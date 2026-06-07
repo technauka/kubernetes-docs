@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>DNS &amp; Service Discovery — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-logo{font-weight:700;font-size:15px;color:var(--text);}
+.sidebar-logo span{color:var(--accent);}
+.sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;}
+.sidebar-search input:focus{outline:none;border-color:var(--accent);}
+nav{padding:8px 0;flex:1;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;z-index:90;gap:12px;}
+.hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:15px;font-weight:600;flex:1;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);cursor:pointer;font-size:13px;}
+.theme-btn:hover{border-color:var(--accent);}
+.main-wrapper{margin-left:var(--sidebar-w);flex:1;display:flex;padding-top:52px;}
+.main-content{flex:1;padding:40px 48px;max-width:960px;overflow-y:auto;height:calc(100vh - 52px);}
+.toc-panel{width:var(--toc-w);padding:24px 16px;position:sticky;top:0;height:calc(100vh - 52px);overflow-y:auto;border-left:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.toc-panel h4{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover{color:var(--text);text-decoration:none;}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-panel a.toc-h3{padding-left:18px;font-size:11px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:600;margin:48px 0 16px;padding-top:8px;border-top:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+.lead{font-size:16px;color:var(--text2);margin-bottom:32px;line-height:1.7;}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--text2);cursor:pointer;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;border-bottom:2px solid var(--border);color:var(--text);}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+.callout{border-left:4px solid;border-radius:0 8px 8px 0;padding:14px 18px;margin:20px 0;}
+.callout-info{border-color:var(--accent);background:rgba(88,166,255,.08);}
+.callout-warn{border-color:var(--yellow);background:rgba(210,153,34,.08);}
+.callout-danger{border-color:var(--red);background:rgba(248,81,73,.08);}
+.callout-success{border-color:var(--green);background:rgba(63,185,80,.08);}
+.callout strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout p{margin:0;font-size:13px;}
+.grid{display:grid;gap:16px;margin:20px 0;}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;}
+.card h4{margin-top:0;color:var(--text);}
+.card-accent{border-top:3px solid var(--accent);}
+.card-green{border-top:3px solid var(--green);}
+.card-yellow{border-top:3px solid var(--yellow);}
+.card-purple{border-top:3px solid var(--purple);}
+.card-red{border-top:3px solid var(--red);}
+.card-orange{border-top:3px solid var(--orange);}
+svg text{fill:var(--text);}
+.page-nav{display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;align-items:center;gap:8px;padding:12px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:14px;transition:all .2s;}
+.page-nav a:hover{border-color:var(--accent);text-decoration:none;}
+.back-to-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+.back-to-top.show{display:flex;}
+.search-hl{background:rgba(210,153,34,.35);border-radius:2px;}
+@media(max-width:1200px){.toc-panel{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrapper{margin-left:0;}.topbar{left:0;}.hamburger{display:block;}.main-content{padding:24px 20px;}}
+</style>
+</head>
+<body>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  </div>
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Foundations</div>
+      <a href="../00-foundations/00-introduction.html">Introduction</a>
+      <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+      <a href="../00-foundations/02-kubernetes-components.html">Core Components</a>
+      <a href="../00-foundations/03-control-loops.html">Control Loops</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html">API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Control Plane</div>
+      <a href="../01-control-plane/00-control-plane-overview.html">Overview</a>
+      <a href="../01-control-plane/01-api-server.html">API Server</a>
+      <a href="../01-control-plane/02-etcd.html">etcd</a>
+      <a href="../01-control-plane/03-scheduler.html">Scheduler</a>
+      <a href="../01-control-plane/04-controller-manager.html">Controller Manager</a>
+      <a href="../01-control-plane/05-cloud-controller-manager.html">Cloud Controller Manager</a>
+      <a href="../01-control-plane/06-ha-control-plane.html">HA Control Plane</a>
+      <a href="../01-control-plane/07-api-aggregation.html">API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html">Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html">Kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html">Kube-Proxy</a>
+      <a href="../02-node-components/03-container-runtime.html">Container Runtime</a>
+      <a href="../02-node-components/04-cri-interface.html">CRI Interface</a>
+      <a href="../02-node-components/05-node-lifecycle.html">Node Lifecycle</a>
+      <a href="../02-node-components/06-node-resource-management.html">Node Resource Management</a>
+      <a href="../02-node-components/07-windows-worker-nodes.html">Windows Worker Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Networking</div>
+      <a href="00-networking-overview.html">Networking Overview</a>
+      <a href="01-pod-networking.html">Pod Networking</a>
+      <a href="02-cni-plugins.html">CNI Plugins</a>
+      <a href="03-kube-proxy-internals.html">Kube-Proxy Internals</a>
+      <a href="04-dns.html" class="active">DNS &amp; Service Discovery</a>
+      <a href="05-ingress.html">Ingress</a>
+      <a href="06-gateway-api.html">Gateway API</a>
+      <a href="07-network-policies.html">Network Policies</a>
+      <a href="08-ipv4-ipv6-dual-stack.html">IPv4/IPv6 Dual-Stack</a>
+      <a href="09-load-balancing.html">Load Balancing</a>
+      <a href="10-service-mesh.html">Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Storage</div>
+      <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+      <a href="../04-storage/01-volumes.html">Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html">Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html">Storage Classes</a>
+      <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+      <a href="../04-storage/05-stateful-sets-storage.html">StatefulSets &amp; Storage</a>
+      <a href="../04-storage/06-volume-snapshots.html">Volume Snapshots</a>
+      <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html">Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html">Pods</a>
+      <a href="../05-workloads/02-deployments.html">Deployments</a>
+      <a href="../05-workloads/03-statefulsets.html">StatefulSets</a>
+      <a href="../05-workloads/04-daemonsets.html">DaemonSets</a>
+      <a href="../05-workloads/05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/06-horizontal-pod-autoscaler.html">HPA</a>
+      <a href="../05-workloads/07-vertical-pod-autoscaler.html">VPA</a>
+      <a href="../05-workloads/08-pod-disruption-budgets.html">Pod Disruption Budgets</a>
+      <a href="../05-workloads/09-resource-management.html">Resource Management</a>
+      <a href="../05-workloads/10-scheduling.html">Scheduling</a>
+      <a href="../05-workloads/11-pod-lifecycle.html">Pod Lifecycle</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Security</div>
+      <a href="../06-security/00-security-overview.html">Security Overview</a>
+      <a href="../06-security/01-rbac.html">RBAC</a>
+      <a href="../06-security/02-pod-security.html">Pod Security</a>
+      <a href="../06-security/03-network-policies.html">Network Policies</a>
+      <a href="../06-security/04-secrets-management.html">Secrets Management</a>
+      <a href="../06-security/05-service-accounts.html">Service Accounts</a>
+      <a href="../06-security/06-admission-controllers.html">Admission Controllers</a>
+      <a href="../06-security/07-image-security.html">Image Security</a>
+      <a href="../06-security/08-audit-logging.html">Audit Logging</a>
+      <a href="../06-security/09-encryption-at-rest.html">Encryption at Rest</a>
+      <a href="../06-security/10-supply-chain-security.html">Supply Chain Security</a>
+      <a href="../06-security/11-compliance.html">Compliance</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Observability</div>
+      <a href="../07-observability/00-observability-overview.html">Observability Overview</a>
+      <a href="../07-observability/01-metrics.html">Metrics &amp; Prometheus</a>
+      <a href="../07-observability/02-logging.html">Logging</a>
+      <a href="../07-observability/03-tracing.html">Distributed Tracing</a>
+      <a href="../07-observability/04-events.html">Events</a>
+      <a href="../07-observability/05-dashboards.html">Dashboards</a>
+      <a href="../07-observability/06-alerting.html">Alerting</a>
+      <a href="../07-observability/07-profiling.html">Profiling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-overview.html">Platform Overview</a>
+      <a href="../08-platform-engineering/01-cluster-provisioning.html">Cluster Provisioning</a>
+      <a href="../08-platform-engineering/02-gitops.html">GitOps</a>
+      <a href="../08-platform-engineering/03-multi-tenancy.html">Multi-Tenancy</a>
+      <a href="../08-platform-engineering/04-policy-management.html">Policy Management</a>
+      <a href="../08-platform-engineering/05-service-catalog.html">Service Catalog</a>
+      <a href="../08-platform-engineering/06-developer-experience.html">Developer Experience</a>
+      <a href="../08-platform-engineering/07-cost-management.html">Cost Management</a>
+      <a href="../08-platform-engineering/08-cluster-upgrades.html">Cluster Upgrades</a>
+      <a href="../08-platform-engineering/09-multi-cluster.html">Multi-Cluster</a>
+      <a href="../08-platform-engineering/10-backup-restore.html">Backup &amp; Restore</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html">Production Overview</a>
+      <a href="../09-production-operations/01-capacity-planning.html">Capacity Planning</a>
+      <a href="../09-production-operations/02-performance-tuning.html">Performance Tuning</a>
+      <a href="../09-production-operations/03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="../09-production-operations/04-security-hardening.html">Security Hardening</a>
+      <a href="../09-production-operations/05-network-operations.html">Network Operations</a>
+      <a href="../09-production-operations/06-storage-operations.html">Storage Operations</a>
+      <a href="../09-production-operations/07-certificate-management.html">Certificate Management</a>
+      <a href="../09-production-operations/08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="../09-production-operations/09-incident-response.html">Incident Response</a>
+      <a href="../09-production-operations/10-sre-practices.html">SRE Practices</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Team Workflows</div>
+      <a href="../10-team-workflows/00-workflows-overview.html">Workflows Overview</a>
+      <a href="../10-team-workflows/01-local-development.html">Local Development</a>
+      <a href="../10-team-workflows/02-ci-cd-pipelines.html">CI/CD Pipelines</a>
+      <a href="../10-team-workflows/03-helm.html">Helm</a>
+      <a href="../10-team-workflows/04-kustomize.html">Kustomize</a>
+      <a href="../10-team-workflows/05-testing-strategies.html">Testing Strategies</a>
+      <a href="../10-team-workflows/06-progressive-delivery.html">Progressive Delivery</a>
+      <a href="../10-team-workflows/07-developer-self-service.html">Developer Self-Service</a>
+      <a href="../10-team-workflows/08-runbooks.html">Runbooks</a>
+      <a href="../10-team-workflows/09-on-call.html">On-Call</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">API Flows &amp; Diagrams</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-overview.html">Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html">Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-service-account-token.html">Service Account Token</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-admission-flow.html">Admission Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduler-flow.html">Scheduler Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-rolling-update-flow.html">Rolling Update Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-hpa-flow.html">HPA Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-csi-flow.html">CSI Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-network-policy-flow.html">Network Policy Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-rbac-flow.html">RBAC Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-garbage-collection.html">Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-leader-election.html">Leader Election</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-webhook-flow.html">Webhook Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-cni-setup-flow.html">CNI Setup Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-volume-attach-flow.html">Volume Attach Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html">Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html">Pod Failures</a>
+      <a href="../12-troubleshooting/02-network-issues.html">Network Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html">Storage Issues</a>
+      <a href="../12-troubleshooting/04-performance-issues.html">Performance Issues</a>
+      <a href="../12-troubleshooting/05-control-plane-issues.html">Control Plane Issues</a>
+      <a href="../12-troubleshooting/06-node-issues.html">Node Issues</a>
+      <a href="../12-troubleshooting/07-security-issues.html">Security Issues</a>
+      <a href="../12-troubleshooting/08-dns-issues.html">DNS Issues</a>
+      <a href="../12-troubleshooting/09-ingress-issues.html">Ingress Issues</a>
+      <a href="../12-troubleshooting/10-etcd-issues.html">etcd Issues</a>
+    </div>
+  </nav>
+</aside>
+
+<div class="main-wrapper">
+<header class="topbar">
+  <button class="hamburger" id="hamburger" aria-label="Toggle sidebar">&#9776;</button>
+  <span class="topbar-title">DNS &amp; Service Discovery</span>
+  <input type="search" id="global-search" placeholder="Search docs…" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-size:13px;width:220px;"/>
+  <button class="theme-btn" id="theme-toggle">Light Mode</button>
+</header>
+
+<main class="main-content" id="main-content">
+<h1>DNS &amp; Service Discovery</h1>
+<p class="lead">CoreDNS is the cluster DNS server for all Kubernetes clusters since 1.13 (replacing kube-dns). It resolves service names, pod hostnames, and external FQDNs for every pod in the cluster. This page covers CoreDNS architecture, the Corefile plugin pipeline, every DNS record type Kubernetes creates, <code>ndots</code> and search-domain resolution mechanics, autopath, stub zones, forward zones, negative caching, DNS-based service discovery patterns, NodeLocal DNSCache, and production tuning.</p>
+
+<!-- Architecture -->
+<h2 id="architecture">CoreDNS Architecture</h2>
+<svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;background:var(--bg2);border-radius:10px;padding:12px;margin:16px 0;">
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker>
+    <marker id="a2" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3fb950"/></marker>
+  </defs>
+  <!-- Pod -->
+  <rect x="20" y="110" width="130" height="70" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="85" y="140" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">Pod</text>
+  <text x="85" y="158" text-anchor="middle" font-size="11" fill="#8b949e">resolv.conf:</text>
+  <text x="85" y="173" text-anchor="middle" font-size="10" fill="#58a6ff">10.96.0.10 :53</text>
+  <!-- Arrow pod → CoreDNS -->
+  <line x1="150" y1="145" x2="230" y2="145" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="190" y="136" text-anchor="middle" font-size="10" fill="#8b949e">UDP/TCP :53</text>
+  <!-- CoreDNS Service -->
+  <rect x="230" y="60" width="180" height="40" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="2"/>
+  <text x="320" y="85" text-anchor="middle" font-size="12" font-weight="600" fill="#58a6ff">kube-dns Service</text>
+  <text x="320" y="100" text-anchor="middle" font-size="10" fill="#8b949e">ClusterIP 10.96.0.10</text>
+  <!-- CoreDNS pods -->
+  <rect x="230" y="120" width="180" height="55" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="2"/>
+  <text x="320" y="143" text-anchor="middle" font-size="12" font-weight="600" fill="#3fb950">CoreDNS Pod 1</text>
+  <text x="320" y="161" text-anchor="middle" font-size="11" fill="#8b949e">coredns:1.11.x</text>
+  <rect x="230" y="185" width="180" height="55" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="2"/>
+  <text x="320" y="208" text-anchor="middle" font-size="12" font-weight="600" fill="#3fb950">CoreDNS Pod 2</text>
+  <text x="320" y="226" text-anchor="middle" font-size="11" fill="#8b949e">coredns:1.11.x</text>
+  <!-- API server -->
+  <rect x="480" y="110" width="160" height="70" rx="8" fill="#21262d" stroke="#d29922"/>
+  <text x="560" y="135" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">Kubernetes</text>
+  <text x="560" y="153" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">API Server</text>
+  <text x="560" y="171" text-anchor="middle" font-size="10" fill="#d29922">Services + Pods watch</text>
+  <!-- External DNS -->
+  <rect x="480" y="210" width="160" height="55" rx="8" fill="#21262d" stroke="#bc8cff"/>
+  <text x="560" y="235" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">External DNS</text>
+  <text x="560" y="253" text-anchor="middle" font-size="11" fill="#8b949e">8.8.8.8 (upstream)</text>
+  <!-- Arrows CoreDNS → API + External -->
+  <line x1="410" y1="147" x2="478" y2="147" stroke="#d29922" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="444" y="140" text-anchor="middle" font-size="10" fill="#8b949e">kubernetes plugin</text>
+  <line x1="410" y1="212" x2="478" y2="237" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="444" y="232" text-anchor="middle" font-size="10" fill="#8b949e">forward plugin</text>
+  <!-- NodeLocal DNSCache -->
+  <rect x="20" y="210" width="130" height="55" rx="8" fill="#21262d" stroke="#f85149"/>
+  <text x="85" y="232" text-anchor="middle" font-size="11" font-weight="600" fill="#f85149">NodeLocal</text>
+  <text x="85" y="249" text-anchor="middle" font-size="11" font-weight="600" fill="#f85149">DNSCache</text>
+  <text x="85" y="264" text-anchor="middle" font-size="10" fill="#8b949e">169.254.20.10</text>
+  <line x1="150" y1="237" x2="228" y2="200" stroke="#f85149" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#a1)"/>
+</svg>
+
+<p>CoreDNS runs as a <strong>Deployment</strong> (typically 2 replicas) in the <code>kube-system</code> namespace. The Service <code>kube-dns</code> holds the stable ClusterIP (e.g. <code>10.96.0.10</code>) written into every pod's <code>/etc/resolv.conf</code> at pod creation time by kubelet.</p>
+
+<div class="grid grid-3">
+  <div class="card card-accent">
+    <h4>CoreDNS Process Model</h4>
+    <p style="font-size:13px;color:var(--text2);">Single binary, plugin chain. Each DNS query traverses the plugin chain in order. Plugins can handle, pass-through, or modify the query. No forking — goroutine per query.</p>
+  </div>
+  <div class="card card-green">
+    <h4>kubernetes plugin</h4>
+    <p style="font-size:13px;color:var(--text2);">Watches the API server for Services and Pods via a shared informer. Answers in-cluster queries from an in-memory cache — no API server hit per DNS query. Serves <code>cluster.local</code> zone.</p>
+  </div>
+  <div class="card card-purple">
+    <h4>forward plugin</h4>
+    <p style="font-size:13px;color:var(--text2);">Forwards unresolved queries upstream. Default: node's <code>/etc/resolv.conf</code> (inherits node DNS). Can be overridden to point at specific resolvers (8.8.8.8, corporate DNS, etc.).</p>
+  </div>
+</div>
+
+<!-- Corefile -->
+<h2 id="corefile">The Corefile — Plugin Pipeline</h2>
+<p>The Corefile is CoreDNS's configuration file, mounted from a ConfigMap. Each server block defines a zone and an ordered list of plugins:</p>
+<pre><code class="language-text"># kubectl get cm -n kube-system coredns -o jsonpath='{.data.Corefile}'
+
+.:53 {
+    errors                    # log errors to stdout
+    health {                  # /health endpoint (HTTP :8080)
+        lameduck 5s           # keep serving 5s after unhealthy for graceful shutdown
+    }
+    ready                     # /ready endpoint (HTTP :8181)
+    kubernetes cluster.local in-addr.arpa ip6.arpa {
+        pods insecure         # create A records for pods (insecure=no verification)
+        fallthrough in-addr.arpa ip6.arpa   # pass PTR queries not found to next plugin
+        ttl 30                # TTL for synthesized records (default 5s)
+    }
+    prometheus :9153          # expose metrics at :9153/metrics
+    forward . /etc/resolv.conf {   # forward all other queries to node DNS
+        max_concurrent 1000
+    }
+    cache 30                  # positive TTL 30s, negative TTL 30s/6 = 5s
+    loop                      # detect forwarding loops
+    reload                    # hot-reload Corefile without restart (every 2s check)
+    loadbalance               # randomize A/AAAA/MX record order (poor-man's LB)
+}</code></pre>
+
+<h3 id="plugin-reference">CoreDNS Plugin Reference</h3>
+<table>
+  <thead><tr><th>Plugin</th><th>Purpose</th><th>Key Config Options</th></tr></thead>
+  <tbody>
+    <tr><td><code>kubernetes</code></td><td>Serve in-cluster DNS (Services, Pods, StatefulSets)</td><td><code>pods insecure|verified|disabled</code>, <code>ttl</code>, <code>endpoint_pod_names</code>, <code>namespaces</code>, <code>fallthrough</code></td></tr>
+    <tr><td><code>forward</code></td><td>Proxy queries upstream</td><td><code>. 8.8.8.8 8.8.4.4</code>, <code>max_concurrent</code>, <code>health_check</code>, <code>prefer_udp</code>, <code>tls</code> (DoT)</td></tr>
+    <tr><td><code>cache</code></td><td>In-memory DNS cache</td><td><code>cache 30</code> (TTL), <code>denial 5</code> (NXDOMAIN TTL), <code>success 9984 30</code> (capacity TTL)</td></tr>
+    <tr><td><code>errors</code></td><td>Log SERVFAIL/REFUSED to stdout</td><td><code>consolidate 5m ".*"</code> (rate-limit identical errors)</td></tr>
+    <tr><td><code>health</code></td><td>HTTP liveness probe at <code>:8080/health</code></td><td><code>lameduck Xs</code> for graceful shutdown</td></tr>
+    <tr><td><code>ready</code></td><td>HTTP readiness probe at <code>:8181/ready</code></td><td>No options; returns 200 when all plugins are ready</td></tr>
+    <tr><td><code>prometheus</code></td><td>Expose metrics at <code>:9153/metrics</code></td><td>Port configurable</td></tr>
+    <tr><td><code>rewrite</code></td><td>Rewrite query names / types</td><td><code>rewrite name suffix .legacy.svc.cluster.local .svc.cluster.local</code></td></tr>
+    <tr><td><code>hosts</code></td><td>Serve records from a hosts-file</td><td><code>hosts /etc/hosts { fallthrough }</code></td></tr>
+    <tr><td><code>file</code></td><td>Serve a zone from a RFC 1035 zone file</td><td><code>file db.example.com example.com</code></td></tr>
+    <tr><td><code>etcd</code></td><td>SkyDNS-compatible etcd backend (legacy)</td><td>Mostly replaced by kubernetes plugin</td></tr>
+    <tr><td><code>autopath</code></td><td>Resolve short names server-side (reduces 5x ndots:5 to 1 query)</td><td><code>autopath @kubernetes</code></td></tr>
+    <tr><td><code>loop</code></td><td>Detect and abort forwarding loops (CoreDNS will crash-loop)</td><td>No options</td></tr>
+    <tr><td><code>reload</code></td><td>Watch Corefile for changes and reload without restart</td><td><code>reload 10s</code></td></tr>
+    <tr><td><code>loadbalance</code></td><td>Rotate A/AAAA/MX records for naive load balancing</td><td><code>loadbalance round_robin</code></td></tr>
+    <tr><td><code>log</code></td><td>Log all DNS queries (verbose; use sparingly in production)</td><td><code>log . {class denial error}</code></td></tr>
+  </tbody>
+</table>
+
+<!-- DNS Records -->
+<h2 id="dns-records">DNS Records Kubernetes Creates</h2>
+
+<h3 id="service-records">Service DNS Records</h3>
+<table>
+  <thead><tr><th>Record Type</th><th>Name Pattern</th><th>Resolves To</th><th>Condition</th></tr></thead>
+  <tbody>
+    <tr><td><strong>A / AAAA</strong></td><td><code>&lt;svc&gt;.&lt;ns&gt;.svc.cluster.local</code></td><td>ClusterIP (IPv4 or IPv6)</td><td>All services with ClusterIP</td></tr>
+    <tr><td><strong>A / AAAA</strong></td><td><code>&lt;svc&gt;.&lt;ns&gt;.svc.cluster.local</code></td><td>All ready pod IPs (multiple A records)</td><td>Headless service (<code>clusterIP: None</code>)</td></tr>
+    <tr><td><strong>SRV</strong></td><td><code>_&lt;port-name&gt;._&lt;proto&gt;.&lt;svc&gt;.&lt;ns&gt;.svc.cluster.local</code></td><td>Port number + target A record</td><td>Named ports only</td></tr>
+    <tr><td><strong>CNAME</strong></td><td><code>&lt;svc&gt;.&lt;ns&gt;.svc.cluster.local</code></td><td>External hostname</td><td>ExternalName services</td></tr>
+    <tr><td><strong>PTR</strong></td><td><code>&lt;reversed-ip&gt;.in-addr.arpa</code></td><td>Service FQDN</td><td>ClusterIP services (reverse DNS)</td></tr>
+  </tbody>
+</table>
+
+<h3 id="pod-records">Pod DNS Records</h3>
+<table>
+  <thead><tr><th>Record Type</th><th>Name Pattern</th><th>Resolves To</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>A</strong></td><td><code>&lt;ip-dashed&gt;.&lt;ns&gt;.pod.cluster.local</code></td><td>Pod IP</td><td>IP with dots replaced by dashes: <code>10-244-1-5.default.pod.cluster.local</code></td></tr>
+    <tr><td><strong>A</strong></td><td><code>&lt;hostname&gt;.&lt;subdomain&gt;.&lt;ns&gt;.svc.cluster.local</code></td><td>Pod IP</td><td>Only when pod has <code>hostname</code> + <code>subdomain</code> and a matching headless service</td></tr>
+  </tbody>
+</table>
+
+<h3 id="statefulset-records">StatefulSet Pod Records</h3>
+<p>StatefulSets combine <code>hostname</code> (pod ordinal name) with <code>subdomain</code> (headless service name) to create stable per-pod DNS entries:</p>
+<pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: cassandra           # headless service — must match subdomain
+spec:
+  clusterIP: None
+  selector:
+    app: cassandra
+  ports:
+  - port: 9042
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+spec:
+  serviceName: cassandra    # sets pod subdomain
+  replicas: 3
+  # Pods: cassandra-0, cassandra-1, cassandra-2
+  # DNS: cassandra-0.cassandra.default.svc.cluster.local → pod-0 IP
+  #      cassandra-1.cassandra.default.svc.cluster.local → pod-1 IP
+  #      cassandra-2.cassandra.default.svc.cluster.local → pod-2 IP</code></pre>
+
+<h3 id="full-dns-name-table">Full DNS Name Resolution Table</h3>
+<table>
+  <thead><tr><th>Query (from pod in <code>default</code> namespace)</th><th>Resolves To</th><th>Search domain hit</th></tr></thead>
+  <tbody>
+    <tr><td><code>nginx</code></td><td>nginx ClusterIP (same namespace)</td><td><code>nginx.default.svc.cluster.local</code></td></tr>
+    <tr><td><code>nginx.production</code></td><td>nginx ClusterIP in production ns</td><td><code>nginx.production.svc.cluster.local</code></td></tr>
+    <tr><td><code>nginx.production.svc</code></td><td>nginx ClusterIP in production ns</td><td><code>nginx.production.svc.cluster.local</code></td></tr>
+    <tr><td><code>nginx.production.svc.cluster.local</code></td><td>nginx ClusterIP (FQDN, no search)</td><td>Direct (no search needed, has dot count ≥ ndots)</td></tr>
+    <tr><td><code>cassandra-0.cassandra</code></td><td>cassandra-0 pod IP</td><td><code>cassandra-0.cassandra.default.svc.cluster.local</code></td></tr>
+    <tr><td><code>google.com</code></td><td>Forwarded to upstream → 142.250.x.x</td><td>All 5 search domains tried first if ndots:5</td></tr>
+    <tr><td><code>google.com.</code> (trailing dot)</td><td>Forwarded immediately (FQDN)</td><td>No search domain expansion</td></tr>
+  </tbody>
+</table>
+
+<!-- resolv.conf and ndots -->
+<h2 id="resolv-conf">Pod /etc/resolv.conf and ndots</h2>
+<pre><code class="language-text"># /etc/resolv.conf inside a pod in 'default' namespace
+nameserver 10.96.0.10
+search default.svc.cluster.local svc.cluster.local cluster.local
+options ndots:5</code></pre>
+
+<h3 id="ndots-mechanics">ndots:5 Resolution Mechanics</h3>
+<p>The <code>ndots:5</code> option means: if the query name has fewer than 5 dots, try each search domain first before treating it as an absolute name. This causes up to <strong>5 DNS queries</strong> for a simple external hostname like <code>google.com</code>:</p>
+
+<div class="callout callout-warn"><strong>The ndots:5 performance tax</strong><p>A pod querying <code>google.com</code> (1 dot) fires 5 queries before getting an answer:<br/>
+1. <code>google.com.default.svc.cluster.local</code> → NXDOMAIN<br/>
+2. <code>google.com.svc.cluster.local</code> → NXDOMAIN<br/>
+3. <code>google.com.cluster.local</code> → NXDOMAIN<br/>
+4. <code>google.com</code> → actual answer<br/>
+(5th search domain only tried on some resolvers)<br/>
+Each NXDOMAIN adds latency. In high-throughput services making frequent external DNS lookups, this multiplies CoreDNS query load by 4×.</p></div>
+
+<h3 id="ndots-mitigation">Mitigating ndots:5 Overhead</h3>
+<pre><code class="language-yaml"># Option 1: use trailing dot for FQDNs in application code
+# app connects to "stripe.com." (trailing dot) → no search expansion → 1 query
+
+# Option 2: lower ndots per pod via dnsConfig
+apiVersion: v1
+kind: Pod
+spec:
+  dnsConfig:
+    options:
+    - name: ndots
+      value: "2"          # only expand if fewer than 2 dots (affects in-cluster too)
+    - name: timeout
+      value: "2"
+    - name: attempts
+      value: "3"
+  containers:
+  - name: app
+    image: myapp
+
+# Option 3: enable autopath plugin in CoreDNS (server-side search expansion)
+# CoreDNS expands the search domains itself — client sends 1 query, CoreDNS tries all
+# Add to Corefile kubernetes block:
+# autopath @kubernetes
+
+# Option 4: NodeLocal DNSCache (caches NXDOMAIN responses too)
+# Reduces repeated NXDOMAIN round trips to CoreDNS pods</code></pre>
+
+<h3 id="dns-policy">Pod dnsPolicy</h3>
+<table>
+  <thead><tr><th>dnsPolicy</th><th>resolv.conf behavior</th><th>Use Case</th></tr></thead>
+  <tbody>
+    <tr><td><code>ClusterFirst</code> (default)</td><td>CoreDNS IP as nameserver; cluster search domains</td><td>All normal pods; in-cluster service resolution</td></tr>
+    <tr><td><code>ClusterFirstWithHostNet</code></td><td>Same as ClusterFirst but for <code>hostNetwork: true</code> pods</td><td>DaemonSet pods needing both host network + cluster DNS</td></tr>
+    <tr><td><code>Default</code></td><td>Inherits node's <code>/etc/resolv.conf</code> exactly</td><td>Pods that must use node's DNS (corporate resolver, etc.)</td></tr>
+    <tr><td><code>None</code></td><td>Completely custom; must provide <code>dnsConfig</code></td><td>Full control; custom nameservers + search domains</td></tr>
+  </tbody>
+</table>
+
+<!-- CoreDNS ConfigMap tuning -->
+<h2 id="coredns-tuning">CoreDNS Configuration Patterns</h2>
+
+<h3 id="stub-zones">Stub Zones (Split-Horizon DNS)</h3>
+<pre><code class="language-yaml"># Route corporate.internal queries to internal DNS server
+# kubectl edit cm -n kube-system coredns
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health { lameduck 5s }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf {
+            max_concurrent 1000
+        }
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+
+    # Stub zone: forward corporate.internal to internal resolver
+    corporate.internal:53 {
+        errors
+        cache 30
+        forward . 10.0.0.2 10.0.0.3 {
+            prefer_udp
+        }
+    }
+
+    # Stub zone for on-prem services
+    on-prem.example.com:53 {
+        errors
+        cache 60
+        forward . 192.168.1.53
+    }</code></pre>
+
+<h3 id="custom-records">Custom In-Cluster Records</h3>
+<pre><code class="language-yaml"># Serve custom A records for hostnames not backed by Services
+# Useful for external endpoints that pods reference by name
+
+data:
+  Corefile: |
+    .:53 {
+        # ... standard config ...
+    }
+    # Custom zone with static records
+    custom.cluster.local:53 {
+        errors
+        hosts /etc/coredns/custom-hosts {
+            10.0.100.50  db-primary.custom.cluster.local
+            10.0.100.51  db-replica.custom.cluster.local
+            fallthrough
+        }
+    }
+  # Mount custom-hosts from a separate ConfigMap key
+  custom-hosts: |
+    10.0.100.50  db-primary.custom.cluster.local
+    10.0.100.51  db-replica.custom.cluster.local</code></pre>
+
+<h3 id="forward-tls">DNS-over-TLS Upstream</h3>
+<pre><code class="language-text">.:53 {
+    forward . tls://8.8.8.8 tls://8.8.4.4 {
+        tls_servername dns.google
+        health_check 5s
+    }
+    cache 30
+}</code></pre>
+
+<h3 id="negative-caching">Negative Caching</h3>
+<pre><code class="language-text"># cache plugin controls positive and negative TTLs
+cache {
+    success 9984 30 0     # capacity=9984, TTL=30s, min-TTL=0
+    denial  9984 5  0     # NXDOMAIN capacity=9984, TTL=5s
+    # Shorter NXDOMAIN TTL (5s) means bad lookups resolve faster
+    # but increases CoreDNS query load for persistent NXDOMAIN patterns
+    prefetch 10 1m 10%    # prefetch popular records when TTL < 10% of original
+}</code></pre>
+
+<!-- NodeLocal DNSCache -->
+<h2 id="nodelocal-dnscache">NodeLocal DNSCache</h2>
+<p>NodeLocal DNSCache (GA 1.18) runs a DNS caching agent (<code>node-local-dns</code> DaemonSet) on every node using a link-local IP (<code>169.254.20.10</code>). Pods are reconfigured to use this local cache instead of the CoreDNS ClusterIP, eliminating the UDP conntrack race condition and reducing latency for cached queries.</p>
+
+<h3 id="nodelocal-why">Why NodeLocal DNSCache?</h3>
+<div class="grid grid-2">
+  <div class="card card-red">
+    <h4>Problem: UDP Conntrack Race (without NodeLocal)</h4>
+    <p style="font-size:13px;color:var(--text2);">Each node runs many pods. UDP DNS queries to CoreDNS ClusterIP go through conntrack DNAT. Under high query rates, multiple simultaneous queries from the same source port can collide in the conntrack table — resulting in <strong>5-second DNS timeouts</strong> on some queries. This is the infamous "5s DNS timeout" bug endemic to iptables-mode Kubernetes.</p>
+  </div>
+  <div class="card card-green">
+    <h4>Solution: NodeLocal DNSCache</h4>
+    <p style="font-size:13px;color:var(--text2);">node-local-dns listens on <code>169.254.20.10:53</code> (link-local, no conntrack needed — no DNAT). Pods send queries to this local address. Cache hits return immediately (sub-millisecond). Cache misses are forwarded to CoreDNS pods over TCP (not UDP), avoiding the conntrack race entirely.</p>
+  </div>
+</div>
+
+<h3 id="nodelocal-architecture">NodeLocal DNSCache Architecture</h3>
+<svg viewBox="0 0 860 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;background:var(--bg2);border-radius:10px;padding:12px;margin:16px 0;">
+  <defs>
+    <marker id="a3" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker>
+    <marker id="a4" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3fb950"/></marker>
+  </defs>
+  <!-- Node box -->
+  <rect x="10" y="10" width="840" height="195" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="30" y="30" font-size="11" font-weight="600" fill="#6e7681">NODE</text>
+  <!-- Pod A -->
+  <rect x="30" y="45" width="110" height="50" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="85" y="66" text-anchor="middle" font-size="11" font-weight="600" fill="#e6edf3">Pod A</text>
+  <text x="85" y="83" text-anchor="middle" font-size="10" fill="#8b949e">ns: 169.254.20.10</text>
+  <!-- Pod B -->
+  <rect x="160" y="45" width="110" height="50" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="215" y="66" text-anchor="middle" font-size="11" font-weight="600" fill="#e6edf3">Pod B</text>
+  <text x="215" y="83" text-anchor="middle" font-size="10" fill="#8b949e">ns: 169.254.20.10</text>
+  <!-- node-local-dns -->
+  <rect x="310" y="30" width="210" height="75" rx="8" fill="#21262d" stroke="#f85149" stroke-width="2"/>
+  <text x="415" y="55" text-anchor="middle" font-size="12" font-weight="600" fill="#f85149">node-local-dns</text>
+  <text x="415" y="73" text-anchor="middle" font-size="11" fill="#e6edf3">169.254.20.10:53</text>
+  <text x="415" y="91" text-anchor="middle" font-size="10" fill="#8b949e">in-memory cache (ristretto)</text>
+  <!-- CoreDNS -->
+  <rect x="580" y="45" width="150" height="50" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="2"/>
+  <text x="655" y="66" text-anchor="middle" font-size="12" font-weight="600" fill="#3fb950">CoreDNS</text>
+  <text x="655" y="83" text-anchor="middle" font-size="10" fill="#8b949e">10.96.0.10:53</text>
+  <!-- External -->
+  <rect x="750" y="45" width="90" height="50" rx="6" fill="#21262d" stroke="#bc8cff"/>
+  <text x="795" y="66" text-anchor="middle" font-size="11" font-weight="600" fill="#bc8cff">Upstream</text>
+  <text x="795" y="83" text-anchor="middle" font-size="10" fill="#8b949e">8.8.8.8</text>
+  <!-- Arrows -->
+  <line x1="140" y1="70" x2="308" y2="70" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a3)"/>
+  <text x="224" y="62" text-anchor="middle" font-size="10" fill="#8b949e">UDP (no conntrack)</text>
+  <line x1="250" y1="85" x2="308" y2="80" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a3)"/>
+  <!-- Cache miss → CoreDNS via TCP -->
+  <line x1="520" y1="67" x2="578" y2="67" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a4)"/>
+  <text x="549" y="59" text-anchor="middle" font-size="10" fill="#3fb950">TCP (cache miss)</text>
+  <!-- CoreDNS → External -->
+  <line x1="730" y1="70" x2="748" y2="70" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#a3)"/>
+  <!-- iptables rule -->
+  <rect x="30" y="140" width="750" height="50" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="405" y="160" text-anchor="middle" font-size="11" font-weight="600" fill="#d29922">iptables: NOTRACK 169.254.20.10 — bypasses conntrack for link-local DNS</text>
+  <text x="405" y="178" text-anchor="middle" font-size="11" fill="#8b949e">node-local-dns adds dummy interface with 169.254.20.10 on each node at startup</text>
+</svg>
+
+<h3 id="nodelocal-install">Installing NodeLocal DNSCache</h3>
+<pre><code class="language-bash"># Download and apply the NodeLocal DNSCache DaemonSet manifest
+# Replace __PILLAR__DNS__SERVER__ with CoreDNS ClusterIP
+# Replace __PILLAR__LOCAL__DNS__ with 169.254.20.10
+# Replace __PILLAR__DNS__DOMAIN__ with cluster.local
+
+COREDNS_IP=$(kubectl get svc -n kube-system kube-dns -o jsonpath='{.spec.clusterIP}')
+
+curl -sL "https://raw.githubusercontent.com/kubernetes/kubernetes/master/cluster/addons/dns/nodelocaldns/nodelocaldns.yaml" | \
+  sed "s/__PILLAR__DNS__SERVER__/${COREDNS_IP}/g" | \
+  sed "s/__PILLAR__LOCAL__DNS__/169.254.20.10/g" | \
+  sed "s/__PILLAR__DNS__DOMAIN__/cluster.local/g" | \
+  kubectl apply -f -
+
+# Kubelet must be reconfigured to use 169.254.20.10 as clusterDNS
+# In KubeletConfiguration:
+# clusterDNS:
+# - 169.254.20.10
+
+# Or set at cluster creation:
+# kubeadm init --config kubeadm.yaml
+# KubeletConfiguration.clusterDNS: ["169.254.20.10"]</code></pre>
+
+<h3 id="nodelocal-corefile">NodeLocal DNSCache Corefile</h3>
+<pre><code class="language-text">cluster.local:53 {
+    errors
+    cache {
+        success 9984 30
+        denial 9984 5
+    }
+    reload
+    loop
+    bind 169.254.20.10        # bind to link-local address
+    forward . __PILLAR__DNS__SERVER__ {
+        force_tcp             # forward to CoreDNS over TCP (avoids conntrack)
+    }
+    prometheus :9253
+    health 169.254.20.10:8080
+    }
+.:53 {
+    errors
+    cache 30
+    reload
+    loop
+    bind 169.254.20.10
+    forward . __PILLAR__DNS__SERVER__ {
+        force_tcp
+    }
+    prometheus :9253
+}</code></pre>
+
+<!-- ExternalDNS -->
+<h2 id="external-dns">ExternalDNS — Automatic External DNS</h2>
+<p>ExternalDNS is a Kubernetes add-on that synchronizes Service and Ingress resources with external DNS providers (Route53, Cloud DNS, Cloudflare, etc.). It watches Services of type LoadBalancer and Ingress objects and creates/updates DNS records automatically.</p>
+<pre><code class="language-yaml"># Annotate a LoadBalancer Service to create a Route53 record
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: api.example.com
+    external-dns.alpha.kubernetes.io/ttl: "300"
+spec:
+  type: LoadBalancer
+  selector:
+    app: web
+  ports:
+  - port: 443
+
+---
+# ExternalDNS Deployment (Route53 example)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      serviceAccountName: external-dns
+      containers:
+      - name: external-dns
+        image: registry.k8s.io/external-dns/external-dns:v0.14.2
+        args:
+        - --source=service
+        - --source=ingress
+        - --domain-filter=example.com
+        - --provider=aws
+        - --aws-zone-type=public
+        - --registry=txt
+        - --txt-owner-id=my-cluster    # prevents multiple clusters clobbering records</code></pre>
+
+<!-- Service Discovery Patterns -->
+<h2 id="service-discovery-patterns">Service Discovery Patterns</h2>
+
+<h3 id="env-var-discovery">Environment Variable Discovery (Legacy)</h3>
+<p>Before DNS was the primary mechanism, Kubernetes injected service information as environment variables into pods. This is still present but <strong>order-dependent</strong> (services must exist before pods) and generally discouraged:</p>
+<pre><code class="language-bash"># In a pod, if service 'nginx' exists in the same namespace:
+env | grep NGINX
+# NGINX_SERVICE_HOST=10.96.14.3
+# NGINX_SERVICE_PORT=80
+# NGINX_PORT=tcp://10.96.14.3:80
+# NGINX_PORT_80_TCP=tcp://10.96.14.3:80
+# NGINX_PORT_80_TCP_PROTO=tcp
+# NGINX_PORT_80_TCP_PORT=80
+# NGINX_PORT_80_TCP_ADDR=10.96.14.3
+
+# Limitation: services created AFTER the pod don't get env vars
+# Use DNS instead — DNS is dynamic and doesn't have this ordering issue</code></pre>
+
+<h3 id="headless-discovery">Headless Service Discovery</h3>
+<p>Headless services are the foundation for stateful workload discovery. DNS returns all ready pod IPs, enabling clients to implement their own load balancing or connect to specific replicas:</p>
+<pre><code class="language-bash"># From inside a pod, querying a headless service returns all pod IPs
+nslookup cassandra.default.svc.cluster.local
+# Server:         10.96.0.10
+# Address:        10.96.0.10#53
+# Name:   cassandra.default.svc.cluster.local
+# Address: 10.244.3.9
+# Address: 10.244.1.5
+# Address: 10.244.2.7
+
+# Round-robin across all IPs (client-side load balancing)
+
+# Individual pod DNS (StatefulSet)
+nslookup cassandra-0.cassandra.default.svc.cluster.local
+# Address: 10.244.1.5   (always same pod — stable address)
+
+# SRV record (port discovery)
+nslookup -type=SRV _cql._tcp.cassandra.default.svc.cluster.local
+# _cql._tcp.cassandra.default.svc.cluster.local service = 0 50 9042 cassandra-0.cassandra.default.svc.cluster.local.
+# _cql._tcp.cassandra.default.svc.cluster.local service = 0 50 9042 cassandra-1.cassandra.default.svc.cluster.local.</code></pre>
+
+<h3 id="multicluster-dns">Multi-Cluster DNS (Clusterset)</h3>
+<p>The <a href="07-network-policies.html">Multicluster Services API</a> (KEP-1645) defines <code>ServiceImport</code> and <code>ServiceExport</code> objects. CoreDNS with the <code>multicluster</code> plugin resolves cross-cluster service names:</p>
+<pre><code class="language-text"># Multi-cluster DNS name format:
+# <service>.<namespace>.svc.<clusterset>.local
+
+# Export a service from cluster-1
+kubectl apply -f - &lt;&lt;EOF
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: nginx
+  namespace: production
+EOF
+
+# In cluster-2, the service is discoverable as:
+# nginx.production.svc.clusterset.local</code></pre>
+
+<!-- CoreDNS scaling -->
+<h2 id="scaling">CoreDNS Scaling</h2>
+<h3 id="hpa-coredns">HPA for CoreDNS</h3>
+<pre><code class="language-yaml"># Default CoreDNS deployment has 2 replicas
+# For large clusters, scale CoreDNS with HPA or static replicas
+
+# Option 1: Static scale (simple)
+kubectl scale deployment coredns -n kube-system --replicas=4
+
+# Option 2: proportional-cluster-autoscaler (cluster-proportional-autoscaler)
+# Scales CoreDNS based on node count
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dns-autoscaler
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: autoscaler
+        image: registry.k8s.io/cpa/cluster-proportional-autoscaler:v1.8.8
+        command:
+        - /cluster-proportional-autoscaler
+        - --namespace=kube-system
+        - --configmap=dns-autoscaler
+        - --target=Deployment/coredns
+        - --default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"min":2,"max":20}}
+        - --logtostderr=true
+        - --v=2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dns-autoscaler
+  namespace: kube-system
+data:
+  linear: |
+    {
+      "coresPerReplica": 256,
+      "nodesPerReplica": 16,
+      "min": 2,
+      "max": 20,
+      "preventSinglePointOfFailure": true
+    }</code></pre>
+
+<h3 id="coredns-resources">CoreDNS Resource Tuning</h3>
+<pre><code class="language-yaml"># CoreDNS pod resource requests/limits
+# Defaults are too conservative for large clusters
+resources:
+  requests:
+    cpu: 100m
+    memory: 70Mi
+  limits:
+    cpu: 500m          # increase for high-QPS clusters
+    memory: 170Mi      # increase for large service count
+
+# CoreDNS cache tuning for large clusters
+cache {
+    success 9984 60    # 9984 entries, 60s TTL (longer reduces CoreDNS load)
+    denial  9984 5     # keep NXDOMAIN TTL short
+    prefetch 10 1m 10% # prefetch entries when 10% of TTL remains
+    serve_stale 15s    # serve stale cache entries during upstream outages (up to 15s)
+}</code></pre>
+
+<!-- DNS debugging -->
+<h2 id="debugging">DNS Debugging</h2>
+<pre><code class="language-bash"># 1. Test basic DNS resolution from a pod
+kubectl run dns-test --image=nicolaka/netshoot --rm -it -- bash
+  # Inside:
+  nslookup kubernetes.default.svc.cluster.local    # should return ClusterIP
+  nslookup kubernetes                              # should expand via search domain
+  dig @10.96.0.10 kubernetes.default.svc.cluster.local   # explicit query to CoreDNS
+  dig kubernetes.default.svc.cluster.local +search +ndots=5
+
+# 2. Check CoreDNS pod logs
+kubectl logs -n kube-system -l k8s-app=kube-dns --tail=50
+# Enable query logging (verbose — use only temporarily):
+# Add to Corefile: log .
+
+# 3. Check CoreDNS metrics
+kubectl exec -n kube-system coredns-abc123 -- \
+  curl -s localhost:9153/metrics | grep -E "coredns_dns_request|coredns_cache"
+
+# 4. CoreDNS health/ready check
+kubectl exec -n kube-system coredns-abc123 -- curl -s localhost:8080/health
+kubectl exec -n kube-system coredns-abc123 -- curl -s localhost:8181/ready
+
+# 5. Test external resolution
+kubectl run dns-test --image=nicolaka/netshoot --rm -it -- \
+  dig google.com @10.96.0.10 +short
+
+# 6. Check pod's resolv.conf
+kubectl exec my-pod -- cat /etc/resolv.conf
+
+# 7. Measure DNS latency
+kubectl run dns-bench --image=nicolaka/netshoot --rm -it -- \
+  bash -c 'for i in $(seq 50); do time nslookup nginx.default; done 2>&1 | grep real'
+
+# 8. Check if NodeLocal DNSCache is active
+kubectl get pods -n kube-system -l k8s-app=node-local-dns -o wide
+kubectl exec my-pod -- cat /etc/resolv.conf
+# Should show 169.254.20.10 as nameserver when NodeLocal DNSCache is active</code></pre>
+
+<!-- Metrics -->
+<h2 id="metrics">Key CoreDNS Metrics</h2>
+<table>
+  <thead><tr><th>Metric</th><th>Type</th><th>Alert Threshold</th></tr></thead>
+  <tbody>
+    <tr><td><code>coredns_dns_requests_total</code></td><td>counter</td><td>Rate growth &gt; 3× baseline</td></tr>
+    <tr><td><code>coredns_dns_responses_total{rcode="SERVFAIL"}</code></td><td>counter</td><td>&gt; 1% of total responses</td></tr>
+    <tr><td><code>coredns_dns_responses_total{rcode="NXDOMAIN"}</code></td><td>counter</td><td>High rate → ndots:5 waste or misconfigured apps</td></tr>
+    <tr><td><code>coredns_dns_request_duration_seconds</code></td><td>histogram</td><td>p99 &gt; 500ms → CoreDNS overloaded or upstream slow</td></tr>
+    <tr><td><code>coredns_cache_hits_total</code></td><td>counter</td><td>ratio vs requests; &lt; 50% cache hit → increase cache TTL</td></tr>
+    <tr><td><code>coredns_cache_misses_total</code></td><td>counter</td><td>Informational; high = low cache hit rate</td></tr>
+    <tr><td><code>coredns_panics_total</code></td><td>counter</td><td>&gt; 0 → immediate investigation</td></tr>
+    <tr><td><code>coredns_kubernetes_dns_programming_duration_seconds</code></td><td>histogram</td><td>p99 &gt; 5s → API server pressure</td></tr>
+    <tr><td><code>process_open_fds</code></td><td>gauge</td><td>&gt; 80% of ulimit → file descriptor exhaustion</td></tr>
+  </tbody>
+</table>
+
+<h3 id="alerting-rules">Alerting Rules</h3>
+<pre><code class="language-yaml">groups:
+- name: coredns
+  rules:
+  - alert: CoreDNSHighErrorRate
+    expr: |
+      rate(coredns_dns_responses_total{rcode="SERVFAIL"}[5m])
+      / rate(coredns_dns_requests_total[5m]) > 0.01
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "CoreDNS SERVFAIL rate >1% — DNS resolution failures in cluster"
+
+  - alert: CoreDNSHighLatency
+    expr: histogram_quantile(0.99, rate(coredns_dns_request_duration_seconds_bucket[5m])) > 0.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "CoreDNS p99 latency >500ms — DNS slow for cluster workloads"
+
+  - alert: CoreDNSPanic
+    expr: increase(coredns_panics_total[5m]) > 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "CoreDNS panic detected — immediate investigation required"
+
+  - alert: CoreDNSLowCacheHitRate
+    expr: |
+      rate(coredns_cache_hits_total[10m])
+      / (rate(coredns_cache_hits_total[10m]) + rate(coredns_cache_misses_total[10m])) < 0.5
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "CoreDNS cache hit rate <50% — consider increasing cache TTL"</code></pre>
+
+<!-- Troubleshooting -->
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<div class="card" style="margin-bottom:16px;border-left:3px solid var(--red);">
+<h4>Runbook 1: Pod cannot resolve service names (DNS broken)</h4>
+<pre style="margin:8px 0;"><code class="language-bash"># 1. Verify CoreDNS pods are running
+kubectl get pods -n kube-system -l k8s-app=kube-dns
+
+# 2. Test DNS from a debug pod
+kubectl run dns-test --image=nicolaka/netshoot --rm -it -- nslookup kubernetes
+# Expected: Server 10.96.0.10, Address: 10.96.0.1
+
+# 3. If nslookup fails — check if CoreDNS ClusterIP is reachable
+kubectl run dns-test --image=nicolaka/netshoot --rm -it -- \
+  nc -vz 10.96.0.10 53
+# If timeout → kube-proxy issue (check 03-kube-proxy-internals.html)
+
+# 4. Check CoreDNS logs for errors
+kubectl logs -n kube-system -l k8s-app=kube-dns --since=5m | grep -i "error\|refused\|failed"
+
+# 5. Verify Corefile is syntactically valid
+kubectl get cm -n kube-system coredns -o jsonpath='{.data.Corefile}' | \
+  docker run --rm -i coredns/coredns -conf /dev/stdin -validate
+
+# 6. Check CoreDNS resource limits (OOMKilled?)
+kubectl describe pod -n kube-system -l k8s-app=kube-dns | grep -A5 "Last State\|OOM\|Limits"
+
+# 7. Restart CoreDNS (last resort)
+kubectl rollout restart deployment -n kube-system coredns</code></pre>
+</div>
+
+<div class="card" style="margin-bottom:16px;border-left:3px solid var(--yellow);">
+<h4>Runbook 2: DNS lookup slow (intermittent 5s timeouts)</h4>
+<pre style="margin:8px 0;"><code class="language-bash"># Root cause: UDP conntrack collision (classic Kubernetes DNS bug)
+# Fix: deploy NodeLocal DNSCache (see above)
+
+# Diagnose: check if timeouts correlate with conntrack drops
+kubectl debug node/worker-1 -it --image=ubuntu -- bash
+  cat /proc/net/stat/nf_conntrack | head -2    # look for insert_failed counter
+  # insert_failed > 0 and growing = conntrack collision confirmed
+
+# Workaround (immediate): increase conntrack table size
+sysctl -w net.netfilter.nf_conntrack_max=1048576
+echo "net.netfilter.nf_conntrack_max=1048576" >> /etc/sysctl.d/99-coredns.conf
+
+# Long-term fix 1: NodeLocal DNSCache (preferred)
+# Long-term fix 2: switch CoreDNS to TCP (adds latency but no collisions)
+# In Corefile: forward . /etc/resolv.conf { prefer_udp false }
+
+# Also check: are pods using ndots:5 for external lookups?
+kubectl exec my-pod -- cat /etc/resolv.conf
+# If yes, add ndots:2 via dnsConfig or deploy autopath plugin</code></pre>
+</div>
+
+<div class="card" style="margin-bottom:16px;border-left:3px solid var(--purple);">
+<h4>Runbook 3: External DNS not resolving (SERVFAIL for external names)</h4>
+<pre style="margin:8px 0;"><code class="language-bash"># 1. Test directly
+kubectl run dns-test --image=nicolaka/netshoot --rm -it -- \
+  dig google.com @10.96.0.10
+
+# 2. Check CoreDNS forward plugin config
+kubectl get cm -n kube-system coredns -o jsonpath='{.data.Corefile}' | grep -A3 forward
+
+# 3. Verify CoreDNS can reach upstream from its node
+kubectl debug node/$(kubectl get pod -n kube-system -l k8s-app=kube-dns -o jsonpath='{.items[0].spec.nodeName}') \
+  -it --image=ubuntu -- dig google.com @8.8.8.8
+
+# 4. If using /etc/resolv.conf as upstream: check node resolv.conf
+kubectl debug node/worker-1 -it --image=ubuntu -- cat /etc/resolv.conf
+
+# 5. NetworkPolicy blocking CoreDNS egress?
+kubectl get networkpolicies -n kube-system
+# Ensure kube-system allows egress to upstream DNS (port 53)
+
+# 6. Check CoreDNS loop plugin (crash loop if forwarding to itself)
+kubectl logs -n kube-system coredns-abc123 | grep "Loop"
+# "Loop detected" → CoreDNS pointing to itself; check node resolv.conf
+# Fix: explicitly set forward target: forward . 8.8.8.8</code></pre>
+</div>
+
+<div class="card" style="margin-bottom:16px;border-left:3px solid var(--accent);">
+<h4>Runbook 4: CoreDNS high CPU / memory (overloaded)</h4>
+<pre style="margin:8px 0;"><code class="language-bash"># 1. Check CoreDNS QPS
+kubectl exec -n kube-system coredns-abc123 -- \
+  curl -s localhost:9153/metrics | grep "coredns_dns_requests_total"
+# rate() in Prometheus:
+# rate(coredns_dns_requests_total[1m]) — queries per second
+
+# 2. Identify top query patterns (enable log plugin temporarily)
+kubectl edit cm -n kube-system coredns
+# Add under .:53 block: log .
+# Watch: kubectl logs -n kube-system -l k8s-app=kube-dns -f | head -200
+
+# 3. Check for NXDOMAIN storms (misconfigured apps hammering CoreDNS)
+kubectl exec -n kube-system coredns-abc123 -- \
+  curl -s localhost:9153/metrics | grep 'rcode="NXDOMAIN"'
+
+# 4. Scale CoreDNS horizontally
+kubectl scale deployment coredns -n kube-system --replicas=6
+
+# 5. Increase cache TTL to reduce upstream queries
+kubectl edit cm -n kube-system coredns
+# Change: cache 30 → cache 120
+
+# 6. Enable NodeLocal DNSCache to offload CoreDNS
+# See NodeLocal DNSCache section above</code></pre>
+</div>
+
+<!-- Best practices -->
+<h2 id="best-practices">Production Best Practices</h2>
+<div class="grid grid-2">
+  <div class="card card-green">
+    <h4>Always Run NodeLocal DNSCache</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Eliminates the conntrack UDP race (5s timeout bug)</li>
+      <li>Sub-millisecond cache hits for popular records</li>
+      <li>Reduces CoreDNS pod load by 60-80%</li>
+      <li>Use <code>force_tcp</code> for cache misses to CoreDNS</li>
+    </ul>
+  </div>
+  <div class="card card-accent">
+    <h4>Scale CoreDNS Proportionally</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Use cluster-proportional-autoscaler (not HPA)</li>
+      <li>1 replica per 16 nodes or 256 cores as baseline</li>
+      <li>Spread across failure domains with anti-affinity</li>
+      <li>Set resource limits to prevent OOMKill on traffic spikes</li>
+    </ul>
+  </div>
+  <div class="card card-yellow">
+    <h4>Reduce ndots Overhead</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Use trailing dots for external FQDNs in app config</li>
+      <li>Set <code>ndots: 2</code> for pods making many external calls</li>
+      <li>Enable <code>autopath @kubernetes</code> for server-side search</li>
+      <li>Use fully-qualified service names where latency matters</li>
+    </ul>
+  </div>
+  <div class="card card-purple">
+    <h4>Security</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Enable NetworkPolicy to restrict who can query CoreDNS</li>
+      <li>Use DNS-over-TLS for upstream forwarding</li>
+      <li>Avoid <code>pods insecure</code> if pod spoofing is a concern</li>
+      <li>Monitor for DNS exfiltration (high TXT/NULL query rate)</li>
+      <li>Use Cilium L7 DNS policy to restrict FQDN access per pod</li>
+    </ul>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="03-kube-proxy-internals.html">&#8592; Kube-Proxy Internals</a>
+  <a href="05-ingress.html">Ingress &#8594;</a>
+</div>
+</main>
+
+<aside class="toc-panel">
+  <h4>On This Page</h4>
+  <a href="#architecture">CoreDNS Architecture</a>
+  <a href="#corefile">The Corefile</a>
+  <a href="#plugin-reference" class="toc-h3">Plugin Reference</a>
+  <a href="#dns-records">DNS Records</a>
+  <a href="#service-records" class="toc-h3">Service Records</a>
+  <a href="#pod-records" class="toc-h3">Pod Records</a>
+  <a href="#statefulset-records" class="toc-h3">StatefulSet Records</a>
+  <a href="#full-dns-name-table" class="toc-h3">Resolution Table</a>
+  <a href="#resolv-conf">resolv.conf &amp; ndots</a>
+  <a href="#ndots-mechanics" class="toc-h3">ndots:5 Mechanics</a>
+  <a href="#ndots-mitigation" class="toc-h3">Mitigating ndots</a>
+  <a href="#dns-policy" class="toc-h3">dnsPolicy</a>
+  <a href="#coredns-tuning">Configuration Patterns</a>
+  <a href="#stub-zones" class="toc-h3">Stub Zones</a>
+  <a href="#custom-records" class="toc-h3">Custom Records</a>
+  <a href="#forward-tls" class="toc-h3">DNS-over-TLS</a>
+  <a href="#negative-caching" class="toc-h3">Negative Caching</a>
+  <a href="#nodelocal-dnscache">NodeLocal DNSCache</a>
+  <a href="#nodelocal-why" class="toc-h3">Why NodeLocal</a>
+  <a href="#nodelocal-architecture" class="toc-h3">Architecture</a>
+  <a href="#nodelocal-install" class="toc-h3">Installation</a>
+  <a href="#external-dns">ExternalDNS</a>
+  <a href="#service-discovery-patterns">Service Discovery Patterns</a>
+  <a href="#env-var-discovery" class="toc-h3">Env Var Discovery</a>
+  <a href="#headless-discovery" class="toc-h3">Headless Services</a>
+  <a href="#multicluster-dns" class="toc-h3">Multi-Cluster DNS</a>
+  <a href="#scaling">CoreDNS Scaling</a>
+  <a href="#debugging">Debugging</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#alerting-rules" class="toc-h3">Alerting Rules</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<button class="back-to-top" id="back-to-top" title="Back to top">&#8679;</button>
+
+<script>
+const root=document.documentElement;
+const themeBtn=document.getElementById('theme-toggle');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'Light Mode':'Dark Mode';
+themeBtn.addEventListener('click',()=>{
+  const t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'Light Mode':'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{btt.classList.toggle('show',main.scrollTop>400);});
+btt.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';
+  btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h=>observer.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+document.getElementById('global-search').addEventListener('input',function(){
+  document.querySelectorAll('.search-hl').forEach(m=>{
+    const p=m.parentNode;p.replaceChild(document.createTextNode(m.textContent),m);p.normalize();
+  });
+  const q=this.value.trim();
+  if(!q)return;
+  const walk=document.createTreeWalker(document.getElementById('main-content'),NodeFilter.SHOW_TEXT);
+  const nodes=[];let n;
+  while((n=walk.nextNode()))nodes.push(n);
+  nodes.forEach(node=>{
+    const idx=node.textContent.toLowerCase().indexOf(q.toLowerCase());
+    if(idx===-1||node.parentElement.classList.contains('copy-btn'))return;
+    const range=document.createRange();
+    range.setStart(node,idx);range.setEnd(node,idx+q.length);
+    const mark=document.createElement('mark');
+    mark.className='search-hl';
+    range.surroundContents(mark);
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storage Classes | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sidebar-logo{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;}
+.sidebar-title{font-weight:600;font-size:14px;}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text);outline:none;}
+.sidebar-search input:focus{border-color:var(--accent);}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+.theme-toggle{background:none;border:none;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:8px;font-size:12px;}
+.topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:99;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--text);font-size:18px;}
+.breadcrumb{font-size:13px;color:var(--text3);}
+.breadcrumb span{color:var(--text2);}
+.topbar-right{margin-left:auto;}
+.back-to-top{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+.back-to-top.visible{opacity:1;}
+.main-wrapper{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;padding:64px 40px 80px;max-width:900px;min-width:0;overflow-y:auto;height:100vh;}
+.toc-sidebar{width:var(--toc-w);flex-shrink:0;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);background:var(--bg);}
+.toc-sidebar h4{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.toc-sidebar a{display:block;font-size:12px;color:var(--text3);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-sidebar a:hover{color:var(--text2);}
+.toc-sidebar a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-sidebar a.toc-h3{padding-left:16px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.3;}
+h2{font-size:22px;font-weight:600;margin:48px 0 16px;padding-top:8px;border-top:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:16px;color:var(--text2);}
+.lead{font-size:17px;color:var(--text2);margin-bottom:24px;}
+.page-meta{display:flex;gap:16px;margin-bottom:32px;flex-wrap:wrap;}
+.meta-badge{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.meta-badge.green{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.3);}
+.meta-badge.blue{background:rgba(88,166,255,.12);color:var(--accent);border-color:rgba(88,166,255,.3);}
+.meta-badge.yellow{background:rgba(210,153,34,.12);color:var(--yellow);border-color:rgba(210,153,34,.3);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin-bottom:20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;font-size:12px;border:1px solid var(--border);color:var(--text2);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:14px 16px;margin-bottom:20px;border-left:4px solid;display:flex;gap:10px;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;font-size:14px;}
+.callout-body strong{display:block;margin-bottom:4px;}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.tip{background:rgba(63,185,80,.08);border-color:var(--green);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px;overflow-x:auto;}
+.diagram pre{background:none;border:none;padding:0;margin:0;font-size:13px;color:var(--text2);}
+.section-nav{display:flex;justify-content:space-between;margin-top:64px;padding-top:24px;border-top:1px solid var(--border);}
+.section-nav a{display:flex;flex-direction:column;gap:4px;max-width:45%;}
+.section-nav a .nav-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.section-nav a .nav-title{font-size:14px;color:var(--accent);}
+.section-nav a.next{text-align:right;}
+ul.plain{color:var(--text2);padding-left:24px;margin-bottom:16px;font-size:14px;line-height:2;}
+ol.steps{color:var(--text2);padding-left:24px;margin-bottom:20px;font-size:14px;line-height:2.2;}
+/* Tier cards */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:28px;}
+.sc-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.sc-card .sc-name{font-weight:700;font-size:14px;margin-bottom:4px;}
+.sc-card .sc-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin-bottom:8px;}
+.sc-card p{font-size:13px;color:var(--text3);margin:0;}
+.tag-fast{background:rgba(63,185,80,.15);color:var(--green);}
+.tag-balanced{background:rgba(88,166,255,.15);color:var(--accent);}
+.tag-slow{background:rgba(139,148,158,.15);color:var(--text2);}
+.tag-shared{background:rgba(188,140,255,.15);color:var(--purple);}
+@media(max-width:1100px){.toc-sidebar{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrapper{margin-left:0;}
+  .main-content{padding:64px 20px 80px;}
+  .topbar{left:0;}
+  .hamburger{display:block;}
+  .coverage-body{grid-template-columns:1fr !important;}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">K8s</div>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="sidebar-filter" placeholder="Filter topics…" oninput="filterNav(this.value)">
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">00 — Foundations</div>
+      <a href="../00-foundations/00-kubernetes-overview.html">Kubernetes Overview</a>
+      <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+      <a href="../00-foundations/02-api-machinery.html">API Machinery</a>
+      <a href="../00-foundations/03-kubectl-and-client.html">kubectl &amp; Client</a>
+      <a href="../00-foundations/04-objects-and-manifests.html">Objects &amp; Manifests</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 — Networking</div>
+      <a href="../03-networking/06-gateway-api.html">Gateway API</a>
+      <a href="../03-networking/07-network-policies.html">Network Policies</a>
+      <a href="../03-networking/09-load-balancing.html">Load Balancing</a>
+      <a href="../03-networking/10-service-mesh.html">Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 — Storage</div>
+      <a href="00-storage-overview.html">Storage Overview</a>
+      <a href="01-volumes.html">Volumes</a>
+      <a href="02-persistent-volumes.html">Persistent Volumes</a>
+      <a href="03-storage-classes.html" class="active">Storage Classes</a>
+      <a href="04-csi-drivers.html">CSI Drivers</a>
+      <a href="05-volume-snapshots.html">Volume Snapshots</a>
+      <a href="06-stateful-storage-patterns.html">Stateful Patterns</a>
+      <a href="07-storage-capacity.html">Storage Capacity</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 — Configuration</div>
+      <a href="../05-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../05-configuration/01-secrets.html">Secrets</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">☀️</span> Toggle theme
+    </button>
+  </div>
+</aside>
+
+<div class="topbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div class="breadcrumb">04 — Storage <span>/ Storage Classes</span></div>
+  <div class="topbar-right">
+    <button class="back-to-top" id="back-to-top" onclick="scrollToTop()">↑ Top</button>
+  </div>
+</div>
+
+<div class="main-wrapper">
+<main class="main-content" id="main-content">
+
+<h1>Storage Classes</h1>
+<p class="lead">The complete StorageClass reference — every field, all major cloud provisioner parameters, topology constraints, multi-tier design patterns, and how to safely migrate PVCs between StorageClasses without downtime.</p>
+
+<div class="page-meta">
+  <span class="meta-badge green">Section 04 of 13</span>
+  <span class="meta-badge blue">File 4 of 8</span>
+  <span class="meta-badge yellow">Platform Engineer</span>
+</div>
+
+<details class="coverage">
+  <summary>What This Page Covers</summary>
+  <div class="coverage-body">
+    <li>StorageClass object model — cluster-scoped; relationship to PV/PVC/provisioner</li>
+    <li>Full StorageClass spec reference — provisioner, parameters, reclaimPolicy, volumeBindingMode, allowVolumeExpansion, mountOptions, allowedTopologies</li>
+    <li>provisioner field — CSI driver name; kubernetes.io/no-provisioner for local; legacy in-tree names</li>
+    <li>reclaimPolicy — Delete vs Retain; does not affect existing PVs</li>
+    <li>volumeBindingMode — Immediate vs WaitForFirstConsumer; topology-aware flow</li>
+    <li>allowVolumeExpansion — enabling on existing SC; per-driver support</li>
+    <li>mountOptions — passed to mount syscall; driver must support; debugging mount options</li>
+    <li>allowedTopologies — restrict provisioning to specific zones/regions</li>
+    <li>AWS EBS CSI driver — all gp2/gp3/io1/io2/st1/sc1 parameters; KMS encryption; throughput/IOPS tuning; multi-attach io1/io2</li>
+    <li>GCE Persistent Disk CSI driver — pd-standard/pd-ssd/pd-balanced/pd-extreme; replication-type; disk encryption key; provisioned-iops-on-create</li>
+    <li>Azure Disk CSI driver — Standard_LRS/Premium_LRS/UltraSSD_LRS/Premium_ZRS; cachingMode; enableBursting; networkAccessPolicy</li>
+    <li>Azure Files CSI driver — NFS vs SMB protocol; skuName; storageAccount; allowBlobPublicAccess</li>
+    <li>AWS EFS CSI driver — dynamic provisioning with access points; basePath; dirName; provisioningMode</li>
+    <li>Ceph RBD CSI — pool; imageFormat; imageFeatures; csi.storage.k8s.io/node-stage-secret-name</li>
+    <li>CephFS CSI — fsName; pool; mounter; kernelMountOptions</li>
+    <li>NFS subdir external provisioner — pathPattern; onDelete; archiveOnDelete</li>
+    <li>Multi-tier StorageClass design — fast/balanced/slow/shared tiers with example manifests</li>
+    <li>StorageClass for different teams — namespace-scoped access via ResourceQuota + LimitRange</li>
+    <li>Changing default StorageClass — annotation swap; multiple-defaults failure; retroactive assignment</li>
+    <li>StorageClass migration — cloning PVCs to new SC; Velero approach; zero-downtime migration runbook</li>
+    <li>StorageClass and VolumeSnapshotClass alignment — snapshotting must use compatible class</li>
+    <li>4 alerting rules + 5 troubleshooting runbooks</li>
+    <li>8 best practices</li>
+  </div>
+</details>
+
+<!-- ============================================================ -->
+<h2 id="object-model">Object Model</h2>
+
+<p>A StorageClass is a cluster-scoped object that acts as a template for dynamic PV provisioning. It encodes everything the provisioner needs to create a volume on behalf of a PVC: which backend to call, what type of disk to create, how to handle reclaim, and topology constraints.</p>
+
+<div class="diagram">
+<pre>
+StorageClass (cluster-scoped)
+  name: gp3-encrypted
+  provisioner: ebs.csi.aws.com    ──────────► CSI driver controller plugin
+  parameters: {type: gp3, ...}              (running in kube-system as Deployment)
+  reclaimPolicy: Delete
+  volumeBindingMode: WaitForFirstConsumer
+  allowVolumeExpansion: true
+         │
+         │  PVC created with storageClassName: gp3-encrypted
+         ▼
+  external-provisioner sidecar calls CSI CreateVolume
+         │
+         ▼
+  PersistentVolume created (spec inherited from StorageClass + provisioner response)
+  PVC bound to PV
+</pre>
+</div>
+
+<p>StorageClasses are immutable in their <code>parameters</code> field once created — you cannot change the disk type or provisioner. To change parameters, create a new StorageClass and migrate PVCs (see <a href="#migration">StorageClass Migration</a>).</p>
+
+<!-- ============================================================ -->
+<h2 id="full-spec">Full StorageClass Spec</h2>
+
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-encrypted
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"   # at most one per cluster
+provisioner: ebs.csi.aws.com          # CSI driver name; must match CSIDriver object name
+
+parameters:                           # driver-specific; opaque to Kubernetes core
+  type: gp3
+  encrypted: "true"
+  kmsKeyId: arn:aws:kms:us-east-1:123456789012:key/mrk-abc123
+
+reclaimPolicy: Delete                 # Delete (default) | Retain
+                                      # Recycle is deprecated and removed
+
+volumeBindingMode: WaitForFirstConsumer  # Immediate | WaitForFirstConsumer
+
+allowVolumeExpansion: true            # false by default; enable for resize support
+
+mountOptions:                         # passed to the mount command on the node
+  - noatime
+  - discard
+
+allowedTopologies:                    # restrict provisioning to these zones
+  - matchLabelExpressions:
+      - key: topology.ebs.csi.aws.com/zone
+        values:
+          - us-east-1a
+          - us-east-1b
+          - us-east-1c</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="provisioner">provisioner Field</h2>
+
+<p>The provisioner name must exactly match the name registered in the <code>CSIDriver</code> object. CSI driver names are typically reverse-domain formatted. Common values:</p>
+
+<table>
+  <tr><th>Provisioner</th><th>Storage Backend</th></tr>
+  <tr><td><code>ebs.csi.aws.com</code></td><td>AWS EBS (gp2, gp3, io1, io2, st1, sc1)</td></tr>
+  <tr><td><code>efs.csi.aws.com</code></td><td>AWS EFS (NFS managed file system)</td></tr>
+  <tr><td><code>pd.csi.storage.gke.io</code></td><td>GCE Persistent Disk (pd-standard, pd-ssd, pd-balanced, pd-extreme)</td></tr>
+  <tr><td><code>filestore.csi.storage.gke.io</code></td><td>GCP Filestore (NFS)</td></tr>
+  <tr><td><code>disk.csi.azure.com</code></td><td>Azure Managed Disk</td></tr>
+  <tr><td><code>file.csi.azure.com</code></td><td>Azure Files (SMB / NFS)</td></tr>
+  <tr><td><code>rbd.csi.ceph.com</code></td><td>Ceph RBD (block)</td></tr>
+  <tr><td><code>cephfs.csi.ceph.com</code></td><td>CephFS (file, RWX)</td></tr>
+  <tr><td><code>kubernetes.io/no-provisioner</code></td><td>Local volumes (no dynamic provisioning)</td></tr>
+  <tr><td><code>nfs.csi.k8s.io</code></td><td>NFS CSI driver (subdir provisioner)</td></tr>
+  <tr><td><code>driver.longhorn.io</code></td><td>Longhorn distributed block storage</td></tr>
+  <tr><td><code>rancher.io/local-path</code></td><td>Local Path Provisioner (Rancher)</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="volumebindingmode">volumeBindingMode</h2>
+
+<p>This field controls <em>when</em> the PV is provisioned relative to pod scheduling. See the full explanation in <a href="02-persistent-volumes.html#binding-modes">Persistent Volumes — WaitForFirstConsumer</a>. The summary:</p>
+
+<table>
+  <tr><th>Mode</th><th>PV Provisioned When</th><th>Required For</th></tr>
+  <tr><td><code>Immediate</code></td><td>PVC is created (zone chosen randomly by provisioner)</td><td>Topology-agnostic storage: EFS, CephFS, NFS, Azure Files</td></tr>
+  <tr><td><code>WaitForFirstConsumer</code></td><td>A pod using the PVC is scheduled to a node</td><td>Zonal block storage: EBS, Azure Disk, GCE PD, local PVs</td></tr>
+</table>
+
+<div class="callout danger">
+  <div class="callout-icon">🔴</div>
+  <div class="callout-body"><strong>Never use Immediate for EBS, Azure Disk, or GCE PD</strong> These are zonal resources. With Immediate, the provisioner may create the volume in a different AZ from where the pod lands. The pod becomes permanently stuck in <code>Pending</code> with <code>node(s) had no available volume zone</code>. Always use <code>WaitForFirstConsumer</code> for any zonal block driver.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="mount-options">mountOptions</h2>
+
+<p>Mount options are passed directly to the <code>mount</code> command on the node when attaching a filesystem volume. They are not validated by Kubernetes — an invalid option causes the mount to fail and the pod to be stuck in <code>ContainerCreating</code>.</p>
+
+<pre><code>mountOptions:
+  - noatime          # don't update atime on reads — reduces write I/O (recommended for DBs)
+  - nodiratime       # don't update directory atime
+  - discard          # enable TRIM for SSDs — frees blocks on delete (EBS gp3/io2 support it)
+  - rsize=1048576    # NFS read size 1MiB (tune for throughput)
+  - wsize=1048576    # NFS write size 1MiB
+  - nfsvers=4.1      # force NFSv4.1 (pNFS capable)
+  - hard             # NFS: retry indefinitely on server failure
+  - timeo=600        # NFS: timeout 60 seconds before retry</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>discard and database write performance</strong> The <code>discard</code> (TRIM) option causes the filesystem to issue TRIM commands on block deallocation. On some cloud block storage implementations this adds latency to delete-heavy workloads. PostgreSQL VACUUM, MySQL purge threads, and compaction jobs can be significantly slower with <code>discard</code>. Use <code>fstrim</code> via a periodic job instead, or test the performance impact before enabling.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="allowed-topologies">allowedTopologies</h2>
+
+<p>Restricts the provisioner to create volumes only within the specified topology zones. This is useful for performance (co-locate volume with expected workload zones) and cost optimization (avoid cross-AZ transfer fees).</p>
+
+<pre><code>allowedTopologies:
+  - matchLabelExpressions:
+      - key: topology.ebs.csi.aws.com/zone
+        values: [us-east-1a, us-east-1b]
+  # EBS volumes will ONLY be provisioned in these two AZs
+  # Pods that schedule to us-east-1c will not get volumes from this StorageClass</code></pre>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>allowedTopologies + WaitForFirstConsumer interaction</strong> When both are set, the scheduler must choose a node in one of the allowed topology zones. If no nodes exist in the allowed zones, pod scheduling fails. Use <code>allowedTopologies</code> to pin storage to specific zones — useful for regulated workloads that must stay in specific regions.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="aws-ebs">AWS EBS CSI Driver Parameters</h2>
+
+<p>Driver: <code>ebs.csi.aws.com</code></p>
+
+<table>
+  <tr><th>Parameter</th><th>Values</th><th>Description</th></tr>
+  <tr><td><code>type</code></td><td>gp2, gp3, io1, io2, st1, sc1</td><td>EBS volume type</td></tr>
+  <tr><td><code>iops</code></td><td>Integer string</td><td>Provisioned IOPS for io1/io2; baseline IOPS for gp3</td></tr>
+  <tr><td><code>throughput</code></td><td>Integer string (MiB/s)</td><td>Throughput for gp3 (default 125, max 1000)</td></tr>
+  <tr><td><code>encrypted</code></td><td>"true" / "false"</td><td>Enable EBS encryption</td></tr>
+  <tr><td><code>kmsKeyId</code></td><td>ARN or key alias</td><td>Customer-managed KMS key for encryption</td></tr>
+  <tr><td><code>blockExpress</code></td><td>"true" / "false"</td><td>Enable io2 Block Express (higher IOPS/GiB, sub-millisecond latency)</td></tr>
+  <tr><td><code>throughputMode</code></td><td>"provisioned"</td><td>For io1/io2 only</td></tr>
+</table>
+
+<h4>gp3 — General Purpose (Recommended Default)</h4>
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  # gp3 defaults: 3000 IOPS, 125 MiB/s throughput (included in base price)
+  # Override for higher performance (charged extra above baseline):
+  iops: "6000"           # up to 16000 IOPS
+  throughput: "250"       # up to 1000 MiB/s
+  encrypted: "true"
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true</code></pre>
+
+<h4>io2 Block Express — High Performance Databases</h4>
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: io2-block-express
+provisioner: ebs.csi.aws.com
+parameters:
+  type: io2
+  iops: "64000"          # up to 256000 IOPS with Block Express
+  encrypted: "true"
+  kmsKeyId: arn:aws:kms:us-east-1:123456789012:key/mrk-prod-db
+  blockExpress: "true"
+reclaimPolicy: Retain    # always Retain for production DBs
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true</code></pre>
+
+<h4>st1 — Throughput Optimized HDD (Cold Data / Data Lake)</h4>
+<pre><code>parameters:
+  type: st1
+  # Minimum size: 125 GiB; Maximum: 16 TiB
+  # 40 MiB/s per TiB baseline throughput, 250 MiB/s per TiB burst
+  # NOT suitable for random I/O workloads — sequential only</code></pre>
+
+<h4>io1/io2 Multi-Attach</h4>
+<pre><code>parameters:
+  type: io1               # or io2
+  iops: "10000"
+  multiAttachEnabled: "true"   # allows RWX-like behavior at EBS level
+# WARNING: Multi-Attach is not a substitute for distributed locking.
+# The application must handle concurrent writes (e.g., cluster-aware filesystems,
+# GFS2, OCFS2). Standard ext4/xfs will corrupt with concurrent writers.</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="gce-pd">GCE Persistent Disk CSI Driver Parameters</h2>
+
+<p>Driver: <code>pd.csi.storage.gke.io</code></p>
+
+<table>
+  <tr><th>Parameter</th><th>Values</th><th>Description</th></tr>
+  <tr><td><code>type</code></td><td>pd-standard, pd-ssd, pd-balanced, pd-extreme</td><td>Disk type</td></tr>
+  <tr><td><code>replication-type</code></td><td>none, regional-pd</td><td>Regional PD: synchronous replication across 2 zones</td></tr>
+  <tr><td><code>disk-encryption-kms-key</code></td><td>KMS key resource name</td><td>Customer-managed encryption key</td></tr>
+  <tr><td><code>provisioned-iops-on-create</code></td><td>Integer string</td><td>Provisioned IOPS for pd-extreme (min 10000)</td></tr>
+  <tr><td><code>provisioned-throughput-on-create</code></td><td>Integer string (MiB/s)</td><td>Provisioned throughput for pd-extreme</td></tr>
+</table>
+
+<pre><code># pd-ssd — SSD-backed (recommended for databases on GKE)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: pd-ssd
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-ssd
+  replication-type: none
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+---
+# Regional PD — synchronous two-zone replication for HA
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: pd-ssd-regional
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-ssd
+  replication-type: regional-pd   # provisions in 2 AZs simultaneously
+allowedTopologies:
+  - matchLabelExpressions:
+      - key: topology.gke.io/zone
+        values: [us-central1-a, us-central1-b]
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="azure-disk">Azure Disk CSI Driver Parameters</h2>
+
+<p>Driver: <code>disk.csi.azure.com</code></p>
+
+<table>
+  <tr><th>Parameter</th><th>Values</th><th>Description</th></tr>
+  <tr><td><code>skuName</code></td><td>Standard_LRS, Premium_LRS, StandardSSD_LRS, UltraSSD_LRS, Premium_ZRS, StandardSSD_ZRS</td><td>Disk SKU</td></tr>
+  <tr><td><code>cachingMode</code></td><td>None, ReadOnly, ReadWrite</td><td>Host caching mode</td></tr>
+  <tr><td><code>kind</code></td><td>managed</td><td>Always use managed (unmanaged is deprecated)</td></tr>
+  <tr><td><code>diskEncryptionSetID</code></td><td>Resource ID</td><td>Disk Encryption Set for CMK</td></tr>
+  <tr><td><code>enableBursting</code></td><td>"true"</td><td>Enable on-demand bursting for Premium SSDs</td></tr>
+  <tr><td><code>networkAccessPolicy</code></td><td>AllowAll, DenyAll, AllowPrivate</td><td>Control disk access for security</td></tr>
+  <tr><td><code>diskAccessID</code></td><td>Resource ID</td><td>Disk Access resource for private endpoint</td></tr>
+  <tr><td><code>tags</code></td><td>key1=value1,key2=value2</td><td>Azure resource tags on disk</td></tr>
+</table>
+
+<pre><code># Premium SSD with encryption and bursting
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: premium-ssd-encrypted
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_LRS
+  cachingMode: ReadOnly          # appropriate for most DB data volumes
+  kind: managed
+  diskEncryptionSetID: /subscriptions/xxx/resourceGroups/rg/providers/Microsoft.Compute/diskEncryptionSets/my-des
+  enableBursting: "true"
+  networkAccessPolicy: DenyAll   # disallow direct disk access outside the cluster
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+---
+# Premium SSD v2 (ZRS — zone-redundant)
+parameters:
+  skuName: Premium_ZRS           # synchronous zone-redundant storage (3 AZ copies)
+  # NOTE: Premium_ZRS does not support cachingMode — must be None</code></pre>
+
+<h4>UltraSSD for demanding databases</h4>
+<pre><code>parameters:
+  skuName: UltraSSD_LRS
+  # Must enable Ultra SSD on the node pool:
+  # az aks nodepool update --enable-ultra-ssd
+  diskIOPSReadWrite: "160000"    # provisioned IOPS
+  diskMBpsReadWrite: "2000"      # provisioned throughput MiB/s</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="azure-files">Azure Files CSI Driver Parameters</h2>
+
+<p>Driver: <code>file.csi.azure.com</code> — supports RWX (ReadWriteMany)</p>
+
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-files-nfs
+provisioner: file.csi.azure.com
+parameters:
+  protocol: nfs                   # nfs | smb; NFS recommended for Linux workloads
+  skuName: Premium_LRS            # Standard_LRS, Premium_LRS, Standard_GRS, etc.
+  # storageAccount: mystoraccount  # optional: use specific storage account
+  # resourceGroup: my-rg           # optional: storage account resource group
+  # subscriptionID: xxx            # optional: cross-subscription
+mountOptions:
+  - nconnect=4                    # NFS: parallel connections per mount (improves throughput)
+  - actimeo=30                    # NFS: attribute cache timeout
+volumeBindingMode: Immediate      # Azure Files is topology-agnostic (global file system)
+allowVolumeExpansion: true
+reclaimPolicy: Delete</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="aws-efs">AWS EFS CSI Driver Parameters</h2>
+
+<p>Driver: <code>efs.csi.aws.com</code> — RWX, serverless NFS, auto-scaling</p>
+
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sc
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap         # efs-ap = dynamic access point provisioning
+  fileSystemId: fs-0abc123def456   # existing EFS filesystem ID
+  directoryPerms: "700"            # permissions for the access point root directory
+  basePath: /dynamic               # base path on the EFS filesystem for access points
+  # gidRangeStart: "1000"          # optional: GID range for access point
+  # gidRangeEnd: "2000"
+  # ensureUniqueDirectory: "true"  # prefix dirName with PVC UID to guarantee uniqueness
+volumeBindingMode: Immediate       # EFS is region-wide (not zonal)
+allowVolumeExpansion: true         # EFS auto-expands; this enables resize status tracking</code></pre>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>EFS access points</strong> The EFS CSI driver in <code>efs-ap</code> mode creates an EFS Access Point for each PVC. Each access point gets its own root directory on the EFS filesystem with isolated ownership and permissions. This enables secure multi-tenant NFS on a shared EFS filesystem — different namespaces get different access points with no cross-tenant visibility.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ceph-rbd">Ceph RBD CSI Driver Parameters</h2>
+
+<p>Driver: <code>rbd.csi.ceph.com</code> — block storage backed by Ceph (via Rook-Ceph or external Ceph cluster)</p>
+
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: rook-ceph-block
+provisioner: rbd.csi.ceph.com
+parameters:
+  clusterID: &lt;ceph-cluster-id&gt;         # from `ceph fsid`
+  pool: replicapool                      # Ceph RBD pool name
+  imageFormat: "2"                       # always use format 2 (format 1 is deprecated)
+  imageFeatures: layering                # comma-separated RBD features
+  # imageFeatures: layering,fast-diff,object-map,deep-flatten,exclusive-lock
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+  csi.storage.k8s.io/fstype: ext4
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+mountOptions:
+  - discard</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="cephfs">CephFS CSI Driver Parameters</h2>
+
+<p>Driver: <code>cephfs.csi.ceph.com</code> — POSIX filesystem, RWX support</p>
+
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: rook-cephfs
+provisioner: cephfs.csi.ceph.com
+parameters:
+  clusterID: &lt;ceph-cluster-id&gt;
+  fsName: myfs                     # CephFS filesystem name
+  pool: myfs-replicated            # metadata or data pool
+  mounter: kernel                  # kernel | fuse; kernel is faster; fuse supports more features
+  kernelMountOptions: ms_mode=prefer-crc    # kernel client mount options
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="nfs-subdir">NFS Subdir External Provisioner</h2>
+
+<p>Dynamically provisions subdirectories on an existing NFS server as PVs. Not a CSI driver — uses the older external provisioner interface.</p>
+
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-client
+provisioner: cluster.local/nfs-subdir-external-provisioner
+parameters:
+  server: nfs-server.prod.svc.cluster.local
+  path: /exports
+  pathPattern: "${.PVC.namespace}/${.PVC.annotations.nfs.io/storage-path}"  # dynamic path pattern
+  onDelete: retain                 # retain | delete | archive
+  archiveOnDelete: "true"          # if onDelete=delete: rename dir to archived-&lt;pvc-uid&gt;
+reclaimPolicy: Delete
+volumeBindingMode: Immediate</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="multi-tier">Multi-Tier StorageClass Design</h2>
+
+<p>Production clusters should define multiple StorageClasses covering different performance and cost tiers. Namespace teams select the appropriate tier via PVC <code>storageClassName</code>, and platform teams enforce limits via ResourceQuota.</p>
+
+<div class="sc-grid">
+  <div class="sc-card">
+    <div class="sc-name">fast</div>
+    <span class="sc-tag tag-fast">High IOPS</span>
+    <p>io2 Block Express / pd-extreme / UltraSSD. For production databases requiring &lt;1ms latency and high IOPS. Most expensive. Protected by ResourceQuota.</p>
+  </div>
+  <div class="sc-card">
+    <div class="sc-name">standard (default)</div>
+    <span class="sc-tag tag-balanced">Balanced</span>
+    <p>gp3 / pd-ssd / Premium_LRS. Default for most workloads. Good baseline performance at reasonable cost. Should be the cluster default SC.</p>
+  </div>
+  <div class="sc-card">
+    <div class="sc-name">slow</div>
+    <span class="sc-tag tag-slow">Low Cost</span>
+    <p>st1 / pd-standard / Standard_LRS. For batch jobs, backups, cold data, or development. Lowest cost. Not suitable for latency-sensitive workloads.</p>
+  </div>
+  <div class="sc-card">
+    <div class="sc-name">shared</div>
+    <span class="sc-tag tag-shared">RWX / NFS</span>
+    <p>EFS / CephFS / Azure Files NFS. ReadWriteMany. For shared config, ML datasets, multi-pod media access. Higher latency than block.</p>
+  </div>
+</div>
+
+<pre><code># ResourceQuota to restrict fast storage to production namespace only
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: storage-quota
+  namespace: development
+spec:
+  hard:
+    requests.storage: 100Gi              # total PVC storage in namespace
+    fast.storageclass.storage.k8s.io/requests.storage: "0"   # no fast SC in dev
+    fast.storageclass.storage.k8s.io/persistentvolumeclaims: "0"</code></pre>
+
+<div class="callout tip">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body"><strong>StorageClass-scoped ResourceQuota</strong> The format <code>&lt;storageClassName&gt;.storageclass.storage.k8s.io/requests.storage</code> limits PVC capacity per StorageClass per namespace. This lets you offer all tiers cluster-wide but control which namespaces can access expensive classes.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="default-storageclass">Default StorageClass Management</h2>
+
+<p>Exactly one StorageClass should be marked default at any time. PVCs without a <code>storageClassName</code> field (not <code>""</code>, but truly absent) use the default.</p>
+
+<pre><code># List all StorageClasses and their default status
+kubectl get storageclass
+# NAME             PROVISIONER        RECLAIMPOLICY  VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION  AGE
+# gp2              kubernetes.io/aws  Delete         Immediate              false                 2y
+# gp3 (default)    ebs.csi.aws.com    Delete         WaitForFirstConsumer   true                  6mo
+
+# Atomically swap the default (remove from gp2, add to gp3)
+kubectl patch storageclass gp2 \
+  -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl patch storageclass gp3 \
+  -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Brief window with no default is safe</strong> Removing the old default before adding the new one creates a brief window where no default exists. PVCs created during this window without an explicit storageClassName will fail admission. In practice this window is milliseconds; apply both patches in the same kubectl call or accept the minimal risk.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="migration">StorageClass Migration</h2>
+
+<p>StorageClass parameters are immutable. To move PVCs to a new StorageClass (e.g., upgrading from gp2 to gp3, or adding encryption), you must create new PVCs and migrate data. Three approaches:</p>
+
+<h3 id="migration-clone">Approach 1: PVC Clone (Online, Same StorageClass Driver)</h3>
+
+<p>Works if the source and destination StorageClasses share the same CSI driver but different parameters (e.g., gp2 → gp3 both use <code>ebs.csi.aws.com</code>). Uses <code>dataSource</code> PVC cloning:</p>
+
+<pre><code># 1. Create new PVC as a clone with the new StorageClass
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-postgres-0-gp3
+  namespace: production
+spec:
+  dataSource:
+    kind: PersistentVolumeClaim
+    name: data-postgres-0          # source PVC (must be Bound)
+  storageClassName: gp3-encrypted  # destination StorageClass
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 100Gi
+
+# 2. Verify clone is Bound and data is present
+kubectl exec -it postgres-0 -- psql -c "SELECT count(*) FROM orders;"   # note count
+
+# 3. Update StatefulSet to use new PVC name (or swap via volumeClaimTemplate rename)
+# This requires careful StatefulSet management — see 06-stateful-storage-patterns.html</code></pre>
+
+<h3 id="migration-snapshot">Approach 2: Snapshot-Based Migration (Cross-Driver)</h3>
+
+<pre><code># 1. Take snapshot of source PVC
+kubectl apply -f - <<EOF
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: pre-migration-snap
+  namespace: production
+spec:
+  volumeSnapshotClassName: csi-aws-vsc
+  source:
+    persistentVolumeClaimName: data-postgres-0
+EOF
+
+# 2. Wait for snapshot to be ReadyToUse
+kubectl wait volumesnapshot pre-migration-snap -n production \
+  --for=jsonpath='{.status.readyToUse}'=true --timeout=5m
+
+# 3. Restore to new PVC with new StorageClass
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-postgres-0-new
+  namespace: production
+spec:
+  dataSource:
+    apiGroup: snapshot.storage.k8s.io
+    kind: VolumeSnapshot
+    name: pre-migration-snap
+  storageClassName: io2-block-express
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 100Gi
+EOF</code></pre>
+
+<h3 id="migration-rsync">Approach 3: rsync / Velero (Cross-Cluster or Different CSI)</h3>
+
+<p>When cloning and snapshot restore are not available (different cloud providers, on-prem to cloud migration), use a data mover:</p>
+
+<pre><code># Velero backup and restore
+velero backup create prod-db-backup \
+  --include-namespaces production \
+  --snapshot-volumes \
+  --storage-location default
+
+# Restore into new cluster with StorageClass remapping
+velero restore create --from-backup prod-db-backup \
+  --namespace-mappings production:production-new \
+  --existing-resource-policy update</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="sc-and-snapshots">StorageClass and VolumeSnapshotClass Alignment</h2>
+
+<p>A <code>VolumeSnapshot</code> must be created with a <code>VolumeSnapshotClass</code> that uses the same CSI driver as the PVC's StorageClass. Mismatched drivers cause snapshot creation to fail:</p>
+
+<pre><code>apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: csi-aws-vsc
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: ebs.csi.aws.com      # MUST match the StorageClass provisioner
+deletionPolicy: Delete        # Delete | Retain
+parameters:
+  # driver-specific snapshot parameters (e.g., tags)
+  tagSpecification_1: "environment=production"</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Separate default VolumeSnapshotClass per driver</strong> If your cluster has both EBS and EFS StorageClasses, you need separate VolumeSnapshotClasses for each. Marking both as default causes snapshot creation without explicit class to fail. Align: one default VolumeSnapshotClass per driver.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="alerting">Alerting Rules</h2>
+
+<pre><code>groups:
+- name: storageclass
+  rules:
+  - alert: PVCProvisioningFailed
+    expr: |
+      increase(storage_operation_errors_total{operation_name="provision"}[5m]) > 0
+    labels: {severity: warning}
+    annotations:
+      summary: "CSI provisioning errors — check CSI controller logs"
+
+  - alert: StorageClassMissing
+    expr: |
+      kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+        unless on(storageclass)
+      kube_storageclass_info
+    for: 5m
+    labels: {severity: warning}
+    annotations:
+      summary: "PVC references a StorageClass that doesn't exist"
+
+  - alert: DefaultStorageClassMissing
+    expr: |
+      count(kube_storageclass_info{is_default_class="true"}) == 0
+    for: 2m
+    labels: {severity: warning}
+    annotations:
+      summary: "No default StorageClass defined — PVCs without explicit SC will fail"
+
+  - alert: MultipleDefaultStorageClasses
+    expr: |
+      count(kube_storageclass_info{is_default_class="true"}) > 1
+    for: 1m
+    labels: {severity: critical}
+    annotations:
+      summary: "Multiple default StorageClasses — PVC creation without SC name will fail"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<h3>Runbook: PVC Stuck Pending — Wrong StorageClass</h3>
+<pre><code># Check what StorageClass the PVC references
+kubectl get pvc &lt;name&gt; -n &lt;ns&gt; -o jsonpath='{.spec.storageClassName}'
+
+# Verify the StorageClass exists
+kubectl get storageclass &lt;name&gt;
+# If NotFound: check for typo or missing cluster setup
+
+# Verify the provisioner is running
+kubectl get pods -n kube-system | grep csi
+
+# Check provisioner logs
+kubectl logs -n kube-system -l app=ebs-csi-controller -c csi-provisioner --tail=50</code></pre>
+
+<h3>Runbook: Volume Mount Fails — Bad mountOptions</h3>
+<pre><code># Pod stuck in ContainerCreating with "failed to mount" error
+kubectl describe pod &lt;name&gt; -n &lt;ns&gt;
+# Event: MountVolume.MountDevice failed: ... exit status 32
+# OR: unrecognized option 'noatime' (driver doesn't pass options)
+
+# Check kubelet logs on the node
+kubectl get node -o wide   # find node
+ssh node-ip -- journalctl -u kubelet | grep -i "mount failed" | tail -20
+
+# Common causes:
+# 1. Option not supported by filesystem type (e.g., nfs option on ext4)
+# 2. Typo in mount option name
+# 3. Driver does not implement mountOptions (verify CSIDriver spec)
+kubectl get csidriver ebs.csi.aws.com -o yaml | grep -i mountInfo</code></pre>
+
+<h3>Runbook: Migration — PVC Clone Stuck in Pending</h3>
+<pre><code># PVC clone is Pending; source PVC is Bound
+kubectl describe pvc data-postgres-0-gp3 -n production
+# Event: "waiting for a volume to be created..."
+
+# Common causes:
+# 1. Source and destination StorageClass use different provisioners
+#    Clone requires same driver
+kubectl get storageclass gp2 -o jsonpath='{.provisioner}'
+kubectl get storageclass gp3 -o jsonpath='{.provisioner}'
+# If different → use snapshot-based migration instead
+
+# 2. Source PVC is not in Bound state at clone time
+kubectl get pvc data-postgres-0 -o jsonpath='{.status.phase}'</code></pre>
+
+<h3>Runbook: EBS Volume Created in Wrong AZ (Immediate Binding)</h3>
+<pre><code># Pod stuck: "no nodes available to schedule pods"
+# PVC Events: "successfully provisioned volume" in wrong zone
+kubectl describe pvc &lt;name&gt; | grep "topology.ebs.csi.aws.com/zone"
+
+# Fix for existing stuck PVC:
+# 1. Note the current data (snapshot if needed)
+# 2. Delete the PVC (will delete the EBS volume if reclaimPolicy:Delete)
+# 3. Patch the StorageClass to WaitForFirstConsumer
+kubectl patch storageclass &lt;name&gt; -p '{"volumeBindingMode":"WaitForFirstConsumer"}'
+# 4. Recreate the PVC
+
+# Prevention: always use WaitForFirstConsumer for EBS/Azure Disk/GCE PD</code></pre>
+
+<h3>Runbook: discard Mount Option Causing Slow DB Writes</h3>
+<pre><code># Database (PostgreSQL VACUUM, MySQL purge) is very slow
+# Suspect: discard mount option on StorageClass
+
+# Check if discard is in mountOptions
+kubectl get storageclass &lt;name&gt; -o jsonpath='{.mountOptions}'
+
+# If discard is enabled and causing issues:
+# 1. Create new StorageClass without discard
+# 2. Migrate PVCs to new SC
+# 3. Or: disable at filesystem level on existing volumes
+kubectl exec -it &lt;pod&gt; -- tune2fs -o ^discard /dev/xvda
+# Use periodic fstrim instead:
+kubectl exec -it &lt;pod&gt; -- fstrim -v /var/lib/postgresql/data</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol style="color:var(--text2);padding-left:24px;font-size:14px;line-height:2.2;">
+  <li><strong>Use WaitForFirstConsumer for all zonal block drivers</strong> (EBS, Azure Disk, GCE PD). This is the single most common StorageClass misconfiguration that causes stuck pods in multi-AZ clusters.</li>
+  <li><strong>Set reclaimPolicy: Retain for production database StorageClasses</strong>. Even if you forget to patch a specific PV, the StorageClass policy applies at provisioning time.</li>
+  <li><strong>Always enable allowVolumeExpansion: true</strong>. It costs nothing to enable. StorageClass parameters are immutable — you cannot add this later without creating a new StorageClass and migrating PVCs.</li>
+  <li><strong>Define named tiers (fast/standard/slow/shared)</strong> rather than a single default. Teams that never think about storage will use the default. Make the default the right choice for most workloads (gp3, pd-ssd, Premium_LRS) — not the cheapest or most expensive.</li>
+  <li><strong>Enforce StorageClass access via ResourceQuota</strong>. Use per-class quotas to prevent development namespaces from consuming expensive io2/pd-extreme storage.</li>
+  <li><strong>Align VolumeSnapshotClass driver with StorageClass provisioner</strong>. Mismatched drivers cause silent snapshot failures. Name your VolumeSnapshotClasses to match their StorageClasses for clarity.</li>
+  <li><strong>Test mountOptions before production rollout</strong>. Invalid options cause mount failures with cryptic errors. Test by manually running the mount command on a node, or by deploying a test PVC and pod first.</li>
+  <li><strong>Document StorageClass intent in annotations</strong>. Add <code>metadata.annotations</code> describing the intended workload type, cost tier, and any performance characteristics. Cluster users shouldn't need to read StorageClass parameters to understand what a class is for.</li>
+</ol>
+
+<!-- ============================================================ -->
+<div class="section-nav">
+  <a href="02-persistent-volumes.html">
+    <span class="nav-label">← Previous</span>
+    <span class="nav-title">Persistent Volumes</span>
+  </a>
+  <a href="04-csi-drivers.html" class="next">
+    <span class="nav-label">Next →</span>
+    <span class="nav-title">CSI Drivers</span>
+  </a>
+</div>
+
+</main>
+
+<aside class="toc-sidebar">
+  <h4>On This Page</h4>
+  <a href="#object-model">Object Model</a>
+  <a href="#full-spec">Full Spec Reference</a>
+  <a href="#provisioner">provisioner Field</a>
+  <a href="#volumebindingmode">volumeBindingMode</a>
+  <a href="#mount-options">mountOptions</a>
+  <a href="#allowed-topologies">allowedTopologies</a>
+  <a href="#aws-ebs">AWS EBS Parameters</a>
+  <a href="#gce-pd">GCE PD Parameters</a>
+  <a href="#azure-disk">Azure Disk Parameters</a>
+  <a href="#azure-files">Azure Files Parameters</a>
+  <a href="#aws-efs">AWS EFS Parameters</a>
+  <a href="#ceph-rbd">Ceph RBD Parameters</a>
+  <a href="#cephfs">CephFS Parameters</a>
+  <a href="#nfs-subdir">NFS Subdir Provisioner</a>
+  <a href="#multi-tier">Multi-Tier Design</a>
+  <a href="#default-storageclass">Default SC Management</a>
+  <a href="#migration">StorageClass Migration</a>
+  <a href="#migration-clone" class="toc-h3">PVC Clone</a>
+  <a href="#migration-snapshot" class="toc-h3">Snapshot-Based</a>
+  <a href="#migration-rsync" class="toc-h3">rsync / Velero</a>
+  <a href="#sc-and-snapshots">SC + SnapshotClass</a>
+  <a href="#alerting">Alerting Rules</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<script>
+(function(){
+  const t=localStorage.getItem('k8s-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('theme-icon').textContent=t==='dark'?'☀️':'🌙';
+})();
+function toggleTheme(){
+  const c=document.documentElement.getAttribute('data-theme');
+  const n=c==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',n);
+  localStorage.setItem('k8s-theme',n);
+  document.getElementById('theme-icon').textContent=n==='dark'?'☀️':'🌙';
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>300));
+function scrollToTop(){main.scrollTo({top:0,behavior:'smooth'});}
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.onclick=()=>{
+    navigator.clipboard.writeText(pre.innerText.replace('Copy','').trim());
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  };
+  pre.appendChild(btn);
+});
+const tocLinks=document.querySelectorAll('.toc-sidebar a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(a=>a.classList.remove('active'));
+      const a=document.querySelector(`.toc-sidebar a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h=>obs.observe(h));
+function filterNav(val){
+  const q=val.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+</script>
+</body>
+</html>

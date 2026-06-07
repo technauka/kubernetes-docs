@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SRE Practices — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--blue:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#ffa657;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--blue);text-decoration:none;}a:hover{text-decoration:underline;}
+.container{max-width:960px;margin:0 auto;padding:32px 24px;}
+h1{font-size:28px;font-weight:700;margin-bottom:8px;}
+h2{font-size:20px;font-weight:600;margin:32px 0 12px;color:var(--blue);}
+h3{font-size:16px;font-weight:600;margin:24px 0 8px;color:var(--text);}
+p{margin-bottom:12px;color:var(--text2);}
+pre{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;margin:12px 0;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;}
+.nav{display:flex;align-items:center;gap:16px;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);font-size:14px;}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(88,166,255,.15);color:var(--blue);}
+.info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);border-radius:6px;padding:12px 16px;margin:12px 0;color:var(--blue);}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);}
+tr:hover td{background:var(--bg2);}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav">
+  <a href="../COVERAGE.html">← Coverage</a>
+  <span>/</span>
+  <span>09 — Production Operations</span>
+  <span>/</span>
+  <span>10 — SRE Practices</span>
+  <span class="badge">Section 09.10</span>
+</div>
+
+<h1>SRE Practices</h1>
+<p>Service Level Objectives, error budgets, toil reduction, and reliability engineering practices for Kubernetes-based platforms.</p>
+
+<h2>SLI / SLO / SLA Framework</h2>
+<pre><code>SLI (Service Level Indicator)
+  → A quantitative measure of a service dimension
+  → Examples: request success rate, p99 latency, uptime percentage
+
+SLO (Service Level Objective)
+  → Target for an SLI over a time window
+  → Examples: 99.9% success rate over 30 days, p99 latency &lt; 200ms
+  → Internal commitment — the goal your team operates to
+
+SLA (Service Level Agreement)
+  → Contractual commitment with external consequences (refunds, penalties)
+  → SLA &lt; SLO (set SLA at 99.5% if you target SLO of 99.9%)
+
+Error Budget
+  → 100% - SLO = allowed downtime
+  → 99.9% SLO → 0.1% error budget → 43.8 min/month
+  → Budget governs how fast you can move (deploy, change) vs stabilize</code></pre>
+
+<h2>Defining SLOs</h2>
+<pre><code># Good SLIs are user-facing, measurable, and meaningful:
+
+# Availability SLI (success rate)
+SLI = successful_requests / total_requests
+# Where "successful" = HTTP 2xx and 3xx (not 5xx, timeouts)
+
+# Latency SLI
+SLI = requests_served_faster_than_threshold / total_requests
+# "What % of requests completed within 200ms?"
+# Better than "average latency" which hides tail problems
+
+# Freshness SLI (for data pipelines)
+SLI = data_age_seconds &lt; threshold
+# "Is the data less than 5 minutes old?"
+
+# Saturation SLI
+SLI = current_utilization / capacity
+# "Is the service below 80% resource utilization?"
+
+# Example SLO document:
+service: payments-api
+slos:
+  - name: availability
+    sli: sum(rate(http_requests_total{status!~"5.."}[5m])) /
+         sum(rate(http_requests_total[5m]))
+    target: 99.9
+    window: 30d
+  - name: latency
+    sli: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+    target: 0.2   # 200ms
+    window: 30d
+    alerting: burn_rate</code></pre>
+
+<h2>Error Budget Policy</h2>
+<pre><code># Error budget policy — what happens when budget runs low:
+
+# Budget remaining &gt; 50%: normal operations, new features allowed
+# Budget remaining 25-50%: feature freeze optional, focus on reliability
+# Budget remaining &lt; 25%: feature freeze, prioritize reliability work
+# Budget remaining 0% (exhausted): no new features, fix first
+
+# Track error budget burn rate (how fast budget is consumed):
+# Burn rate = error_rate / (1 - SLO)
+# Example: SLO = 99.9%, current error rate = 1%
+# Burn rate = 1% / 0.1% = 10x
+# → Exhausts 30-day budget in 3 days
+
+# Prometheus SLO alerting (multi-window burn rate):
+# Fast burn (1h window, 14x burn): pages immediately
+# Slow burn (6h window, 6x burn): tickets + notify
+# See: sloth.dev, pyrra.dev for SLO tooling</code></pre>
+
+<h2>Prometheus SLO Rules</h2>
+<pre><code class="yaml"># PrometheusRule for payments-api SLO
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: payments-api-slo
+  namespace: monitoring
+spec:
+  groups:
+  - name: payments-api.slo
+    interval: 30s
+    rules:
+    # Availability recording rules
+    - record: job:http_requests:rate5m
+      expr: sum(rate(http_requests_total{job="payments-api"}[5m]))
+    - record: job:http_errors:rate5m
+      expr: sum(rate(http_requests_total{job="payments-api",status=~"5.."}[5m]))
+
+    # Error budget burn rate alerts (multi-window, multi-burn-rate)
+    - alert: PaymentsAPIHighErrorRate
+      expr: |
+        (
+          job:http_errors:rate5m / job:http_requests:rate5m > (14.4 * 0.001)
+        ) and (
+          job:http_errors:rate1h / job:http_requests:rate1h > (14.4 * 0.001)
+        )
+      labels:
+        severity: critical
+        slo: availability
+      annotations:
+        summary: "Payments API burning error budget at 14x rate (P1)"
+        runbook_url: "https://wiki.example.com/runbooks/payments-api-high-error-rate"
+
+    - alert: PaymentsAPIElevatedErrorRate
+      expr: |
+        (
+          job:http_errors:rate30m / job:http_requests:rate30m > (6 * 0.001)
+        ) and (
+          job:http_errors:rate6h / job:http_requests:rate6h > (6 * 0.001)
+        )
+      labels:
+        severity: warning
+        slo: availability
+      annotations:
+        summary: "Payments API burning error budget at 6x rate"</code></pre>
+
+<h2>Toil Reduction</h2>
+<pre><code># Toil = manual, repetitive, automatable operational work that scales with service growth
+# SRE principle: if toil &gt; 50% of time, team is failing to improve the system
+
+# Identify toil:
+# - Tracking in every sprint retrospective: "What did we do manually this week?"
+# - On-call log review: what pages required human action?
+# - Categories: manual deploys, manual scaling, manual restarts, manual certificate renewal
+
+# Toil examples and automation:
+# Manual cert renewal → cert-manager auto-renewal
+# Manual scaling → HPA + Karpenter auto-scaling
+# Manual secret rotation → External Secrets + Vault auto-rotation
+# Manual runbook execution → runbook automation (Ansible, scripts)
+# Manual deploy approval → automated canary analysis (Flagger/Argo Rollouts)
+
+# Measure toil:
+# Track pages per week that required human action
+# Target: reduce by 10% each quarter
+# Automate anything that fires more than 3 times per month</code></pre>
+
+<h2>Production Readiness Review (PRR)</h2>
+<pre><code># PRR checklist before a service goes to production:
+
+Observability:
+  [ ] SLOs defined and SLO alerts configured
+  [ ] Structured logging (JSON with request ID, user ID)
+  [ ] Distributed tracing (OpenTelemetry)
+  [ ] Grafana dashboard exists with golden signals
+  [ ] Prometheus metrics exported (/metrics)
+
+Reliability:
+  [ ] Readiness + liveness probes configured
+  [ ] Resource requests and limits set
+  [ ] PodDisruptionBudget configured (minAvailable: 1)
+  [ ] HPA or KEDA configured (no manual scaling)
+  [ ] Graceful shutdown (SIGTERM handler, preStop hook)
+
+Security:
+  [ ] Non-root container (runAsNonRoot: true)
+  [ ] Resource limits set (memory limit required)
+  [ ] NetworkPolicy defined (default deny + explicit allow)
+  [ ] Secrets via External Secrets (not hardcoded)
+  [ ] RBAC scoped to minimum necessary
+
+Deployment:
+  [ ] CI/CD pipeline with automated tests
+  [ ] Canary or blue-green deployment strategy
+  [ ] Rollback procedure documented
+  [ ] Feature flags for risky changes
+
+Runbooks:
+  [ ] Runbook exists for top 3 alert scenarios
+  [ ] Runbook URL in Prometheus alert annotations
+  [ ] On-call rotation includes this service</code></pre>
+
+<h2>Capacity Planning</h2>
+<pre><code># Forecast resource usage to stay ahead of growth
+
+# 1. Baseline current usage
+kubectl top pods -n production --sort-by=memory
+# Or via Prometheus:
+# avg_over_time(container_memory_usage_bytes{namespace="production"}[7d])
+
+# 2. Growth rate
+# Compare last month vs this month requests:
+# rate(http_requests_total[30d]) offset 30d vs current
+
+# 3. Headroom targets
+# CPU: keep P99 usage &lt; 60% of request (leaves burst headroom)
+# Memory: keep working set &lt; 70% of limit (avoid OOMKill)
+# Nodes: keep allocatable at &gt;20% free (allows scheduling spikes)
+
+# 4. Karpenter / cluster autoscaler
+# Ensure node pool min/max bounds cover forecasted peak
+kubectl get nodepool default \
+  -o jsonpath='{.spec.limits}'   # Karpenter CPU/memory limits
+
+# 5. Cloud quota
+# Check AWS EC2 service quotas for instance types you use
+aws service-quotas get-service-quota \
+  --service-code ec2 \
+  --quota-code L-1216C47A   # Running On-Demand Standard instances
+
+# Review quarterly: peak load × 3 = headroom target</code></pre>
+
+<h2>SLO Dashboard</h2>
+<pre><code class="yaml"># Grafana dashboard queries for SLO tracking:
+
+# 30-day availability
+sum(increase(http_requests_total{job="payments-api",status!~"5.."}[30d]))
+/
+sum(increase(http_requests_total{job="payments-api"}[30d]))
+
+# Error budget remaining (30-day)
+(
+  1 - (
+    sum(increase(http_requests_total{job="payments-api",status=~"5.."}[30d]))
+    / sum(increase(http_requests_total{job="payments-api"}[30d]))
+  )
+) / (1 - 0.999)   # SLO = 99.9%
+# Result: 1.0 = full budget, 0 = exhausted
+
+# p99 latency trend (7 days)
+histogram_quantile(0.99,
+  sum(rate(http_request_duration_seconds_bucket{job="payments-api"}[5m]))
+  by (le)
+)
+
+# Burn rate (current vs 6h vs 24h)
+job:http_errors:rate5m / job:http_requests:rate5m / 0.001
+# 1 = burning exactly at SLO rate
+# 10 = burning 10x too fast</code></pre>
+
+<h2>Key SRE Metrics</h2>
+<table>
+  <tr><th>Metric</th><th>Formula</th><th>Target</th></tr>
+  <tr><td>MTTA (Mean Time to Acknowledge)</td><td>Time from alert → acknowledgement</td><td>&lt;5 min (P1)</td></tr>
+  <tr><td>MTTR (Mean Time to Recover)</td><td>Time from incident start → resolution</td><td>&lt;30 min (P1)</td></tr>
+  <tr><td>MTBF (Mean Time Between Failures)</td><td>Time between P1/P2 incidents</td><td>&gt;30 days</td></tr>
+  <tr><td>Change Failure Rate</td><td>Failed deploys / total deploys</td><td>&lt;5%</td></tr>
+  <tr><td>Deployment Frequency</td><td>Deploys per day/week</td><td>Multiple/day (elite)</td></tr>
+  <tr><td>Pages per rotation</td><td>Actionable alerts per on-call week</td><td>&lt;5/week</td></tr>
+  <tr><td>Toil %</td><td>Toil hours / total work hours</td><td>&lt;50%</td></tr>
+</table>
+
+<h2>Related</h2>
+<ul style="color:var(--text2);padding-left:24px;">
+  <li><a href="./09-incident-response.html">09 — Incident Response</a> — handling incidents</li>
+  <li><a href="./01-capacity-planning.html">01 — Capacity Planning</a> — node and cluster sizing</li>
+  <li><a href="../10-team-workflows/09-on-call.html">10.09 — On-Call</a> — PagerDuty and rotation management</li>
+  <li><a href="../10-team-workflows/08-runbooks.html">10.08 — Runbooks</a> — runbook standards with SLO context</li>
+</ul>
+
+</div>
+</body>
+</html>

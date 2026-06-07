@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kubernetes Events — Observability</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#1f2328;--text2:#656d76;--text3:#9198a1;--code-bg:#f6f8fa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;font-size:14px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:272px;min-width:272px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:transform .25s}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo{font-size:20px}.sidebar-title{font-size:14px;font-weight:600}
+.sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.sidebar-nav{overflow-y:auto;flex:1;padding:8px 0}
+.nav-section{margin-bottom:4px}
+.nav-section-header{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.nav-section a{display:block;padding:5px 16px 5px 28px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3)}
+.main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.hamburger{background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px;display:none}
+.topbar-title{font-size:14px;font-weight:600;flex:1}
+.topbar-actions{display:flex;gap:8px}
+.btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 12px;font-size:12px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--bg4)}
+main{flex:1;overflow-y:auto;padding:32px 40px;scroll-behavior:smooth}
+h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.subtitle{color:var(--text2);font-size:15px;margin-bottom:24px}
+h2{font-size:20px;font-weight:600;margin:40px 0 16px;padding-top:8px;border-top:1px solid var(--border)}
+h2:first-of-type{margin-top:24px;border-top:none}
+h3{font-size:16px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:18px 0 8px;color:var(--text2)}
+p{color:var(--text2);line-height:1.65;margin-bottom:12px}
+ul,ol{color:var(--text2);padding-left:20px;margin-bottom:12px}
+li{margin-bottom:4px;line-height:1.55}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'SF Mono',Consolas,monospace;font-size:12px;color:var(--text)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin-bottom:16px;position:relative}
+pre code{background:none;border:none;padding:0;font-size:12px;line-height:1.55}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);padding:3px 8px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}.copy-btn:hover{background:var(--bg4)}
+.table-wrap{overflow-x:auto;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text)}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg2)}
+.callout{border-left:3px solid;padding:12px 16px;margin-bottom:16px;border-radius:0 6px 6px 0}
+.callout-info{border-color:var(--accent);background:rgba(88,166,255,.08)}
+.callout-warn{border-color:var(--yellow);background:rgba(210,153,34,.08)}
+.callout-danger{border-color:var(--red);background:rgba(248,81,73,.08)}
+.callout-success{border-color:var(--green);background:rgba(63,185,80,.08)}
+.callout-title{font-weight:600;font-size:13px;margin-bottom:4px}
+.callout p{margin-bottom:0;font-size:13px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin-top:0;margin-bottom:8px;font-size:14px}
+.card p{font-size:13px;margin-bottom:0}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;font-family:'SF Mono',Consolas,monospace;font-size:12px;line-height:1.7;overflow-x:auto;white-space:pre;color:var(--text2)}
+.badge{display:inline-block;padding:1px 7px;border-radius:12px;font-size:11px;font-weight:500}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px}
+.toc-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.toc ol{margin-bottom:0;padding-left:16px}
+.toc li{font-size:12px;margin-bottom:3px}
+.toc a{color:var(--text2)}.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.section-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2)}
+.section-nav a:hover{color:var(--accent);text-decoration:none;border-color:var(--accent)}
+.step-list{counter-reset:step;list-style:none;padding:0;margin-bottom:16px}
+.step-list li{counter-increment:step;padding:10px 12px 10px 44px;position:relative;border-left:2px solid var(--border);margin-bottom:6px;color:var(--text2);font-size:13px}
+.step-list li::before{content:counter(step);position:absolute;left:-14px;top:8px;background:var(--accent2);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+/* event reason chips */
+.reason-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px}
+.reason-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
+.reason-card .reason-name{font-family:'SF Mono',Consolas,monospace;font-size:12px;font-weight:600;margin-bottom:4px}
+.reason-card.warn .reason-name{color:var(--yellow)}
+.reason-card.normal .reason-name{color:var(--green)}
+.reason-card p{font-size:12px;color:var(--text3);margin-bottom:0}
+#back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:100}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:40px}
+details.coverage summary{padding:14px 16px;cursor:pointer;font-size:13px;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;color:var(--text3)}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2)}
+@media(max-width:768px){.sidebar{position:fixed;left:0;top:0;height:100%;z-index:200;transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{padding:20px 16px}.two-col{grid-template-columns:1fr}.coverage-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-logo">☸</span>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="nav-filter" placeholder="Filter navigation…" aria-label="Filter navigation"/>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-header">Getting Started</div>
+      <a href="../00-introduction/00-overview.html">Overview</a>
+      <a href="../00-introduction/01-architecture.html">Architecture</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Workloads</div>
+      <a href="../01-workloads/00-pods.html">Pods</a>
+      <a href="../01-workloads/01-deployments.html">Deployments</a>
+      <a href="../01-workloads/02-statefulsets.html">StatefulSets</a>
+      <a href="../01-workloads/03-daemonsets.html">DaemonSets</a>
+      <a href="../01-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Networking</div>
+      <a href="../02-networking/00-services.html">Services</a>
+      <a href="../02-networking/01-ingress.html">Ingress</a>
+      <a href="../02-networking/02-network-policies.html">Network Policies</a>
+      <a href="../02-networking/03-dns.html">DNS</a>
+      <a href="../02-networking/04-cni.html">CNI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Storage</div>
+      <a href="../03-storage/00-volumes.html">Volumes</a>
+      <a href="../03-storage/01-persistent-volumes.html">Persistent Volumes</a>
+      <a href="../03-storage/02-storage-classes.html">Storage Classes</a>
+      <a href="../03-storage/03-csi.html">CSI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Configuration</div>
+      <a href="../04-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../04-configuration/01-secrets.html">Secrets</a>
+      <a href="../04-configuration/02-resource-management.html">Resource Management</a>
+      <a href="../04-configuration/03-hpa-vpa.html">HPA &amp; VPA</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Scheduling</div>
+      <a href="../05-scheduling/00-node-selection.html">Node Selection</a>
+      <a href="../05-scheduling/01-taints-tolerations.html">Taints &amp; Tolerations</a>
+      <a href="../05-scheduling/02-priority-preemption.html">Priority &amp; Preemption</a>
+      <a href="../05-scheduling/03-scheduler-internals.html">Scheduler Internals</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Security</div>
+      <a href="../06-security/00-rbac.html">RBAC</a>
+      <a href="../06-security/01-service-accounts.html">Service Accounts</a>
+      <a href="../06-security/02-pod-security.html">Pod Security</a>
+      <a href="../06-security/03-network-policies.html">Network Policies (Security)</a>
+      <a href="../06-security/04-secrets-management.html">Secrets Management</a>
+      <a href="../06-security/05-opa-gatekeeper.html">OPA Gatekeeper</a>
+      <a href="../06-security/06-admission-controllers.html">Admission Controllers</a>
+      <a href="../06-security/07-image-security.html">Image Security</a>
+      <a href="../06-security/08-audit-logging.html">Audit Logging</a>
+      <a href="../06-security/09-encryption-at-rest.html">Encryption at Rest</a>
+      <a href="../06-security/10-supply-chain-security.html">Supply Chain Security</a>
+      <a href="../06-security/11-compliance.html">Compliance</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Observability</div>
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics &amp; Prometheus</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html">Distributed Tracing</a>
+      <a href="04-events.html" class="active">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-overview.html">Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Production Operations</div>
+      <a href="../09-production-operations/00-overview.html">Overview</a>
+    </div>
+  </nav>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+    <span class="topbar-title">Kubernetes Events — Observability</span>
+    <div class="topbar-actions">
+      <button class="btn" id="theme-toggle">Light Mode</button>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <h1>Kubernetes Events</h1>
+    <p class="subtitle">The fourth observability signal: event structure, retention, kubectl usage, event exporters, kubernetes-event-exporter, custom event recording, alerting on events, and production event pipeline design.</p>
+
+    <nav class="section-nav" aria-label="Section navigation">
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html">Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </nav>
+
+    <nav class="toc" aria-label="Table of contents">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#what-are-events">What Are Kubernetes Events</a></li>
+        <li><a href="#event-structure">Event Object Structure</a></li>
+        <li><a href="#event-types">Event Types and Sources</a></li>
+        <li><a href="#kubectl-events">kubectl events Usage</a></li>
+        <li><a href="#event-reasons">Important Event Reasons</a></li>
+        <li><a href="#retention">Retention and the TTL Problem</a></li>
+        <li><a href="#exporter">kubernetes-event-exporter</a></li>
+        <li><a href="#kube-eventer">kube-eventer</a></li>
+        <li><a href="#event-router">Event Router Patterns</a></li>
+        <li><a href="#custom-events">Recording Custom Events</a></li>
+        <li><a href="#alerting">Alerting on Events</a></li>
+        <li><a href="#operations">Metrics, Alerts &amp; Runbooks</a></li>
+      </ol>
+    </nav>
+
+    <!-- =================== WHAT ARE EVENTS =================== -->
+    <h2 id="what-are-events">What Are Kubernetes Events</h2>
+
+    <p>Kubernetes Events are first-class API objects (<code>core/v1 Event</code>) written to the API server by controllers, the kubelet, the scheduler, and other system components. They describe <em>what happened</em> to a Kubernetes object — a pod was scheduled, an image pull failed, a container was OOMKilled, a deployment scaled up.</p>
+
+    <p>Events are the "fourth observability signal" alongside metrics, logs, and traces. They are unique because they are generated automatically by the cluster itself with no application code changes. Every significant state transition in the cluster produces an event.</p>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">Events Are Not Logs — They Expire</div>
+      <p>Events are stored in <strong>etcd</strong>, not on disk. By default, the API server purges events after <strong>1 hour</strong> (configurable via <code>--event-ttl</code> on kube-apiserver). In high-activity clusters, etcd is also protected by event quota limits that discard older events earlier. If you need event history beyond 1 hour — for incident retrospectives, auditing, or trend alerting — you <strong>must</strong> run an event exporter that streams events to a durable backend as they arrive.</p>
+    </div>
+
+    <h3>Events vs Audit Logs vs Application Logs</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Aspect</th><th>Events</th><th>Audit Logs</th><th>Application Logs</th></tr></thead>
+        <tbody>
+          <tr><td>Source</td><td>K8s controllers, kubelet, scheduler</td><td>kube-apiserver (all API calls)</td><td>Application containers</td></tr>
+          <tr><td>Describes</td><td>Object state transitions</td><td>Who did what via API</td><td>Application behavior</td></tr>
+          <tr><td>Storage</td><td>etcd (1h TTL)</td><td>Files / webhook backend</td><td>/var/log/containers/</td></tr>
+          <tr><td>Access</td><td>kubectl get events / API</td><td>Log files / SIEM</td><td>kubectl logs / Loki</td></tr>
+          <tr><td>Volume</td><td>Low-Medium (state changes only)</td><td>High (every API call)</td><td>High</td></tr>
+          <tr><td>App changes needed</td><td>None (for system events)</td><td>None</td><td>Yes (to structured logging)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== EVENT STRUCTURE =================== -->
+    <h2 id="event-structure">Event Object Structure</h2>
+
+    <pre><code class="language-bash">kubectl get event -n production -o yaml | head -80</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml">apiVersion: v1
+kind: Event
+metadata:
+  name: order-service-7d5f9-xk2pq.17c4a3f0b8e2d1a5   # pod-name.hex-suffix
+  namespace: production
+  creationTimestamp: "2024-01-15T10:23:45Z"
+
+# The resource this event is about
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: order-service-7d5f9-xk2pq
+  namespace: production
+  uid: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  resourceVersion: "98765"
+  fieldPath: spec.containers{order-service}   # specific container, if applicable
+
+# Classification
+reason: OOMKilling             # machine-readable reason (CamelCase)
+message: "Memory limit reached: Killing container with allowance 256Mi, used 256Mi"
+type: Warning                  # Normal or Warning
+
+# Deduplication and aggregation
+count: 3                       # how many times this event has occurred
+firstTimestamp: "2024-01-15T09:45:00Z"
+lastTimestamp:  "2024-01-15T10:23:45Z"
+
+# Who generated this event
+source:
+  component: kubelet
+  host: ip-10-0-1-45.us-east-1.compute.internal
+
+# v1.19+ fields (EventSeries for high-frequency events)
+series:
+  count: 3
+  lastObservedTime: "2024-01-15T10:23:45.000000Z"
+
+# v1.19+ reporting fields (replaces source)
+reportingComponent: kubelet
+reportingInstance: ip-10-0-1-45.us-east-1.compute.internal
+
+# Related object (action target, if different from involvedObject)
+related:
+  apiVersion: v1
+  kind: Node
+  name: ip-10-0-1-45.us-east-1.compute.internal
+
+action: Killing                # verb describing the action taken
+eventTime: "2024-01-15T10:23:45.000000Z"   # MicroTime (v1.19+)</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Key Fields Reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>involvedObject</code></td><td>ObjectReference</td><td>The K8s object this event is about</td><td>kind + name + namespace + uid</td></tr>
+          <tr><td><code>reason</code></td><td>string</td><td>Short CamelCase reason code</td><td>Machine-readable; used for filtering and alerting</td></tr>
+          <tr><td><code>message</code></td><td>string</td><td>Human-readable description</td><td>May contain variable data (pod names, resource values)</td></tr>
+          <tr><td><code>type</code></td><td>string</td><td><code>Normal</code> or <code>Warning</code></td><td>Warning events indicate problems</td></tr>
+          <tr><td><code>count</code></td><td>int</td><td>Occurrence count (deduplicated)</td><td>Identical events within 10min window are merged</td></tr>
+          <tr><td><code>firstTimestamp</code></td><td>Time</td><td>First occurrence time</td><td>Deprecated in v1.19+ in favor of <code>eventTime</code></td></tr>
+          <tr><td><code>lastTimestamp</code></td><td>Time</td><td>Most recent occurrence</td><td>This is what you see in <code>kubectl get events</code> AGE column</td></tr>
+          <tr><td><code>source</code></td><td>EventSource</td><td>Component + host that generated event</td><td>Deprecated in v1.19+ in favor of <code>reportingComponent</code></td></tr>
+          <tr><td><code>reportingComponent</code></td><td>string</td><td>Component name (v1.19+)</td><td>e.g., <code>kubelet</code>, <code>deployment-controller</code></td></tr>
+          <tr><td><code>action</code></td><td>string</td><td>Action taken</td><td>e.g., <code>Killing</code>, <code>Pulling</code>, <code>Scheduled</code></td></tr>
+          <tr><td><code>series</code></td><td>EventSeries</td><td>High-frequency event aggregation (v1.19+)</td><td>Replaces count for rapid-fire events</td></tr>
+          <tr><td><code>related</code></td><td>ObjectReference</td><td>Secondary object involved</td><td>e.g., Node when killing a pod</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Event Deduplication</h3>
+    <p>The Kubernetes event recorder deduplicates events that share the same <code>involvedObject</code>, <code>reason</code>, <code>message</code>, <code>source</code>, and <code>type</code> within a 10-minute window. Duplicate events increment <code>count</code> and update <code>lastTimestamp</code> rather than creating new Event objects. This prevents etcd flooding from hot loops but means you lose individual timestamps for high-frequency events.</p>
+
+    <!-- =================== EVENT TYPES =================== -->
+    <h2 id="event-types">Event Types and Sources</h2>
+
+    <h3>Event Types</h3>
+    <div class="two-col">
+      <div class="card">
+        <h4><span class="badge badge-green">Normal</span> — Informational</h4>
+        <p>Routine state transitions that are expected. Examples: pod scheduled, container started, image pulled, deployment scaled, volume bound. These are part of normal cluster operation.</p>
+        <p style="margin-top:8px">In production monitoring, Normal events are useful for <strong>change tracking</strong> (when did a deployment roll out?) but rarely require alerting.</p>
+      </div>
+      <div class="card">
+        <h4><span class="badge badge-yellow">Warning</span> — Requires Attention</h4>
+        <p>Indicates a problem or degraded state. Examples: OOMKilling, BackOff (crash loop), FailedScheduling, FailedMount, Evicted, FailedPullImage. These are actionable signals.</p>
+        <p style="margin-top:8px">Warning events should flow to your alerting pipeline and trigger investigation. High-frequency Warning events indicate cluster health problems.</p>
+      </div>
+    </div>
+
+    <h3>Event Sources (Reporting Components)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>Typical Events Generated</th></tr></thead>
+        <tbody>
+          <tr><td><code>kubelet</code></td><td>Pulling/Pulled/Failed image, Created/Started/Killing container, OOMKilling, Evicting pod, VolumeMount errors, NodeNotReady</td></tr>
+          <tr><td><code>kube-scheduler</code></td><td>Scheduled pod to node, FailedScheduling (insufficient resources, affinity mismatch, taints)</td></tr>
+          <tr><td><code>deployment-controller</code></td><td>ScalingReplicaSet, Scaled up/down ReplicaSet</td></tr>
+          <tr><td><code>replicaset-controller</code></td><td>SuccessfulCreate/Delete pod, FailedCreate pod</td></tr>
+          <tr><td><code>statefulset-controller</code></td><td>SuccessfulCreate/Delete pod</td></tr>
+          <tr><td><code>job-controller</code></td><td>SuccessfulCreate, BackoffLimitExceeded, Completed</td></tr>
+          <tr><td><code>cronjob-controller</code></td><td>SuccessfulCreate job, MissSchedule, TooManyMissedTimes</td></tr>
+          <tr><td><code>horizontal-pod-autoscaler</code></td><td>SuccessfulRescale, FailedGetScale, DesiredReplicas, ScalingLimited</td></tr>
+          <tr><td><code>endpoint-slice-controller</code></td><td>FailedToCreateEndpointSlices, SuccessfulCreate/Update</td></tr>
+          <tr><td><code>node-controller</code></td><td>NodeNotReady, NodeReady, RegisteredNode, RemovingNode</td></tr>
+          <tr><td><code>volume-controller</code></td><td>FailedBinding, VolumeReleased, ProvisioningSucceeded/Failed</td></tr>
+          <tr><td><code>default-scheduler</code></td><td>Preempting, Scheduled, FailedScheduling</td></tr>
+          <tr><td>Custom controllers/operators</td><td>Reconciled, SyncFailed, Updated, any custom reason</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== KUBECTL =================== -->
+    <h2 id="kubectl-events">kubectl events Usage</h2>
+
+    <pre><code class="language-bash"># List all events in a namespace (sorted by time, most recent last)
+kubectl get events -n production
+
+# Sort by most recent first
+kubectl get events -n production --sort-by='.lastTimestamp'
+
+# Only Warning events
+kubectl get events -n production --field-selector type=Warning
+
+# Events for a specific pod
+kubectl get events -n production --field-selector involvedObject.name=order-service-7d5f9-xk2pq
+
+# Events for a specific object kind
+kubectl get events -n production --field-selector involvedObject.kind=Node
+
+# Events by reason
+kubectl get events -n production --field-selector reason=OOMKilling
+
+# Cross-namespace (all namespaces)
+kubectl get events -A --sort-by='.lastTimestamp'
+
+# Only Warning events cluster-wide (most useful for incident triage)
+kubectl get events -A --field-selector type=Warning --sort-by='.lastTimestamp'
+
+# Watch events as they arrive
+kubectl get events -n production -w
+
+# Describe a specific resource to see associated events inline
+kubectl describe pod order-service-7d5f9-xk2pq -n production
+# Events section at the bottom shows events for this pod
+
+# Custom columns (useful for quick triage)
+kubectl get events -n production \
+  -o custom-columns='TIME:.lastTimestamp,TYPE:.type,REASON:.reason,OBJECT:.involvedObject.name,MSG:.message' \
+  --sort-by='.lastTimestamp' | tail -30
+
+# JSON output for scripting
+kubectl get events -n production -o json | \
+  jq '.items[] | select(.type=="Warning") | {time:.lastTimestamp, reason:.reason, object:.involvedObject.name, msg:.message}'</code><button class="copy-btn">Copy</button></pre>
+
+    <div class="callout callout-info">
+      <div class="callout-title">kubectl events (1.26+)</div>
+      <p>Kubernetes 1.26 added <code>kubectl events</code> as a dedicated subcommand with improved output: <code>kubectl events -n production --for pod/order-service-7d5f9-xk2pq</code>. It supports <code>--for</code> (filter by object), <code>--types</code> (filter by Warning/Normal), and outputs in a human-friendly table sorted by time by default.</p>
+    </div>
+
+    <pre><code class="language-bash"># kubectl events (1.26+)
+kubectl events -n production
+kubectl events -n production --for pod/order-service-7d5f9-xk2pq
+kubectl events -n production --types=Warning
+kubectl events -n production --for deployment/order-service --types=Warning
+kubectl events -A --types=Warning --no-headers | sort -k1</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== EVENT REASONS =================== -->
+    <h2 id="event-reasons">Important Event Reasons</h2>
+
+    <p>The <code>reason</code> field is the most important field for programmatic filtering and alerting. These are the reasons that matter most for production operations:</p>
+
+    <h3>Warning Events (Action Required)</h3>
+    <div class="reason-grid">
+      <div class="reason-card warn">
+        <div class="reason-name">OOMKilling</div>
+        <p>Container exceeded memory limit and was killed by the kernel OOM killer. Increase memory limit or find memory leak.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">BackOff</div>
+        <p>Container in CrashLoopBackOff. Application is crashing on startup. Check container logs with --previous.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">Evicted</div>
+        <p>Pod evicted due to node resource pressure (memory, disk, PID). Check eviction threshold and node capacity.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">FailedScheduling</div>
+        <p>Scheduler cannot place pod. Reason: insufficient CPU/memory, no nodes match affinity, all nodes tainted. Check describe pod for details.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">FailedMount</div>
+        <p>Volume cannot be mounted. Common causes: PVC not bound, StorageClass missing, CSI driver error, wrong access mode.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">FailedAttachVolume</div>
+        <p>Volume attach failed. CSI or in-tree driver error. Often transient; persists if detach from previous node is stuck.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">Failed</div>
+        <p>Image pull failed (FailedPullImage). Check imagePullSecret, registry reachability, image tag exists.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">ErrImagePull</div>
+        <p>Initial image pull error before entering BackOff. Often registry auth or network issue.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">ImagePullBackOff</div>
+        <p>Repeated image pull failures with exponential backoff. Persistent registry or authentication problem.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">NodeNotReady</div>
+        <p>Node condition changed to NotReady. All pods on this node may be evicted or rescheduled after tolerationSeconds.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">Preempting</div>
+        <p>Scheduler preempting lower-priority pods to make room for a higher-priority pod. Check PriorityClass assignments.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">FailedCreatePodContainer</div>
+        <p>Runtime could not create container. Common: invalid image entrypoint, securityContext conflict, init container failure.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">Unhealthy</div>
+        <p>Liveness or readiness probe failed. Check probe config and application health endpoint.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">BackoffLimitExceeded</div>
+        <p>Job exhausted its retry budget. All pod attempts failed. Check Job pod logs for root cause.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">MissSchedule</div>
+        <p>CronJob missed its scheduled run (controller was down or schedule changed). Check for TooManyMissedTimes.</p>
+      </div>
+      <div class="reason-card warn">
+        <div class="reason-name">FailedGetScale</div>
+        <p>HPA could not read current replica count or metric. Check RBAC and metrics-server health.</p>
+      </div>
+    </div>
+
+    <h3>Normal Events (Operational Visibility)</h3>
+    <div class="reason-grid">
+      <div class="reason-card normal">
+        <div class="reason-name">Scheduled</div>
+        <p>Pod assigned to a node by the scheduler. Contains which node was chosen.</p>
+      </div>
+      <div class="reason-card normal">
+        <div class="reason-name">Pulling / Pulled</div>
+        <p>Image pull started / completed. Pulled includes how long it took — useful for diagnosing slow cold starts.</p>
+      </div>
+      <div class="reason-card normal">
+        <div class="reason-name">Created / Started</div>
+        <p>Container created and started. Time gap between Pulled and Started indicates container startup overhead.</p>
+      </div>
+      <div class="reason-card normal">
+        <div class="reason-name">Killing</div>
+        <p>Container being killed (graceful shutdown or OOMKill). Check if OOMKilling is the subtype.</p>
+      </div>
+      <div class="reason-card normal">
+        <div class="reason-name">ScalingReplicaSet</div>
+        <p>Deployment scaled a ReplicaSet up or down. Useful for deployment change timeline.</p>
+      </div>
+      <div class="reason-card normal">
+        <div class="reason-name">SuccessfulRescale</div>
+        <p>HPA successfully changed replica count. Contains old and new replica count.</p>
+      </div>
+      <div class="reason-card normal">
+        <div class="reason-name">ProvisioningSucceeded</div>
+        <p>PVC dynamically provisioned. Contains StorageClass and volume name.</p>
+      </div>
+    </div>
+
+    <!-- =================== RETENTION =================== -->
+    <h2 id="retention">Retention and the TTL Problem</h2>
+
+    <p>The 1-hour event TTL is the single most important operational fact about Kubernetes events. Most production incidents last longer than 1 hour, and retrospective analysis almost always requires events from before the incident started.</p>
+
+    <h3>Changing the Default TTL</h3>
+    <pre><code class="language-yaml"># /etc/kubernetes/manifests/kube-apiserver.yaml (static pod)
+spec:
+  containers:
+    - name: kube-apiserver
+      command:
+        - kube-apiserver
+        - --event-ttl=4h        # extend to 4 hours
+        # WARNING: longer TTL = more etcd storage consumed by events
+        # Events are stored in etcd under /registry/events/
+        # High-event clusters can produce GBs of event data per hour</code><button class="copy-btn">Copy</button></pre>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">TTL Extension Has Costs</div>
+      <p>Extending <code>--event-ttl</code> to 24h in a large cluster can consume hundreds of MB to several GB of etcd storage, slowing etcd list operations and increasing backup size. The correct solution is to run an event exporter that ships events to a cheap long-term store (Loki, Elasticsearch, S3) in real-time, keeping the API server TTL at 1–2 hours.</p>
+    </div>
+
+    <h3>etcd Event Quota</h3>
+    <p>The API server has a per-namespace event object limit (default 1000 events per namespace per object type). In a namespace with many pods crashing, events may be dropped before TTL expires. The <code>--max-events-per-namespace</code> flag on kube-apiserver (v1.21+) controls this:</p>
+    <pre><code class="language-yaml">- --max-events-per-namespace=1000   # default; increase if events are being dropped</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== EXPORTER =================== -->
+    <h2 id="exporter">kubernetes-event-exporter</h2>
+
+    <p><a href="https://github.com/resmoio/kubernetes-event-exporter">kubernetes-event-exporter</a> (by Resmo, formerly opsgenie) is the most feature-rich and actively maintained event exporter. It watches the Events API and routes events to multiple backends based on configurable filters.</p>
+
+    <h3>Architecture</h3>
+    <div class="diagram">Events API (watch /api/v1/events?watch=true)
+    │
+    ▼
+kubernetes-event-exporter (Deployment, single replica)
+    │
+    ├── Router rules (match on type/reason/namespace/labels)
+    │
+    ├── Output: Elasticsearch
+    ├── Output: Loki (HTTP push)
+    ├── Output: Slack webhook (Warning events only)
+    ├── Output: PagerDuty (critical reasons)
+    ├── Output: Opsgenie / PagerDuty
+    ├── Output: Kafka
+    └── Output: stdout / file</div>
+
+    <h3>Helm Install</h3>
+    <pre><code class="language-bash">helm repo add deliveryhero https://charts.deliveryhero.io
+helm upgrade --install kubernetes-event-exporter deliveryhero/kubernetes-event-exporter \
+  --namespace monitoring \
+  --create-namespace \
+  --set config.logLevel=warn \
+  --set config.logFormat=json \
+  --values event-exporter-values.yaml</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Production Configuration</h3>
+    <pre><code class="language-yaml"># event-exporter-config.yaml (mounted as ConfigMap)
+logLevel: warn
+logFormat: json
+
+# Cluster-wide label added to all exported events
+clusterName: prod-us-east-1
+
+receivers:
+  # --- Loki: all events ---
+  - name: loki
+    loki:
+      streamLabels:
+        app: kubernetes-event-exporter
+        cluster: prod-us-east-1
+      url: http://loki-gateway.monitoring.svc/loki/api/v1/push
+      headers:
+        Content-Type: application/json
+      layout:
+        # Map event fields to Loki log labels and body
+        namespace: "{{ .InvolvedObject.Namespace }}"
+        name: "{{ .InvolvedObject.Name }}"
+        kind: "{{ .InvolvedObject.Kind }}"
+        reason: "{{ .Reason }}"
+        type: "{{ .Type }}"
+        message: "{{ .Message }}"
+        component: "{{ .ReportingComponent }}"
+        count: "{{ .Count }}"
+
+  # --- Elasticsearch: all events ---
+  - name: elasticsearch
+    elasticsearch:
+      hosts:
+        - https://prod-logs-es-http.logging.svc:9200
+      index: kubernetes-events
+      indexFormat: kubernetes-events-{2006.01.02}   # daily index
+      username: elastic
+      password:
+        valueFrom:
+          secretKeyRef:
+            name: elastic-credentials
+            key: password
+      tls:
+        insecureSkipVerify: false
+        caFile: /es-certs/ca.crt
+      layout:
+        timestamp: "{{ .LastTimestamp }}"
+        namespace: "{{ .InvolvedObject.Namespace }}"
+        name: "{{ .InvolvedObject.Name }}"
+        kind: "{{ .InvolvedObject.Kind }}"
+        reason: "{{ .Reason }}"
+        message: "{{ .Message }}"
+        type: "{{ .Type }}"
+        count: "{{ .Count }}"
+        component: "{{ .ReportingComponent }}"
+        cluster: prod-us-east-1
+
+  # --- Slack: Warning events only ---
+  - name: slack-warnings
+    slack:
+      token:
+        valueFrom:
+          secretKeyRef:
+            name: slack-token
+            key: token
+      channel: "#k8s-warnings"
+      message: |
+        *[{{ .Type }}]* `{{ .Reason }}` on `{{ .InvolvedObject.Kind }}/{{ .InvolvedObject.Name }}`
+        *Namespace:* `{{ .InvolvedObject.Namespace }}`
+        *Message:* {{ .Message }}
+        *Count:* {{ .Count }} | *Last seen:* {{ .LastTimestamp }}
+
+  # --- PagerDuty: critical Warning reasons ---
+  - name: pagerduty-critical
+    opsgenie:
+      apiKey:
+        valueFrom:
+          secretKeyRef:
+            name: opsgenie-key
+            key: apiKey
+      message: "K8s {{ .Reason }}: {{ .InvolvedObject.Kind }}/{{ .InvolvedObject.Name }}"
+      description: "{{ .Message }}"
+      alias: "{{ .InvolvedObject.Namespace }}/{{ .InvolvedObject.Name }}/{{ .Reason }}"
+      priority: P2
+
+route:
+  # Default: send all events to Loki and Elasticsearch
+  routes:
+    # Warning events → Loki + Elasticsearch + Slack
+    - match:
+        - type: Warning
+      receivers:
+        - loki
+        - elasticsearch
+        - slack-warnings
+
+    # Critical Warning reasons → also page
+    - match:
+        - type: Warning
+          reason:
+            - OOMKilling
+            - Evicted
+            - BackoffLimitExceeded
+            - NodeNotReady
+      receivers:
+        - pagerduty-critical
+
+    # Normal events → Loki only (cheaper, not in Elasticsearch)
+    - match:
+        - type: Normal
+      receivers:
+        - loki
+
+    # Exclude noisy Normal events from kube-system
+    - drop:
+        - type: Normal
+          namespace: kube-system
+          reason:
+            - LeaderElection
+            - Pulling
+            - Pulled</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>RBAC for Event Exporter</h3>
+    <pre><code class="language-yaml">apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubernetes-event-exporter
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubernetes-event-exporter
+rules:
+  - apiGroups: [""]
+    resources: [events, namespaces, nodes, pods]
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets, statefulsets, daemonsets]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-event-exporter
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubernetes-event-exporter
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-event-exporter
+    namespace: monitoring</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Deployment with Leader Election</h3>
+    <pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernetes-event-exporter
+  namespace: monitoring
+spec:
+  replicas: 2   # HA: leader election prevents duplicate events
+  selector:
+    matchLabels:
+      app: kubernetes-event-exporter
+  template:
+    spec:
+      serviceAccountName: kubernetes-event-exporter
+      containers:
+        - name: exporter
+          image: ghcr.io/resmoio/kubernetes-event-exporter:v1.7
+          args:
+            - -conf=/data/config.yaml
+            - -leader-election          # ensures only one replica exports at a time
+            - -leader-election-id=event-exporter-lock
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 200m, memory: 256Mi}
+          volumeMounts:
+            - name: config
+              mountPath: /data
+      volumes:
+        - name: config
+          configMap:
+            name: kubernetes-event-exporter-config</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== KUBE-EVENTER =================== -->
+    <h2 id="kube-eventer">kube-eventer</h2>
+
+    <p>kube-eventer (Alibaba Cloud) is an alternative event exporter with native support for DingTalk, Kafka, Elasticsearch, InfluxDB, and more. Useful when kubernetes-event-exporter lacks a specific output plugin.</p>
+
+    <pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-eventer
+  namespace: monitoring
+spec:
+  replicas: 1
+  template:
+    spec:
+      serviceAccountName: kube-eventer
+      containers:
+        - name: kube-eventer
+          image: registry.aliyuncs.com/acs/kube-eventer-amd64:v1.2.7-358d0d3-aliyun
+          command:
+            - /kube-eventer
+            - --source=kubernetes:https://kubernetes.default
+            # Elasticsearch sink
+            - --sink=elasticsearch:https://prod-es:9200?sniff=false&index=kube-events&x-pack-enabled=true
+            # DingTalk sink (optional)
+            # - --sink=dingtalk:https://oapi.dingtalk.com/robot/send?level=warning&label=prod
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 200m, memory: 128Mi}</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== EVENT ROUTER =================== -->
+    <h2 id="event-router">Event Router Patterns</h2>
+
+    <h3>Fluent Bit as Event Collector</h3>
+    <p>Rather than a dedicated event exporter, Fluent Bit can watch the Kubernetes Events API directly and route to the same Loki/Elasticsearch pipeline used for container logs:</p>
+    <pre><code class="language-ini">[INPUT]
+    Name              kubernetes_events
+    # Connects to the K8s API and watches /api/v1/events
+    Kube_URL          https://kubernetes.default.svc:443
+    Kube_CA_File      /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    Kube_Token_File   /var/run/secrets/kubernetes.io/serviceaccount/token
+    DB                /var/log/flb-events.db
+    Interval_Sec      5
+
+[FILTER]
+    Name   grep
+    Match  kube_events
+    # Only Warning events
+    Regex  type Warning
+
+[OUTPUT]
+    Name  loki
+    Match kube_events
+    Host  loki-gateway.monitoring.svc
+    Labels job=k8s-events,cluster=prod</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>OTel Collector k8sevents Receiver</h3>
+    <pre><code class="language-yaml">receivers:
+  k8s_events:
+    auth_type: serviceAccount
+    namespaces: []   # empty = all namespaces
+
+processors:
+  resource:
+    attributes:
+      - key: cluster
+        value: prod-us-east-1
+        action: insert
+  filter/warnings_only:
+    logs:
+      log_record:
+        - 'attributes["k8s.event.reason"] != "" and attributes["k8s.event.action"] != "Scheduled"'
+  batch:
+    timeout: 10s
+
+exporters:
+  loki:
+    endpoint: http://loki-gateway.monitoring.svc/loki/api/v1/push
+    labels:
+      resource:
+        cluster: ""
+        k8s.namespace.name: ""
+
+service:
+  pipelines:
+    logs/events:
+      receivers: [k8s_events]
+      processors: [resource, batch]
+      exporters: [loki]</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== CUSTOM EVENTS =================== -->
+    <h2 id="custom-events">Recording Custom Events</h2>
+
+    <p>Kubernetes controllers and operators should emit events to report the outcome of reconciliation loops. This follows the standard Kubernetes operational model and makes operator behavior observable via <code>kubectl describe</code> and event exporters without any extra tooling.</p>
+
+    <h3>Go: client-go EventRecorder</h3>
+    <pre><code class="language-go">package controller
+
+import (
+    "context"
+    corev1 "k8s.io/api/core/v1"
+    "k8s.io/apimachinery/pkg/runtime"
+    "k8s.io/client-go/tools/record"
+    ctrl "sigs.k8s.io/controller-runtime"
+)
+
+type MyReconciler struct {
+    client.Client
+    Scheme   *runtime.Scheme
+    Recorder record.EventRecorder
+}
+
+func (r *MyReconciler) SetupWithManager(mgr ctrl.Manager) error {
+    // Create recorder with the component name (appears in event source)
+    r.Recorder = mgr.GetEventRecorderFor("my-controller")
+    return ctrl.NewControllerManagedBy(mgr).
+        For(&myv1.MyResource{}).
+        Complete(r)
+}
+
+func (r *MyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+    var resource myv1.MyResource
+    if err := r.Get(ctx, req.NamespacedName, &resource); err != nil {
+        return ctrl.Result{}, client.IgnoreNotFound(err)
+    }
+
+    // Normal event: informational
+    r.Recorder.Event(&resource, corev1.EventTypeNormal,
+        "Reconciled",              // reason (CamelCase)
+        "Resource reconciled successfully",  // message
+    )
+
+    // Warning event: something went wrong
+    if err := r.doSomething(ctx, &resource); err != nil {
+        r.Recorder.Eventf(&resource, corev1.EventTypeWarning,
+            "SyncFailed",          // reason
+            "Failed to sync resource: %v", err,  // formatted message
+        )
+        return ctrl.Result{}, err
+    }
+
+    // Annotation-based event (annotate the related object)
+    r.Recorder.AnnotatedEventf(&resource, map[string]string{
+        "reconcile-version": "v2",
+    }, corev1.EventTypeNormal, "Updated", "Configuration updated to version %s", "v2")
+
+    return ctrl.Result{}, nil
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Event Reason Naming Conventions</h3>
+    <div class="callout callout-info">
+      <div class="callout-title">Event Reason Best Practices</div>
+      <p>Reasons should be <strong>CamelCase</strong>, short (one word or two), and stable (don't change them — external systems filter on them). Use positive names for success and past-tense verbs for state transitions: <code>Reconciled</code>, <code>Updated</code>, <code>Deleted</code>, <code>SyncFailed</code>, <code>ValidationFailed</code>. Avoid including variable data in the reason; put it in the message field instead.</p>
+    </div>
+
+    <h3>controller-runtime Event Recorder (operator-sdk style)</h3>
+    <pre><code class="language-go">// In main.go / cmd/main.go (operator-sdk scaffold)
+mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+    Scheme: scheme,
+    // EventBroadcaster is configured automatically
+    // EventRecorder is available via mgr.GetEventRecorderFor()
+})
+
+// Use in reconciler:
+type DatabaseReconciler struct {
+    client.Client
+    Scheme   *runtime.Scheme
+    Recorder record.EventRecorder
+}
+
+func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+    db := &dbv1.Database{}
+    if err := r.Get(ctx, req.NamespacedName, db); err != nil {
+        return ctrl.Result{}, client.IgnoreNotFound(err)
+    }
+
+    // Record event on a *related* object (not the resource being reconciled)
+    // e.g., record event on the Secret created by this controller
+    secret := &corev1.Secret{}
+    r.Recorder.Event(secret, corev1.EventTypeNormal, "Created",
+        "Secret created for database credentials")
+
+    return ctrl.Result{}, nil
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== ALERTING =================== -->
+    <h2 id="alerting">Alerting on Events</h2>
+
+    <p>There are two approaches to alert on Kubernetes events: using kube-state-metrics (converts events to Prometheus metrics for PromQL alerting) and direct alerting from the event exporter pipeline (e.g., Loki alert rules or webhook routing).</p>
+
+    <h3>kube-state-metrics: Event Metrics</h3>
+    <p>kube-state-metrics (KSM) exposes event counts as Prometheus metrics, enabling event-based alerting via standard PrometheusRule without a separate event exporter:</p>
+    <pre><code class="language-promql"># kube_event_count: count of events by type/reason/namespace/name
+# Available in kube-state-metrics v2.8+
+kube_event_count{type="Warning", reason="OOMKilling"}
+kube_event_count{type="Warning", reason="BackOff"}
+kube_event_count{type="Warning", reason="Evicted"}
+kube_event_count{type="Warning", reason="FailedScheduling"}
+
+# Rate of Warning events (increase = new events)
+increase(kube_event_count{type="Warning"}[5m])
+
+# Find namespaces with OOM kills in last 15 minutes
+sum by (namespace) (increase(kube_event_count{type="Warning", reason="OOMKilling"}[15m]))</code><button class="copy-btn">Copy</button></pre>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">kube_event_count Cardinality Warning</div>
+      <p>Each unique combination of type/reason/namespace/name/uid creates a separate time series. In large clusters with many pod names, this can create cardinality problems. Use <code>metricRelabelings</code> in the ServiceMonitor to drop the <code>name</code> and <code>uid</code> labels if cardinality is a concern, aggregating to namespace + reason level only.</p>
+    </div>
+
+    <h3>PrometheusRule Alerts on Events</h3>
+    <pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kubernetes-event-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: kubernetes-events
+      rules:
+        - alert: KubernetesOOMKilling
+          expr: |
+            increase(kube_event_count{type="Warning", reason="OOMKilling"}[10m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "OOMKill in {{ $labels.namespace }} ({{ $labels.name }})"
+            description: "Container was OOMKilled. Increase memory limit or investigate memory leak."
+            runbook_url: "https://wiki/runbooks/oomkilling"
+
+        - alert: KubernetesCrashLoopBackOff
+          expr: |
+            increase(kube_event_count{type="Warning", reason="BackOff"}[5m]) > 3
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CrashLoopBackOff in {{ $labels.namespace }} ({{ $labels.name }})"
+            description: "Pod is in CrashLoopBackOff. Check container logs with --previous flag."
+
+        - alert: KubernetesPodEvicted
+          expr: |
+            increase(kube_event_count{type="Warning", reason="Evicted"}[10m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod evicted in {{ $labels.namespace }}"
+            description: "A pod was evicted due to node resource pressure."
+
+        - alert: KubernetesFailedScheduling
+          expr: |
+            increase(kube_event_count{type="Warning", reason="FailedScheduling"}[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod cannot be scheduled in {{ $labels.namespace }}"
+            description: "Scheduler cannot find a suitable node. Check resource requests and node capacity."
+
+        - alert: KubernetesNodeNotReady
+          expr: |
+            increase(kube_event_count{type="Warning", reason="NodeNotReady"}[5m]) > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node entered NotReady state"
+            description: "A node transitioned to NotReady. Pods may be evicted after tolerationSeconds."
+
+        - alert: KubernetesImagePullFailure
+          expr: |
+            increase(kube_event_count{type="Warning", reason=~"Failed|ErrImagePull|ImagePullBackOff"}[5m]) > 0
+          for: 3m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Image pull failing in {{ $labels.namespace }}"
+            description: "Container image cannot be pulled. Check imagePullSecret and registry reachability."</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Loki-Based Event Alerting</h3>
+    <p>When events are forwarded to Loki via kubernetes-event-exporter or Fluent Bit, you can write LogQL alerts. This captures the full event message (not just counts) and allows richer filtering:</p>
+    <pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1alpha1
+kind: PrometheusRule
+metadata:
+  name: loki-event-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: loki-events
+      interval: 1m
+      rules:
+        - alert: KubernetesWarningEventSpike
+          expr: |
+            sum by (namespace) (
+              rate({job="k8s-events"} | json | type="Warning" [5m])
+            ) > 5
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High rate of Warning events in {{ $labels.namespace }}"
+
+        - alert: CriticalEventPattern
+          expr: |
+            count_over_time(
+              {job="k8s-events"} | json | type="Warning"
+                | reason =~ "OOMKilling|Evicted|BackoffLimitExceeded|NodeNotReady" [5m]
+            ) > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Critical Kubernetes event detected"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Slack Alert Routing for Events</h3>
+    <pre><code class="language-yaml"># kubernetes-event-exporter routing: critical events → PagerDuty, warnings → Slack
+route:
+  routes:
+    - match:
+        - type: Warning
+          reason:
+            - OOMKilling
+            - NodeNotReady
+            - Evicted
+      throttle:
+        # Prevent Slack flooding: max 10 messages per 5 minutes per reason
+        period: 5m
+        count: 10
+      receivers:
+        - slack-critical
+        - elasticsearch
+
+    - match:
+        - type: Warning
+      receivers:
+        - slack-warnings
+        - elasticsearch</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== OPERATIONS =================== -->
+    <h2 id="operations">Metrics, Alerts &amp; Runbooks</h2>
+
+    <h3>Key Metrics for the Event Pipeline</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Metric</th><th>Source</th><th>Alert Threshold</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>kube_event_count{type="Warning"}</code></td><td>kube-state-metrics</td><td>increase &gt; 0 for critical reasons</td><td>Warning event counts by reason/namespace</td></tr>
+          <tr><td><code>kubernetes_event_exporter_sends_total</code></td><td>event-exporter</td><td>—</td><td>Events successfully exported per receiver</td></tr>
+          <tr><td><code>kubernetes_event_exporter_send_errors_total</code></td><td>event-exporter</td><td>&gt;0</td><td>Export failures — events may be lost</td></tr>
+          <tr><td><code>kubernetes_event_exporter_watch_errors_total</code></td><td>event-exporter</td><td>&gt;0</td><td>API watch errors — events may be missed</td></tr>
+          <tr><td><code>kubernetes_event_exporter_events_total</code></td><td>event-exporter</td><td>—</td><td>Total events observed (before routing)</td></tr>
+          <tr><td><code>kubernetes_event_exporter_dropped_total</code></td><td>event-exporter</td><td>&gt;0</td><td>Events dropped by routing rules</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Operational Alert Rules</h3>
+    <pre><code class="language-yaml">groups:
+  - name: event-exporter-health
+    rules:
+      - alert: EventExporterSendErrors
+        expr: rate(kubernetes_event_exporter_send_errors_total[5m]) > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "kubernetes-event-exporter failing to send events — check receiver connectivity"
+
+      - alert: EventExporterWatchErrors
+        expr: increase(kubernetes_event_exporter_watch_errors_total[5m]) > 3
+        labels: {severity: warning}
+        annotations:
+          summary: "Event exporter watch API errors — events may be missed"
+
+      - alert: EventExporterDown
+        expr: absent(kubernetes_event_exporter_events_total)
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "kubernetes-event-exporter is not running — no events are being exported"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Runbooks</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>OOMKilling Events</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Identify pod: <code>kubectl get events -A --field-selector reason=OOMKilling</code></li>
+          <li>Check current memory usage: <code>kubectl top pod &lt;pod&gt; -n &lt;ns&gt;</code></li>
+          <li>Check memory limit: <code>kubectl get pod &lt;pod&gt; -o jsonpath='{.spec.containers[0].resources}'</code></li>
+          <li>Check if limit is appropriate: compare working set to limit</li>
+          <li>Short-term: increase limit in Deployment spec; Long-term: investigate memory leak</li>
+          <li>Consider VPA for automatic limit recommendation</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>FailedScheduling Events</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li><code>kubectl describe pod &lt;pod&gt; -n &lt;ns&gt;</code> — see Events section for exact reason</li>
+          <li>Insufficient CPU/memory: <code>kubectl describe nodes | grep -A5 "Allocated resources"</code></li>
+          <li>Taint mismatch: <code>kubectl describe node | grep Taints</code></li>
+          <li>Affinity mismatch: review nodeAffinity/podAntiAffinity rules in deployment</li>
+          <li>Topology spread: too many pods on some nodes, spread constraint too strict</li>
+          <li>If persistent: scale cluster (add nodes or node pool)</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>CrashLoopBackOff</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li><code>kubectl logs &lt;pod&gt; --previous</code> — logs from crashed container</li>
+          <li>Check exit code: <code>kubectl get pod -o jsonpath='{.status.containerStatuses[0].lastState.terminated}'</code></li>
+          <li>Exit 137 = OOMKilled; Exit 1 = application error; Exit 2 = misuse of command</li>
+          <li>Check ConfigMap / Secret mounts (missing secret causes immediate crash)</li>
+          <li>Check readiness/liveness probe configuration</li>
+          <li>Test container locally with same environment variables</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>ImagePullBackOff</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li><code>kubectl describe pod &lt;pod&gt;</code> — see exact pull error message in Events</li>
+          <li>Verify image tag exists in registry</li>
+          <li>Check imagePullSecret is attached to ServiceAccount or pod spec</li>
+          <li>Test credentials: <code>kubectl create secret docker-registry test --docker-server=... --dry-run=client</code></li>
+          <li>Check network policy allows egress to registry IP/port 443</li>
+          <li>If private registry: verify secret is in correct namespace</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Event Exporter Not Running</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li><code>kubectl get deploy kubernetes-event-exporter -n monitoring</code></li>
+          <li>Check pod status and logs: <code>kubectl logs -l app=kubernetes-event-exporter -n monitoring</code></li>
+          <li>Verify RBAC: <code>kubectl auth can-i list events --as=system:serviceaccount:monitoring:kubernetes-event-exporter</code></li>
+          <li>Check ConfigMap format: <code>kubectl get cm kubernetes-event-exporter-config -o yaml</code></li>
+          <li>Restart deployment: <code>kubectl rollout restart deploy/kubernetes-event-exporter -n monitoring</code></li>
+        </ol>
+      </div>
+    </div>
+
+    <h3>Querying Events in Loki</h3>
+    <pre><code class="language-logql"># All Warning events in last 1 hour
+{job="k8s-events"} | json | type="Warning"
+
+# OOMKilling events with details
+{job="k8s-events"} | json | reason="OOMKilling"
+  | line_format "{{.namespace}}/{{.name}}: {{.message}}"
+
+# Events for a specific namespace
+{job="k8s-events"} | json | namespace="payments"
+
+# Count Warning events by reason (last 24h)
+sum by (reason) (count_over_time({job="k8s-events"} | json | type="Warning" [24h]))
+
+# Find all events for a specific pod
+{job="k8s-events"} | json | name=~"order-service-.*"
+
+# Events that correlate with a deployment (around rollout time)
+{job="k8s-events"} | json | reason="ScalingReplicaSet" | name=~"order-service-.*"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Best Practices</h3>
+    <ol class="step-list">
+      <li><strong>Deploy a persistent event exporter from day one.</strong> The 1-hour TTL makes events useless for any incident that lasts more than an hour. Run kubernetes-event-exporter (or equivalent) before you need it — you cannot retroactively recover expired events.</li>
+      <li><strong>Send Warning events to an alerting channel.</strong> Not every Warning event needs a page, but they should appear in a low-urgency Slack channel where on-call engineers can spot patterns. Aggregate by reason to identify systemic issues.</li>
+      <li><strong>Route critical event reasons to PagerDuty.</strong> OOMKilling, NodeNotReady, Evicted, and BackoffLimitExceeded should trigger alerting. Use throttling (max N per 5 minutes) to prevent alert fatigue from cascading failures.</li>
+      <li><strong>Emit events from custom controllers.</strong> Every operator reconcile loop should emit a Normal event on success and a Warning event on failure. This makes controller behavior observable via <code>kubectl describe</code> with no additional tooling required.</li>
+      <li><strong>Filter out LeaderElection and health-probe events.</strong> These fire every few seconds in kube-system and add noise without value. Exclude them in the event exporter routing rules before they reach Elasticsearch or Loki.</li>
+      <li><strong>Do not store events in Elasticsearch unless you need full-text search.</strong> Loki is 10–20× cheaper per event record. Use Elasticsearch only if you need complex aggregation queries or full-text search on event messages. Forward to Loki for standard operational use.</li>
+      <li><strong>Enable leader election in the event exporter.</strong> A single-replica event exporter is a single point of failure for your event pipeline. Run 2+ replicas with leader election to survive pod restarts without missing events.</li>
+      <li><strong>Add cluster label to all exported events.</strong> In multi-cluster environments, always include a <code>cluster</code> label in exported events so you can distinguish events from different clusters when they land in a shared Loki/Elasticsearch instance.</li>
+    </ol>
+
+    <details class="coverage">
+      <summary>Coverage Details</summary>
+      <ul class="coverage-body">
+        <li>Events as first-class API objects (core/v1 Event) — the fourth observability signal</li>
+        <li>Events vs Audit Logs vs Application Logs comparison table</li>
+        <li>1-hour default TTL (--event-ttl) and etcd storage — critical retention problem</li>
+        <li>Full Event object YAML: involvedObject, reason, message, type, count, firstTimestamp, lastTimestamp, source, series, reportingComponent, related, action, eventTime</li>
+        <li>Key fields reference table (12 fields with types and notes)</li>
+        <li>Event deduplication: 10-minute window, count increment, identical field matching</li>
+        <li>Normal vs Warning event types (two cards)</li>
+        <li>Event sources table: kubelet, scheduler, deployment-controller, replicaset, statefulset, job, cronjob, HPA, endpoint-slice, node, volume controllers</li>
+        <li>kubectl events reference: --field-selector (type/reason/involvedObject), --sort-by, -w watch, -A all-namespaces, custom columns, jq JSON processing</li>
+        <li>kubectl events subcommand (1.26+): --for, --types flags</li>
+        <li>Warning event reasons: OOMKilling, BackOff, Evicted, FailedScheduling, FailedMount, FailedAttachVolume, Failed/ErrImagePull/ImagePullBackOff, NodeNotReady, Preempting, FailedCreatePodContainer, Unhealthy, BackoffLimitExceeded, MissSchedule, FailedGetScale</li>
+        <li>Normal event reasons: Scheduled, Pulling/Pulled, Created/Started, Killing, ScalingReplicaSet, SuccessfulRescale, ProvisioningSucceeded</li>
+        <li>--event-ttl kube-apiserver flag and cost warning for extension</li>
+        <li>etcd event quota: --max-events-per-namespace (v1.21+)</li>
+        <li>kubernetes-event-exporter architecture diagram</li>
+        <li>Helm install for kubernetes-event-exporter</li>
+        <li>Production event-exporter config: Loki output (template layout), Elasticsearch output (daily index, TLS, credentials from secret), Slack (Warning events, message template), PagerDuty/Opsgenie (critical reasons)</li>
+        <li>Route rules: Warning→Loki+ES+Slack, critical reasons→page, Normal→Loki only, drop noisy kube-system Normal events</li>
+        <li>RBAC for event-exporter: ClusterRole (get/list/watch events/namespaces/nodes/pods + apps)</li>
+        <li>Deployment with leader election (2 replicas, -leader-election flag)</li>
+        <li>kube-eventer alternative: install YAML with Elasticsearch sink</li>
+        <li>Fluent Bit kubernetes_events input plugin config (DB, Interval_Sec, filter, Loki output)</li>
+        <li>OTel Collector k8s_events receiver config (auth_type, namespaces, filter processor, Loki exporter)</li>
+        <li>Go: client-go EventRecorder via controller-runtime: SetupWithManager, Recorder.Event, Recorder.Eventf, Recorder.AnnotatedEventf</li>
+        <li>Event reason naming conventions: CamelCase, stable, positive/past-tense, no variables in reason</li>
+        <li>controller-runtime operator-sdk scaffold pattern for EventRecorder</li>
+        <li>kube-state-metrics kube_event_count metric (v2.8+): type/reason/namespace labels</li>
+        <li>kube_event_count cardinality warning: drop name/uid labels via metricRelabelings</li>
+        <li>PrometheusRule alerts: OOMKilling, CrashLoopBackOff, Evicted, FailedScheduling, NodeNotReady, ImagePullFailure</li>
+        <li>Loki-based event alerting via LogQL metric queries (Warning event spike, critical pattern count)</li>
+        <li>Slack routing with throttle (max N per 5 minutes per reason) to prevent flooding</li>
+        <li>6 event pipeline metrics with thresholds (sends_total, send_errors, watch_errors, events_total, dropped)</li>
+        <li>3 PrometheusRule alerts: EventExporterSendErrors, WatchErrors, EventExporterDown (absent)</li>
+        <li>5 runbooks: OOMKilling, FailedScheduling, CrashLoopBackOff, ImagePullBackOff, event exporter not running</li>
+        <li>LogQL event queries: Warning filter, OOMKilling, namespace filter, count by reason, pod filter, ScalingReplicaSet correlation</li>
+        <li>8 best practices: day-one exporter, Warning→Slack, critical→PagerDuty with throttle, emit from controllers, filter LeaderElection, Loki vs ES cost, leader election, cluster label</li>
+      </ul>
+    </details>
+
+  </main>
+</div>
+
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-toggle');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => { btt.style.display = main.scrollTop > 400 ? 'flex' : 'none'; });
+btt.addEventListener('click', () => main.scrollTo({ top: 0, behavior: 'smooth' }));
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = pre.querySelector('.copy-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const code = pre.querySelector('code');
+    navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  });
+});
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const tocLinks = document.querySelectorAll('.toc a');
+if (headings.length && tocLinks.length) {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove('toc-active'));
+        const active = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('toc-active');
+      }
+    });
+  }, { root: main, rootMargin: '0px 0px -70% 0px' });
+  headings.forEach(h => obs.observe(h));
+}
+document.getElementById('nav-filter').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

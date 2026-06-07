@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kubernetes Security Overview | K8s Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+/* Sidebar */
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border);}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;}
+.sidebar-search input:focus{border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.06);}
+/* Main */
+main{flex:1;overflow-y:auto;padding:40px 48px;max-width:1100px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;color:var(--text);}
+.page-meta{color:var(--text3);font-size:13px;margin-bottom:32px;display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;color:var(--text);border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+/* Code */
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;}
+:not(pre)>code{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:12px;color:var(--purple);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:11px;padding:3px 8px;cursor:pointer;transition:all .15s;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:8px 12px;text-align:left;border:1px solid var(--border);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+/* Callouts */
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid;font-size:14px;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout strong{display:block;margin-bottom:4px;font-size:13px;}
+/* Diagram */
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;overflow-x:auto;}
+.diagram pre{background:none;border:none;padding:0;margin:0;font-size:12px;color:var(--text2);}
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+/* TOC */
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:32px;font-size:13px;}
+.toc h4{color:var(--text);margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{margin-bottom:4px;}
+/* Coverage */
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:24px 0;overflow:hidden;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:8px;list-style:none;}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.coverage-body li{font-size:12px;color:var(--text2);}
+/* Pillar cards */
+.pillar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.pillar-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;}
+.pillar-card h4{color:var(--text);margin-bottom:8px;font-size:15px;}
+.pillar-card p{font-size:13px;margin:0;}
+.pillar-icon{font-size:22px;margin-bottom:8px;}
+/* Back to top */
+#back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+#back-to-top.visible{display:flex;}
+/* Hamburger */
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:18px;color:var(--text);}
+@media(max-width:768px){.hamburger{display:block;}.sidebar{position:fixed;left:-280px;top:0;z-index:100;transition:left .25s;}.sidebar.open{left:0;}main{padding:24px 16px;}}
+</style>
+</head>
+<body>
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-header"><div class="logo">K8s <span>Docs</span></div></div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter navigation…" oninput="filterNav(this.value)"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-index.html">Overview</a>
+    <a href="../01-getting-started/01-what-is-kubernetes.html">What is Kubernetes?</a>
+    <a href="../01-getting-started/02-architecture.html">Architecture</a>
+    <a href="../01-getting-started/03-installation.html">Installation</a>
+    <a href="../01-getting-started/04-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Core Concepts</div>
+    <a href="../02-core-concepts/00-index.html">Overview</a>
+    <a href="../02-core-concepts/01-pods.html">Pods</a>
+    <a href="../02-core-concepts/02-namespaces.html">Namespaces</a>
+    <a href="../02-core-concepts/03-labels-selectors.html">Labels &amp; Selectors</a>
+    <a href="../02-core-concepts/04-annotations.html">Annotations</a>
+    <a href="../02-core-concepts/05-configmaps-secrets.html">ConfigMaps &amp; Secrets</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../03-workload-controllers/00-index.html">Overview</a>
+    <a href="../03-workload-controllers/01-deployments.html">Deployments</a>
+    <a href="../03-workload-controllers/02-statefulsets.html">StatefulSets</a>
+    <a href="../03-workload-controllers/03-daemonsets.html">DaemonSets</a>
+    <a href="../03-workload-controllers/04-replicasets.html">ReplicaSets</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../04-networking/00-index.html">Overview</a>
+    <a href="../04-networking/01-services.html">Services</a>
+    <a href="../04-networking/02-ingress.html">Ingress</a>
+    <a href="../04-networking/03-dns.html">DNS</a>
+    <a href="../04-networking/04-network-policies.html">Network Policies</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Advanced Workloads</div>
+    <a href="../05-workloads/00-index.html">Overview</a>
+    <a href="../05-workloads/05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../05-workloads/06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="../05-workloads/07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="../05-workloads/08-pod-disruption-budgets.html">PDBs</a>
+    <a href="../05-workloads/09-resource-management.html">Resource Management</a>
+    <a href="../05-workloads/10-scheduling.html">Scheduling</a>
+    <a href="../05-workloads/11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="00-security-overview.html" class="active">Security Overview</a>
+    <a href="01-rbac.html">RBAC</a>
+    <a href="02-pod-security.html">Pod Security</a>
+    <a href="03-network-policies.html">Network Policies</a>
+    <a href="04-secrets-management.html">Secrets Management</a>
+    <a href="05-service-accounts.html">Service Accounts</a>
+    <a href="06-admission-controllers.html">Admission Controllers</a>
+    <a href="07-image-security.html">Image Security</a>
+    <a href="08-audit-logging.html">Audit Logging</a>
+    <a href="09-encryption-at-rest.html">Encryption at Rest</a>
+    <a href="10-supply-chain-security.html">Supply Chain Security</a>
+    <a href="11-compliance.html">Compliance</a>
+  </div>
+</nav>
+
+<main id="main-content">
+<h1>Kubernetes Security Overview</h1>
+<div class="page-meta">
+  <span>Section 06</span>
+  <span>Last updated: 2025</span>
+  <span>~25 min read</span>
+</div>
+
+<div class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#threat-model">Kubernetes Threat Model</a></li>
+    <li><a href="#4c-model">The 4C Security Model</a></li>
+    <li><a href="#attack-surface">Attack Surface Map</a></li>
+    <li><a href="#defense-layers">Defense-in-Depth Layers</a></li>
+    <li><a href="#authn-authz">Authentication &amp; Authorization</a></li>
+    <li><a href="#workload-isolation">Workload Isolation</a></li>
+    <li><a href="#network-security">Network Security</a></li>
+    <li><a href="#secrets-supply-chain">Secrets &amp; Supply Chain</a></li>
+    <li><a href="#runtime-security">Runtime Security</a></li>
+    <li><a href="#compliance-audit">Compliance &amp; Audit</a></li>
+    <li><a href="#security-checklist">Security Hardening Checklist</a></li>
+    <li><a href="#cis-benchmark">CIS Benchmark Summary</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<details class="coverage">
+  <summary>Coverage checklist</summary>
+  <div class="coverage-body">
+    <ul>
+      <li>Kubernetes threat model and STRIDE analysis</li>
+      <li>4C security model (Cloud, Cluster, Container, Code)</li>
+      <li>Attack surface: API server, etcd, kubelet, supply chain</li>
+      <li>Defense-in-depth layer diagram</li>
+      <li>AuthN: X.509 / OIDC / ServiceAccount tokens / webhook</li>
+      <li>AuthZ: RBAC, ABAC, Node, Webhook modes</li>
+      <li>Admission control pipeline</li>
+      <li>Pod Security Admission (privileged/baseline/restricted)</li>
+      <li>Network policy default-deny pattern</li>
+      <li>Secrets: etcd encryption, external secret stores</li>
+      <li>Service account token security (bound tokens)</li>
+      <li>Image scanning: Trivy, Grype, Snyk</li>
+      <li>Supply chain: SBOM, Sigstore/cosign, provenance</li>
+      <li>Runtime security: Falco, seccomp, AppArmor, SELinux</li>
+      <li>Audit logging: levels, backend, retention</li>
+      <li>CIS Kubernetes Benchmark top controls</li>
+      <li>Security checklist 30 items</li>
+      <li>Best practices 8 items</li>
+    </ul>
+    <ul>
+      <li>mTLS between components: kube-apiserver TLS</li>
+      <li>etcd TLS client auth requirement</li>
+      <li>Anonymous auth disable</li>
+      <li>NodeRestriction admission plugin</li>
+      <li>Kubelet authorization mode: Webhook</li>
+      <li>read-only port 10255 disable</li>
+      <li>Privileged container risks</li>
+      <li>hostNetwork/hostPID/hostIPC risks</li>
+      <li>Capability drop ALL + add specific</li>
+      <li>seccompProfile RuntimeDefault</li>
+      <li>runAsNonRoot enforcement</li>
+      <li>readOnlyRootFilesystem</li>
+      <li>Resource limits as security control</li>
+      <li>IRSA / Workload Identity patterns</li>
+      <li>Namespace-based tenancy limitations</li>
+      <li>Links to all detailed sub-pages</li>
+    </ul>
+  </div>
+</details>
+
+<!-- THREAT MODEL -->
+<h2 id="threat-model">Kubernetes Threat Model</h2>
+
+<p>Kubernetes clusters are complex distributed systems with a large attack surface. Understanding <em>what can go wrong</em> drives the security architecture. The Kubernetes threat model covers adversaries who are:</p>
+
+<ul>
+  <li><strong>External attackers</strong> — no access to the cluster; attempting to reach exposed services or the API server</li>
+  <li><strong>Internal network attackers</strong> — compromised a node or pod; attempting lateral movement within the cluster</li>
+  <li><strong>Malicious tenants</strong> — legitimate cluster users attempting privilege escalation to other namespaces or the host</li>
+  <li><strong>Supply chain attackers</strong> — compromised a container image, Helm chart, or operator to gain execution inside the cluster</li>
+</ul>
+
+<h3>STRIDE Analysis</h3>
+<table>
+  <tr><th>Threat</th><th>Kubernetes Context</th><th>Primary Mitigations</th></tr>
+  <tr><td><strong>Spoofing</strong></td><td>Impersonating a service account, forging kubeconfig credentials</td><td>OIDC short-lived tokens, cert rotation, audit logging</td></tr>
+  <tr><td><strong>Tampering</strong></td><td>Modifying etcd data directly, patching running pods without audit trail</td><td>etcd TLS+auth, etcd encryption at rest, audit log immutability</td></tr>
+  <tr><td><strong>Repudiation</strong></td><td>Denying that a workload made a change; no record of API calls</td><td>Audit logging with Request/Response levels retained off-cluster</td></tr>
+  <tr><td><strong>Information Disclosure</strong></td><td>Secrets in env vars, overly permissive RBAC reads, pod spec dumps</td><td>Encryption at rest, external secret stores, RBAC least privilege</td></tr>
+  <tr><td><strong>Denial of Service</strong></td><td>Resource exhaustion via unconstrained workloads, etcd overload</td><td>ResourceQuota, LimitRange, PriorityClass, rate limiting</td></tr>
+  <tr><td><strong>Elevation of Privilege</strong></td><td>Container escape via privileged pod, hostPath write, RBAC cluster-admin grant</td><td>Pod Security Admission (restricted), no privileged pods, RBAC audit</td></tr>
+</table>
+
+<!-- 4C MODEL -->
+<h2 id="4c-model">The 4C Security Model</h2>
+
+<p>The 4C model (Cloud, Cluster, Container, Code) describes a layered security approach. Each outer layer protects the layers within it, but a vulnerability at any layer can undermine the protections of the layers it contains.</p>
+
+<div class="diagram">
+<pre>
+┌────────────────────────────────────────────────────────────────┐
+│                           CLOUD                                │
+│  IAM roles, VPC network ACLs, node firewall rules,            │
+│  cloud provider encryption, managed control plane TLS          │
+│                                                                │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │                        CLUSTER                           │  │
+│  │  API server auth/authz, RBAC, admission controllers,     │  │
+│  │  etcd encryption, network policies, audit logging        │  │
+│  │                                                          │  │
+│  │  ┌────────────────────────────────────────────────────┐  │  │
+│  │  │                    CONTAINER                       │  │  │
+│  │  │  Pod Security (seccomp, AppArmor, capabilities),   │  │  │
+│  │  │  non-root execution, read-only rootfs, Falco       │  │  │
+│  │  │                                                    │  │  │
+│  │  │  ┌──────────────────────────────────────────────┐  │  │  │
+│  │  │  │                  CODE                        │  │  │  │
+│  │  │  │  SAST, dependency scanning, image signing,   │  │  │  │
+│  │  │  │  SBOM, Sigstore provenance, secret scanning  │  │  │  │
+│  │  │  └──────────────────────────────────────────────┘  │  │  │
+│  │  └────────────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<div class="callout callout-warn">
+  <strong>Outer layers do not compensate for inner layer weaknesses.</strong>
+  A privileged container on a locked-down node can still escape to the host. Cloud IAM does not prevent a cluster-admin RBAC binding from being abused. Security must be enforced at every layer independently.
+</div>
+
+<!-- ATTACK SURFACE -->
+<h2 id="attack-surface">Attack Surface Map</h2>
+
+<div class="diagram">
+<pre>
+EXTERNAL                          CLUSTER INTERNAL
+─────────                         ──────────────────
+kubectl / CI/CD ──► API Server ──► etcd (CRITICAL — encrypt + TLS client auth)
+                        │
+                        ├──► Controller Manager (in-cluster RBAC)
+                        ├──► Scheduler (in-cluster RBAC)
+                        └──► Kubelet API (port 10250)
+                                    │
+                             ┌──────┴──────┐
+                             │  Node OS    │
+                             │  Container  │
+                             │  Runtime    │
+                             └─────────────┘
+                                    │
+                             ┌──────▼──────┐
+                             │   Pods      │
+                             │ ServiceAcct │──► cloud IAM via IRSA/Workload Identity
+                             └─────────────┘
+</pre>
+</div>
+
+<h3>High-Value Targets</h3>
+<table>
+  <tr><th>Target</th><th>Why Critical</th><th>Key Hardening</th></tr>
+  <tr><td><strong>etcd</strong></td><td>All cluster state including secrets; direct write bypasses all admission</td><td>TLS client cert auth, encryption at rest, firewall to API server only</td></tr>
+  <tr><td><strong>API server</strong></td><td>Single entry point for all cluster operations</td><td>Disable anonymous auth, enable audit, RBAC, admission plugins</td></tr>
+  <tr><td><strong>Kubelet</strong></td><td>Port 10250 allows exec/logs for all pods on node</td><td>Webhook authorization, disable read-only port 10255, NodeRestriction</td></tr>
+  <tr><td><strong>Service account tokens</strong></td><td>Auto-mounted; long-lived tokens give persistent API access</td><td>Bound tokens (expiry), automountServiceAccountToken: false default</td></tr>
+  <tr><td><strong>Container images</strong></td><td>Backdoored images run attacker code at cluster scale</td><td>Image signing (cosign), admission policy (image policy webhook)</td></tr>
+</table>
+
+<!-- DEFENSE LAYERS -->
+<h2 id="defense-layers">Defense-in-Depth Layers</h2>
+
+<div class="pillar-grid">
+  <div class="pillar-card">
+    <div class="pillar-icon">🔐</div>
+    <h4>Authentication</h4>
+    <p>Who can talk to the API server? X.509 client certs, OIDC tokens (Dex, Okta), ServiceAccount bound tokens, webhook token authenticators.</p>
+  </div>
+  <div class="pillar-card">
+    <div class="pillar-icon">🛡️</div>
+    <h4>Authorization (RBAC)</h4>
+    <p>What are they allowed to do? Role, ClusterRole, RoleBinding, ClusterRoleBinding — least-privilege per workload. Covered in <a href="01-rbac.html">01-rbac.html</a>.</p>
+  </div>
+  <div class="pillar-card">
+    <div class="pillar-icon">🚦</div>
+    <h4>Admission Control</h4>
+    <p>Mutating and validating webhooks, OPA/Gatekeeper, Kyverno, Pod Security Admission. Final gate before objects are persisted. Covered in <a href="06-admission-controllers.html">06-admission-controllers.html</a>.</p>
+  </div>
+  <div class="pillar-card">
+    <div class="pillar-icon">🌐</div>
+    <h4>Network Policies</h4>
+    <p>Default-deny east-west traffic; explicit allow rules per service. Requires a CNI that enforces policies (Cilium, Calico, Weave). Covered in <a href="03-network-policies.html">03-network-policies.html</a>.</p>
+  </div>
+  <div class="pillar-card">
+    <div class="pillar-icon">🔒</div>
+    <h4>Pod Security</h4>
+    <p>seccomp, AppArmor, Linux capabilities, non-root, read-only rootfs, no privilege escalation. Covered in <a href="02-pod-security.html">02-pod-security.html</a>.</p>
+  </div>
+  <div class="pillar-card">
+    <div class="pillar-icon">🗝️</div>
+    <h4>Secrets Management</h4>
+    <p>etcd encryption at rest, external secret stores (Vault, AWS SSM, CSI driver), short rotation windows. Covered in <a href="04-secrets-management.html">04-secrets-management.html</a>.</p>
+  </div>
+  <div class="pillar-card">
+    <div class="pillar-icon">📦</div>
+    <h4>Image &amp; Supply Chain</h4>
+    <p>Vulnerability scanning (Trivy), image signing (cosign/Sigstore), SBOM generation, admission policy enforcement. Covered in <a href="07-image-security.html">07-image-security.html</a> and <a href="10-supply-chain-security.html">10-supply-chain-security.html</a>.</p>
+  </div>
+  <div class="pillar-card">
+    <div class="pillar-icon">🔍</div>
+    <h4>Runtime Security</h4>
+    <p>Falco behavioral detection, eBPF-based syscall monitoring, anomaly alerting. Covered in <a href="07-image-security.html">runtime section</a>.</p>
+  </div>
+  <div class="pillar-card">
+    <div class="pillar-icon">📋</div>
+    <h4>Audit Logging</h4>
+    <p>All API server requests recorded at configurable levels; shipped off-cluster for immutability. Covered in <a href="08-audit-logging.html">08-audit-logging.html</a>.</p>
+  </div>
+</div>
+
+<!-- AUTHN / AUTHZ -->
+<h2 id="authn-authz">Authentication &amp; Authorization</h2>
+
+<h3>Authentication Methods</h3>
+<table>
+  <tr><th>Method</th><th>Use Case</th><th>Token Lifetime</th><th>Notes</th></tr>
+  <tr><td><strong>X.509 client certs</strong></td><td>Admin users, control-plane components</td><td>Up to cert expiry</td><td>Revocation requires CRL or cert rotation; hard to revoke individual users</td></tr>
+  <tr><td><strong>OIDC tokens</strong></td><td>Human users via Dex, Okta, Auth0, Azure AD</td><td>Typically 1h (JWT exp)</td><td>Short-lived; requires <code>--oidc-issuer-url</code> API server flag</td></tr>
+  <tr><td><strong>ServiceAccount tokens (bound)</strong></td><td>In-cluster workloads (1.20+ projected volumes)</td><td>Configurable (default 1h)</td><td>Audience + expiry + pod binding; replaces legacy static tokens</td></tr>
+  <tr><td><strong>Bootstrap tokens</strong></td><td>Node join (kubeadm)</td><td>24h default</td><td>system:bootstrappers group; deleted after join</td></tr>
+  <tr><td><strong>Webhook token authenticator</strong></td><td>External identity providers</td><td>Provider-defined</td><td>API server calls webhook; flexible but adds latency</td></tr>
+  <tr><td><strong>Static token file</strong></td><td>Testing only</td><td>Permanent until restart</td><td class="badge badge-red">Never use in production</td></tr>
+</table>
+
+<h3>Authorization Modes</h3>
+<p>The API server evaluates authorization modes in the order specified by <code>--authorization-mode</code>. A request is allowed if <em>any</em> mode permits it (short-circuit on first Allow).</p>
+<table>
+  <tr><th>Mode</th><th>Description</th><th>Production Use</th></tr>
+  <tr><td><code>RBAC</code></td><td>Role-based; fine-grained verb+resource rules</td><td>✅ Always enable</td></tr>
+  <tr><td><code>Node</code></td><td>Restricts kubelet to only read/write resources belonging to its own node</td><td>✅ Always enable (with NodeRestriction admission)</td></tr>
+  <tr><td><code>Webhook</code></td><td>Delegates to external HTTP endpoint (OPA, custom systems)</td><td>Optional; for complex policies</td></tr>
+  <tr><td><code>ABAC</code></td><td>File-based attribute policies; requires restart to update</td><td>❌ Legacy; superseded by RBAC</td></tr>
+  <tr><td><code>AlwaysAllow</code></td><td>No authorization check</td><td>❌ Testing only</td></tr>
+  <tr><td><code>AlwaysDeny</code></td><td>All requests denied</td><td>❌ Testing only</td></tr>
+</table>
+
+<div class="callout callout-warn">
+  <strong>Required authorization mode for production.</strong>
+  Always run <code>--authorization-mode=Node,RBAC</code> at minimum. Node mode + NodeRestriction admission prevents a compromised kubelet from reading secrets for pods not running on its node.
+</div>
+
+<h3>Admission Control Pipeline</h3>
+<p>After a request passes authentication and authorization, it passes through the admission control pipeline before being persisted to etcd:</p>
+
+<div class="diagram">
+<pre>
+Request → AuthN → AuthZ → Mutating Admission → Object Schema Validation → Validating Admission → etcd
+                              │                                                      │
+                     MutatingWebhookConfigurations                   ValidatingWebhookConfigurations
+                     Pod Security Admission (mutate)                 Pod Security Admission (validate)
+                     LimitRanger                                      OPA/Gatekeeper
+                     ServiceAccount token injection                   Kyverno
+                     NamespaceLifecycle                               ResourceQuota
+</pre>
+</div>
+
+<p>Key built-in admission plugins (enabled by default or recommended):</p>
+<table>
+  <tr><th>Plugin</th><th>Purpose</th></tr>
+  <tr><td><code>NamespaceLifecycle</code></td><td>Prevents creating objects in terminating namespaces</td></tr>
+  <tr><td><code>LimitRanger</code></td><td>Enforces LimitRange defaults and constraints</td></tr>
+  <tr><td><code>ServiceAccount</code></td><td>Injects default service account token</td></tr>
+  <tr><td><code>NodeRestriction</code></td><td>Limits kubelet to mutate only its own Node/Pod objects</td></tr>
+  <tr><td><code>PodSecurity</code></td><td>Enforces Pod Security Standards (privileged/baseline/restricted)</td></tr>
+  <tr><td><code>ResourceQuota</code></td><td>Enforces namespace resource quotas</td></tr>
+  <tr><td><code>MutatingAdmissionWebhook</code></td><td>Calls registered mutating webhooks</td></tr>
+  <tr><td><code>ValidatingAdmissionWebhook</code></td><td>Calls registered validating webhooks</td></tr>
+</table>
+
+<!-- WORKLOAD ISOLATION -->
+<h2 id="workload-isolation">Workload Isolation</h2>
+
+<h3>Pod Security Standards</h3>
+<p>Pod Security Admission (PSA) enforces three built-in policy levels per namespace, applied via the label <code>pod-security.kubernetes.io/enforce</code>. See <a href="02-pod-security.html">02-pod-security.html</a> for the full field-by-field breakdown.</p>
+
+<table>
+  <tr><th>Level</th><th>Who Should Use It</th><th>What It Allows</th></tr>
+  <tr><td><span class="badge badge-red">privileged</span></td><td>System namespaces (kube-system, node agents)</td><td>No restrictions — full host access possible</td></tr>
+  <tr><td><span class="badge badge-yellow">baseline</span></td><td>General workloads needing some elevated permissions</td><td>No privileged containers; no host namespaces; restricted capabilities</td></tr>
+  <tr><td><span class="badge badge-green">restricted</span></td><td>Untrusted or hardened production workloads</td><td>Enforces seccomp RuntimeDefault, non-root, no privilege escalation, drop ALL caps</td></tr>
+</table>
+
+<h3>Namespace Tenancy Model</h3>
+<p>Namespaces provide a <strong>soft isolation boundary</strong> — they scope RBAC, ResourceQuota, NetworkPolicy, and PSA. They do <em>not</em> provide hard multi-tenancy; a privileged workload in any namespace can reach the host. For stronger isolation, use separate clusters or hierarchical namespace controllers (HNC).</p>
+
+<div class="callout callout-info">
+  <strong>Namespace security labels — apply to all tenant namespaces.</strong>
+  <pre style="margin-top:8px;font-size:12px;">kubectl label namespace my-app \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/audit=restricted \
+  pod-security.kubernetes.io/warn=restricted</pre>
+  Use <code>enforce</code> to block, <code>audit</code> to log violations, <code>warn</code> to surface warnings without blocking.
+</div>
+
+<h3>Key Pod-Level Security Fields</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">securityContext:                      # Pod-level
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 3000
+  fsGroup: 2000
+  seccompProfile:
+    type: RuntimeDefault               # or Localhost with custom profile
+  sysctls: []                          # avoid privileged sysctls
+
+containers:
+  - securityContext:                   # Container-level (overrides pod-level)
+      allowPrivilegeEscalation: false  # prevent setuid/sudo escalation
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+        add: ["NET_BIND_SERVICE"]      # only if port < 1024 needed
+      seccompProfile:
+        type: RuntimeDefault</code></pre>
+
+<!-- NETWORK SECURITY -->
+<h2 id="network-security">Network Security</h2>
+
+<h3>Default-Deny Pattern</h3>
+<p>Without Network Policies, all pods can communicate freely within a cluster. The correct default is to deny all ingress and egress, then explicitly allow required flows. See <a href="03-network-policies.html">03-network-policies.html</a> for full examples.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Apply to every tenant namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}          # matches all pods
+  policyTypes:
+  - Ingress
+  - Egress
+  # no ingress/egress rules = deny all</code></pre>
+
+<div class="callout callout-warn">
+  <strong>Network Policies require a CNI that enforces them.</strong>
+  The default kubenet CNI does not enforce NetworkPolicy. Use Cilium, Calico, Weave Net, or another policy-capable CNI. Pods are unprotected if you create NetworkPolicy objects but the CNI doesn't implement them — no error is raised.
+</div>
+
+<h3>mTLS for Service-to-Service</h3>
+<p>NetworkPolicy operates at L3/L4 (IP + port). For L7 identity-based traffic control and end-to-end encryption, use a service mesh (Istio, Linkerd, Cilium's mesh mode). mTLS provides:</p>
+<ul>
+  <li>Mutual authentication — both sides verify identity via SPIFFE SVID certs</li>
+  <li>Encryption in transit — all service traffic encrypted, even within the same node</li>
+  <li>Fine-grained AuthorizationPolicy — "service A may only call service B's /api/v1 endpoint"</li>
+</ul>
+
+<!-- SECRETS AND SUPPLY CHAIN -->
+<h2 id="secrets-supply-chain">Secrets &amp; Supply Chain</h2>
+
+<h3>Secret Storage Risk Hierarchy</h3>
+<table>
+  <tr><th>Storage Method</th><th>Risk Level</th><th>Notes</th></tr>
+  <tr><td>Plain text in source code / ConfigMap</td><td><span class="badge badge-red">Critical</span></td><td>Never do this</td></tr>
+  <tr><td>Kubernetes Secret (base64, no etcd encryption)</td><td><span class="badge badge-red">High</span></td><td>Readable by anyone with etcd access or broad RBAC</td></tr>
+  <tr><td>Kubernetes Secret + etcd encryption at rest</td><td><span class="badge badge-yellow">Medium</span></td><td>Protects stolen etcd backup; API server still decrypts on read</td></tr>
+  <tr><td>External Secret Operator (Vault / AWS SSM)</td><td><span class="badge badge-green">Low</span></td><td>Secrets never reside in etcd; centralized rotation; audit trail</td></tr>
+  <tr><td>CSI secrets store driver (SSCD)</td><td><span class="badge badge-green">Low</span></td><td>Mounted as files, not env vars; ephemeral, rotated by provider</td></tr>
+</table>
+
+<h3>Supply Chain Attack Vectors</h3>
+<ul>
+  <li><strong>Compromised base image</strong> — malicious code in public Docker Hub image</li>
+  <li><strong>Dependency confusion</strong> — internal package name shadowed by public malicious package</li>
+  <li><strong>Typosquatting</strong> — <code>alpine-3.18</code> vs <code>alipne-3.18</code> in Dockerfile</li>
+  <li><strong>Compromised CI pipeline</strong> — attacker injects code during build, before signing</li>
+  <li><strong>Untrusted Helm charts</strong> — public chart installs ClusterRoleBinding with cluster-admin</li>
+</ul>
+
+<p>See <a href="10-supply-chain-security.html">10-supply-chain-security.html</a> for Sigstore/cosign signing workflow, SBOM generation with Syft, and admission policy enforcement with Kyverno image verification.</p>
+
+<!-- RUNTIME SECURITY -->
+<h2 id="runtime-security">Runtime Security</h2>
+
+<h3>Linux Kernel Security Mechanisms</h3>
+<table>
+  <tr><th>Mechanism</th><th>What It Does</th><th>Kubernetes Integration</th></tr>
+  <tr><td><strong>seccomp</strong></td><td>Restricts allowed syscalls; blocks dangerous calls like <code>ptrace</code>, <code>mount</code>, <code>unshare</code></td><td><code>securityContext.seccompProfile</code>; RuntimeDefault or custom JSON profile</td></tr>
+  <tr><td><strong>AppArmor</strong></td><td>File/capability access profiles per process</td><td><code>container.apparmor.security.beta.kubernetes.io/&lt;container&gt;</code> annotation (GA in 1.30)</td></tr>
+  <tr><td><strong>SELinux</strong></td><td>Mandatory access control; label-based policy enforcement</td><td><code>securityContext.seLinuxOptions</code>; typically set by runtime on RHEL/CoreOS</td></tr>
+  <tr><td><strong>Linux capabilities</strong></td><td>Split root privileges into fine-grained tokens</td><td><code>capabilities.drop: ["ALL"]</code> + explicit add of needed caps</td></tr>
+  <tr><td><strong>Namespaces</strong></td><td>Isolate process view: PID, net, IPC, UTS, mount</td><td>Container runtime manages; <code>hostPID/hostNetwork/hostIPC: false</code></td></tr>
+</table>
+
+<h3>Falco — Behavioral Runtime Detection</h3>
+<p>Falco (CNCF) monitors kernel syscalls via eBPF/kernel module and alerts on policy violations at runtime. Key default rules:</p>
+<ul>
+  <li>Shell spawned in container (exec of bash/sh/zsh)</li>
+  <li>Write to /etc or /usr directories</li>
+  <li>Network connection from unexpected process</li>
+  <li>Sensitive file reads (/etc/shadow, /etc/kubernetes/pki/...)</li>
+  <li>Container privilege escalation attempt</li>
+  <li>K8s audit event for sensitive operations (secret reads, exec into pods)</li>
+</ul>
+
+<div class="callout callout-info">
+  <strong>Falco does not prevent — it detects.</strong>
+  Falco alerts on violations after the syscall occurs. It is a detection control, not a prevention control. Pair it with admission policies (Kyverno/OPA) for prevention, and Falco for detection of what admission policies miss (runtime behavior, zero-days).
+</div>
+
+<!-- COMPLIANCE AND AUDIT -->
+<h2 id="compliance-audit">Compliance &amp; Audit</h2>
+
+<p>Kubernetes audit logging records every API server request at configurable verbosity levels. Logs should be shipped to immutable storage (S3, Elasticsearch, Splunk) off-cluster immediately. See <a href="08-audit-logging.html">08-audit-logging.html</a> for audit policy examples.</p>
+
+<h3>Compliance Frameworks</h3>
+<table>
+  <tr><th>Framework</th><th>Kubernetes Relevance</th><th>Key Controls</th></tr>
+  <tr><td><strong>CIS Kubernetes Benchmark</strong></td><td>Prescriptive hardening for control plane, nodes, RBAC</td><td>API server flags, etcd TLS, RBAC audit, node config</td></tr>
+  <tr><td><strong>NSA/CISA Kubernetes Hardening Guide</strong></td><td>Government/defense-grade guidance</td><td>Pod security, network policies, audit, image provenance</td></tr>
+  <tr><td><strong>SOC 2 Type II</strong></td><td>Audit trail completeness, access control</td><td>Audit logging, RBAC reviews, secret management, MFA for API access</td></tr>
+  <tr><td><strong>PCI DSS</strong></td><td>Cardholder data environment isolation</td><td>Network segmentation (policies), encryption at rest+transit, audit, vulnerability scanning</td></tr>
+  <tr><td><strong>HIPAA</strong></td><td>PHI in containers</td><td>Encryption at rest, audit, BAA with cloud provider, access control</td></tr>
+  <tr><td><strong>FedRAMP</strong></td><td>US federal cloud authorization</td><td>FIPS 140-2 crypto, STIG compliance, continuous monitoring</td></tr>
+</table>
+
+<p>See <a href="11-compliance.html">11-compliance.html</a> for compliance automation tools (kube-bench, Polaris, Kubescape).</p>
+
+<!-- SECURITY CHECKLIST -->
+<h2 id="security-checklist">Security Hardening Checklist</h2>
+
+<h3>Control Plane</h3>
+<table>
+  <tr><th>Check</th><th>Command / Verification</th><th>Priority</th></tr>
+  <tr><td>Disable anonymous auth</td><td><code>--anonymous-auth=false</code> on kube-apiserver</td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Enable Node+RBAC authorization</td><td><code>--authorization-mode=Node,RBAC</code></td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Enable audit logging</td><td><code>--audit-log-path</code> + <code>--audit-policy-file</code></td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>etcd TLS + client cert auth</td><td><code>--etcd-cafile --etcd-certfile --etcd-keyfile</code></td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>etcd encryption at rest</td><td><code>--encryption-provider-config</code> with aescbc or KMS</td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Enable NodeRestriction admission</td><td><code>--enable-admission-plugins=...,NodeRestriction</code></td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Disable insecure HTTP port</td><td><code>--insecure-port=0</code> (default disabled since 1.20)</td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>TLS cipher restriction</td><td><code>--tls-min-version=VersionTLS13</code></td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>Enable PodSecurity admission</td><td><code>--enable-admission-plugins=...,PodSecurity</code></td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>Rotate certificates regularly</td><td><code>kubeadm certs renew all</code>; automate via cert-manager</td><td><span class="badge badge-yellow">High</span></td></tr>
+</table>
+
+<h3>Nodes</h3>
+<table>
+  <tr><th>Check</th><th>Verification</th><th>Priority</th></tr>
+  <tr><td>Kubelet authorization mode: Webhook</td><td><code>--authorization-mode=Webhook</code> in kubelet config</td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Disable read-only port</td><td><code>--read-only-port=0</code> in kubelet config</td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Disable anonymous kubelet auth</td><td><code>authentication.anonymous.enabled: false</code></td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Enable kubelet TLS</td><td><code>--tls-cert-file --tls-private-key-file</code></td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Restrict hostPath mounts</td><td>Admission policy: deny <code>hostPath.path: /</code> or <code>/etc</code></td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>CIS-hardened node image</td><td>Use CIS-hardened AMI/image; run kube-bench to verify</td><td><span class="badge badge-yellow">High</span></td></tr>
+</table>
+
+<h3>Workloads</h3>
+<table>
+  <tr><th>Check</th><th>Implementation</th><th>Priority</th></tr>
+  <tr><td>No privileged containers</td><td>PSA restricted or Kyverno deny <code>privileged: true</code></td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>No hostNetwork / hostPID / hostIPC</td><td>PSA baseline+ or admission policy</td><td><span class="badge badge-red">Critical</span></td></tr>
+  <tr><td>Drop ALL capabilities</td><td><code>capabilities.drop: ["ALL"]</code></td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>seccomp RuntimeDefault</td><td><code>seccompProfile.type: RuntimeDefault</code></td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>runAsNonRoot</td><td><code>runAsNonRoot: true</code> + <code>runAsUser: 1000</code></td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>readOnlyRootFilesystem</td><td><code>readOnlyRootFilesystem: true</code></td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>No allowPrivilegeEscalation</td><td><code>allowPrivilegeEscalation: false</code></td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>automount SA token only when needed</td><td><code>automountServiceAccountToken: false</code> on SA or Pod</td><td><span class="badge badge-yellow">High</span></td></tr>
+  <tr><td>Resource limits set on all containers</td><td>LimitRange defaults + explicit limits</td><td><span class="badge badge-blue">Medium</span></td></tr>
+  <tr><td>Network policies: default deny</td><td>Apply default-deny NetworkPolicy to all tenant namespaces</td><td><span class="badge badge-yellow">High</span></td></tr>
+</table>
+
+<!-- CIS BENCHMARK -->
+<h2 id="cis-benchmark">CIS Benchmark Key Controls Summary</h2>
+
+<p>The <strong>CIS Kubernetes Benchmark</strong> (Center for Internet Security) is the most widely adopted prescriptive hardening guide. Run <code>kube-bench</code> to automatically check your cluster against the benchmark. Key sections:</p>
+
+<table>
+  <tr><th>Section</th><th>Focus Area</th><th>Example Checks</th></tr>
+  <tr><td>1 — Control Plane Components</td><td>kube-apiserver, etcd, scheduler, controller-manager flags</td><td>--anonymous-auth=false, --audit-log-path, etcd TLS</td></tr>
+  <tr><td>2 — Etcd</td><td>etcd security configuration</td><td>Peer TLS, client cert auth, encryption at rest</td></tr>
+  <tr><td>3 — Control Plane Config</td><td>kubeconfig file permissions, certificates</td><td>admin.conf permissions 600, cert expiry monitoring</td></tr>
+  <tr><td>4 — Worker Node Security</td><td>Kubelet configuration</td><td>Webhook authn/authz, read-only port disabled</td></tr>
+  <tr><td>5 — Kubernetes Policies</td><td>RBAC, Pod Security, Network Policies, Secrets</td><td>No cluster-admin bindings for SA, PSA enabled, secrets encrypted</td></tr>
+</table>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Run kube-bench in-cluster
+kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job.yaml
+kubectl logs job/kube-bench
+
+# Or run as a pod targeting specific benchmark
+kubectl run kube-bench --image=aquasec/kube-bench:latest \
+  --restart=Never -- node --benchmark cis-1.8</code></pre>
+
+<!-- BEST PRACTICES -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Apply the 4C model systematically.</strong> Don't rely on cluster security alone. Harden the cloud layer (IAM, VPC), the container layer (seccomp, capabilities), and the code layer (SAST, image scanning) independently.</li>
+
+  <li><strong>Enforce Pod Security Standards at the restricted level for all non-system namespaces.</strong> Use <code>enforce</code> mode (not just <code>warn</code>) on all workload namespaces. Reserve <code>privileged</code> level for <code>kube-system</code> and node agent namespaces only.</li>
+
+  <li><strong>Use short-lived, bound service account tokens.</strong> Disable legacy auto-mounted tokens (<code>automountServiceAccountToken: false</code> on default ServiceAccount per namespace). Inject tokens only for pods that need API server access, using projected volumes with a 1h audience-bound expiry.</li>
+
+  <li><strong>Encrypt secrets at rest and prefer external secret stores.</strong> etcd encryption at rest protects stolen backups; an external store (Vault, AWS SSM) additionally prevents secrets from residing in etcd at all. Use IRSA/Workload Identity for cloud-native secret retrieval without static credentials.</li>
+
+  <li><strong>Implement default-deny NetworkPolicy in every tenant namespace.</strong> Then explicitly allow required ingress/egress. This prevents east-west lateral movement after a container compromise.</li>
+
+  <li><strong>Sign all images with cosign and enforce policy in admission.</strong> A Kyverno ClusterPolicy or OPA Gatekeeper constraint should reject pods using unsigned images from unauthorized registries. This blocks most supply chain attacks.</li>
+
+  <li><strong>Ship audit logs off-cluster immediately to immutable storage.</strong> A compromised cluster admin can delete on-cluster audit logs. Ship to an external SIEM (Splunk, Elasticsearch, CloudWatch) with a write-once policy.</li>
+
+  <li><strong>Run CIS kube-bench and address all Level 1 failures before production.</strong> Automate kube-bench as part of cluster provisioning CI. Re-run after every control plane upgrade. Track benchmark drift in a dedicated Grafana dashboard.</li>
+</ol>
+
+<button id="back-to-top" title="Back to top" onclick="document.getElementById('main-content').scrollTo({top:0,behavior:'smooth'})">↑</button>
+</main>
+
+<script>
+// Theme
+(function(){const t=localStorage.getItem('k8s-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+
+// Hamburger
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');}
+
+// Copy buttons
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=pre.querySelector('.copy-btn');
+  if(!btn)return;
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code').innerText).then(()=>{
+      btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+    });
+  });
+});
+
+// Back to top
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+
+// TOC IntersectionObserver
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const a=document.querySelector('.toc a[href="#'+e.target.id+'"]');
+      if(a)a.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-20% 0px -70% 0px'});
+headings.forEach(h=>obs.observe(h));
+
+// Sidebar filter
+function filterNav(val){
+  const v=val.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v)?'':'none';
+  });
+}
+
+// Copy code helper
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+</script>
+</body>
+</html>

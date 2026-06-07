@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jobs & CronJobs | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+/* Layout */
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar.closed{transform:translateX(-100%);}
+.main-content{margin-left:var(--sidebar-w);flex:1;padding:0;overflow-y:auto;height:100vh;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);position:fixed;top:0;right:0;height:100vh;overflow-y:auto;padding:24px 16px;}
+.content-area{max-width:900px;margin:0 auto;padding:40px 48px 80px;}
+
+/* Topbar */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-weight:600;font-size:16px;flex:1;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);cursor:pointer;padding:6px 12px;border-radius:6px;font-size:13px;}
+.back-to-top{position:fixed;bottom:32px;right:calc(var(--toc-w) + 16px);background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50;}
+.back-to-top.visible{opacity:1;}
+
+/* Sidebar nav */
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;color:var(--text2);}
+.sidebar-search{margin:12px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:calc(100% - 24px);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:6px 16px 6px 24px;font-size:13px;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover,.nav-section a.active{background:var(--bg3);color:var(--accent);text-decoration:none;}
+
+/* TOC */
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover,.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);text-decoration:none;}
+
+/* Content */
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-top:8px;}
+h3{font-size:17px;font-weight:600;margin:32px 0 12px;}
+h4{font-size:15px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{padding-left:24px;margin-bottom:16px;color:var(--text2);}
+li{margin-bottom:4px;}
+
+.subtitle{font-size:18px;color:var(--text2);margin-bottom:32px;}
+.meta{display:flex;gap:16px;margin-bottom:40px;flex-wrap:wrap;}
+.meta-tag{background:var(--bg3);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--text2);}
+
+/* Code */
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;margin-bottom:24px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;line-height:1.7;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;}
+.copy-btn:hover{background:var(--bg4);}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--text);border:1px solid var(--border);}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+
+/* Callouts */
+.callout{border-radius:8px;padding:16px 20px;margin-bottom:24px;border-left:4px solid;}
+.callout-warn{background:#d2992218;border-color:var(--yellow);}
+.callout-warn strong{color:var(--yellow);}
+.callout-danger{background:#f8514918;border-color:var(--red);}
+.callout-danger strong{color:var(--red);}
+.callout-info{background:#58a6ff18;border-color:var(--accent);}
+.callout-info strong{color:var(--accent);}
+.callout-success{background:#3fb95018;border-color:var(--green);}
+.callout-success strong{color:var(--green);}
+
+/* Cards / grids */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:32px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 8px;color:var(--text);}
+.card p{font-size:13px;margin:0;color:var(--text2);}
+.card .card-tag{display:inline-block;background:var(--bg3);border-radius:12px;padding:2px 10px;font-size:11px;margin-bottom:10px;color:var(--accent);}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-green{background:#3fb95022;color:var(--green);border:1px solid var(--green);}
+.badge-yellow{background:#d2992222;color:var(--yellow);border:1px solid var(--yellow);}
+.badge-red{background:#f8514922;color:var(--red);border:1px solid var(--red);}
+.badge-blue{background:#58a6ff22;color:var(--accent);border:1px solid var(--accent);}
+.badge-purple{background:#bc8cff22;color:var(--purple);border:1px solid var(--purple);}
+
+/* Coverage block */
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+
+/* Section divider */
+.section-divider{border:none;border-top:1px solid var(--border);margin:48px 0;}
+
+/* ASCII diagram */
+.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;margin-bottom:24px;color:var(--text2);}
+
+@media(max-width:1200px){.toc-panel{display:none;}.main-content{margin-left:var(--sidebar-w);}.back-to-top{right:16px;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.content-area{padding:24px 20px 60px;}}
+</style>
+</head>
+<body>
+
+<div class="layout">
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">Kubernetes Docs</div>
+  <input class="sidebar-search" id="nav-search" placeholder="Filter navigation..." type="text">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Kubernetes Overview</a>
+    <a href="../01-getting-started/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/02-control-plane-components.html">Control Plane Components</a>
+    <a href="../01-getting-started/03-node-components.html">Node Components</a>
+    <a href="../01-getting-started/04-api-server-deep-dive.html">API Server Deep Dive</a>
+    <a href="../01-getting-started/05-etcd.html">etcd</a>
+    <a href="../01-getting-started/06-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../02-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../02-networking/01-services.html">Services</a>
+    <a href="../02-networking/02-ingress.html">Ingress</a>
+    <a href="../02-networking/03-network-policies.html">Network Policies</a>
+    <a href="../02-networking/04-dns.html">DNS</a>
+    <a href="../02-networking/05-cni-plugins.html">CNI Plugins</a>
+    <a href="../02-networking/06-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../03-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../03-configuration/01-secrets.html">Secrets</a>
+    <a href="../03-configuration/02-resource-quotas.html">Resource Quotas</a>
+    <a href="../03-configuration/03-limit-ranges.html">Limit Ranges</a>
+    <a href="../03-configuration/04-namespaces.html">Namespaces</a>
+    <a href="../03-configuration/05-labels-annotations.html">Labels &amp; Annotations</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">Persistent Volumes</a>
+    <a href="../04-storage/02-storage-classes.html">Storage Classes</a>
+    <a href="../04-storage/03-volume-types.html">Volume Types</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+    <a href="../04-storage/05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="../04-storage/06-stateful-sets-storage.html">StatefulSet Storage</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html" class="active">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main-content" id="main-content">
+<div class="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span class="topbar-title">Jobs &amp; CronJobs</span>
+  <button class="theme-btn" id="theme-btn">Light Mode</button>
+</div>
+
+<div class="content-area">
+
+<details class="coverage">
+  <summary>📋 Page Coverage Checklist</summary>
+  <div class="coverage-body">
+    <li>Job spec anatomy: completions, parallelism, backoffLimit, activeDeadlineSeconds, TTL</li>
+    <li>Job completion modes: NonIndexed vs Indexed with completion index env var</li>
+    <li>Job failure policy (1.25+): onExitCodes / onPodConditions actions</li>
+    <li>backoffLimitPerIndex (1.26+): per-index retry isolation</li>
+    <li>Job pod disruption with podReplacementPolicy and terminationGracePeriodSeconds</li>
+    <li>Suspend/resume Jobs; external controller patterns</li>
+    <li>Work queue pattern, static work assignment, indexed scatter-gather</li>
+    <li>Sidecar termination problem and native sidecar fix (1.28+)</li>
+    <li>CronJob spec: schedule, timeZone (GA 1.27), concurrencyPolicy, startingDeadlineSeconds</li>
+    <li>CronJob history limits: successfulJobsHistoryLimit, failingJobsHistoryLimit</li>
+    <li>CronJob missed schedules (>100 → stuck), lastScheduleTime semantics</li>
+    <li>Job patterns: fan-out/fan-in, external work queue (KEDA)</li>
+    <li>Resource management for batch: PriorityClass, preemption, node taints</li>
+    <li>5 metrics + 4 alerting rules + 5 runbooks + 8 best practices</li>
+  </div>
+</details>
+
+<h1>Jobs &amp; CronJobs</h1>
+<p class="subtitle">Run-to-completion workloads, indexed parallelism, and time-based scheduling</p>
+<div class="meta">
+  <span class="meta-tag">batch/v1</span>
+  <span class="meta-tag">Kubernetes 1.24+</span>
+  <span class="meta-tag">Platform Engineer</span>
+</div>
+
+<p>Unlike Deployments or StatefulSets, Jobs and CronJobs model <strong>finite work</strong>: they create Pods, track their completions, and succeed or fail as a whole unit. Understanding their controller mechanics — completion tracking, retry semantics, parallelism, and scheduling guarantees — is essential for building reliable batch pipelines, ETL jobs, database migrations, and any workload that must run once (or on a schedule) and stop.</p>
+
+<!-- ============================================================ -->
+<h2 id="job-controller">Job Controller Mechanics</h2>
+
+<p>The Job controller lives in <code>kube-controller-manager</code> and reconciles the observed Pod states against the desired completion count. Its core loop:</p>
+
+<div class="diagram">
+Job spec: completions=3, parallelism=2, backoffLimit=4
+
+  Job Controller reconcile loop
+  ┌─────────────────────────────────────────────────┐
+  │                                                 │
+  │  Watch Job + owned Pods                         │
+  │      │                                          │
+  │      ▼                                          │
+  │  Count succeeded / failed / active Pods         │
+  │      │                                          │
+  │      ├─ succeeded >= completions → Complete ✓   │
+  │      ├─ failed > backoffLimit   → Failed ✗      │
+  │      ├─ active > parallelism    → delete excess │
+  │      └─ active < parallelism    → create more   │
+  │                                                 │
+  │  Pod failure → increment .status.failed         │
+  │  Exponential backoff: 10s → 20s → 40s → 80s    │
+  │  (capped at 6 minutes)                          │
+  └─────────────────────────────────────────────────┘
+
+  Ownership: Job owns Pods via ownerRef (GC on Job deletion)
+  Selector: auto-generated (controller-uid label), immutable
+</div>
+
+<p>Key invariant: the Job controller does <strong>not</strong> use a ReplicaSet intermediary. It owns Pods directly, identified by the auto-generated label <code>controller-uid=&lt;job-uid&gt;</code>. This selector is immutable once set.</p>
+
+<!-- ============================================================ -->
+<h2 id="job-spec">Job Spec Anatomy</h2>
+
+<pre><code class="language-yaml">apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-migration-v2
+  namespace: platform
+  labels:
+    app: data-migration
+    version: v2
+spec:
+  # --- Completion semantics ---
+  completions: 5          # Total successful pods needed (default: 1)
+  parallelism: 2          # Max pods running simultaneously (default: 1)
+  completionMode: Indexed # NonIndexed (default) or Indexed
+
+  # --- Failure handling ---
+  backoffLimit: 4         # Max pod failures before Job fails (default: 6)
+  backoffLimitPerIndex: 1 # Per-index failures before that index fails (1.26+)
+  activeDeadlineSeconds: 600  # Job-level timeout (wall clock)
+
+  # --- Cleanup ---
+  ttlSecondsAfterFinished: 3600  # Auto-delete 1hr after completion
+
+  # --- Suspension ---
+  suspend: false          # Set true to pause (deletes active pods)
+
+  # --- Pod replacement ---
+  podReplacementPolicy: Failed  # Failed (default) | TerminatingOrFailed
+
+  # --- Pod failure policy (1.25+) ---
+  podFailurePolicy:
+    rules:
+      - action: FailJob           # Fail entire Job immediately
+        onExitCodes:
+          containerName: worker
+          operator: In
+          values: [42]            # Exit code 42 = non-retriable error
+      - action: Ignore            # Don't count toward backoffLimit
+        onPodConditions:
+          - type: DisruptionTarget # Node preemption / eviction
+      - action: FailIndex         # Fail this index only (Indexed mode)
+        onExitCodes:
+          operator: In
+          values: [1, 2, 127]
+
+  # --- Selector (auto-generated; only set if manualSelector: true) ---
+  # selector:
+  #   matchLabels:
+  #     controller-uid: &lt;job-uid&gt;
+
+  template:
+    metadata:
+      labels:
+        app: data-migration
+    spec:
+      restartPolicy: Never  # REQUIRED: Never or OnFailure
+      containers:
+        - name: worker
+          image: registry.example.com/migration:v2@sha256:abc123
+          env:
+            - name: JOB_COMPLETION_INDEX   # Injected by controller (Indexed mode)
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2
+              memory: 1Gi
+          volumeMounts:
+            - name: work-dir
+              mountPath: /work
+      volumes:
+        - name: work-dir
+          emptyDir: {}
+      # Batch pods typically don't need high availability
+      tolerations:
+        - key: batch
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      nodeSelector:
+        workload-type: batch</code></pre>
+
+<div class="callout callout-danger">
+  <strong>restartPolicy is mandatory and constrained</strong><br>
+  Jobs require <code>restartPolicy: Never</code> or <code>restartPolicy: OnFailure</code>. <code>Always</code> is forbidden — a pod that always restarts never counts as "succeeded." With <code>Never</code>, each failure creates a new Pod (counting against backoffLimit). With <code>OnFailure</code>, the same Pod is restarted in-place (container restart, not pod replacement).
+</div>
+
+<!-- ============================================================ -->
+<h2 id="completion-modes">Completion Modes</h2>
+
+<h3 id="nonindexed">NonIndexed (default)</h3>
+<p>Pods are interchangeable. The controller creates pods until <code>completions</code> successful pods exist. Use this when each pod unit of work is identical (e.g., draining a shared queue).</p>
+<ul>
+  <li>No completion index assigned to pods</li>
+  <li>Any pod success counts toward total; pod failures are retried up to <code>backoffLimit</code></li>
+  <li>Work distribution is external (e.g., message queue, database cursor)</li>
+</ul>
+
+<h3 id="indexed">Indexed (GA 1.24)</h3>
+<p>Each pod gets a unique stable index from <code>0</code> to <code>completions-1</code>. Exactly one pod must succeed at each index for the Job to complete.</p>
+
+<div class="diagram">
+Indexed Job: completions=4, parallelism=2
+
+  Index 0: Pod-xkz → succeeded ✓
+  Index 1: Pod-mnp → running...
+  Index 2: Pod-qrs → pending
+  Index 3: Pod-tuv → pending
+
+  JOB_COMPLETION_INDEX env var = "0", "1", "2", "3" respectively
+  Hostname: &lt;job-name&gt;-&lt;index&gt;     (e.g., data-migration-v2-0)
+  DNS:      &lt;job-name&gt;-&lt;index&gt;.&lt;svc&gt;.&lt;ns&gt;.svc.cluster.local
+            (requires headless Service with job-name selector)
+</div>
+
+<pre><code class="language-yaml"># Inject the index from annotation (recommended pattern)
+env:
+  - name: JOB_COMPLETION_INDEX
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+
+# Or from the downward API (alternative)
+env:
+  - name: JOB_COMPLETION_INDEX
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']</code></pre>
+
+<p>The index can also be read from a static file mounted at <code>/etc/podinfo/job-completion-index</code> if you use a <code>downwardAPI</code> volume.</p>
+
+<h3 id="indexed-use-cases">Indexed Job use cases</h3>
+<div class="card-grid">
+  <div class="card">
+    <span class="card-tag">Data processing</span>
+    <h4>Shard-parallel ETL</h4>
+    <p>Each index processes one partition/shard. Index → shard mapping is deterministic from the env var.</p>
+  </div>
+  <div class="card">
+    <span class="card-tag">Machine learning</span>
+    <h4>Distributed training</h4>
+    <p>Index maps to worker rank. Used by PyTorch distributed and MPI-based frameworks.</p>
+  </div>
+  <div class="card">
+    <span class="card-tag">Testing</span>
+    <h4>Parallel test matrix</h4>
+    <p>Each index runs one test suite combination. Scatter-gather after all complete.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="failure-policy">Pod Failure Policy (1.25+)</h2>
+
+<p>The default behavior counts every pod failure toward <code>backoffLimit</code>. Pod failure policy lets you classify failures and take different actions — critically, distinguishing between application bugs (retriable) and infrastructure events (should not burn retries).</p>
+
+<table>
+  <thead><tr><th>Action</th><th>Effect</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr><td><code>FailJob</code></td><td>Immediately mark entire Job as failed, delete active pods</td><td>Non-retriable exit codes (config error, data corruption)</td></tr>
+    <tr><td><code>FailIndex</code></td><td>Fail only this index (Indexed mode), others continue</td><td>Per-shard non-retriable error without killing the whole job</td></tr>
+    <tr><td><code>Ignore</code></td><td>Don't count toward backoffLimit, pod failure is recorded but ignored</td><td>Node preemption, spot instance reclaim (DisruptionTarget condition)</td></tr>
+    <tr><td><code>Count</code></td><td>Default: increment failure counter toward backoffLimit</td><td>Retriable transient errors</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-yaml">podFailurePolicy:
+  rules:
+    # Rule 1: non-retriable application error
+    - action: FailJob
+      onExitCodes:
+        containerName: worker
+        operator: In
+        values: [42, 43]         # Exit 42/43 = configuration / data error
+
+    # Rule 2: OOM — infrastructure issue, retry
+    - action: Count
+      onExitCodes:
+        operator: In
+        values: [137]            # SIGKILL (OOM)
+
+    # Rule 3: preemption / eviction — don't waste retries
+    - action: Ignore
+      onPodConditions:
+        - type: DisruptionTarget
+
+    # Rule 4: per-index isolation (Indexed jobs only)
+    - action: FailIndex
+      onExitCodes:
+        operator: NotIn
+        values: [0]              # Any non-zero exit in this index = index fails</code></pre>
+
+<div class="callout callout-info">
+  <strong>DisruptionTarget condition</strong><br>
+  Kubernetes 1.25+ sets the <code>DisruptionTarget</code> pod condition when a Pod is terminated due to node pressure eviction, preemption, or <code>kubectl drain</code>. Using <code>Ignore</code> on this condition prevents spot instance reclaims from burning your retry budget.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="backoff-per-index">Per-Index Backoff (1.26+)</h2>
+
+<p><code>backoffLimitPerIndex</code> applies <code>backoffLimit</code> semantics independently to each index. Without it, failures across all indexes share a single global counter — one pathologically failing index can exhaust retries for all others.</p>
+
+<pre><code class="language-yaml">spec:
+  completions: 100
+  parallelism: 10
+  completionMode: Indexed
+  backoffLimit: 10000         # High global limit (not meaningful with perIndex)
+  backoffLimitPerIndex: 2     # Each index may fail 2 times before that index fails
+  maxFailedIndexes: 5         # Job fails if more than 5 indexes fail (optional)</code></pre>
+
+<div class="diagram">
+Without backoffLimitPerIndex:
+  Index 3 fails 6 times → entire Job fails (backoffLimit=6 exhausted)
+  Indexes 0,1,2,4..99 never get a chance
+
+With backoffLimitPerIndex: 2
+  Index 3 fails 3 times → index 3 marked Failed
+  All other indexes continue unaffected
+  maxFailedIndexes: 5 → Job fails when 6th index fails
+</div>
+
+<!-- ============================================================ -->
+<h2 id="suspend-resume">Suspend &amp; Resume</h2>
+
+<p>Setting <code>spec.suspend: true</code> pauses a Job: all active Pods are deleted (terminated gracefully), and no new Pods are created. The Job's <code>Suspended</code> condition is set to <code>True</code>. Resuming (setting <code>suspend: false</code>) restores scheduling.</p>
+
+<pre><code class="language-bash"># Suspend a running job
+kubectl patch job data-migration-v2 -p '{"spec":{"suspend":true}}'
+
+# Resume it
+kubectl patch job data-migration-v2 -p '{"spec":{"suspend":false}}'
+
+# Check suspension status
+kubectl get job data-migration-v2 -o jsonpath='{.status.conditions}'</code></pre>
+
+<p>Suspend/resume is the foundation for <strong>external job schedulers</strong> (Volcano, Yunikorn, Apache Airflow Kubernetes executor) that need to queue Jobs without creating Pods until resources are available.</p>
+
+<!-- ============================================================ -->
+<h2 id="ttl-cleanup">TTL-based Cleanup</h2>
+
+<p>Finished Jobs (succeeded or failed) accumulate indefinitely without cleanup. The TTL-after-finished controller (GA 1.23) auto-deletes Jobs and their owned Pods after a configurable delay.</p>
+
+<pre><code class="language-yaml">spec:
+  ttlSecondsAfterFinished: 86400  # Delete 24 hours after finish
+  # 0 = delete immediately after finish (cascade deletes pods too)
+  # omit = never auto-delete (manual cleanup required)</code></pre>
+
+<div class="callout callout-warn">
+  <strong>CronJob history vs TTL</strong><br>
+  CronJobs manage their own Job history via <code>successfulJobsHistoryLimit</code> and <code>failingJobsHistoryLimit</code>. If you also set <code>ttlSecondsAfterFinished</code> on the Job template, the TTL controller may delete Jobs before CronJob history limits are evaluated. Use one mechanism or the other, not both.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pod-replacement">Pod Replacement Policy</h2>
+
+<p><code>podReplacementPolicy</code> (1.28+) controls when replacement pods are created:</p>
+
+<table>
+  <thead><tr><th>Policy</th><th>Replacement created when</th><th>Use case</th></tr></thead>
+  <tbody>
+    <tr><td><code>Failed</code> (default)</td><td>Pod reaches Failed phase (all containers terminated)</td><td>Standard jobs</td></tr>
+    <tr><td><code>TerminatingOrFailed</code></td><td>Pod has deletionTimestamp (terminating) OR Failed phase</td><td>Long graceful termination; don't wait for full shutdown before scheduling replacement</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="job-patterns">Job Patterns</h2>
+
+<h3 id="pattern-queue">Pattern 1: Work Queue (NonIndexed)</h3>
+<p>Pods pull tasks from an external queue (Redis, SQS, RabbitMQ, Kafka). When the queue is empty, pods exit 0. Set <code>completions</code> to the number of workers you want running; when all succeed (having drained the queue), the Job completes.</p>
+
+<pre><code class="language-yaml">spec:
+  completions: null         # Null = succeed when any pod succeeds AND
+  parallelism: 5            # all pods have exited (work queue pattern)
+  # With completions:null, Job completes when all pods succeed
+  # This is the "work queue" completion mode
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: worker
+          image: queue-worker:v1
+          env:
+            - name: QUEUE_URL
+              value: redis://redis-svc:6379/0</code></pre>
+
+<div class="callout callout-info">
+  <strong>completions: null semantics</strong><br>
+  When <code>completions</code> is null and <code>completionMode: NonIndexed</code>, the Job succeeds when at least one pod succeeds and all pods have terminated. This is the classic work-queue model where workers self-terminate when the queue is empty.
+</div>
+
+<h3 id="pattern-indexed-fanout">Pattern 2: Indexed Fan-out / Fan-in</h3>
+
+<pre><code class="language-yaml"># Stage 1: fan-out (Indexed Job)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: process-shards
+spec:
+  completions: 32
+  parallelism: 8
+  completionMode: Indexed
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: processor
+          image: shard-processor:v1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              INDEX=${JOB_COMPLETION_INDEX}
+              # Process shard $INDEX of 32 total shards
+              ./process-shard --index=${INDEX} --total=32 --output=s3://bucket/shards/${INDEX}
+          env:
+            - name: JOB_COMPLETION_INDEX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+---
+# Stage 2: fan-in (separate Job triggered by CI/workflow engine after fan-out completes)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: merge-shards
+spec:
+  completions: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: merger
+          image: shard-merger:v1
+          command: ["./merge-shards", "--input=s3://bucket/shards/", "--count=32"]</code></pre>
+
+<h3 id="pattern-migration">Pattern 3: Database Migration</h3>
+
+<pre><code class="language-yaml">apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate-v3-2-0
+  annotations:
+    # Immutable label for audit trail
+    migration/version: "3.2.0"
+    migration/type: "schema"
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 0           # Schema migrations are NOT idempotent — fail fast
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 604800  # Keep for 1 week for debugging
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z postgres-svc 5432; do sleep 2; done']
+      containers:
+        - name: migrator
+          image: myapp:v3.2.0
+          command: ["./migrate", "--direction=up", "--target=3.2.0"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: url
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="sidecar-problem">Sidecar Termination Problem</h2>
+
+<p>Before Kubernetes 1.28, running sidecars (e.g., Istio envoy, Datadog agent, Vault agent) alongside a Job was problematic: when the main container exits 0, the Job wants to complete — but the sidecar is still running, so the Pod never reaches the <code>Succeeded</code> phase.</p>
+
+<div class="diagram">
+Pre-1.28 sidecar problem:
+
+  Pod: [main-container (exit 0)] [sidecar (still running)]
+                                          │
+                    Pod never reaches Succeeded phase
+                    Job never completes
+                    Manual workaround: shareProcessNamespace + kill sidecar
+
+1.28+ Native sidecar solution:
+
+  initContainers:
+    - name: vault-agent
+      restartPolicy: Always    # ← This makes it a sidecar container
+      ...
+    - name: envoy
+      restartPolicy: Always
+      ...
+  containers:
+    - name: main-worker
+      ...
+
+  Shutdown order: main exits 0 → sidecars receive SIGTERM → Pod Succeeded ✓
+</div>
+
+<pre><code class="language-yaml"># Native sidecar in a Job (1.28+, stable 1.33)
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: vault-agent
+          image: vault:1.15
+          restartPolicy: Always   # sidecar designation
+          args: ["agent", "-config=/vault/config"]
+          volumeMounts:
+            - name: vault-config
+              mountPath: /vault/config
+        - name: datadog-agent
+          image: datadog/agent:7
+          restartPolicy: Always   # sidecar designation
+          env:
+            - name: DD_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: datadog-secret
+                  key: api-key
+      containers:
+        - name: worker
+          image: batch-worker:v2
+          command: ["./process"]</code></pre>
+
+<div class="callout callout-success">
+  <strong>Native sidecars in Jobs (stable 1.33)</strong><br>
+  With <code>restartPolicy: Always</code> in an <code>initContainer</code>, Kubernetes treats it as a sidecar: it starts before regular containers, receives SIGTERM when the main container exits, and its exit does not fail the Pod. This cleanly solves the Job sidecar problem without shell hacks.
+</div>
+
+<!-- ============================================================ -->
+<hr class="section-divider">
+<h2 id="cronjob">CronJob</h2>
+
+<p>CronJob creates Job objects on a time-based schedule. The CronJob controller runs in <code>kube-controller-manager</code> and periodically checks whether a new Job should be spawned based on the schedule and concurrency policy.</p>
+
+<div class="diagram">
+CronJob lifecycle:
+
+  CronJob controller (runs every 10s by default)
+       │
+       ▼
+  Evaluate schedule: should a new Job run now?
+       │
+       ├─ Yes → create Job → Job controller creates Pods
+       ├─ No  → wait
+       └─ Missed? → check startingDeadlineSeconds
+
+  CronJob owns Jobs via ownerRef
+  Jobs own Pods via ownerRef
+  CronJob GC: prune old Jobs per history limits
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cronjob-spec">CronJob Spec</h2>
+
+<pre><code class="language-yaml">apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-report
+  namespace: analytics
+spec:
+  # --- Schedule ---
+  schedule: "0 2 * * *"          # Every day at 02:00
+  timeZone: "America/New_York"   # Named timezone (GA 1.27); default UTC
+
+  # --- Concurrency ---
+  concurrencyPolicy: Forbid      # Allow | Forbid | Replace
+
+  # --- Missed schedule deadline ---
+  startingDeadlineSeconds: 300   # Allow up to 5 min late start; nil = no deadline
+
+  # --- History ---
+  successfulJobsHistoryLimit: 3  # Keep last 3 successful Jobs (default: 3)
+  failingJobsHistoryLimit: 1     # Keep last 1 failed Job (default: 1)
+
+  # --- Suspension ---
+  suspend: false                 # Suspend scheduling (existing Jobs unaffected)
+
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: reporter
+              image: analytics/reporter:v3
+              env:
+                - name: REPORT_DATE
+                  value: "$(date -d 'yesterday' +%Y-%m-%d)"
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: 2
+                  memory: 4Gi</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="cron-schedule">Cron Schedule Syntax</h2>
+
+<table>
+  <thead><tr><th>Field</th><th>Range</th><th>Special chars</th></tr></thead>
+  <tbody>
+    <tr><td>Minute</td><td>0–59</td><td><code>* , - /</code></td></tr>
+    <tr><td>Hour</td><td>0–23</td><td><code>* , - /</code></td></tr>
+    <tr><td>Day of month</td><td>1–31</td><td><code>* , - / ?</code></td></tr>
+    <tr><td>Month</td><td>1–12 or JAN–DEC</td><td><code>* , - /</code></td></tr>
+    <tr><td>Day of week</td><td>0–6 (Sun=0) or SUN–SAT</td><td><code>* , - / ?</code></td></tr>
+  </tbody>
+</table>
+
+<table>
+  <thead><tr><th>Example schedule</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>0 * * * *</code></td><td>Every hour at :00</td></tr>
+    <tr><td><code>*/15 * * * *</code></td><td>Every 15 minutes</td></tr>
+    <tr><td><code>0 2 * * *</code></td><td>Daily at 02:00 UTC</td></tr>
+    <tr><td><code>0 9 * * 1-5</code></td><td>Weekdays at 09:00</td></tr>
+    <tr><td><code>0 0 1 * *</code></td><td>Monthly, 1st day at midnight</td></tr>
+    <tr><td><code>0 0 * * 0</code></td><td>Every Sunday at midnight</td></tr>
+    <tr><td><code>@hourly</code></td><td>Macro = <code>0 * * * *</code></td></tr>
+    <tr><td><code>@daily</code></td><td>Macro = <code>0 0 * * *</code></td></tr>
+    <tr><td><code>@weekly</code></td><td>Macro = <code>0 0 * * 0</code></td></tr>
+    <tr><td><code>@monthly</code></td><td>Macro = <code>0 0 1 * *</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="timezone">Time Zones (GA 1.27)</h2>
+
+<p>Before 1.27, CronJobs always ran in UTC; teams worked around this by shifting schedule values manually. The <code>timeZone</code> field accepts IANA timezone names from the <a href="https://www.iana.org/time-zones">tz database</a>.</p>
+
+<pre><code class="language-yaml">spec:
+  schedule: "0 9 * * 1-5"         # 09:00 local time, weekdays
+  timeZone: "Europe/Berlin"        # CET/CEST automatically handled
+
+# Common zones
+# America/New_York     UTC-5/UTC-4 (EST/EDT)
+# America/Los_Angeles  UTC-8/UTC-7 (PST/PDT)
+# Asia/Tokyo           UTC+9
+# Australia/Sydney     UTC+10/UTC+11
+# UTC                  Always UTC (explicit is better than implicit)</code></pre>
+
+<div class="callout callout-warn">
+  <strong>DST edge cases</strong><br>
+  When a clock change makes a time slot ambiguous (e.g., 02:30 appears twice during fall-back) or skipped (spring-forward), the CronJob controller uses the first occurrence. Schedules at midnight in DST-observing zones can shift by one hour seasonally — audit CronJobs for timezone-sensitive business logic.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="concurrency-policy">Concurrency Policy</h2>
+
+<table>
+  <thead><tr><th>Policy</th><th>Behavior when previous Job still running</th><th>Use case</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>Allow</code> (default)</td>
+      <td>Create new Job anyway — multiple Jobs may run simultaneously</td>
+      <td>Independent periodic tasks; each run is isolated</td>
+    </tr>
+    <tr>
+      <td><code>Forbid</code></td>
+      <td>Skip this schedule tick; record a missed schedule</td>
+      <td>Non-reentrant jobs (DB maintenance, cache warm-up)</td>
+    </tr>
+    <tr>
+      <td><code>Replace</code></td>
+      <td>Delete the current running Job, create a new one</td>
+      <td>Stateless jobs that must always run on fresh data; old run is stale</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-danger">
+  <strong>Replace deletes the running Job</strong><br>
+  With <code>concurrencyPolicy: Replace</code>, the in-flight Job is forcefully deleted (all its Pods are terminated) before the new Job starts. Any partially completed work is lost. Only use <code>Replace</code> when jobs are fully idempotent and partial runs have no side effects.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="missed-schedules">Missed Schedules &amp; startingDeadlineSeconds</h2>
+
+<p>If the CronJob controller is unavailable (controller-manager downtime, cluster upgrade) or a Job is stuck, schedule ticks may be missed. The controller catches up by counting missed schedules since the last successful run.</p>
+
+<div class="callout callout-danger">
+  <strong>100-missed-schedule limit</strong><br>
+  If more than 100 schedule ticks have been missed since the last run (or since the CronJob was created), the controller <strong>stops scheduling entirely</strong> and logs: <code>Cannot determine if job needs to be started. Too many missed start time (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.</code> This is a hard stop — the CronJob will not auto-recover. You must manually delete and recreate it, or update the schedule to reset the counter.
+</div>
+
+<pre><code class="language-yaml">spec:
+  startingDeadlineSeconds: 300
+  # If the job cannot start within 5 minutes of its scheduled time,
+  # skip this occurrence and wait for the next schedule tick.
+  # null (default) = no deadline; may trigger the 100-missed-schedule trap
+  # if controller is down for many schedule periods</code></pre>
+
+<p><code>lastScheduleTime</code> in the CronJob status shows when the last Job was successfully spawned. Use this to detect scheduling staleness:</p>
+
+<pre><code class="language-bash"># Check last schedule time
+kubectl get cronjob nightly-report -o jsonpath='{.status.lastScheduleTime}'
+
+# List all active Jobs owned by this CronJob
+kubectl get jobs -l "batch.kubernetes.io/cronjob-name=nightly-report"
+
+# Manually trigger a CronJob (create Job from template)
+kubectl create job --from=cronjob/nightly-report nightly-report-manual-$(date +%s)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="history-limits">History Limits</h2>
+
+<p>CronJob prunes old Jobs to prevent unbounded accumulation. The controller keeps the N most recent Jobs of each type.</p>
+
+<table>
+  <thead><tr><th>Field</th><th>Default</th><th>Recommendation</th></tr></thead>
+  <tbody>
+    <tr><td><code>successfulJobsHistoryLimit</code></td><td>3</td><td>3–10 for debugging; 0 to disable (not recommended for prod)</td></tr>
+    <tr><td><code>failingJobsHistoryLimit</code></td><td>1</td><td>3–5 to preserve failure logs; higher if jobs are long-lived</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-info">
+  <strong>Logs lost when Job is pruned</strong><br>
+  When a Job is deleted (by history limits or TTL), its Pods and their logs are deleted too unless you have a log aggregation pipeline (Loki, Elasticsearch, Datadog). Always ship logs to external storage for batch jobs before relying on history limits for debugging.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="batch-resources">Resource Management for Batch</h2>
+
+<h3 id="priority-class">PriorityClass for Batch Isolation</h3>
+
+<pre><code class="language-yaml"># Batch priority class — lower than production workloads
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: batch-low
+value: 100              # Production = 1000; system-cluster-critical = 2000000000
+globalDefault: false
+preemptionPolicy: Never # Batch should not preempt production pods
+description: "Low-priority batch workloads"
+---
+# Interactive/short jobs
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: batch-high
+value: 500
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Time-sensitive batch jobs (e.g., SLA-bound reports)"
+---
+# Use in Job template
+spec:
+  template:
+    spec:
+      priorityClassName: batch-low</code></pre>
+
+<h3 id="batch-node-taints">Dedicated Batch Nodes</h3>
+
+<pre><code class="language-bash"># Taint batch nodes to prevent non-batch workloads from landing there
+kubectl taint nodes batch-node-1 batch=true:NoSchedule
+kubectl taint nodes batch-node-2 batch=true:NoSchedule
+
+# Label batch nodes
+kubectl label nodes batch-node-1 workload-type=batch
+kubectl label nodes batch-node-2 workload-type=batch</code></pre>
+
+<pre><code class="language-yaml"># Job template tolerations + nodeSelector for batch nodes
+spec:
+  template:
+    spec:
+      tolerations:
+        - key: batch
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      nodeSelector:
+        workload-type: batch
+      # Ensure batch pods don't get evicted for production
+      priorityClassName: batch-low</code></pre>
+
+<h3 id="resource-requests-batch">Right-sizing Batch Resources</h3>
+
+<p>Batch jobs often have predictable resource profiles. Over-requesting wastes cluster capacity; under-requesting causes OOM kills that count as failures.</p>
+
+<pre><code class="language-yaml">resources:
+  requests:
+    cpu: "500m"      # What the scheduler uses for placement
+    memory: "1Gi"    # Set to p95 of observed usage
+  limits:
+    cpu: "4"         # Generous CPU limit (throttling is recoverable)
+    memory: "2Gi"    # Tight memory limit = OOM = pod failure
+                     # Memory limit should be >= p99.9 of usage</code></pre>
+
+<div class="callout callout-info">
+  <strong>Memory OOM in batch jobs</strong><br>
+  For batch jobs processing variable-size inputs (e.g., large files), memory needs may vary per run. Either provision generously, use VPA recommendations (see <a href="07-vertical-pod-autoscaler.html">VPA page</a>), or implement input-size-based resource selection in your workflow engine. Pod OOM kills increment the backoff counter.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="keda-batch">KEDA for Event-Driven Job Scaling</h2>
+
+<p>KEDA (Kubernetes Event-Driven Autoscaling) can trigger Jobs based on queue depth — creating zero Jobs when the queue is empty and scaling to N Jobs as messages accumulate. This complements CronJob (time-based) with event-driven batch execution.</p>
+
+<pre><code class="language-yaml">apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: queue-processor
+  namespace: platform
+spec:
+  jobTargetRef:
+    parallelism: 5
+    completions: 5
+    backoffLimit: 3
+    template:
+      spec:
+        restartPolicy: Never
+        containers:
+          - name: processor
+            image: queue-processor:v2
+            resources:
+              requests:
+                cpu: 200m
+                memory: 256Mi
+  pollingInterval: 30        # Check queue every 30 seconds
+  maxReplicaCount: 50        # Max concurrent Jobs
+  scalingStrategy:
+    strategy: "accurate"     # Create one Job per queue message
+  triggers:
+    - type: redis
+      metadata:
+        address: redis-svc.platform.svc.cluster.local:6379
+        listName: work-queue
+        listLength: "5"      # One Job per 5 messages (batch processing)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="operational-commands">Operational Commands</h2>
+
+<pre><code class="language-bash"># --- Job operations ---
+# List jobs with status
+kubectl get jobs -n platform -o wide
+
+# Watch a job complete
+kubectl get job data-migration-v2 -w
+
+# Get job status details
+kubectl describe job data-migration-v2
+
+# Get job completion ratio
+kubectl get job data-migration-v2 \
+  -o jsonpath='{.status.succeeded}/{.spec.completions} succeeded'
+
+# View logs from all pods of a job
+kubectl logs -l job-name=data-migration-v2 --all-containers
+
+# Delete finished jobs older than 1 day (manual cleanup)
+kubectl get jobs -o json | jq -r \
+  '.items[] | select(.status.completionTime != null) |
+   select(now - (.status.completionTime | fromdateiso8601) > 86400) |
+   .metadata.name' | xargs -I{} kubectl delete job {}
+
+# --- CronJob operations ---
+# List cronjobs with schedule and last schedule time
+kubectl get cronjobs -o wide
+
+# Manually trigger a CronJob
+kubectl create job --from=cronjob/nightly-report nightly-report-manual-$(date +%s)
+
+# Suspend a CronJob (stop new jobs from being created)
+kubectl patch cronjob nightly-report -p '{"spec":{"suspend":true}}'
+
+# Resume a CronJob
+kubectl patch cronjob nightly-report -p '{"spec":{"suspend":false}}'
+
+# List Jobs created by a specific CronJob
+kubectl get jobs -l "batch.kubernetes.io/cronjob-name=nightly-report"
+
+# View CronJob events (missed schedules, etc.)
+kubectl describe cronjob nightly-report
+
+# --- Indexed Job debugging ---
+# Get pods for each index
+kubectl get pods -l job-name=process-shards -L batch.kubernetes.io/job-completion-index
+
+# Get logs for specific index
+kubectl logs -l batch.kubernetes.io/job-completion-index=3 -l job-name=process-shards</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="job-status">Job Status Fields</h2>
+
+<table>
+  <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>status.active</code></td><td>int</td><td>Number of currently running pods</td></tr>
+    <tr><td><code>status.succeeded</code></td><td>int</td><td>Number of successfully completed pods</td></tr>
+    <tr><td><code>status.failed</code></td><td>int</td><td>Number of failed pods (total, not just toward backoffLimit)</td></tr>
+    <tr><td><code>status.completedIndexes</code></td><td>string</td><td>Compact range notation of completed indexes (Indexed mode)</td></tr>
+    <tr><td><code>status.failedIndexes</code></td><td>string</td><td>Compact range notation of failed indexes (with backoffLimitPerIndex)</td></tr>
+    <tr><td><code>status.startTime</code></td><td>time</td><td>When the Job was acknowledged by the controller</td></tr>
+    <tr><td><code>status.completionTime</code></td><td>time</td><td>When the Job entered terminal state (succeeded or failed)</td></tr>
+    <tr><td><code>status.conditions</code></td><td>[]Condition</td><td><code>Complete</code>, <code>Failed</code>, <code>Suspended</code>, <code>FailureTarget</code></td></tr>
+    <tr><td><code>status.uncountedTerminatedPods</code></td><td>object</td><td>Pods that terminated but haven't been counted yet (transient)</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Labels</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>kube_job_status_active</code></td><td><code>job_name</code>, <code>namespace</code></td><td>Currently running pods in a Job</td></tr>
+    <tr><td><code>kube_job_status_succeeded</code></td><td><code>job_name</code>, <code>namespace</code></td><td>Successful completions</td></tr>
+    <tr><td><code>kube_job_status_failed</code></td><td><code>job_name</code>, <code>namespace</code></td><td>Cumulative failures</td></tr>
+    <tr><td><code>kube_job_complete</code></td><td><code>job_name</code>, <code>condition</code></td><td>1 when Job is complete (succeeded/failed)</td></tr>
+    <tr><td><code>kube_cronjob_next_schedule_time</code></td><td><code>cronjob</code>, <code>namespace</code></td><td>Unix timestamp of next scheduled execution</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Alerting Rules</h2>
+
+<pre><code class="language-yaml">groups:
+  - name: jobs-cronjobs
+    rules:
+      # Job failed
+      - alert: JobFailed
+        expr: kube_job_status_conditions{condition="Failed",status="true"} > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Job {{ $labels.namespace }}/{{ $labels.job_name }} has failed"
+          description: "Check logs: kubectl logs -l job-name={{ $labels.job_name }} -n {{ $labels.namespace }}"
+
+      # Job taking too long (no activeDeadlineSeconds set)
+      - alert: JobStalled
+        expr: |
+          kube_job_status_active > 0
+          and (time() - kube_job_status_start_time) > 7200
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Job {{ $labels.job_name }} has been running for > 2 hours"
+
+      # CronJob not scheduled on time
+      - alert: CronJobMissedSchedule
+        expr: |
+          time() - kube_cronjob_status_last_schedule_time > 3600
+          unless kube_cronjob_spec_suspend == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} missed last schedule"
+
+      # CronJob suspended unexpectedly
+      - alert: CronJobSuspended
+        expr: kube_cronjob_spec_suspend == 1
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "CronJob {{ $labels.cronjob }} has been suspended for > 1 hour"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="runbooks">Runbooks</h2>
+
+<h3>Job Stuck / Not Completing</h3>
+<pre><code class="language-bash"># 1. Check job status and conditions
+kubectl describe job &lt;job-name&gt; -n &lt;namespace&gt;
+
+# 2. Check pod states
+kubectl get pods -l job-name=&lt;job-name&gt; -n &lt;namespace&gt;
+
+# 3. Look at logs from failed pods
+kubectl logs -l job-name=&lt;job-name&gt; --previous -n &lt;namespace&gt;
+
+# 4. Check if backoffLimit exhausted
+kubectl get job &lt;job-name&gt; -o jsonpath='{.status.failed}/{.spec.backoffLimit}'
+
+# 5. Check for resource constraints (Pending pods)
+kubectl describe pods -l job-name=&lt;job-name&gt; -n &lt;namespace&gt; | grep -A5 Events</code></pre>
+
+<h3>CronJob Stopped Scheduling (100-missed limit)</h3>
+<pre><code class="language-bash"># Check events
+kubectl describe cronjob &lt;name&gt; -n &lt;namespace&gt; | grep -A20 Events
+
+# If "Too many missed start time" error:
+# Option 1: delete and recreate (loses history)
+kubectl delete cronjob &lt;name&gt; -n &lt;namespace&gt;
+kubectl apply -f cronjob.yaml
+
+# Option 2: add/reduce startingDeadlineSeconds to reset the window
+kubectl patch cronjob &lt;name&gt; -p '{"spec":{"startingDeadlineSeconds":300}}'
+
+# Option 3: check for controller-manager issues
+kubectl logs -n kube-system -l component=kube-controller-manager | grep cronjob</code></pre>
+
+<h3>IndexedJob Index Stuck</h3>
+<pre><code class="language-bash"># Which indexes are complete?
+kubectl get job &lt;job-name&gt; -o jsonpath='{.status.completedIndexes}'
+
+# Which indexes failed (with backoffLimitPerIndex)?
+kubectl get job &lt;job-name&gt; -o jsonpath='{.status.failedIndexes}'
+
+# Get pods for a specific index
+kubectl get pods -l job-name=&lt;job-name&gt;,batch.kubernetes.io/job-completion-index=5
+
+# Retry a specific index by setting backoffLimitPerIndex higher and re-patching
+# (Must be done before the index is in terminal Failed state)</code></pre>
+
+<h3>Manually Triggering a CronJob</h3>
+<pre><code class="language-bash"># One-shot manual run from CronJob template
+kubectl create job --from=cronjob/&lt;cronjob-name&gt; &lt;cronjob-name&gt;-manual-$(date +%s) \
+  -n &lt;namespace&gt;
+
+# Monitor the manually triggered Job
+kubectl get job -l "batch.kubernetes.io/cronjob-name=&lt;cronjob-name&gt;" \
+  -n &lt;namespace&gt; -w</code></pre>
+
+<h3>Job Pod Failures Due to Node Preemption</h3>
+<pre><code class="language-bash"># Check if DisruptionTarget condition is set on failed pods
+kubectl get pods -l job-name=&lt;job-name&gt; -o json | \
+  jq '.items[].status.conditions[] | select(.type=="DisruptionTarget")'
+
+# Solution: add podFailurePolicy to Ignore DisruptionTarget (see above)
+# This prevents preemption from consuming backoffLimit retries</code></pre>
+
+<h3>CronJob Job Not Appearing</h3>
+<pre><code class="language-bash"># Check if CronJob is suspended
+kubectl get cronjob &lt;name&gt; -o jsonpath='{.spec.suspend}'
+
+# Check concurrencyPolicy blocking new jobs
+kubectl get cronjob &lt;name&gt; -o jsonpath='{.spec.concurrencyPolicy}'
+kubectl get jobs -l "batch.kubernetes.io/cronjob-name=&lt;name&gt;" --sort-by=.metadata.creationTimestamp
+
+# Check controller-manager logs for scheduling decisions
+kubectl logs -n kube-system -l component=kube-controller-manager --tail=200 | grep &lt;name&gt;</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Always set <code>activeDeadlineSeconds</code></strong> — without it, a hung Job runs forever and its pods accumulate. Set it to 2–3× the expected runtime.</li>
+  <li><strong>Use <code>ttlSecondsAfterFinished</code></strong> to prevent Job accumulation. Even with CronJob history limits, standalone Jobs need explicit cleanup.</li>
+  <li><strong>Set <code>backoffLimit: 0</code> for non-idempotent operations</strong> (schema migrations, one-time data fixes). Retrying a migration that partially ran can corrupt data.</li>
+  <li><strong>Add <code>podFailurePolicy</code> with <code>DisruptionTarget: Ignore</code></strong> on any Job that runs on spot or preemptible nodes — prevents spot reclaims from wasting retry budget.</li>
+  <li><strong>Use Indexed completion mode for sharded workloads</strong> — deterministic index-to-shard mapping eliminates distributed coordination overhead.</li>
+  <li><strong>Use <code>backoffLimitPerIndex</code> for large Indexed jobs</strong> — prevents one hot shard from exhausting global retries.</li>
+  <li><strong>Never set <code>concurrencyPolicy: Replace</code> on stateful jobs</strong> — the in-flight job is deleted without waiting for graceful termination. Only safe for truly idempotent, stateless work.</li>
+  <li><strong>Set explicit <code>timeZone</code> on CronJobs</strong> — UTC-only schedules create operational confusion for teams in non-UTC zones; DST errors cause missed or doubled runs.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="comparison">Job vs CronJob vs Deployment</h2>
+
+<table>
+  <thead><tr><th>Dimension</th><th>Job</th><th>CronJob</th><th>Deployment</th></tr></thead>
+  <tbody>
+    <tr><td>Lifecycle</td><td>Run-to-completion</td><td>Recurring run-to-completion</td><td>Long-running (always on)</td></tr>
+    <tr><td>Pod restartPolicy</td><td>Never or OnFailure</td><td>Never or OnFailure</td><td>Always</td></tr>
+    <tr><td>Completion tracking</td><td>Yes (succeeded count)</td><td>Yes (per-Job)</td><td>No (desired replicas)</td></tr>
+    <tr><td>Scheduling</td><td>Immediate on creation</td><td>Time-based (cron)</td><td>Continuous</td></tr>
+    <tr><td>History</td><td>TTL or manual</td><td>successfulJobsHistoryLimit</td><td>ReplicaSet revisions</td></tr>
+    <tr><td>Parallelism</td><td>spec.parallelism</td><td>Via Job template</td><td>spec.replicas</td></tr>
+    <tr><td>Failure semantics</td><td>backoffLimit, podFailurePolicy</td><td>Inherited from Job</td><td>Restart controller</td></tr>
+  </tbody>
+</table>
+
+</div><!-- content-area -->
+
+<button class="back-to-top" id="back-to-top">↑ Top</button>
+</div><!-- main-content -->
+
+<!-- TOC -->
+<nav class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#job-controller">Job Controller Mechanics</a>
+  <a href="#job-spec">Job Spec Anatomy</a>
+  <a href="#completion-modes">Completion Modes</a>
+  <a href="#failure-policy">Pod Failure Policy</a>
+  <a href="#backoff-per-index">Per-Index Backoff</a>
+  <a href="#suspend-resume">Suspend &amp; Resume</a>
+  <a href="#ttl-cleanup">TTL-based Cleanup</a>
+  <a href="#pod-replacement">Pod Replacement Policy</a>
+  <a href="#job-patterns">Job Patterns</a>
+  <a href="#sidecar-problem">Sidecar Termination</a>
+  <a href="#cronjob">CronJob</a>
+  <a href="#cronjob-spec">CronJob Spec</a>
+  <a href="#cron-schedule">Schedule Syntax</a>
+  <a href="#timezone">Time Zones</a>
+  <a href="#concurrency-policy">Concurrency Policy</a>
+  <a href="#missed-schedules">Missed Schedules</a>
+  <a href="#history-limits">History Limits</a>
+  <a href="#batch-resources">Resource Management</a>
+  <a href="#keda-batch">KEDA Scaling</a>
+  <a href="#operational-commands">Operational Commands</a>
+  <a href="#job-status">Job Status Fields</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#alerts">Alerting Rules</a>
+  <a href="#runbooks">Runbooks</a>
+  <a href="#best-practices">Best Practices</a>
+  <a href="#comparison">Comparison Table</a>
+</nav>
+</div><!-- layout -->
+
+<script>
+// Theme
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+
+// Hamburger
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// Back to top (scroll listener on main-content)
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => {
+  btt.classList.toggle('visible', main.scrollTop > 400);
+});
+btt.addEventListener('click', () => main.scrollTo({top: 0, behavior: 'smooth'}));
+
+// Copy buttons
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText || pre.innerText);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+
+// TOC active state
+const tocLinks = document.querySelectorAll('.toc-panel a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, {root: main, threshold: 0.2});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+
+// Sidebar filter
+document.getElementById('nav-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

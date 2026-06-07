@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pod Disruption Budgets | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.main-content{margin-left:var(--sidebar-w);flex:1;padding:0;overflow-y:auto;height:100vh;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);position:fixed;top:0;right:0;height:100vh;overflow-y:auto;padding:24px 16px;}
+.content-area{max-width:900px;margin:0 auto;padding:40px 48px 80px;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-weight:600;font-size:16px;flex:1;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);cursor:pointer;padding:6px 12px;border-radius:6px;font-size:13px;}
+.back-to-top{position:fixed;bottom:32px;right:calc(var(--toc-w) + 16px);background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50;}
+.back-to-top.visible{opacity:1;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;color:var(--text2);}
+.sidebar-search{margin:12px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:calc(100% - 24px);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:6px 16px 6px 24px;font-size:13px;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover,.nav-section a.active{background:var(--bg3);color:var(--accent);text-decoration:none;}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover,.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);text-decoration:none;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-top:8px;}
+h3{font-size:17px;font-weight:600;margin:32px 0 12px;}
+h4{font-size:15px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{padding-left:24px;margin-bottom:16px;color:var(--text2);}
+li{margin-bottom:4px;}
+.subtitle{font-size:18px;color:var(--text2);margin-bottom:32px;}
+.meta{display:flex;gap:16px;margin-bottom:40px;flex-wrap:wrap;}
+.meta-tag{background:var(--bg3);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--text2);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;margin-bottom:24px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;line-height:1.7;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--text);border:1px solid var(--border);}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:16px 20px;margin-bottom:24px;border-left:4px solid;}
+.callout-warn{background:#d2992218;border-color:var(--yellow);}
+.callout-warn strong{color:var(--yellow);}
+.callout-danger{background:#f8514918;border-color:var(--red);}
+.callout-danger strong{color:var(--red);}
+.callout-info{background:#58a6ff18;border-color:var(--accent);}
+.callout-info strong{color:var(--accent);}
+.callout-success{background:#3fb95018;border-color:var(--green);}
+.callout-success strong{color:var(--green);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.section-divider{border:none;border-top:1px solid var(--border);margin:48px 0;}
+.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;margin-bottom:24px;color:var(--text2);}
+@media(max-width:1200px){.toc-panel{display:none;}.main-content{margin-left:var(--sidebar-w);}.back-to-top{right:16px;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.content-area{padding:24px 20px 60px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">Kubernetes Docs</div>
+  <input class="sidebar-search" id="nav-search" placeholder="Filter navigation..." type="text">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Kubernetes Overview</a>
+    <a href="../01-getting-started/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/02-control-plane-components.html">Control Plane Components</a>
+    <a href="../01-getting-started/03-node-components.html">Node Components</a>
+    <a href="../01-getting-started/04-api-server-deep-dive.html">API Server Deep Dive</a>
+    <a href="../01-getting-started/05-etcd.html">etcd</a>
+    <a href="../01-getting-started/06-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../02-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../02-networking/01-services.html">Services</a>
+    <a href="../02-networking/02-ingress.html">Ingress</a>
+    <a href="../02-networking/03-network-policies.html">Network Policies</a>
+    <a href="../02-networking/04-dns.html">DNS</a>
+    <a href="../02-networking/05-cni-plugins.html">CNI Plugins</a>
+    <a href="../02-networking/06-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../03-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../03-configuration/01-secrets.html">Secrets</a>
+    <a href="../03-configuration/02-resource-quotas.html">Resource Quotas</a>
+    <a href="../03-configuration/03-limit-ranges.html">Limit Ranges</a>
+    <a href="../03-configuration/04-namespaces.html">Namespaces</a>
+    <a href="../03-configuration/05-labels-annotations.html">Labels &amp; Annotations</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">Persistent Volumes</a>
+    <a href="../04-storage/02-storage-classes.html">Storage Classes</a>
+    <a href="../04-storage/03-volume-types.html">Volume Types</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+    <a href="../04-storage/05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="../04-storage/06-stateful-sets-storage.html">StatefulSet Storage</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html" class="active">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="main-content" id="main-content">
+<div class="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span class="topbar-title">Pod Disruption Budgets</span>
+  <button class="theme-btn" id="theme-btn">Light Mode</button>
+</div>
+
+<div class="content-area">
+
+<details class="coverage">
+  <summary>📋 Page Coverage Checklist</summary>
+  <div class="coverage-body">
+    <li>PDB purpose: voluntary vs involuntary disruptions</li>
+    <li>spec.minAvailable: integer and percentage semantics</li>
+    <li>spec.maxUnavailable: integer and percentage semantics</li>
+    <li>Eviction API: policy/v1/evictions subresource, 429 response</li>
+    <li>kubectl drain: --ignore-daemonsets, --delete-emptydir-data, --force, --grace-period</li>
+    <li>PDB status fields: currentHealthy, desiredHealthy, disruptionsAllowed, expectedPods</li>
+    <li>unhealthyPodEvictionPolicy (1.26+): IfHealthyBudget vs AlwaysAllow</li>
+    <li>PDB for quorum systems: etcd, Kafka, ZooKeeper examples</li>
+    <li>maxUnavailable: 0 + RollingUpdate deadlock and resolution</li>
+    <li>PDB with Deployment RollingUpdate: maxSurge requirement</li>
+    <li>Cluster Autoscaler: CA respects PDBs on scale-down, stuck node scenario</li>
+    <li>VPA Updater: PDB as eviction guard</li>
+    <li>Zero-disruption: minAvailable: 100% semantics and use case</li>
+    <li>Multi-workload PDB selectors and namespace scope</li>
+    <li>5 metrics + 4 alerting rules + 5 runbooks + 8 best practices</li>
+  </div>
+</details>
+
+<h1>Pod Disruption Budgets</h1>
+<p class="subtitle">Limit voluntary disruptions to maintain availability during drains, upgrades, and autoscaling</p>
+<div class="meta">
+  <span class="meta-tag">policy/v1</span>
+  <span class="meta-tag">GA 1.21</span>
+  <span class="meta-tag">Platform Engineer</span>
+</div>
+
+<p>A PodDisruptionBudget (PDB) constrains how many pods of a workload can be simultaneously unavailable due to <em>voluntary disruptions</em> — node drains, cluster upgrades, VPA evictions, Cluster Autoscaler scale-down, and any other caller of the Eviction API. PDBs do not protect against <em>involuntary disruptions</em> (node hardware failure, kernel panic, OOM kill) — those are handled by replica counts, topology spread, and readiness probes.</p>
+
+<!-- ============================================================ -->
+<h2 id="voluntary-involuntary">Voluntary vs Involuntary Disruptions</h2>
+
+<table>
+  <thead><tr><th>Disruption type</th><th>Category</th><th>PDB protects?</th><th>Examples</th></tr></thead>
+  <tbody>
+    <tr><td>Node drain (<code>kubectl drain</code>)</td><td>Voluntary</td><td>Yes</td><td>Node maintenance, OS upgrade, cluster upgrade</td></tr>
+    <tr><td>Cluster Autoscaler scale-down</td><td>Voluntary</td><td>Yes</td><td>Removing underutilized nodes</td></tr>
+    <tr><td>VPA Updater eviction</td><td>Voluntary</td><td>Yes</td><td>Right-sizing resource requests</td></tr>
+    <tr><td>kubectl delete pod</td><td>Voluntary</td><td>Yes — uses Eviction API if specified</td><td>Manual intervention</td></tr>
+    <tr><td>Deployment RollingUpdate</td><td>Voluntary</td><td>Partial — HPA and kube-controller use spec, not Eviction API</td><td>kubectl rollout</td></tr>
+    <tr><td>Node hardware failure</td><td>Involuntary</td><td>No</td><td>Power outage, NIC failure</td></tr>
+    <tr><td>OOM kill</td><td>Involuntary</td><td>No</td><td>Container exceeds memory limit</td></tr>
+    <tr><td>Kernel panic / node NotReady</td><td>Involuntary</td><td>No</td><td>OS crash, kubelet failure</td></tr>
+    <tr><td>Pod eviction for resource pressure</td><td>Involuntary</td><td>No</td><td>kubelet evicts BestEffort/Burstable pods</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="pdb-spec">PDB Spec</h2>
+
+<pre><code class="language-yaml">apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-server-pdb
+  namespace: production
+spec:
+  # --- Availability constraint (choose one: minAvailable OR maxUnavailable) ---
+
+  minAvailable: 2        # At least 2 pods must be healthy before eviction is allowed
+  # OR
+  # maxUnavailable: 1    # At most 1 pod can be unavailable at a time
+  # OR percentages:
+  # minAvailable: "80%"  # At least 80% of pods must be healthy
+  # maxUnavailable: "20%"
+
+  # --- Pod selector ---
+  selector:
+    matchLabels:
+      app: api-server
+    # Optional: matchExpressions for complex selectors
+    # matchExpressions:
+    #   - key: environment
+    #     operator: In
+    #     values: [production, staging]
+
+  # --- Unhealthy pod policy (1.26+) ---
+  unhealthyPodEvictionPolicy: IfHealthyBudget  # IfHealthyBudget (default) | AlwaysAllow</code></pre>
+
+<div class="callout callout-warn">
+  <strong>minAvailable and maxUnavailable are mutually exclusive</strong><br>
+  You cannot set both in the same PDB. Choose based on how you think about the constraint: <code>minAvailable</code> for quorum-based systems ("always keep N healthy"), <code>maxUnavailable</code> for rolling operations ("allow at most N down at once").
+</div>
+
+<!-- ============================================================ -->
+<h2 id="semantics">minAvailable vs maxUnavailable Semantics</h2>
+
+<div class="diagram">
+Deployment: replicas=5, selector: app=api-server
+
+  PDB: minAvailable: 3
+  ├─ currentHealthy=5, disruptionsAllowed=2
+  ├─ Evict pod-1 → currentHealthy=4, disruptionsAllowed=1
+  ├─ Evict pod-2 → currentHealthy=3, disruptionsAllowed=0
+  └─ Evict pod-3 → BLOCKED (429 Too Many Requests)
+
+  PDB: maxUnavailable: 2
+  ├─ currentHealthy=5, disruptionsAllowed=2  (same result for replicas=5)
+  ├─ If replicas scale to 10 → disruptionsAllowed=2  (absolute)
+  │   vs minAvailable: "60%" → disruptionsAllowed=4  (percentage scales with replicas)
+
+  Percentage example with replicas=10:
+  ├─ minAvailable: "80%" → minAvailable=ceil(10×0.8)=8 → disruptionsAllowed=2
+  └─ maxUnavailable: "20%" → maxUnavailable=floor(10×0.2)=2 → disruptionsAllowed=2
+</div>
+
+<table>
+  <thead><tr><th>Constraint</th><th>Replicas=3</th><th>Replicas=5</th><th>Replicas=10</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>minAvailable: 2</code></td><td>1 allowed</td><td>3 allowed</td><td>8 allowed</td><td>Absolute — scales with replicas</td></tr>
+    <tr><td><code>minAvailable: "60%"</code></td><td>1 allowed (3-ceil(1.8))</td><td>3 allowed (5-3)</td><td>4 allowed (10-6)</td><td>Percentage rounds minAvailable up</td></tr>
+    <tr><td><code>maxUnavailable: 1</code></td><td>1 allowed</td><td>1 allowed</td><td>1 allowed</td><td>Absolute — does not scale</td></tr>
+    <tr><td><code>maxUnavailable: "20%"</code></td><td>0 allowed (floor(0.6))</td><td>1 allowed (floor(1))</td><td>2 allowed (floor(2))</td><td>Percentage rounds maxUnavailable down (conservative)</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-info">
+  <strong>Percentage rounding direction</strong><br>
+  <code>minAvailable</code> percentages round <strong>up</strong> (more conservative — more pods must stay healthy). <code>maxUnavailable</code> percentages round <strong>down</strong> (more conservative — fewer pods can be removed). For small replica counts, <code>maxUnavailable: "20%"</code> with 3 replicas allows 0 disruptions (<code>floor(0.6) = 0</code>) — effectively freezing all evictions. Verify behavior at your minimum replica count.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="eviction-api">Eviction API</h2>
+
+<p>PDBs are enforced through the <strong>Eviction API</strong> (<code>policy/v1/evictions</code>), not through the Delete API. Any caller that wants to respect PDBs must use eviction rather than deletion.</p>
+
+<div class="diagram">
+Eviction API flow:
+
+  Caller (kubectl drain, CA, VPA, etc.)
+       │
+       ▼
+  POST /api/v1/namespaces/{ns}/pods/{pod}/eviction
+       │
+       ▼
+  kube-apiserver checks all PDBs selecting this pod:
+  ├─ Is disruption budget satisfied? → 200 OK (pod eviction proceeds)
+  └─ Budget would be violated? → 429 Too Many Requests
+         body: {"code":429,"reason":"TooManyRequests",
+                "message":"Cannot evict pod as it would violate PDB"}
+
+  Caller must retry on 429 — no automatic retry by apiserver
+  kubectl drain retries with exponential backoff automatically
+</div>
+
+<pre><code class="language-bash"># Evict a pod via the Eviction API (PDB-aware)
+kubectl delete pod &lt;pod-name&gt; --grace-period=30
+# kubectl delete uses the Eviction API by default since 1.22
+
+# Raw eviction API call
+kubectl proxy &amp;
+curl -X POST \
+  "http://localhost:8001/api/v1/namespaces/production/pods/api-server-xyz/eviction" \
+  -H "Content-Type: application/json" \
+  -d '{"apiVersion":"policy/v1","kind":"Eviction","metadata":{"name":"api-server-xyz","namespace":"production"}}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="node-drain">kubectl drain and PDBs</h2>
+
+<p><code>kubectl drain</code> cordons the node (marks it unschedulable) then evicts all pods via the Eviction API, respecting PDBs automatically. It retries on 429 responses until the PDB allows the eviction or a timeout is reached.</p>
+
+<pre><code class="language-bash"># Standard drain — respects PDBs, graceful termination
+kubectl drain node-1 \
+  --ignore-daemonsets \          # Don't evict DaemonSet pods (they reschedule on same node)
+  --delete-emptydir-data \       # Allow eviction of pods with emptyDir volumes
+  --grace-period=60 \            # Override pod's terminationGracePeriodSeconds
+  --timeout=600s                 # Give up after 10 minutes total
+
+# Check what would be drained (dry run)
+kubectl drain node-1 --ignore-daemonsets --dry-run
+
+# Force drain — bypasses PDBs (DANGEROUS — use only for node replacement)
+kubectl drain node-1 --ignore-daemonsets --force --disable-eviction
+# --disable-eviction: uses DELETE instead of Eviction API (bypasses PDB checks)
+# Use only when: node is already NotReady, or you accept the availability risk</code></pre>
+
+<div class="callout callout-danger">
+  <strong>--force and --disable-eviction bypass PDBs</strong><br>
+  <code>--force</code> allows deletion of pods not managed by a controller (orphan pods). <code>--disable-eviction</code> switches from the Eviction API to direct deletion, entirely bypassing PDB checks. Both flags can cause outages if used on healthy nodes with carefully configured PDBs. Reserve them for disaster recovery scenarios where the node is already failed.
+</div>
+
+<pre><code class="language-bash"># Drain stuck due to PDB — diagnose before forcing
+# See which PDB is blocking
+kubectl get pdb -n production
+kubectl describe pdb api-server-pdb -n production
+
+# See which pods are selected
+kubectl get pods -n production -l app=api-server
+
+# Check if some pods are not Ready (contributing to low currentHealthy)
+kubectl get pods -n production -l app=api-server \
+  -o custom-columns=NAME:.metadata.name,READY:.status.conditions[?(@.type=="Ready")].status
+
+# If pods are stuck not-Ready, fix them first before draining
+# Or use unhealthyPodEvictionPolicy: AlwaysAllow to allow eviction of unhealthy pods</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="pdb-status">PDB Status Fields</h2>
+
+<pre><code class="language-bash">kubectl get pdb -n production
+# NAME             MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+# api-server-pdb   2               N/A               3                     14d
+
+kubectl describe pdb api-server-pdb -n production</code></pre>
+
+<table>
+  <thead><tr><th>Status field</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>status.currentHealthy</code></td><td>Number of pods matching selector that are currently Ready</td></tr>
+    <tr><td><code>status.desiredHealthy</code></td><td>Minimum number of pods that must be healthy (derived from minAvailable / maxUnavailable)</td></tr>
+    <tr><td><code>status.disruptionsAllowed</code></td><td><code>currentHealthy - desiredHealthy</code> — how many evictions are currently permitted</td></tr>
+    <tr><td><code>status.expectedPods</code></td><td>Total pods matching the selector (whether healthy or not)</td></tr>
+    <tr><td><code>status.disruptedPods</code></td><td>Pods that have been evicted but not yet removed from the endpoint list</td></tr>
+    <tr><td><code>status.observedGeneration</code></td><td>Generation of the PDB spec this status reflects</td></tr>
+    <tr><td><code>status.conditions[].type: DisruptionAllowed</code></td><td><code>True</code> if at least 1 disruption is currently allowed</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># Watch PDB status in real time during drain
+watch kubectl get pdb -n production
+
+# Get disruptionsAllowed programmatically
+kubectl get pdb api-server-pdb -n production \
+  -o jsonpath='{.status.disruptionsAllowed}'
+
+# Get all PDB conditions
+kubectl get pdb api-server-pdb -n production \
+  -o jsonpath='{.status.conditions}' | jq .</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="unhealthy-policy">unhealthyPodEvictionPolicy (1.26+)</h2>
+
+<p>This field controls what happens when pods are already unhealthy (not Ready) and a PDB exists. Without it, unhealthy pods count toward the budget — even though they're already broken — blocking eviction of nodes that need maintenance.</p>
+
+<table>
+  <thead><tr><th>Policy</th><th>Behavior</th><th>Use case</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>IfHealthyBudget</code> (default)</td>
+      <td>Unhealthy pods can be evicted only if <code>currentHealthy &gt; desiredHealthy</code> (budget has room). If all pods are unhealthy, none can be evicted.</td>
+      <td>Strict availability guarantee — never evict when below the healthy threshold</td>
+    </tr>
+    <tr>
+      <td><code>AlwaysAllow</code></td>
+      <td>Unhealthy pods can always be evicted regardless of budget state</td>
+      <td>Allow node drain to proceed even when pods are already broken (e.g., stuck CrashLoopBackOff blocking maintenance)</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre><code class="language-yaml">spec:
+  minAvailable: 2
+  unhealthyPodEvictionPolicy: AlwaysAllow  # Unblock drains when pods are already broken
+  selector:
+    matchLabels:
+      app: api-server</code></pre>
+
+<div class="callout callout-warn">
+  <strong>AlwaysAllow can cause further degradation</strong><br>
+  With <code>AlwaysAllow</code>, if 3 of 5 pods are already in CrashLoopBackOff and a node drain evicts the remaining 2 healthy pods, you have 0 healthy pods serving traffic. Use <code>AlwaysAllow</code> only when the alternative (nodes stuck in maintenance limbo) is worse than the availability risk.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="quorum-systems">PDB for Quorum Systems</h2>
+
+<p>Distributed consensus systems (etcd, Kafka, ZooKeeper, PostgreSQL with Patroni) require a strict quorum of healthy members. PDBs enforce this during maintenance.</p>
+
+<h3 id="etcd-pdb">etcd (3-node cluster — needs 2 for quorum)</h3>
+
+<pre><code class="language-yaml">apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: etcd-pdb
+  namespace: kube-system
+spec:
+  minAvailable: 2       # 2 of 3 = quorum maintained
+  selector:
+    matchLabels:
+      component: etcd</code></pre>
+
+<h3 id="kafka-pdb">Kafka (3 brokers — ISR-based availability)</h3>
+
+<pre><code class="language-yaml">apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-pdb
+  namespace: platform
+spec:
+  maxUnavailable: 1     # Only 1 broker down at a time
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: kafka
+      app.kubernetes.io/instance: production</code></pre>
+
+<h3 id="zookeeper-pdb">ZooKeeper (5-node — needs 3 for quorum)</h3>
+
+<pre><code class="language-yaml">apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: zookeeper-pdb
+  namespace: platform
+spec:
+  minAvailable: 3       # 3 of 5 = quorum (majority)
+  selector:
+    matchLabels:
+      app: zookeeper</code></pre>
+
+<h3 id="postgres-pdb">PostgreSQL with Patroni (1 primary + 2 replicas)</h3>
+
+<pre><code class="language-yaml"># Primary must never be disrupted alone — use minAvailable: 2 to ensure
+# at least one replica is present before eviction is allowed
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: databases
+spec:
+  minAvailable: 2       # 2 of 3 — Patroni can failover if primary is drained
+  selector:
+    matchLabels:
+      app: patroni-cluster</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="rollingupdate-deadlock">RollingUpdate + PDB Deadlock</h2>
+
+<p>A common misconfiguration: <code>maxUnavailable: 0</code> in the PDB combined with a Deployment's <code>RollingUpdate</code> strategy can create a deadlock where the rollout cannot proceed.</p>
+
+<div class="diagram">
+Deadlock scenario:
+
+  Deployment: replicas=3, maxUnavailable=0, maxSurge=1
+  PDB: maxUnavailable: 0
+
+  RollingUpdate creates new pod (replicas now 4) ✓
+  RollingUpdate wants to delete old pod → Eviction API
+  PDB: maxUnavailable=0, currentHealthy=3, disruptionsAllowed=0
+  └─ BLOCKED: cannot evict any old pod
+
+  Rollout stuck indefinitely at 4/3 pods
+
+Resolution options:
+  1. Set PDB maxUnavailable: 1  (most common fix)
+  2. Set Deployment maxUnavailable: 1 (allow replacement without eviction)
+  3. Use minAvailable: N-1 instead of maxUnavailable: 0
+  4. Temporarily delete PDB during rollout (not recommended for prod)
+</div>
+
+<pre><code class="language-yaml"># WRONG — deadlocks RollingUpdate when all pods are healthy
+spec:
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: api-server
+
+# CORRECT — allows 1 pod down during rollout while maintaining 2 healthy
+spec:
+  minAvailable: 2        # For replicas=3: allows 1 disruption
+  selector:
+    matchLabels:
+      app: api-server</code></pre>
+
+<div class="callout callout-info">
+  <strong>Deployment controller uses Eviction API for rolling updates</strong><br>
+  The Deployment controller does call the Eviction API when deleting pods during a rolling update (since Kubernetes 1.22). This means PDBs are respected during Deployments. If your PDB prevents any eviction, your rolling update will stall. Ensure <code>minAvailable &lt; currentReplicas</code> (or equivalently, <code>maxUnavailable &gt;= 1</code>) so the rollout can always make progress.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cluster-autoscaler">Cluster Autoscaler &amp; PDBs</h2>
+
+<p>The Cluster Autoscaler (CA) respects PDBs when deciding whether to scale down underutilized nodes. A node is safe to remove only if all pods on it can be evicted without violating their PDBs.</p>
+
+<div class="diagram">
+CA scale-down with PDB:
+
+  Node-3: underutilized (CPU < 50% for 10min)
+  Pods on Node-3:
+    ├─ api-server-pod-4  (PDB: minAvailable=2, currentHealthy=3) → eviction OK
+    └─ db-pod-2          (PDB: minAvailable=2, currentHealthy=2) → eviction BLOCKED
+
+  CA decision: Node-3 cannot be removed (db-pod-2 eviction blocked by PDB)
+  CA marks Node-3 as "not safe for removal" → tries again later
+
+  → If db-pod is stuck/unhealthy and PDB policy=IfHealthyBudget:
+    CA is stuck permanently until db-pod recovers or PDB is relaxed
+</div>
+
+<pre><code class="language-bash"># Check why CA isn't scaling down a node
+kubectl get nodes -o wide
+kubectl describe node &lt;node&gt; | grep -i "scale-down\|autoscaler"
+
+# Check CA logs
+kubectl logs -n kube-system -l app=cluster-autoscaler --tail=100 | grep -i "pdb\|blocked\|not safe"
+
+# List all nodes CA considers safe to remove
+kubectl get nodes -o json | \
+  jq '.items[] | select(.metadata.annotations["cluster-autoscaler.kubernetes.io/scale-down-disabled"] != "true") | .metadata.name'</code></pre>
+
+<div class="callout callout-warn">
+  <strong>Stuck nodes due to PDB + unhealthy pods</strong><br>
+  If a pod is in CrashLoopBackOff and its PDB uses <code>IfHealthyBudget</code> with all healthy copies at minimum, CA cannot remove the node hosting that broken pod. The broken pod prevents CA from evicting it (budget depleted), but the pod isn't self-healing. Resolution: fix the pod, use <code>unhealthyPodEvictionPolicy: AlwaysAllow</code>, or temporarily annotate the node with <code>cluster-autoscaler.kubernetes.io/scale-down-disabled: "true"</code> and handle it manually.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="zero-disruption">Zero-Disruption: minAvailable: 100%</h2>
+
+<p>Setting <code>minAvailable: "100%"</code> means no pod can ever be voluntarily disrupted — all pods must remain healthy at all times. This is rarely the right choice but is appropriate for:</p>
+<ul>
+  <li>Leader-elected singletons that cannot tolerate even brief downtime</li>
+  <li>During critical business periods (e.g., no deploys/drains during Black Friday)</li>
+  <li>Workloads with very long startup times where replacement would take too long</li>
+</ul>
+
+<pre><code class="language-yaml">spec:
+  minAvailable: "100%"    # Zero disruptions allowed
+  selector:
+    matchLabels:
+      app: payment-processor</code></pre>
+
+<div class="callout callout-danger">
+  <strong>100% minAvailable blocks all node maintenance</strong><br>
+  With <code>minAvailable: 100%</code>, you cannot drain any node hosting a pod of this workload unless you first manually delete a pod (bypassing the PDB), do a rolling restart before drain, or scale up to add an extra pod on a different node. Cluster upgrades, node replacements, and autoscaler activity will all be blocked. Only use this for true zero-tolerance workloads with a documented maintenance procedure.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="multi-workload">Multi-Workload PDB Selectors</h2>
+
+<p>A single PDB can cover multiple Deployments/StatefulSets if they share a common label. This is useful for cross-workload availability guarantees (e.g., keep at least 3 cache nodes across multiple cache Deployments).</p>
+
+<pre><code class="language-yaml"># PDB covering two Deployments sharing the tier=cache label
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cache-tier-pdb
+  namespace: production
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      tier: cache        # Matches pods from both redis-primary and redis-replica Deployments</code></pre>
+
+<div class="callout callout-warn">
+  <strong>Broad selectors reduce disruption allowance</strong><br>
+  If a PDB selects 10 pods across multiple workloads with <code>minAvailable: 8</code>, only 2 disruptions are allowed across all 10 pods — even if the disruption is on different workloads. This can be unexpectedly restrictive. Prefer per-workload PDBs for independent availability guarantees.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pdb-with-hpa">PDB + HPA Interaction</h2>
+
+<p>When HPA is active, the replica count fluctuates. A PDB with an absolute <code>minAvailable</code> value may become overly or insufficiently restrictive:</p>
+
+<pre><code class="language-yaml"># With HPA: prefer percentage-based PDB to track replica changes
+spec:
+  minAvailable: "66%"    # Always keep 2/3 of current replicas healthy
+                         # With replicas=3: min=2; with replicas=9: min=6
+  selector:
+    matchLabels:
+      app: api-server
+
+# Avoid absolute minAvailable with HPA if replicas can scale below minAvailable:
+# minAvailable: 5 with HPA minReplicas=3 → disruptionsAllowed < 0 → always blocked</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="operational-commands">Operational Commands</h2>
+
+<pre><code class="language-bash"># List all PDBs across namespaces
+kubectl get pdb -A
+
+# Check which PDB is blocking an eviction
+kubectl get events -n &lt;namespace&gt; --field-selector reason=FailedKillPod
+kubectl get events -n &lt;namespace&gt; | grep -i "pdb\|disruption\|eviction"
+
+# Watch PDB during drain
+watch -n2 "kubectl get pdb -n production && echo && kubectl get pods -n production -l app=api-server"
+
+# Test if a specific pod can be evicted (dry run)
+kubectl delete pod &lt;pod&gt; -n &lt;namespace&gt; --dry-run=server
+
+# Check disruptions allowed for all PDBs in a namespace
+kubectl get pdb -n production -o jsonpath=\
+'{range .items[*]}{.metadata.name}{" allowed:"}{.status.disruptionsAllowed}{"\n"}{end}'
+
+# Temporarily increase PDB disruption budget (e.g., during planned maintenance)
+kubectl patch pdb api-server-pdb -n production --type=merge \
+  -p '{"spec":{"minAvailable":1}}'
+# Restore after maintenance:
+kubectl patch pdb api-server-pdb -n production --type=merge \
+  -p '{"spec":{"minAvailable":2}}'
+
+# Delete a PDB to unblock stuck drain (emergency only)
+kubectl delete pdb api-server-pdb -n production
+# After drain completes:
+kubectl apply -f pdb.yaml</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="pdb-anti-patterns">Common Anti-patterns</h2>
+
+<table>
+  <thead><tr><th>Anti-pattern</th><th>Problem</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>maxUnavailable: 0</code> on multi-replica Deployment</td>
+      <td>Blocks all voluntary evictions including rollouts</td>
+      <td>Use <code>minAvailable: N-1</code> or <code>maxUnavailable: 1</code></td>
+    </tr>
+    <tr>
+      <td>Absolute <code>minAvailable</code> ≥ HPA <code>minReplicas</code></td>
+      <td>When HPA scales down to <code>minReplicas</code>, PDB is immediately at 0 disruptions — blocks all drains</td>
+      <td>Use percentage-based PDB or ensure absolute value &lt; HPA <code>minReplicas</code></td>
+    </tr>
+    <tr>
+      <td>No PDB on StatefulSet with quorum</td>
+      <td>Node drain can remove multiple members simultaneously, breaking consensus</td>
+      <td>Add PDB with <code>minAvailable: quorum_size</code></td>
+    </tr>
+    <tr>
+      <td>PDB selector matching 0 pods</td>
+      <td>PDB has no effect; evictions proceed unchecked</td>
+      <td>Verify selector with <code>kubectl get pods -l &lt;selector&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>minAvailable: 100%</code> without documented drain procedure</td>
+      <td>Node maintenance permanently blocked with no escape hatch</td>
+      <td>Document the emergency drain procedure; consider 99% or N-1</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Labels</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>kube_poddisruptionbudget_status_current_healthy</code></td><td><code>poddisruptionbudget</code>, <code>namespace</code></td><td>Currently healthy pods (vs desired)</td></tr>
+    <tr><td><code>kube_poddisruptionbudget_status_desired_healthy</code></td><td><code>poddisruptionbudget</code>, <code>namespace</code></td><td>Minimum required healthy pods</td></tr>
+    <tr><td><code>kube_poddisruptionbudget_status_disruptions_allowed</code></td><td><code>poddisruptionbudget</code>, <code>namespace</code></td><td>Current eviction budget remaining (0 = blocked)</td></tr>
+    <tr><td><code>kube_poddisruptionbudget_status_expected_pods</code></td><td><code>poddisruptionbudget</code>, <code>namespace</code></td><td>Total pods selected by this PDB</td></tr>
+    <tr><td><code>kube_poddisruptionbudget_status_observed_generation</code></td><td><code>poddisruptionbudget</code>, <code>namespace</code></td><td>Reconciliation lag detection</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Alerting Rules</h2>
+
+<pre><code class="language-yaml">groups:
+  - name: pdb
+    rules:
+      # PDB at zero disruptions for extended period (drain may be stuck)
+      - alert: PDBNoDisruptionsAllowed
+        expr: kube_poddisruptionbudget_status_disruptions_allowed == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PDB {{ $labels.namespace }}/{{ $labels.poddisruptionbudget }} has 0 disruptions allowed"
+          description: "Node drains, VPA evictions, and CA scale-down are blocked. Check pod health."
+
+      # PDB below desired healthy count (below minimum!)
+      - alert: PDBBelowDesiredHealthy
+        expr: |
+          kube_poddisruptionbudget_status_current_healthy
+          < kube_poddisruptionbudget_status_desired_healthy
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PDB {{ $labels.namespace }}/{{ $labels.poddisruptionbudget }} currentHealthy below desiredHealthy"
+          description: "Workload is already below its minimum availability threshold. All evictions blocked."
+
+      # PDB selecting no pods (misconfigured selector)
+      - alert: PDBSelectsNoPods
+        expr: kube_poddisruptionbudget_status_expected_pods == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PDB {{ $labels.namespace }}/{{ $labels.poddisruptionbudget }} selects 0 pods — check selector"
+
+      # Workload consistently at minimum replicas — PDB may be too tight
+      - alert: PDBAlwaysAtMinimum
+        expr: |
+          kube_poddisruptionbudget_status_disruptions_allowed == 0
+          and kube_poddisruptionbudget_status_current_healthy
+            == kube_poddisruptionbudget_status_desired_healthy
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "PDB {{ $labels.poddisruptionbudget }} has been at exactly minimum healthy for 1h — consider increasing replicas"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="runbooks">Runbooks</h2>
+
+<h3>Node Drain Stuck Due to PDB</h3>
+<pre><code class="language-bash"># 1. Identify which PDB is blocking
+kubectl get pdb -n &lt;namespace&gt; -o wide
+kubectl describe pdb &lt;pdb-name&gt; -n &lt;namespace&gt;
+
+# 2. Check current pod health
+kubectl get pods -n &lt;namespace&gt; -l &lt;pdb-selector&gt;
+
+# 3. If pods are not Ready — fix them first
+kubectl describe pods -n &lt;namespace&gt; -l &lt;pdb-selector&gt; | grep -A10 Events
+
+# 4. If pods are healthy but budget is 0 (replicas == minAvailable):
+#    Option A: Scale up replicas temporarily
+kubectl scale deployment &lt;name&gt; -n &lt;namespace&gt; --replicas=4
+
+#    Option B: Temporarily lower minAvailable
+kubectl patch pdb &lt;pdb&gt; -n &lt;namespace&gt; --type=merge -p '{"spec":{"minAvailable":1}}'
+kubectl drain &lt;node&gt; --ignore-daemonsets
+kubectl patch pdb &lt;pdb&gt; -n &lt;namespace&gt; --type=merge -p '{"spec":{"minAvailable":2}}'
+
+#    Option C: Emergency — delete PDB, drain, re-apply (production risk)
+kubectl delete pdb &lt;pdb&gt; -n &lt;namespace&gt;
+kubectl drain &lt;node&gt; --ignore-daemonsets
+kubectl apply -f pdb.yaml</code></pre>
+
+<h3>PDB Selecting No Pods (Misconfigured)</h3>
+<pre><code class="language-bash"># Verify selector
+kubectl get pdb &lt;name&gt; -n &lt;namespace&gt; -o jsonpath='{.spec.selector}'
+
+# Check pods with that selector
+kubectl get pods -n &lt;namespace&gt; -l &lt;label-key&gt;=&lt;label-value&gt;
+
+# Compare with Deployment selector
+kubectl get deployment &lt;name&gt; -n &lt;namespace&gt; -o jsonpath='{.spec.selector.matchLabels}'
+
+# Fix: update PDB selector to match Deployment labels
+kubectl patch pdb &lt;name&gt; -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"selector":{"matchLabels":{"app":"&lt;correct-app&gt;"}}}}'</code></pre>
+
+<h3>Cluster Autoscaler Stuck on Node with PDB</h3>
+<pre><code class="language-bash"># Check CA logs for PDB-related messages
+kubectl logs -n kube-system -l app=cluster-autoscaler | grep -i "pdb\|disruption\|not safe"
+
+# Check which pods on the node have PDBs
+NODE=&lt;node-name&gt;
+kubectl get pods --all-namespaces --field-selector spec.nodeName=$NODE \
+  -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}'
+
+# For each pod, check if there's a blocking PDB
+kubectl get pdb -A | grep -v "ALLOWED DISRUPTIONS: [1-9]"
+
+# If pod is unhealthy and blocking: use AlwaysAllow policy
+kubectl patch pdb &lt;pdb&gt; -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"unhealthyPodEvictionPolicy":"AlwaysAllow"}}'</code></pre>
+
+<h3>Rolling Update Deadlock</h3>
+<pre><code class="language-bash"># Check rollout status
+kubectl rollout status deployment &lt;name&gt; -n &lt;namespace&gt;
+
+# Check PDB status
+kubectl get pdb -n &lt;namespace&gt; -l app=&lt;name&gt;
+
+# If disruptionsAllowed=0 and rollout is stuck:
+# Temporarily increase allowed disruptions
+kubectl patch pdb &lt;pdb&gt; -n &lt;namespace&gt; --type=merge -p '{"spec":{"minAvailable":1}}'
+
+# Wait for rollout to progress
+kubectl rollout status deployment &lt;name&gt; -n &lt;namespace&gt; --timeout=300s
+
+# Restore after rollout
+kubectl patch pdb &lt;pdb&gt; -n &lt;namespace&gt; --type=merge -p '{"spec":{"minAvailable":2}}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Every production workload with ≥ 2 replicas should have a PDB</strong> — without one, a node drain can evict all pods simultaneously if they happen to land on the same node.</li>
+  <li><strong>Use <code>minAvailable: N-1</code> (not <code>maxUnavailable: 0</code>) for rolling-update compatibility</strong> — <code>maxUnavailable: 0</code> semantically sounds like "zero downtime" but deadlocks Deployment rollouts. <code>minAvailable: N-1</code> is equivalent for healthy workloads and allows progress.</li>
+  <li><strong>Use percentage-based PDBs when HPA manages replicas</strong> — absolute values can create a permanently-blocked budget if HPA scales down to the PDB's minimum. A percentage-based PDB scales with the current replica count.</li>
+  <li><strong>Set <code>unhealthyPodEvictionPolicy: AlwaysAllow</code> for workloads that can run with fewer instances</strong> — prevents broken pods from permanently blocking node maintenance. Pair with good alerting so you know when a pod is unhealthy.</li>
+  <li><strong>For quorum systems, set <code>minAvailable</code> to exactly the quorum size</strong> — for a 3-node etcd, <code>minAvailable: 2</code>; for a 5-node ZooKeeper, <code>minAvailable: 3</code>. Going below quorum means data loss risk.</li>
+  <li><strong>Alert on <code>disruptionsAllowed == 0</code> persisting for > 15 minutes</strong> — this means infrastructure operations are blocked. Either the workload is under-replicated or pods are unhealthy and need attention.</li>
+  <li><strong>Test PDB behavior before cluster upgrades</strong> — run <code>kubectl drain &lt;node&gt; --dry-run</code> on each node type before a maintenance window to discover which PDBs will block and plan accordingly.</li>
+  <li><strong>Document emergency drain procedures for <code>minAvailable: 100%</code> workloads</strong> — zero-disruption guarantees require a defined escape hatch. The procedure should be in a runbook, not in the head of a single engineer.</li>
+</ol>
+
+</div><!-- content-area -->
+<button class="back-to-top" id="back-to-top">↑ Top</button>
+</div><!-- main-content -->
+
+<nav class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#voluntary-involuntary">Voluntary vs Involuntary</a>
+  <a href="#pdb-spec">PDB Spec</a>
+  <a href="#semantics">minAvailable vs maxUnavailable</a>
+  <a href="#eviction-api">Eviction API</a>
+  <a href="#node-drain">kubectl drain</a>
+  <a href="#pdb-status">PDB Status</a>
+  <a href="#unhealthy-policy">unhealthyPodEvictionPolicy</a>
+  <a href="#quorum-systems">Quorum Systems</a>
+  <a href="#rollingupdate-deadlock">RollingUpdate Deadlock</a>
+  <a href="#cluster-autoscaler">Cluster Autoscaler</a>
+  <a href="#zero-disruption">Zero-Disruption (100%)</a>
+  <a href="#multi-workload">Multi-Workload Selectors</a>
+  <a href="#pdb-with-hpa">PDB + HPA</a>
+  <a href="#operational-commands">Operational Commands</a>
+  <a href="#pdb-anti-patterns">Anti-patterns</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#alerts">Alerting Rules</a>
+  <a href="#runbooks">Runbooks</a>
+  <a href="#best-practices">Best Practices</a>
+</nav>
+</div><!-- layout -->
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => btt.classList.toggle('visible', main.scrollTop > 400));
+btt.addEventListener('click', () => main.scrollTo({top: 0, behavior: 'smooth'}));
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText || pre.innerText);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+const tocLinks = document.querySelectorAll('.toc-panel a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, {root: main, threshold: 0.2});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+document.getElementById('nav-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

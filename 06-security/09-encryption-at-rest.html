@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encryption at Rest | Kubernetes Documentation</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#30363d;
+  --border:#30363d; --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --accent:#58a6ff; --accent2:#388bfd; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --orange:#d18616; --code-bg:#161b22;
+}
+[data-theme="light"] {
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eaeef2; --bg4:#d0d7de;
+  --border:#d0d7de; --text:#24292f; --text2:#57606a; --text3:#6e7781;
+  --accent:#0969da; --accent2:#0550ae; --green:#1a7f37; --yellow:#9a6700;
+  --red:#cf222e; --purple:#8250df; --orange:#953800; --code-bg:#f6f8fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-filter{padding:12px 16px;border-bottom:1px solid var(--border);}
+.sidebar-filter input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;}
+.sidebar-filter input:focus{outline:none;border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+
+.main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
+.page-header{margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.breadcrumb{font-size:13px;color:var(--text3);margin-bottom:12px;}
+.breadcrumb a{color:var(--text3);}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;margin-bottom:12px;}
+.page-desc{font-size:16px;color:var(--text2);line-height:1.6;}
+.meta-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.tag{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--text2);}
+.tag.adv{border-color:var(--red);color:var(--red);}
+
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{margin:0 0 16px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'SF Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+.copy-btn:hover{color:var(--text);}
+
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid;}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.warning{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-size:13px;font-weight:700;margin-bottom:6px;}
+.callout.danger .callout-title{color:var(--red);}
+.callout.warning .callout-title{color:var(--yellow);}
+.callout.info .callout-title{color:var(--accent);}
+.callout.success .callout-title{color:var(--green);}
+.callout p{margin-bottom:0;font-size:14px;}
+
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);border-bottom:1px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 10px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card.danger{border-color:var(--red);}
+.card.warning{border-color:var(--yellow);}
+.card.success{border-color:var(--green);}
+.card.info{border-color:var(--accent);}
+
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'SF Mono','Fira Code',monospace;font-size:13px;line-height:1.8;overflow-x:auto;}
+.diagram .box{display:inline-block;border:1px solid var(--border);padding:4px 12px;border-radius:4px;background:var(--bg3);}
+.diagram .box.red{border-color:var(--red);color:var(--red);}
+.diagram .box.green{border-color:var(--green);color:var(--green);}
+.diagram .box.blue{border-color:var(--accent);color:var(--accent);}
+.diagram .box.yellow{border-color:var(--yellow);color:var(--yellow);}
+.diagram .box.purple{border-color:var(--purple);color:var(--purple);}
+
+.steps{display:flex;flex-direction:column;gap:0;margin:20px 0;}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step-num{width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.step-num.green{background:var(--green);}
+.step-num.yellow{background:var(--yellow);}
+.step-num.red{background:var(--red);}
+.step-content h4{margin:0 0 4px;font-size:14px;color:var(--text);}
+.step-content p{margin:0;font-size:13px;}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge.red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge.green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge.yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge.blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge.purple{background:rgba(188,140,255,.15);color:var(--purple);}
+
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden;}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;border-top:1px solid var(--border);}
+.coverage-body li{font-size:13px;color:var(--text2);}
+
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:32px;}
+.toc-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{font-size:13px;margin-bottom:4px;}
+.toc a{color:var(--text2);}
+.toc a:hover{color:var(--accent);}
+.toc a.active{color:var(--accent);}
+
+.toolbar{position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:100;}
+.toolbar button{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+.toolbar button:hover{color:var(--text);border-color:var(--text3);}
+.back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;}
+.back-to-top.visible{opacity:1;}
+
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;}
+@media(max-width:768px){
+  .hamburger{display:block;}
+  .sidebar{position:fixed;left:-280px;top:0;z-index:150;transition:left .25s;}
+  .sidebar.open{left:0;}
+  .main{padding:24px 20px;}
+}
+
+.k{color:#ff7b72;} .s{color:#a5d6ff;} .c{color:#8b949e;font-style:italic;} .n{color:#ffa657;} .cm{color:#3fb950;}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">K8s <span>Docs</span></div>
+  </div>
+  <div class="sidebar-filter">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="00-security-overview.html">Security Overview</a>
+    <a href="01-rbac.html">RBAC</a>
+    <a href="02-pod-security.html">Pod Security</a>
+    <a href="03-network-policies.html">Network Policies</a>
+    <a href="04-secrets-management.html">Secrets Management</a>
+    <a href="05-service-accounts.html">Service Accounts</a>
+    <a href="06-admission-controllers.html">Admission Controllers</a>
+    <a href="07-image-security.html">Image Security</a>
+    <a href="08-audit-logging.html">Audit Logging</a>
+    <a href="09-encryption-at-rest.html" class="active">Encryption at Rest</a>
+    <a href="10-supply-chain-security.html">Supply Chain Security</a>
+    <a href="11-compliance.html">Compliance</a>
+  </div>
+</nav>
+
+<main class="main" id="main">
+  <div class="toolbar">
+    <button onclick="toggleTheme()">Theme</button>
+  </div>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-security-overview.html">Security</a> › Encryption at Rest</div>
+    <h1>Encryption at Rest</h1>
+    <p class="page-desc">etcd encryption at rest for Kubernetes Secrets and other resources: provider hierarchy, KMS v2 envelope encryption, key rotation procedures, verification, etcd disk encryption, and node-level storage security.</p>
+    <div class="meta-tags">
+      <span class="tag adv">Advanced</span>
+      <span class="tag">Security</span>
+      <span class="tag">etcd</span>
+      <span class="tag">KMS</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">On This Page</div>
+    <ol>
+      <li><a href="#why-encrypt">Why Encrypt at Rest</a></li>
+      <li><a href="#how-it-works">How etcd Encryption Works</a></li>
+      <li><a href="#providers">Encryption Providers</a></li>
+      <li><a href="#kms-v2">KMS v2 Envelope Encryption</a></li>
+      <li><a href="#config">EncryptionConfiguration</a></li>
+      <li><a href="#enabling">Enabling Encryption</a></li>
+      <li><a href="#key-rotation">Key Rotation</a></li>
+      <li><a href="#verification">Verifying Encryption</a></li>
+      <li><a href="#etcd-disk">etcd Disk-Level Encryption</a></li>
+      <li><a href="#node-storage">Node Storage Security</a></li>
+      <li><a href="#managed">Managed Kubernetes Encryption</a></li>
+      <li><a href="#observability">Metrics, Alerts &amp; Runbooks</a></li>
+      <li><a href="#best-practices">Best Practices</a></li>
+    </ol>
+  </div>
+
+  <details class="coverage">
+    <summary>Coverage Checklist</summary>
+    <ul class="coverage-body">
+      <li>etcd stores plaintext by default — the fundamental problem</li>
+      <li>EncryptionConfiguration resource and API server flag</li>
+      <li>Providers: identity / secretbox / aesgcm / aescbc / kms v1 / kms v2</li>
+      <li>Provider selection order (first = write, all = read)</li>
+      <li>KMS v2 envelope encryption: DEK/KEK model</li>
+      <li>KMS v2 vs v1 improvements: DEK caching, performance</li>
+      <li>KMS plugin: gRPC socket, Health check</li>
+      <li>AWS KMS / GCP CMEK / Azure Key Vault integration</li>
+      <li>Full EncryptionConfiguration YAML for all providers</li>
+      <li>Enabling encryption: step-by-step procedure</li>
+      <li>Re-encrypting existing resources: kubectl replace</li>
+      <li>Key rotation: zero-downtime procedure</li>
+      <li>Verifying: etcdctl get + base64 decode</li>
+      <li>etcd TLS configuration</li>
+      <li>etcd disk-level encryption: LUKS</li>
+      <li>Node ephemeral storage: emptyDir, tmpfs</li>
+      <li>Managed K8s: EKS / GKE / AKS encryption options</li>
+      <li>5 metrics, 4 alerts, 5 runbooks, 8 best practices</li>
+    </ul>
+  </details>
+
+  <!-- ───── WHY ENCRYPT ───── -->
+  <h2 id="why-encrypt">Why Encrypt at Rest</h2>
+
+  <p>By default, all Kubernetes objects — including Secrets — are stored in etcd as plaintext (base64-encoded, which is encoding not encryption). Anyone with read access to the etcd data directory or etcd API can read every Secret in the cluster.</p>
+
+  <div class="callout danger">
+    <div class="callout-title">etcd Access = Full Cluster Compromise</div>
+    <p>etcd stores the entire cluster state. Direct access to the etcd data directory bypasses all Kubernetes AuthN, AuthZ, and admission controls. An attacker who can read etcd data can extract every Secret, ServiceAccount token, TLS certificate, and kubeconfig in the cluster without triggering a single audit log entry.</p>
+  </div>
+
+  <h3>Attack Vectors That Encryption at Rest Mitigates</h3>
+
+  <div class="card-grid">
+    <div class="card danger">
+      <h4>etcd Backup Theft</h4>
+      <p>etcd snapshots are commonly stored in object storage. Without encryption at rest, a stolen backup exposes the entire cluster state including all Secrets.</p>
+    </div>
+    <div class="card danger">
+      <h4>Disk Forensics</h4>
+      <p>Physical access to a decommissioned control plane node allows recovery of etcd data files. Encryption at rest makes this data unreadable without the key.</p>
+    </div>
+    <div class="card danger">
+      <h4>Cloud Provider Access</h4>
+      <p>Cloud storage snapshots of the etcd EBS volume or GCP persistent disk could be accessed by a cloud provider employee or via a compromised cloud account.</p>
+    </div>
+    <div class="card warning">
+      <h4>Partial Mitigation Only</h4>
+      <p>Encryption at rest does <em>not</em> protect against a live etcd API compromise (attacker has credentials to talk to etcd directly) — etcd always decrypts before returning data.</p>
+    </div>
+  </div>
+
+  <!-- ───── HOW IT WORKS ───── -->
+  <h2 id="how-it-works">How etcd Encryption Works</h2>
+
+  <p>Kubernetes API server encrypts resources before writing them to etcd, and decrypts them after reading. etcd itself has no knowledge of the encryption — it stores opaque encrypted bytes.</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── Write path ────────────────────────────────────────────────────────</span>
+<br>
+<br><span class="box blue">kubectl create secret</span>
+<br>  │
+<br>  ▼
+<br><span class="box">kube-apiserver</span>
+<br>  │  receives plaintext Secret object
+<br>  │
+<br>  ├── Serialize to JSON/protobuf
+<br>  │
+<br>  ├── Encrypt with configured provider
+<br>  │   <span style="color:var(--text3)">(secretbox / aesgcm / KMS envelope encryption)</span>
+<br>  │
+<br>  └──▶ <span class="box red">etcd</span>
+<br>        stores: <span style="color:var(--red)">k8s:enc:secretbox:v1:key1:&lt;ciphertext&gt;</span>
+<br>
+<br><span style="color:var(--text3)">── Read path ─────────────────────────────────────────────────────────</span>
+<br>
+<br><span class="box red">etcd</span>
+<br>  returns: <span style="color:var(--red)">k8s:enc:secretbox:v1:key1:&lt;ciphertext&gt;</span>
+<br>  │
+<br>  ▼
+<br><span class="box">kube-apiserver</span>
+<br>  ├── Parse prefix to identify provider + key name
+<br>  ├── Decrypt ciphertext
+<br>  └──▶ returns plaintext Secret to caller
+  </div>
+
+  <div class="callout info">
+    <div class="callout-title">Encryption Prefix Format</div>
+    <p>Encrypted values in etcd are prefixed with <code>k8s:enc:&lt;provider&gt;:v1:&lt;keyname&gt;:</code>. This prefix tells the API server which provider and key to use for decryption. The <code>identity</code> provider stores values without any prefix — they appear as raw protobuf.</p>
+  </div>
+
+  <h3>What Gets Encrypted</h3>
+
+  <p>The <code>EncryptionConfiguration</code> specifies which resource types to encrypt. You can encrypt any API resource, but these are the most security-relevant:</p>
+
+  <table>
+    <thead><tr><th>Resource</th><th>Why Encrypt</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr><td><code>secrets</code></td><td>Contains passwords, tokens, TLS keys</td><td><span class="badge red">Critical</span></td></tr>
+      <tr><td><code>configmaps</code></td><td>May contain environment-specific config with sensitive values</td><td><span class="badge yellow">High</span></td></tr>
+      <tr><td><code>serviceaccounts</code></td><td>SA metadata (not tokens — those are JWTs and separate)</td><td><span class="badge blue">Medium</span></td></tr>
+      <tr><td><code>pods</code></td><td>Pod specs can contain env var secrets, volume refs</td><td><span class="badge blue">Medium</span></td></tr>
+      <tr><td>Custom resources</td><td>CRDs that store credentials or sensitive config</td><td>Case-by-case</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── PROVIDERS ───── -->
+  <h2 id="providers">Encryption Providers</h2>
+
+  <table>
+    <thead><tr><th>Provider</th><th>Algorithm</th><th>Key Management</th><th>Performance</th><th>Recommended</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>identity</code></td>
+        <td>None (plaintext)</td>
+        <td>N/A</td>
+        <td>Best</td>
+        <td><span class="badge red">Never for sensitive resources</span></td>
+      </tr>
+      <tr>
+        <td><code>secretbox</code></td>
+        <td>XSalsa20 + Poly1305</td>
+        <td>Local key in config file</td>
+        <td>Excellent</td>
+        <td><span class="badge yellow">Good for non-KMS setups</span></td>
+      </tr>
+      <tr>
+        <td><code>aesgcm</code></td>
+        <td>AES-GCM (128 or 256-bit)</td>
+        <td>Local key in config file</td>
+        <td>Good (hardware AES-NI)</td>
+        <td><span class="badge yellow">Acceptable; rotate keys frequently</span></td>
+      </tr>
+      <tr>
+        <td><code>aescbc</code></td>
+        <td>AES-CBC (256-bit)</td>
+        <td>Local key in config file</td>
+        <td>Good</td>
+        <td><span class="badge red">Legacy; use secretbox or aesgcm</span></td>
+      </tr>
+      <tr>
+        <td><code>kms</code> (v1)</td>
+        <td>Envelope: AES-CBC DEK + KMS KEK</td>
+        <td>External KMS (AWS/GCP/Azure/Vault)</td>
+        <td>Moderate (KMS call per write)</td>
+        <td><span class="badge yellow">Superseded by v2</span></td>
+      </tr>
+      <tr>
+        <td><code>kms</code> (v2)</td>
+        <td>Envelope: AES-GCM DEK + KMS KEK, DEK cached</td>
+        <td>External KMS (AWS/GCP/Azure/Vault)</td>
+        <td>Excellent (DEK cache)</td>
+        <td><span class="badge green">Recommended for production</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <div class="callout-title">Provider Order Matters: First = Write, All = Read</div>
+    <p>The first provider in the list is used to encrypt new writes. All listed providers are tried in order for decryption. During key rotation, you add the new key as first (for new writes) while keeping the old key second (to decrypt existing data). Once all data is re-encrypted, remove the old key.</p>
+  </div>
+
+  <div class="callout danger">
+    <div class="callout-title">identity Provider as Read Fallback</div>
+    <p>Including <code>identity</code> in the providers list allows reading unencrypted data that was written before encryption was enabled. Once all existing resources have been re-encrypted, remove <code>identity</code> from the list. Leaving it in permanently means unencrypted values can always be written if a misconfiguration occurs.</p>
+  </div>
+
+  <!-- ───── KMS v2 ───── -->
+  <h2 id="kms-v2">KMS v2 Envelope Encryption</h2>
+
+  <p>KMS v2 (GA in Kubernetes 1.29) uses envelope encryption — a two-tier key hierarchy that keeps the KMS workload manageable while maintaining strong security properties.</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── KMS v2 Envelope Encryption ────────────────────────────────────────</span>
+<br>
+<br>  <span class="box purple">KMS (AWS/GCP/Azure/Vault)</span>
+<br>  │  holds: <span style="color:var(--purple)">Key Encryption Key (KEK)</span>  ← never leaves KMS
+<br>  │
+<br>  ├── On startup: generate <span style="color:var(--green)">Data Encryption Key (DEK)</span>
+<br>  │   DEK encrypted by KEK → <span style="color:var(--yellow)">EncryptedDEK</span> stored in API server memory
+<br>  │
+<br>  ├── On Secret write:
+<br>  │   <span style="color:var(--text3)">plaintext → AES-GCM encrypt with DEK → ciphertext</span>
+<br>  │   <span style="color:var(--text3)">ciphertext + EncryptedDEK stored in etcd</span>
+<br>  │   <span style="color:var(--text3)">(no KMS call needed — DEK is cached)</span>
+<br>  │
+<br>  ├── On Secret read:
+<br>  │   <span style="color:var(--text3)">read ciphertext + EncryptedDEK from etcd</span>
+<br>  │   <span style="color:var(--text3)">if DEK cached: decrypt directly</span>
+<br>  │   <span style="color:var(--text3)">if DEK not cached: call KMS to decrypt EncryptedDEK first</span>
+<br>  │
+<br>  └── On API server restart:
+<br>      <span style="color:var(--text3)">DEK cache is lost → first read calls KMS to re-derive DEK</span>
+<br>
+<br><span style="color:var(--text3)">── vs KMS v1 ─────────────────────────────────────────────────────────</span>
+<br>  <span class="box red">KMS v1</span>: KMS call on EVERY write (severe latency at scale)
+<br>  <span class="box green">KMS v2</span>: KMS call only on DEK generation (startup) + DEK expiry (every 1h default)
+  </div>
+
+  <h3>KMS Plugin Architecture</h3>
+
+  <p>The API server communicates with the KMS via a local gRPC socket. The KMS plugin (a separate process) translates between the Kubernetes KMS gRPC protocol and the cloud KMS API.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># kube-apiserver communicates via Unix socket to KMS plugin</span>
+<span class="c"># KMS plugin process runs on the control plane node</span>
+
+<span class="c">──── kube-apiserver ────────────────────────────────────────────────────</span>
+<span class="c">#  │</span>
+<span class="c">#  │  gRPC over Unix socket: /var/run/kms-plugin/socket.sock</span>
+<span class="c">#  │  Protocol: k8s.io/kms/v2beta1</span>
+<span class="c">#  ▼</span>
+<span class="c">──── KMS plugin process ────────────────────────────────────────────────</span>
+<span class="c">#  │</span>
+<span class="c">#  │  Cloud SDK / Vault API</span>
+<span class="c">#  ▼</span>
+<span class="c">──── External KMS ──────────────────────────────────────────────────────</span>
+<span class="c">#  AWS KMS / GCP Cloud KMS / Azure Key Vault / HashiCorp Vault</span></code></pre>
+
+  <h3>KMS Plugin Examples</h3>
+
+  <table>
+    <thead><tr><th>Platform</th><th>Plugin</th><th>Key Type</th></tr></thead>
+    <tbody>
+      <tr><td>AWS EKS / self-managed on EC2</td><td>aws-encryption-provider</td><td>AWS KMS CMK (symmetric)</td></tr>
+      <tr><td>GKE / GCE</td><td>kmsplugin (built into GKE) or cloud-kms-plugin</td><td>GCP Cloud KMS CryptoKey</td></tr>
+      <tr><td>AKS / Azure</td><td>azure-kms-plugin</td><td>Azure Key Vault key</td></tr>
+      <tr><td>Any</td><td>vault-k8s-kms-plugin</td><td>HashiCorp Vault Transit key</td></tr>
+      <tr><td>Any</td><td>k8s-kms-plugin (generic)</td><td>Configurable backend</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── CONFIG ───── -->
+  <h2 id="config">EncryptionConfiguration</h2>
+
+  <h3>Full Configuration with All Providers</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># /etc/kubernetes/encryption-config.yaml</span>
+<span class="k">apiVersion</span>: <span class="s">apiserver.config.k8s.io/v1</span>
+<span class="k">kind</span>: <span class="s">EncryptionConfiguration</span>
+
+<span class="k">resources</span>:
+<span class="c"># ── Secrets: highest priority, KMS v2 ────────────────────────────────</span>
+- <span class="k">resources</span>:
+  - <span class="s">secrets</span>
+  <span class="k">providers</span>:
+  <span class="c"># First provider = used for new writes</span>
+  - <span class="k">kms</span>:
+      <span class="k">apiVersion</span>: <span class="s">v2</span>            <span class="c"># KMS v2 (GA in 1.29)</span>
+      <span class="k">name</span>: <span class="s">aws-kms-key-1</span>
+      <span class="k">endpoint</span>: <span class="s">unix:///var/run/kms-plugin/socket.sock</span>
+      <span class="k">cachesize</span>: <span class="n">1000</span>           <span class="c"># Max cached DEKs</span>
+      <span class="k">timeout</span>: <span class="s">3s</span>
+  <span class="c"># identity as last fallback allows reading pre-encryption data</span>
+  <span class="c"># REMOVE after all secrets re-encrypted</span>
+  - <span class="k">identity</span>: {}
+
+<span class="c"># ── ConfigMaps: secretbox (local key) ────────────────────────────────</span>
+- <span class="k">resources</span>:
+  - <span class="s">configmaps</span>
+  <span class="k">providers</span>:
+  - <span class="k">secretbox</span>:
+      <span class="k">keys</span>:
+      - <span class="k">name</span>: <span class="s">key2</span>
+        <span class="k">secret</span>: <span class="s">c2VjcmV0Ym94a2V5Zm9yY29uZmlnbWFwc3h5ejEyMzQ1Njc=</span>
+        <span class="c"># 32-byte base64-encoded random key</span>
+        <span class="c"># Generate: head -c 32 /dev/urandom | base64</span>
+  - <span class="k">identity</span>: {}
+
+<span class="c"># ── Everything else: identity (unencrypted) ──────────────────────────</span>
+<span class="c"># Add other resource types above as needed</span></code></pre>
+
+  <h3>secretbox Provider (Local Key)</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Generate a 32-byte base64-encoded key for secretbox</span>
+head -c 32 /dev/urandom | base64
+
+<span class="c"># secretbox provider configuration</span>
+<span class="k">resources</span>:
+- <span class="k">resources</span>:
+  - <span class="s">secrets</span>
+  <span class="k">providers</span>:
+  - <span class="k">secretbox</span>:
+      <span class="k">keys</span>:
+      - <span class="k">name</span>: <span class="s">key1</span>          <span class="c"># Arbitrary name; appears in etcd prefix</span>
+        <span class="k">secret</span>: <span class="s">&lt;base64-32-bytes&gt;</span>
+  - <span class="k">identity</span>: {}           <span class="c"># Read fallback for pre-encryption data</span></code></pre>
+
+  <h3>aesgcm Provider</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># aesgcm uses 16-byte (AES-128) or 32-byte (AES-256) keys</span>
+<span class="c"># Generate AES-256 key:</span>
+head -c 32 /dev/urandom | base64
+
+<span class="k">providers</span>:
+- <span class="k">aesgcm</span>:
+    <span class="k">keys</span>:
+    - <span class="k">name</span>: <span class="s">key1</span>
+      <span class="k">secret</span>: <span class="s">&lt;base64-32-bytes&gt;</span>
+- <span class="k">identity</span>: {}</code></pre>
+
+  <div class="callout warning">
+    <div class="callout-title">aesgcm: Rotate Keys Every 200,000 Writes</div>
+    <p>AES-GCM uses a random 96-bit nonce. The probability of nonce collision becomes significant at ~2^32 writes with the same key (birthday bound). For AES-GCM, key rotation should happen after ~200,000 writes to a single key. <code>secretbox</code> uses a 192-bit nonce and does not have this constraint at practical scale.</p>
+  </div>
+
+  <h3>KMS v2 Provider (Full)</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="k">providers</span>:
+- <span class="k">kms</span>:
+    <span class="k">apiVersion</span>: <span class="s">v2</span>
+    <span class="k">name</span>: <span class="s">my-kms-key</span>            <span class="c"># Logical name (appears in etcd prefix)</span>
+    <span class="k">endpoint</span>: <span class="s">unix:///var/run/kmsplugin/socket.sock</span>
+    <span class="k">cachesize</span>: <span class="n">1000</span>             <span class="c"># Number of DEKs to cache (default 1000)</span>
+    <span class="k">timeout</span>: <span class="s">3s</span>                 <span class="c"># gRPC call timeout (default 3s)</span>
+- <span class="k">identity</span>: {}                  <span class="c"># Read fallback; remove after re-encryption</span></code></pre>
+
+  <!-- ───── ENABLING ───── -->
+  <h2 id="enabling">Enabling Encryption</h2>
+
+  <p>Enabling encryption for an existing cluster requires a careful sequence to avoid downtime and data loss. The API server must be restarted, which is momentarily disruptive in single-API-server setups.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Create EncryptionConfiguration file on all control plane nodes</h4>
+        <p>Write the config to <code>/etc/kubernetes/encryption-config.yaml</code>. Include <code>identity</code> as a read fallback provider. Restrict file permissions: <code>chmod 600</code>, owned by root.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Add --encryption-provider-config flag to API server</h4>
+        <p>For kubeadm clusters: edit <code>/etc/kubernetes/manifests/kube-apiserver.yaml</code>. The kubelet will detect the change and restart the API server pod. Add the volume mount for the config file.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Verify API server restarts successfully</h4>
+        <p>Watch <code>kubectl get pods -n kube-system</code>. Check API server logs for encryption provider initialization. Verify the cluster is healthy before proceeding.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num yellow">4</div>
+      <div class="step-content">
+        <h4>Re-encrypt all existing resources</h4>
+        <p>New writes go through the encryption provider, but existing data in etcd is still plaintext. Force re-encryption by reading and writing back all resources.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">5</div>
+      <div class="step-content">
+        <h4>Remove identity fallback provider</h4>
+        <p>Once all resources are re-encrypted, remove <code>identity</code> from the providers list and restart the API server. Now any plaintext read from etcd will fail — which is intentional.</p>
+      </div>
+    </div>
+  </div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Step 2: kubeadm API server manifest additions</span>
+<span class="c"># /etc/kubernetes/manifests/kube-apiserver.yaml</span>
+<span class="k">spec</span>:
+  <span class="k">containers</span>:
+  - <span class="k">command</span>:
+    - <span class="s">kube-apiserver</span>
+    <span class="c"># ... existing flags ...</span>
+    - <span class="s">--encryption-provider-config=/etc/kubernetes/encryption-config.yaml</span>
+    <span class="k">volumeMounts</span>:
+    - <span class="k">name</span>: <span class="s">encryption-config</span>
+      <span class="k">mountPath</span>: <span class="s">/etc/kubernetes/encryption-config.yaml</span>
+      <span class="k">readOnly</span>: <span class="s">true</span>
+  <span class="k">volumes</span>:
+  - <span class="k">name</span>: <span class="s">encryption-config</span>
+    <span class="k">hostPath</span>:
+      <span class="k">path</span>: <span class="s">/etc/kubernetes/encryption-config.yaml</span>
+      <span class="k">type</span>: <span class="s">File</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Step 4: Re-encrypt all existing Secrets</span>
+<span class="c"># This reads each secret and writes it back — triggers encryption on write</span>
+
+kubectl get secrets --all-namespaces -o json | \
+  kubectl replace -f -
+
+<span class="c"># Re-encrypt ConfigMaps if configured</span>
+kubectl get configmaps --all-namespaces -o json | \
+  kubectl replace -f -
+
+<span class="c"># For large clusters, process namespace by namespace to avoid API server overload</span>
+for ns in $(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}'); do
+  echo "Processing namespace: $ns"
+  kubectl get secrets -n "$ns" -o json | kubectl replace -f - || true
+  sleep 1
+done</code></pre>
+
+  <!-- ───── KEY ROTATION ───── -->
+  <h2 id="key-rotation">Key Rotation</h2>
+
+  <p>Key rotation for local providers (secretbox, aesgcm) requires a precise sequence. KMS v2 key rotation is handled by the KMS provider — you rotate the KEK in AWS/GCP/Azure and the plugin transparently re-wraps DEKs.</p>
+
+  <h3>Local Key Rotation (secretbox / aesgcm)</h3>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Generate new key</h4>
+        <p><code>head -c 32 /dev/urandom | base64</code> — store securely.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Add new key as FIRST in providers list, old key second</h4>
+        <p>New writes use the new key. Old key remains for decrypting existing data. Restart API server.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Re-encrypt all resources</h4>
+        <p>Run <code>kubectl get secrets --all-namespaces -o json | kubectl replace -f -</code>. This re-encrypts all existing data with the new key.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
+      <div class="step-content">
+        <h4>Remove old key from providers list</h4>
+        <p>After all data is re-encrypted with the new key, remove the old key entry. Restart API server. Securely delete the old key material.</p>
+      </div>
+    </div>
+  </div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Phase 1: Add new key as first (new writes use new key)</span>
+<span class="k">providers</span>:
+- <span class="k">secretbox</span>:
+    <span class="k">keys</span>:
+    - <span class="k">name</span>: <span class="s">key2</span>            <span class="c"># NEW — first = used for writes</span>
+      <span class="k">secret</span>: <span class="s">&lt;new-key-base64&gt;</span>
+    - <span class="k">name</span>: <span class="s">key1</span>            <span class="c"># OLD — kept for reading existing data</span>
+      <span class="k">secret</span>: <span class="s">&lt;old-key-base64&gt;</span>
+
+<span class="c"># Phase 2: After re-encryption, remove old key</span>
+<span class="k">providers</span>:
+- <span class="k">secretbox</span>:
+    <span class="k">keys</span>:
+    - <span class="k">name</span>: <span class="s">key2</span>            <span class="c"># Only new key remains</span>
+      <span class="k">secret</span>: <span class="s">&lt;new-key-base64&gt;</span></code></pre>
+
+  <h3>KMS v2 Key Rotation</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># AWS KMS: rotate the CMK (creates new key material, old still valid for decrypt)</span>
+aws kms enable-key-rotation --key-id &lt;key-id&gt;
+
+<span class="c"># GCP Cloud KMS: create a new key version</span>
+gcloud kms keys versions create \
+  --key my-k8s-key \
+  --keyring my-keyring \
+  --location global
+
+<span class="c"># Set new version as primary</span>
+gcloud kms keys versions get-public-key 1 \
+  --key my-k8s-key --keyring my-keyring --location global
+
+<span class="c"># After KMS rotation: force API server to re-derive DEK from new KEK</span>
+<span class="c"># Restart API server OR wait for DEK expiry (1h default)</span>
+
+<span class="c"># Re-encrypt all secrets so they use new DEK wrapped by new KEK</span>
+kubectl get secrets --all-namespaces -o json | kubectl replace -f -</code></pre>
+
+  <!-- ───── VERIFICATION ───── -->
+  <h2 id="verification">Verifying Encryption</h2>
+
+  <p>After enabling encryption, verify that etcd actually stores encrypted data — not just that the API server accepted the configuration.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Create a test secret</span>
+kubectl create secret generic encryption-test \
+  --from-literal=test-key=test-value \
+  -n default
+
+<span class="c"># Read directly from etcd using etcdctl</span>
+<span class="c"># (must run on a control plane node with etcd certs)</span>
+ETCDCTL_API=3 etcdctl \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  get /registry/secrets/default/encryption-test
+
+<span class="c"># Expected output if encrypted (secretbox):</span>
+<span class="c"># /registry/secrets/default/encryption-test</span>
+<span class="c"># k8s:enc:secretbox:v1:key1:&lt;binary ciphertext&gt;</span>
+
+<span class="c"># If you see plaintext JSON/protobuf: encryption is NOT working</span>
+<span class="c"># k8s:enc: prefix MUST be present</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Alternative: pipe through hexdump to inspect binary prefix</span>
+ETCDCTL_API=3 etcdctl \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  get /registry/secrets/default/encryption-test | hexdump -C | head -5
+
+<span class="c"># Look for the "k8s:enc:" ASCII prefix in the hex output</span>
+<span class="c"># 6b 38 73 3a 65 6e 63 3a  = "k8s:enc:"</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Check API server logs for encryption provider initialization</span>
+kubectl logs -n kube-system kube-apiserver-&lt;node-name&gt; | \
+  grep -i "encrypt\|kms\|provider"
+
+<span class="c"># Expected log line on successful KMS v2 init:</span>
+<span class="c"># "KMS plugin initialized" or "encryption provider" messages</span>
+
+<span class="c"># Verify encryption config is loaded</span>
+kubectl get --raw /healthz/etcd
+
+<span class="c"># Check KMS plugin health</span>
+kubectl get --raw /healthz/kms-providers</code></pre>
+
+  <!-- ───── ETCD DISK ───── -->
+  <h2 id="etcd-disk">etcd Disk-Level Encryption</h2>
+
+  <p>Kubernetes-level encryption (via EncryptionConfiguration) and disk-level encryption (LUKS/dm-crypt) are complementary, not mutually exclusive. Disk encryption protects against physical disk theft; Kubernetes encryption protects against etcd API compromise and backup theft.</p>
+
+  <h3>etcd TLS Configuration</h3>
+
+  <p>Regardless of encryption at rest, etcd communications must be TLS-encrypted in transit. This is separate from encryption at rest but equally important.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># etcd flags for mutual TLS (peer and client)</span>
+
+<span class="c"># Client-to-server TLS (kube-apiserver → etcd)</span>
+--cert-file=/etc/kubernetes/pki/etcd/server.crt
+--key-file=/etc/kubernetes/pki/etcd/server.key
+--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+--client-cert-auth=true
+
+<span class="c"># Peer TLS (etcd member ↔ etcd member)</span>
+--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt
+--peer-key-file=/etc/kubernetes/pki/etcd/peer.key
+--peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+--peer-client-cert-auth=true</code></pre>
+
+  <h3>LUKS Full Disk Encryption for etcd Data Directory</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Create LUKS encrypted volume for etcd data</span>
+<span class="c"># (Run before etcd is initialized)</span>
+
+<span class="c"># 1. Create LUKS container on device /dev/sdb</span>
+cryptsetup luksFormat --type luks2 \
+  --cipher aes-xts-plain64 \
+  --key-size 512 \
+  --hash sha256 \
+  --pbkdf argon2id \
+  /dev/sdb
+
+<span class="c"># 2. Open the LUKS volume</span>
+cryptsetup luksOpen /dev/sdb etcd-data
+
+<span class="c"># 3. Format the plaintext device</span>
+mkfs.ext4 /dev/mapper/etcd-data
+
+<span class="c"># 4. Mount as etcd data directory</span>
+mount /dev/mapper/etcd-data /var/lib/etcd
+
+<span class="c"># 5. Add to /etc/crypttab for auto-open on boot</span>
+<span class="c"># etcd-data  /dev/sdb  /etc/etcd-luks.key  luks</span>
+
+<span class="c"># 6. Key stored in HSM or cloud KMS — NOT on the same disk</span></code></pre>
+
+  <div class="callout info">
+    <div class="callout-title">Cloud-Managed Disk Encryption</div>
+    <p>Managed Kubernetes services (EKS, GKE, AKS) automatically encrypt etcd data at the infrastructure level using the cloud provider's disk encryption. This provides disk-level encryption but may not provide Kubernetes-level secret encryption unless you additionally configure <code>EncryptionConfiguration</code> with a KMS provider.</p>
+  </div>
+
+  <!-- ───── NODE STORAGE ───── -->
+  <h2 id="node-storage">Node Storage Security</h2>
+
+  <p>Encryption at rest for etcd is only one layer. Data also lands on node storage through container filesystems, emptyDir volumes, and node-local resources.</p>
+
+  <h3>emptyDir and tmpfs</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># emptyDir defaults to node disk — data survives pod restarts on same node</span>
+<span class="c"># Use medium: Memory (tmpfs) for sensitive temporary data</span>
+<span class="k">spec</span>:
+  <span class="k">containers</span>:
+  - <span class="k">name</span>: <span class="s">app</span>
+    <span class="k">volumeMounts</span>:
+    - <span class="k">name</span>: <span class="s">scratch</span>
+      <span class="k">mountPath</span>: <span class="s">/tmp/secrets</span>
+  <span class="k">volumes</span>:
+  - <span class="k">name</span>: <span class="s">scratch</span>
+    <span class="k">emptyDir</span>:
+      <span class="k">medium</span>: <span class="s">Memory</span>   <span class="c"># tmpfs — data in RAM, never written to disk</span>
+      <span class="k">sizeLimit</span>: <span class="s">64Mi</span></code></pre>
+
+  <h3>Secret Volume Default Mode</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Secret volumes are projected to tmpfs on the node by default (since K8s 1.3)</span>
+<span class="c"># They do NOT write to the node's disk filesystem</span>
+<span class="c"># However, container images and writable layers ARE on disk</span>
+
+<span class="k">volumes</span>:
+- <span class="k">name</span>: <span class="s">db-creds</span>
+  <span class="k">secret</span>:
+    <span class="k">secretName</span>: <span class="s">db-credentials</span>
+    <span class="k">defaultMode</span>: <span class="n">0400</span>   <span class="c"># Read-only for owner only (pod UID)</span></code></pre>
+
+  <h3>Container Image Layer Encryption (OCI)</h3>
+
+  <p>OCI image encryption (ocicrypt) allows container image layers to be encrypted. This is distinct from Kubernetes-level encryption and is relatively uncommon — it protects image content at rest in the registry and on node disk.</p>
+
+  <table>
+    <thead><tr><th>Storage Location</th><th>Default State</th><th>Encryption Mechanism</th></tr></thead>
+    <tbody>
+      <tr><td>etcd Secrets</td><td>Plaintext (base64)</td><td>EncryptionConfiguration + KMS</td></tr>
+      <tr><td>etcd data directory</td><td>Depends on cloud/disk config</td><td>LUKS / cloud disk encryption</td></tr>
+      <tr><td>Secret volume mount</td><td>tmpfs (in-memory)</td><td>N/A — RAM only, cleared on unmount</td></tr>
+      <tr><td>emptyDir volume</td><td>Node disk (unless medium:Memory)</td><td>Node disk encryption or tmpfs</td></tr>
+      <tr><td>Container image layers</td><td>Plaintext on node</td><td>OCI image encryption (ocicrypt)</td></tr>
+      <tr><td>PersistentVolume</td><td>Depends on StorageClass</td><td>Storage provider encryption (EBS, GCP PD)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── MANAGED K8S ───── -->
+  <h2 id="managed">Managed Kubernetes Encryption</h2>
+
+  <h3>Amazon EKS</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Enable Secrets encryption with AWS KMS CMK at cluster creation</span>
+aws eks create-cluster \
+  --name my-cluster \
+  --kubernetes-version 1.29 \
+  --resources-vpc-config subnetIds=subnet-xxx,securityGroupIds=sg-xxx \
+  --encryption-config '[{"resources":["secrets"],"provider":{"keyArn":"arn:aws:kms:us-east-1:123456789012:key/xxx"}}]'
+
+<span class="c"># Enable on existing cluster</span>
+aws eks associate-encryption-config \
+  --cluster-name my-cluster \
+  --encryption-config '[{"resources":["secrets"],"provider":{"keyArn":"arn:aws:kms:..."}}]'
+
+<span class="c"># Verify encryption config</span>
+aws eks describe-cluster --name my-cluster \
+  --query 'cluster.encryptionConfig'</code></pre>
+
+  <h3>GKE (Google Kubernetes Engine)</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code"><span class="c"># GKE uses Google-managed encryption by default (AES-256)</span>
+<span class="c"># For CMEK (Customer-Managed Encryption Keys):</span>
+gcloud container clusters create my-cluster \
+  --database-encryption-key projects/my-project/locations/global/keyRings/my-ring/cryptoKeys/my-key
+
+<span class="c"># GKE Application-layer secrets encryption (using Cloud KMS)</span>
+gcloud container clusters update my-cluster \
+  --database-encryption-key projects/my-project/locations/global/keyRings/my-ring/cryptoKeys/my-key</code></pre>
+
+  <h3>AKS (Azure Kubernetes Service)</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># AKS encrypts etcd at rest with Microsoft-managed keys by default</span>
+<span class="c"># For customer-managed keys (CMK):</span>
+az aks create \
+  --resource-group myRG \
+  --name myAKS \
+  --enable-encryption-at-host
+
+<span class="c"># Azure Disk Encryption for node OS/data disks</span>
+az aks update \
+  --resource-group myRG \
+  --name myAKS \
+  --enable-disk-encryption</code></pre>
+
+  <!-- ───── OBSERVABILITY ───── -->
+  <h2 id="observability">Metrics, Alerts &amp; Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Source</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>apiserver_envelope_encryption_dek_cache_fill_percent</code></td><td>kube-apiserver</td><td>DEK cache fill ratio (KMS v2)</td></tr>
+      <tr><td><code>apiserver_storage_transformation_operations_total</code></td><td>kube-apiserver</td><td>Encrypt/decrypt operations by provider and resource</td></tr>
+      <tr><td><code>apiserver_storage_transformation_duration_seconds</code></td><td>kube-apiserver</td><td>Latency of encryption/decryption operations</td></tr>
+      <tr><td><code>etcd_disk_wal_fsync_duration_seconds</code></td><td>etcd</td><td>etcd write latency (elevated if storage is slow)</td></tr>
+      <tr><td><code>kms_plugin_rpc_duration_seconds</code></td><td>KMS plugin</td><td>Latency of KMS gRPC calls (high = KMS issues)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Alerts</h3>
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Alert: KMS plugin unhealthy</span>
+- <span class="k">alert</span>: <span class="s">KMSPluginUnhealthy</span>
+  <span class="k">expr</span>: <span class="s">up{job="kube-apiserver"} == 1 and absent(kms_plugin_rpc_duration_seconds)</span>
+  <span class="k">for</span>: <span class="s">5m</span>
+  <span class="k">severity</span>: <span class="s">critical</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"KMS plugin not reachable — new Secret writes will fail"</span>
+
+<span class="c"># Alert: High KMS call latency</span>
+- <span class="k">alert</span>: <span class="s">KMSHighLatency</span>
+  <span class="k">expr</span>: <span class="s">histogram_quantile(0.99, kms_plugin_rpc_duration_seconds_bucket) > 1</span>
+  <span class="k">for</span>: <span class="s">5m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"KMS gRPC p99 latency exceeds 1s — API server write latency elevated"</span>
+
+<span class="c"># Alert: Encryption transformation errors</span>
+- <span class="k">alert</span>: <span class="s">EncryptionTransformationErrors</span>
+  <span class="k">expr</span>: <span class="s">increase(apiserver_storage_transformation_operations_total{status="failed"}[5m]) > 0</span>
+  <span class="k">severity</span>: <span class="s">critical</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Encryption/decryption failures — data may be inaccessible"</span>
+
+<span class="c"># Alert: DEK cache full</span>
+- <span class="k">alert</span>: <span class="s">DEKCacheNearFull</span>
+  <span class="k">expr</span>: <span class="s">apiserver_envelope_encryption_dek_cache_fill_percent > 90</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"DEK cache over 90% full — consider increasing cachesize"</span></code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>KMS Plugin Unreachable</h4>
+      <p>1. Check plugin process: <code>systemctl status kms-plugin</code><br>2. Check Unix socket exists: <code>ls -la /var/run/kmsplugin/socket.sock</code><br>3. Check cloud KMS connectivity from control plane node<br>4. KMS v2: existing secrets still readable from DEK cache; new writes fail</p>
+    </div>
+    <div class="card">
+      <h4>Encryption Not Working</h4>
+      <p>1. Check etcdctl value prefix: must start with <code>k8s:enc:</code><br>2. Verify <code>--encryption-provider-config</code> flag is set on API server<br>3. Check API server logs for provider init errors<br>4. Verify config file exists and has correct permissions (600)</p>
+    </div>
+    <div class="card">
+      <h4>API Server Won't Start After Config Change</h4>
+      <p>1. Check API server logs in <code>/var/log/pods/kube-system_kube-apiserver*/</code><br>2. Verify EncryptionConfiguration YAML is valid<br>3. If old key was removed prematurely: restore key, restart, re-encrypt, remove key<br>4. Never remove a key while there is data still encrypted with it</p>
+    </div>
+    <div class="card">
+      <h4>Key Rotation Emergency</h4>
+      <p>1. If key is compromised: rotate to new key immediately (add as first provider)<br>2. Re-encrypt all resources urgently<br>3. Remove compromised key from config<br>4. Audit all secret reads in logs for the compromise window</p>
+    </div>
+    <div class="card">
+      <h4>Verify Encrypted etcd Backup</h4>
+      <p>1. Restore backup to test cluster<br>2. Attempt to read secrets WITHOUT the encryption key<br>3. Reads should fail with garbled data<br>4. Confirms backup is truly encrypted at rest</p>
+    </div>
+  </div>
+
+  <!-- ───── BEST PRACTICES ───── -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num green">1</div>
+      <div class="step-content">
+        <h4>Use KMS v2 with a cloud-managed key for production</h4>
+        <p>Local key providers (secretbox, aesgcm) store the encryption key in a config file on the control plane node. If the node is compromised, the key and data are both exposed. KMS v2 with AWS KMS/GCP Cloud KMS/Azure Key Vault separates key management from data storage.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">2</div>
+      <div class="step-content">
+        <h4>Encrypt at minimum: secrets and configmaps</h4>
+        <p>Secrets are the obvious target. ConfigMaps are often overlooked but frequently contain connection strings, environment-specific config, or feature flags with security implications.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h4>Remove identity provider after re-encryption</h4>
+        <p>Leaving <code>identity</code> in the providers list permanently creates a window where plaintext data could be written (e.g., if the primary provider fails and falls through). Remove it once all existing data is encrypted.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
+      <div class="step-content">
+        <h4>Never remove a key before re-encrypting all data</h4>
+        <p>Removing a key while data still encrypted with it exists in etcd will make that data permanently unreadable. Always: add new key first → re-encrypt all → remove old key.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">5</div>
+      <div class="step-content">
+        <h4>Restrict access to the EncryptionConfiguration file</h4>
+        <p>The config file contains encryption keys (for local providers) or KMS key references. Set <code>chmod 600</code> owned by root. Never commit to version control. For KMS v2, the file only contains a socket path — less sensitive, but still should be protected.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">6</div>
+      <div class="step-content">
+        <h4>Test restoration from encrypted etcd backups</h4>
+        <p>Regularly practice restoring etcd backups to confirm the encryption/decryption pipeline works end-to-end. An encrypted backup you cannot decrypt is worse than no backup — you will discover this at the worst possible moment.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">7</div>
+      <div class="step-content">
+        <h4>Monitor KMS plugin health continuously</h4>
+        <p>If the KMS plugin becomes unreachable, new Secret writes will fail (with KMS v2, reads continue from DEK cache). Alert on KMS plugin health endpoint and RPC latency. Have a runbook for KMS plugin restart.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">8</div>
+      <div class="step-content">
+        <h4>Combine encryption at rest with RBAC and audit logging</h4>
+        <p>Encryption at rest protects against offline access. RBAC (see <a href="01-rbac.html">RBAC</a>) restricts live API access. Audit logging (see <a href="08-audit-logging.html">Audit Logging</a>) provides forensic visibility. All three are required for a complete secrets security posture.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="back-to-top" id="back-to-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+</main>
+
+<script>
+function toggleTheme(){
+  const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  if(t !== 'dark') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('k8s-theme', t);
+}
+(function(){
+  const t = localStorage.getItem('k8s-theme');
+  if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+})();
+
+function copyCode(btn){
+  const pre = btn.parentElement;
+  const code = pre.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display = a.textContent.toLowerCase().includes(v.toLowerCase()) ? '' : 'none';
+  });
+}
+
+const main = document.getElementById('main');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{
+  btt.classList.toggle('visible', main.scrollTop > 400);
+});
+
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    const id = e.target.id;
+    const link = document.querySelector(`.toc a[href="#${id}"]`);
+    if(link) link.classList.toggle('active', e.isIntersecting);
+  });
+},{root: main, rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('h2[id]').forEach(h=>observer.observe(h));
+</script>
+</body>
+</html>

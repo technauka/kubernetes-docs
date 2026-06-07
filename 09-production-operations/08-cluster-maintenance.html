@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cluster Maintenance — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--blue:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#ffa657;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--blue);text-decoration:none;}a:hover{text-decoration:underline;}
+.container{max-width:960px;margin:0 auto;padding:32px 24px;}
+h1{font-size:28px;font-weight:700;margin-bottom:8px;}
+h2{font-size:20px;font-weight:600;margin:32px 0 12px;color:var(--blue);}
+h3{font-size:16px;font-weight:600;margin:24px 0 8px;color:var(--text);}
+p{margin-bottom:12px;color:var(--text2);}
+pre{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;margin:12px 0;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;}
+.nav{display:flex;align-items:center;gap:16px;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);font-size:14px;}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(88,166,255,.15);color:var(--blue);}
+.warning{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:6px;padding:12px 16px;margin:12px 0;color:var(--yellow);}
+.info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);border-radius:6px;padding:12px 16px;margin:12px 0;color:var(--blue);}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);}
+tr:hover td{background:var(--bg2);}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav">
+  <a href="../COVERAGE.html">← Coverage</a>
+  <span>/</span>
+  <span>09 — Production Operations</span>
+  <span>/</span>
+  <span>08 — Cluster Maintenance</span>
+  <span class="badge">Section 09.08</span>
+</div>
+
+<h1>Cluster Maintenance</h1>
+<p>Procedures for upgrading Kubernetes clusters, rotating certificates, draining nodes, and performing routine maintenance with minimal service disruption.</p>
+
+<h2>Upgrade Strategy</h2>
+<pre><code># Kubernetes version skew policy:
+#   kube-apiserver:          N
+#   kube-controller-manager: N or N-1
+#   kube-scheduler:          N or N-1
+#   kubelet:                 N, N-1, or N-2
+#   kubectl:                 N-1, N, or N+1
+
+# Upgrade order:
+# 1. etcd (if major version change)
+# 2. kube-apiserver
+# 3. kube-controller-manager + kube-scheduler
+# 4. kubelet on each node (one at a time or rolling)
+# 5. kubectl
+
+# Never skip minor versions: 1.27 → 1.28 → 1.29 (not 1.27 → 1.29)</code></pre>
+
+<h2>kubeadm Upgrade (Self-Managed Clusters)</h2>
+<pre><code># Step 1: Upgrade kubeadm on control plane
+apt-get update && apt-get install -y kubeadm=1.29.0-00
+kubeadm version
+
+# Step 2: Preview upgrade plan
+kubeadm upgrade plan
+# Shows: current version, available versions, component upgrade steps
+
+# Step 3: Apply upgrade (control plane only)
+kubeadm upgrade apply v1.29.0
+# This upgrades: kube-apiserver, kube-controller-manager, kube-scheduler
+# Does NOT upgrade: kubelet, kubectl, etcd (separate steps)
+
+# Step 4: Upgrade kubelet and kubectl on control plane
+apt-get install -y kubelet=1.29.0-00 kubectl=1.29.0-00
+systemctl daemon-reload && systemctl restart kubelet
+
+# Step 5: Upgrade additional control plane nodes
+# For each additional control plane node:
+kubeadm upgrade node   # (not 'upgrade apply' — that's only for first CP)
+
+# Step 6: Drain and upgrade each worker node
+kubectl drain worker-1 --ignore-daemonsets --delete-emptydir-data
+# SSH to worker-1:
+apt-get install -y kubeadm=1.29.0-00 kubelet=1.29.0-00 kubectl=1.29.0-00
+kubeadm upgrade node
+systemctl daemon-reload && systemctl restart kubelet
+# Back on control plane:
+kubectl uncordon worker-1
+
+# Step 7: Verify all nodes are on new version
+kubectl get nodes</code></pre>
+
+<h2>EKS Managed Upgrade</h2>
+<pre><code># EKS upgrade: managed control plane, worker nodes separate
+
+# Step 1: Update cluster control plane
+aws eks update-cluster-version \
+  --name my-cluster \
+  --kubernetes-version 1.29
+# Wait for cluster to become ACTIVE:
+aws eks wait cluster-active --name my-cluster
+
+# Step 2: Update managed node group
+aws eks update-nodegroup-version \
+  --cluster-name my-cluster \
+  --nodegroup-name workers \
+  --kubernetes-version 1.29
+# Managed: EKS drains and replaces nodes automatically
+
+# Step 3: Update self-managed node groups (if any)
+# Drain node → terminate → new node launches with new AMI → uncordon
+
+# Step 4: Update add-ons (kube-proxy, CoreDNS, vpc-cni)
+aws eks update-addon \
+  --cluster-name my-cluster \
+  --addon-name kube-proxy \
+  --addon-version v1.29.0-eksbuild.1
+aws eks update-addon --cluster-name my-cluster --addon-name coredns \
+  --addon-version v1.11.1-eksbuild.4
+aws eks update-addon --cluster-name my-cluster --addon-name vpc-cni \
+  --addon-version v1.16.0-eksbuild.1
+
+# Step 5: Verify
+kubectl version
+kubectl get nodes</code></pre>
+
+<h2>Pre-Upgrade Checklist</h2>
+<pre><code># 1. Check release notes for breaking changes
+# https://kubernetes.io/releases/ — read CHANGELOG for target version
+
+# 2. Check API deprecations
+kubectl deprecations --k8s-version v1.29.0
+# OR use pluto:
+pluto detect-all-in-cluster --target-versions k8s=v1.29.0
+
+# 3. Validate add-on compatibility
+# cert-manager, Istio, Prometheus Operator, Argo CD — check their K8s version support matrix
+
+# 4. Take etcd backup
+ETCD_POD=$(kubectl get pod -n kube-system -l component=etcd \
+  -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n kube-system $ETCD_POD -- etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+  --key=/etc/kubernetes/pki/etcd/healthcheck-client.key \
+  snapshot save /tmp/pre-upgrade-etcd.db
+kubectl cp kube-system/$ETCD_POD:/tmp/pre-upgrade-etcd.db ./etcd-pre-upgrade.db
+
+# 5. Check all PodDisruptionBudgets
+kubectl get pdb -A
+
+# 6. Check cluster is healthy
+kubectl get nodes
+kubectl get pods -n kube-system
+kubectl cluster-info</code></pre>
+
+<h2>Certificate Rotation</h2>
+<pre><code># Check certificate expiration
+kubeadm certs check-expiration
+# NAME                    EXPIRES                  RESIDUAL TIME
+# admin.conf              Jan 15, 2026             364d
+# apiserver               Jan 15, 2026             364d
+# etcd-healthcheck-client Jan 15, 2026             364d
+
+# Renew all certificates (kubeadm clusters — annual or on expiry)
+kubeadm certs renew all
+
+# Restart static pods to pick up new certificates
+# Option 1: touch manifests (kubelet detects change and restarts pods)
+for m in /etc/kubernetes/manifests/*.yaml; do touch $m; done
+
+# Option 2: move and restore manifests
+for m in kube-apiserver kube-controller-manager kube-scheduler etcd; do
+  mv /etc/kubernetes/manifests/$m.yaml /tmp/
+done
+sleep 30
+for m in kube-apiserver kube-controller-manager kube-scheduler etcd; do
+  mv /tmp/$m.yaml /etc/kubernetes/manifests/
+done
+
+# Update kubeconfig
+cp /etc/kubernetes/admin.conf ~/.kube/config
+# OR refresh user credentials:
+kubeadm kubeconfig user --client-name admin > ~/.kube/config
+
+# cert-manager certificates (auto-renewed — see certificate management playbook)
+kubectl get certificate -A
+kubectl describe certificate &lt;name&gt; -n &lt;ns&gt;</code></pre>
+
+<h2>Node Maintenance</h2>
+<pre><code># Scheduled node maintenance (kernel update, hardware replacement)
+
+# Step 1: Cordon node (prevent new pods)
+kubectl cordon worker-5
+
+# Step 2: Drain node (evict all evictable pods)
+kubectl drain worker-5 \
+  --ignore-daemonsets \
+  --delete-emptydir-data \
+  --timeout=300s
+
+# If PDB is blocking eviction:
+kubectl get pdb -A
+# Options:
+# a) Wait for other pods to become ready
+# b) Temporarily scale up the affected deployment
+# c) Last resort: --disable-eviction=true (bypasses PDB — risky)
+
+# Step 3: Perform maintenance
+# SSH to node, apply kernel patches, etc.
+apt-get update && apt-get upgrade -y
+reboot
+
+# Step 4: Verify node is back
+kubectl get node worker-5
+# Should show Ready
+
+# Step 5: Uncordon
+kubectl uncordon worker-5
+
+# Step 6: Verify pods rescheduled
+kubectl get pods -o wide -n &lt;ns&gt; | grep worker-5</code></pre>
+
+<h2>Rolling Node Replacement (Cloud)</h2>
+<pre><code># Replace all nodes in a node group (new AMI, instance type change)
+
+# Option 1: Rolling replacement (zero downtime)
+for node in $(kubectl get nodes -l nodegroup=workers -o name); do
+  echo "Draining $node"
+  kubectl drain $node --ignore-daemonsets --delete-emptydir-data --timeout=300s
+  # Terminate node (cloud will provision replacement)
+  INSTANCE_ID=$(kubectl get $node -o jsonpath='{.spec.providerID}' | cut -d'/' -f5)
+  aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+  # Wait for replacement
+  sleep 120
+  kubectl wait --for=condition=Ready node -l nodegroup=workers \
+    --timeout=300s
+done
+
+# Option 2: AWS ASG instance refresh (managed rolling replacement)
+aws autoscaling start-instance-refresh \
+  --auto-scaling-group-name workers-asg \
+  --preferences '{"MinHealthyPercentage":80,"InstanceWarmup":300}'
+
+# Monitor refresh
+aws autoscaling describe-instance-refreshes \
+  --auto-scaling-group-name workers-asg</code></pre>
+
+<h2>Maintenance Windows and Freeze Periods</h2>
+<pre><code># Communicate maintenance windows via Slack/email:
+# - 48h advance notice for planned maintenance
+# - 15 min notice for emergency patching
+# - Post in #platform-announcements channel
+
+# Freeze period configuration (prevent Argo CD sync during freeze)
+# Argo CD: set maintenance window
+kubectl patch application payments-api -n argocd \
+  --type merge -p '{"spec":{"syncPolicy":{"automated":null}}}'
+
+# Re-enable auto-sync after maintenance
+kubectl patch application payments-api -n argocd \
+  --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+
+# Mark node as maintenance (custom label for monitoring)
+kubectl label node worker-5 maintenance=true
+# Remove after maintenance:
+kubectl label node worker-5 maintenance-</code></pre>
+
+<h2>Post-Upgrade Validation</h2>
+<pre><code># Run after every upgrade
+echo "=== Node versions ===" && kubectl get nodes
+echo "=== Control plane ===" && kubectl get pods -n kube-system -l tier=control-plane
+echo "=== Add-ons ===" && kubectl get pods -n kube-system
+echo "=== Workload health ===" && kubectl get pods -A | grep -v Running | grep -v Completed
+echo "=== Recent events ===" && kubectl get events -A --sort-by='.lastTimestamp' | grep -v Normal | tail -20
+
+# Smoke test key workflows
+kubectl run smoke-test --image=nginx --rm -it -- nginx -v
+kubectl run dns-test --image=nicolaka/netshoot --rm -it -- \
+  nslookup kubernetes.default.svc.cluster.local
+
+# Verify HPA is working
+kubectl get hpa -A
+
+# Verify cert-manager
+kubectl get certificate -A | grep -v True</code></pre>
+
+<h2>Related</h2>
+<ul style="color:var(--text2);padding-left:24px;">
+  <li><a href="./07-certificate-management.html">07 — Certificate Management</a> — certificate rotation details</li>
+  <li><a href="./09-incident-response.html">09 — Incident Response</a> — if upgrade causes an outage</li>
+  <li><a href="../12-troubleshooting/05-control-plane-issues.html">12.05 — Control Plane Issues</a> — API server and etcd failures post-upgrade</li>
+</ul>
+
+</div>
+</body>
+</html>

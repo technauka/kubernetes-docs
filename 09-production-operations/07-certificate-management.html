@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificate Management | Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+#sidebar-header h1{font-size:14px;font-weight:600;color:var(--text);}
+#sidebar-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+#sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+#sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none;}
+#sidebar-search input:focus{border-color:var(--accent);}
+#sidebar-nav{overflow-y:auto;flex:1;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);}
+#main{flex:1;overflow-y:auto;padding:40px 48px;position:relative;}
+.page-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.page-header .breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.page-header .breadcrumb span{color:var(--text2);}
+.page-header h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-header .subtitle{color:var(--text2);font-size:16px;line-height:1.6;}
+.page-header .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+#toc{float:right;width:220px;margin:0 0 24px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;position:sticky;top:24px;}
+#toc h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+#toc a{display:block;font-size:12px;color:var(--text2);padding:3px 0;border-left:2px solid transparent;padding-left:8px;transition:all .15s;}
+#toc a:hover{color:var(--text);text-decoration:none;}
+#toc a.active{color:var(--accent);border-left-color:var(--accent);}
+#toc a.toc-h3{padding-left:18px;font-size:11px;}
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);clear:both;}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px;}
+h4{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;}
+p{color:var(--text2);line-height:1.7;margin-bottom:12px;}
+ul,ol{color:var(--text2);line-height:1.7;padding-left:20px;margin-bottom:12px;}
+li{margin-bottom:4px;}
+strong{color:var(--text);font-weight:600;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:12px;color:var(--text);line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);color:var(--text);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card-accent-blue{border-top:3px solid var(--accent);}
+.card-accent-green{border-top:3px solid var(--green);}
+.card-accent-yellow{border-top:3px solid var(--yellow);}
+.card-accent-red{border-top:3px solid var(--red);}
+.card-accent-purple{border-top:3px solid var(--purple);}
+.card-accent-orange{border-top:3px solid var(--orange);}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout-body p,.callout-body ul{font-size:13px;margin:0;}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.diagram .title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+#back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;z-index:100;}
+#back-top.visible{opacity:1;}
+#back-top:hover{background:var(--bg4);color:var(--text);}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Kubernetes Docs</h1>
+    <p>Production-Grade Reference</p>
+  </div>
+  <div id="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)" />
+  </div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Security</div>
+      <a href="../06-security/00-security-overview.html">Security Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/06-multi-tenancy.html">Multi-Tenancy</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="00-production-overview.html">Production Overview</a>
+      <a href="01-capacity-planning.html">Capacity Planning</a>
+      <a href="02-performance-tuning.html">Performance Tuning</a>
+      <a href="03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="04-security-hardening.html">Security Hardening</a>
+      <a href="05-network-operations.html">Network Operations</a>
+      <a href="06-storage-operations.html">Storage Operations</a>
+      <a href="07-certificate-management.html" class="active">Certificate Management</a>
+      <a href="08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="09-incident-response.html">Incident Response</a>
+      <a href="10-sre-practices.html">SRE Practices</a>
+    </div>
+  </nav>
+</div>
+
+<div id="main">
+
+<nav id="toc">
+  <h3>On This Page</h3>
+  <a href="#cert-landscape">Certificate Landscape</a>
+  <a href="#cert-manager">cert-manager</a>
+  <a href="#issuers">Issuers &amp; ClusterIssuers</a>
+  <a href="#certificates">Certificate Resources</a>
+  <a href="#ingress-tls">Ingress TLS Automation</a>
+  <a href="#cluster-pki">Cluster PKI Certs</a>
+  <a href="#rotation">Certificate Rotation</a>
+  <a href="#mtls">mTLS with Istio</a>
+  <a href="#vault-pki">Vault PKI Integration</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#alerts">Alerting</a>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">Production Operations <span>/ Certificate Management</span></div>
+  <h1>Certificate Management</h1>
+  <p class="subtitle">Managing TLS certificates for workloads, ingress, cluster components, and service mesh mTLS — with automated issuance, renewal, and rotation using cert-manager.</p>
+  <div class="meta">
+    <span class="badge badge-blue">Section 09.07</span>
+    <span class="badge badge-green">cert-manager</span>
+    <span class="badge badge-yellow">PKI</span>
+    <span class="badge badge-purple">mTLS</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cert-landscape">Certificate Landscape in Kubernetes</h2>
+
+<p>A production Kubernetes cluster uses certificates at multiple layers — each with different issuers, lifetimes, and rotation mechanisms. Understanding the full landscape prevents surprise expirations that take down clusters or applications.</p>
+
+<div class="diagram">
+  <div class="title">Certificate Layers in a Production Cluster</div>
+<pre style="background:none;border:none;padding:0;margin:0;font-size:12px;line-height:2;">
+  Layer 1: Cluster PKI (managed by kubeadm / cloud provider)
+  ├─ etcd peer CA  +  etcd server/client certs          (10 year CA, 1 year leaf)
+  ├─ Kubernetes CA +  API server cert                   (10 year CA, 1 year leaf)
+  ├─ Front-proxy CA                                     (aggregation layer)
+  ├─ kubelet client cert (node identity to API server)  (auto-rotated by kubelet)
+  └─ Service Account signing key pair                   (not a cert, RSA/ECDSA key)
+
+  Layer 2: Ingress / Edge TLS (managed by cert-manager)
+  ├─ Let's Encrypt ACME (public domains, 90-day, auto-renewed)
+  └─ Internal CA (private domains, configurable lifetime)
+
+  Layer 3: Workload mTLS (managed by service mesh)
+  ├─ Istio SPIFFE certs (24-hour, auto-rotated by istiod)
+  └─ SPIRE (external SPIFFE implementation for multi-cluster)
+
+  Layer 4: Webhook &amp; CRD server certs (managed by cert-manager)
+  └─ Admission webhook TLS, CSR serving certs
+</pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Certificate</th><th>Issuer</th><th>Lifetime</th><th>Rotation</th><th>Impact if expired</th></tr></thead>
+  <tbody>
+    <tr><td>API server TLS</td><td>Cluster CA</td><td>1 year</td><td>Manual (kubeadm) / auto (EKS)</td><td>All kubectl commands fail</td></tr>
+    <tr><td>kubelet client cert</td><td>Cluster CA</td><td>1 year</td><td>Auto (kubelet rotateCertificates)</td><td>Node goes NotReady</td></tr>
+    <tr><td>etcd server cert</td><td>etcd CA</td><td>1 year</td><td>Manual (kubeadm / etcd restart)</td><td>Cluster total outage</td></tr>
+    <tr><td>Ingress TLS (Let's Encrypt)</td><td>ACME</td><td>90 days</td><td>Auto (cert-manager, 30d before expiry)</td><td>Browser TLS errors</td></tr>
+    <tr><td>Ingress TLS (internal CA)</td><td>Internal CA</td><td>Configurable</td><td>Auto (cert-manager)</td><td>Internal service TLS errors</td></tr>
+    <tr><td>Webhook serving cert</td><td>cert-manager</td><td>90 days</td><td>Auto (cert-manager)</td><td>Admission webhooks reject all pods</td></tr>
+    <tr><td>Istio workload cert</td><td>istiod (SPIFFE)</td><td>24 hours</td><td>Auto (Envoy xDS rotation)</td><td>mTLS between services fails</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cert-manager">cert-manager Installation and Operation</h2>
+
+<p>cert-manager is the de facto standard for automating certificate issuance and renewal in Kubernetes. It provides <code>Certificate</code>, <code>Issuer</code>, <code>ClusterIssuer</code>, and <code>CertificateRequest</code> CRDs that integrate with Let's Encrypt ACME, HashiCorp Vault, and internal CAs.</p>
+
+<h3>Install via Helm</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">helm repo add jetstack https://charts.jetstack.io
+helm repo update
+
+helm upgrade --install cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.16.3 \
+  --set installCRDs=true \
+  --set replicaCount=2 \
+  --set webhook.replicaCount=2 \
+  --set cainjector.replicaCount=2 \
+  --set prometheus.enabled=true \
+  --set prometheus.servicemonitor.enabled=true \
+  --set global.leaderElection.namespace=cert-manager
+
+# Verify all cert-manager pods are running
+kubectl get pods -n cert-manager</code></pre>
+
+<h3>cert-manager Component Architecture</h3>
+
+<div class="diagram">
+  <div class="title">cert-manager Components</div>
+<pre style="background:none;border:none;padding:0;margin:0;font-size:12px;line-height:1.8;">
+  cert-manager controller
+    ├─ Watches Certificate, CertificateRequest, Order, Challenge CRDs
+    ├─ Issues CertificateRequests to Issuers
+    └─ Renews certs 30 days before expiry (or 2/3 of lifetime, whichever is sooner)
+
+  cert-manager webhook
+    ├─ Validates Issuer/Certificate spec on admission
+    └─ Defaults missing fields (duration, renewBefore)
+
+  cert-manager cainjector
+    ├─ Injects CA bundles into ValidatingWebhookConfiguration
+    └─ Keeps MutatingWebhookConfiguration caBundle up to date
+
+  Reconciliation loop per Certificate:
+    Certificate → CertificateRequest → Order (ACME) → Challenge (HTTP-01 or DNS-01)
+                                     → CSR (Vault/CA)
+</pre>
+</div>
+
+<h3>cert-manager Health Check</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check all cert-manager pods
+kubectl get pods -n cert-manager -o wide
+
+# Check the cert-manager controller logs
+kubectl logs -n cert-manager \
+  -l app.kubernetes.io/component=controller \
+  --tail=50 --follow
+
+# Check the webhook is healthy (test with a dry-run cert)
+kubectl apply -f - --dry-run=server &lt;&lt;'EOF'
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: test-cert
+  namespace: default
+spec:
+  secretName: test-cert-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames: ["test.example.com"]
+EOF
+
+# List all Certificates and their status across all namespaces
+kubectl get certificates -A
+
+# List failed CertificateRequests
+kubectl get certificaterequests -A | grep -v True
+
+# List all ACME Orders (pending challenges show here)
+kubectl get orders -A
+
+# List all ACME Challenges
+kubectl get challenges -A</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="issuers">Issuers and ClusterIssuers</h2>
+
+<p><code>Issuer</code> is namespace-scoped; <code>ClusterIssuer</code> is cluster-scoped and can issue certificates for any namespace. For shared infrastructure (Let's Encrypt, internal CA), always use <code>ClusterIssuer</code>.</p>
+
+<h3>Let's Encrypt ACME — HTTP-01 Challenge</h3>
+
+<p>HTTP-01 works by placing a file at <code>http://&lt;domain&gt;/.well-known/acme-challenge/&lt;token&gt;</code>. cert-manager creates a temporary Ingress/Service/Pod to serve the challenge response. Requires the domain to be publicly resolvable and port 80 accessible.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Staging issuer for testing (won't burn rate limits)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: ops@example.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-key
+    solvers:
+    - http01:
+        ingress:
+          ingressClassName: nginx
+
+---
+# Production issuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: ops@example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+    - http01:
+        ingress:
+          ingressClassName: nginx</code></pre>
+
+<h3>Let's Encrypt ACME — DNS-01 Challenge (Route 53)</h3>
+
+<p>DNS-01 works by creating a TXT record <code>_acme-challenge.&lt;domain&gt;</code>. It is required for wildcard certificates and works for private/internal domains that are not publicly accessible via HTTP. Uses IRSA for Route 53 permissions.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-dns
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: ops@example.com
+    privateKeySecretRef:
+      name: letsencrypt-dns-key
+    solvers:
+    - dns01:
+        route53:
+          region: us-east-1
+          hostedZoneID: Z1D633PJN98FT9    # optional — scopes to specific zone
+          # Use IRSA — no access key needed
+      selector:
+        dnsZones:
+        - "example.com"
+        - "internal.example.com"</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-json">{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "route53:GetChange",
+        "route53:ChangeResourceRecordSets",
+        "route53:ListResourceRecordSets"
+      ],
+      "Resource": [
+        "arn:aws:route53:::hostedzone/Z1D633PJN98FT9",
+        "arn:aws:route53:::change/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["route53:ListHostedZonesByName"],
+      "Resource": "*"
+    }
+  ]
+}</code></pre>
+
+<h3>Internal CA ClusterIssuer (Self-Signed Root)</h3>
+
+<p>For internal services, cluster-internal mTLS, and webhook certs: create a self-signed root CA in a Secret, then use it as a CA Issuer.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Step 1: Bootstrap — create a self-signed issuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-bootstrap
+spec:
+  selfSigned: {}
+
+---
+# Step 2: Issue a root CA certificate using the bootstrap issuer
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-root-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: "Internal Kubernetes CA"
+  secretName: internal-root-ca-secret
+  duration: 87600h     # 10 years for root CA
+  renewBefore: 720h    # renew 30 days before
+  subject:
+    organizations: ["Example Corp"]
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  issuerRef:
+    name: selfsigned-bootstrap
+    kind: ClusterIssuer
+
+---
+# Step 3: Create a CA ClusterIssuer using the root CA cert
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: internal-ca
+spec:
+  ca:
+    secretName: internal-root-ca-secret</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="certificates">Certificate Resources</h2>
+
+<h3>Certificate for a Workload Service</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: payments-api-tls
+  namespace: production
+spec:
+  secretName: payments-api-tls         # Secret created/updated by cert-manager
+  duration: 2160h                      # 90 days
+  renewBefore: 720h                    # renew 30 days before expiry
+  subject:
+    organizations: ["Example Corp"]
+  commonName: payments-api.production.svc.cluster.local
+  dnsNames:
+  - payments-api.production.svc.cluster.local
+  - payments-api.production.svc
+  - payments-api
+  - payments.example.com              # external domain if needed
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always            # generate new key on every renewal
+  issuerRef:
+    name: internal-ca
+    kind: ClusterIssuer</code></pre>
+
+<h3>Wildcard Certificate (DNS-01 Required)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-example-com
+  namespace: cert-manager
+spec:
+  secretName: wildcard-example-com-tls
+  duration: 2160h
+  renewBefore: 720h
+  dnsNames:
+  - "*.example.com"
+  - "example.com"                      # SANs include bare domain too
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer</code></pre>
+
+<div class="callout callout-info">
+  <span class="callout-icon">ℹ</span>
+  <div class="callout-body">
+    <strong>Wildcard Certificate Distribution</strong>
+    <p>Once issued into a Secret in the <code>cert-manager</code> namespace, use <a href="../08-platform-engineering/00-platform-overview.html">External Secrets Operator</a> or <code>kubectl-reflector</code> to replicate the Secret to namespaces that need it. Alternatively, issue per-namespace Certificates referencing the same ClusterIssuer — cert-manager deduplicates ACME Orders for the same domain.</p>
+  </div>
+</div>
+
+<h3>Certificate Status Inspection</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check a Certificate's status and renewal timeline
+kubectl describe certificate payments-api-tls -n production
+# Look for:
+#   Status.Conditions: Ready=True
+#   Status.NotBefore / NotAfter (expiry)
+#   Status.RenewalTime (when cert-manager will auto-renew)
+
+# Check the TLS Secret's actual expiry
+kubectl get secret payments-api-tls -n production \
+  -o jsonpath='{.data.tls\.crt}' | \
+  base64 -d | \
+  openssl x509 -noout -dates -subject -issuer
+
+# Check all certs and days until expiry (bash one-liner)
+kubectl get secrets -A \
+  -o json | \
+jq -r '.items[] | select(.type=="kubernetes.io/tls") |
+  [.metadata.namespace, .metadata.name, (.data."tls.crt" // "")] |
+  @tsv' | \
+while IFS=$'\t' read ns name cert; do
+  if [ -n "$cert" ]; then
+    EXPIRY=$(echo "$cert" | base64 -d | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+    DAYS=$(( ($(date -d "$EXPIRY" +%s 2>/dev/null || date -jf "%b %d %T %Y %Z" "$EXPIRY" +%s 2>/dev/null) - $(date +%s)) / 86400 ))
+    echo "$DAYS days | $ns/$name | expires $EXPIRY"
+  fi
+done | sort -n</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="ingress-tls">Ingress TLS Automation</h2>
+
+<h3>NGINX Ingress with cert-manager Annotation</h3>
+
+<p>The simplest integration: annotate an Ingress with the issuer name. cert-manager's ingress-shim watches for this annotation and automatically creates a Certificate resource.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: payments-ingress
+  namespace: production
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - payments.example.com
+    secretName: payments-tls           # cert-manager creates this Secret
+  rules:
+  - host: payments.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: payments-api
+            port:
+              number: 8080</code></pre>
+
+<h3>Using a Pre-Issued Certificate Secret</h3>
+
+<p>For wildcard certs issued centrally (stored in <code>cert-manager</code> namespace), reference the replicated Secret directly:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: admin-ingress
+  namespace: production
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - admin.example.com
+    secretName: wildcard-example-com-tls   # pre-existing wildcard cert Secret
+  rules:
+  - host: admin.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-ui
+            port:
+              number: 3000</code></pre>
+
+<h3>ACME Challenge Debugging</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Find failing challenges
+kubectl get challenges -A
+kubectl describe challenge &lt;challenge-name&gt; -n &lt;ns&gt;
+
+# For HTTP-01: verify the challenge URL is accessible
+DOMAIN=payments.example.com
+TOKEN=$(kubectl get challenge -n production -o jsonpath='{.items[0].spec.token}')
+curl -vL "http://$DOMAIN/.well-known/acme-challenge/$TOKEN"
+# Should return the key authorization string
+
+# Check if cert-manager created the temporary solver pod/ingress
+kubectl get pods -n production -l acme.cert-manager.io/http01-solver=true
+kubectl get ingress -n production | grep cm-acme
+
+# For DNS-01: verify the TXT record was created
+dig +short TXT "_acme-challenge.$DOMAIN" @8.8.8.8
+
+# Check cert-manager controller logs for ACME errors
+kubectl logs -n cert-manager \
+  -l app.kubernetes.io/component=controller \
+  --tail=100 | grep -i "error\|acme\|challenge"
+
+# Common HTTP-01 failures:
+# - Firewall blocks port 80 from Let's Encrypt servers
+# - Ingress class mismatch (solver uses wrong class)
+# - Missing ingressClassName on ClusterIssuer solver
+
+# Force re-issue a failed certificate
+kubectl delete certificaterequest -n production \
+  $(kubectl get certificaterequest -n production \
+    -l cert-manager.io/certificate-name=payments-api-tls \
+    -o jsonpath='{.items[0].metadata.name}')</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="cluster-pki">Cluster PKI Certificate Management</h2>
+
+<h3>EKS Managed Certificate Rotation</h3>
+
+<p>On EKS, AWS manages the Kubernetes CA and API server certificate. The kubelet client certificate is auto-rotated by the kubelet when <code>rotateCertificates: true</code> is set (covered in <a href="04-security-hardening.html">Security Hardening</a>). The cluster CA itself can be rotated via EKS managed rotation.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check when EKS cluster CA expires
+aws eks describe-cluster \
+  --name &lt;cluster-name&gt; \
+  --query 'cluster.certificateAuthority.data' \
+  --output text | \
+  base64 -d | \
+  openssl x509 -noout -dates
+
+# Check kubelet certificate on a node
+kubectl debug node/&lt;node-name&gt; -it --image=nicolaka/netshoot -- \
+  openssl x509 -in /etc/kubernetes/pki/kubelet.crt -noout -dates 2>/dev/null || \
+  openssl x509 -in /var/lib/kubelet/pki/kubelet-client-current.pem -noout -dates
+
+# Initiate EKS CA rotation (two-phase: issue new CA + activate)
+aws eks update-cluster-config \
+  --name &lt;cluster-name&gt; \
+  --resources-vpc-config endpointPrivateAccess=true,endpointPublicAccess=true</code></pre>
+
+<h3>Self-Managed Cluster: kubeadm Certificate Renewal</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check all certificate expiry dates (kubeadm clusters)
+kubeadm certs check-expiration
+
+# Sample output:
+# CERTIFICATE                EXPIRES                  RESIDUAL TIME   ...
+# admin.conf                 May 24, 2027 10:00 UTC   364d            OK
+# apiserver                  May 24, 2027 10:00 UTC   364d            OK
+# apiserver-etcd-client      May 24, 2027 10:00 UTC   364d            OK
+# etcd-healthcheck-client    May 24, 2027 10:00 UTC   364d            OK
+
+# Renew all certificates (run on each control plane node)
+# This rotates all certs but does NOT restart components automatically
+kubeadm certs renew all
+
+# Restart control plane components to pick up new certs
+# (they read certs at startup for static pods, so restart static pods)
+crictl rm $(crictl ps -a | grep kube-apiserver | awk '{print $1}')
+crictl rm $(crictl ps -a | grep kube-controller | awk '{print $1}')
+crictl rm $(crictl ps -a | grep kube-scheduler | awk '{print $1}')
+crictl rm $(crictl ps -a | grep etcd | awk '{print $1}')
+
+# kubelet picks up the new client cert automatically (rotateCertificates)
+# Update kubeconfig after renewal
+cp /etc/kubernetes/admin.conf ~/.kube/config</code></pre>
+
+<div class="callout callout-danger">
+  <span class="callout-icon">!</span>
+  <div class="callout-body">
+    <strong>Expired API Server Certificate = Total Cluster Lock-out</strong>
+    <p>If the API server certificate expires, <code>kubectl</code> stops working entirely. You cannot use cert-manager or any in-cluster tooling to recover — you must have out-of-band node access (SSH, SSM) to run <code>kubeadm certs renew all</code> directly on the control plane. Set up expiry alerts with at least 30 days advance warning.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="rotation">Certificate Rotation Strategies</h2>
+
+<h3>Zero-Downtime Application Certificate Rotation</h3>
+
+<p>When cert-manager renews a Certificate, it updates the TLS Secret in-place. Applications must reload the certificate without restart — or Kubernetes must restart them. The two main strategies:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Strategy</th><th>How it works</th><th>Downtime</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr><td>Volume mount (file watch)</td><td>App watches cert file path and reloads on change; K8s propagates Secret updates to mounted files within ~1 minute</td><td>None</td><td>NGINX, custom servers with reload support</td></tr>
+    <tr><td>Rolling restart via Reloader</td><td>Stakater Reloader watches Secrets; triggers rolling Deployment restart when TLS Secret changes</td><td>Rolling (pods replaced)</td><td>Apps without file-watch, any container</td></tr>
+    <tr><td>Manual restart annotation</td><td>cert-manager annotation triggers restart; or <code>kubectl rollout restart</code> after renewal</td><td>Rolling</td><td>Simple deployments</td></tr>
+    <tr><td>Envoy SDS (xDS)</td><td>Envoy dynamically fetches new certs via Secret Discovery Service — no restart needed</td><td>None</td><td>Istio-managed workloads</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Stakater Reloader — Auto-Restart on Secret Change</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">helm repo add stakater https://stakater.github.io/stakater-charts
+helm upgrade --install reloader stakater/reloader \
+  --namespace reloader \
+  --create-namespace \
+  --set reloader.watchGlobally=false</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: production
+  annotations:
+    # Trigger rolling restart when this Secret changes
+    secret.reloader.stakater.com/reload: "payments-api-tls"
+spec:
+  # ...rest of deployment spec</code></pre>
+
+<h3>Secret Rotation — Private Key Rotation Policy</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: payments-api-tls
+  namespace: production
+spec:
+  secretName: payments-api-tls
+  privateKey:
+    rotationPolicy: Always    # generate NEW private key on every renewal
+    # vs "Never" — reuse same key (easier for cert pinning, less secure)
+  duration: 2160h
+  renewBefore: 720h
+  # ...rest of spec</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="mtls">mTLS with Istio</h2>
+
+<p>Istio uses SPIFFE (Secure Production Identity Framework For Everyone) X.509 certificates for pod-to-pod mTLS. Every pod gets a SPIFFE identity: <code>spiffe://&lt;trust-domain&gt;/ns/&lt;namespace&gt;/sa/&lt;service-account&gt;</code>. Certs are 24-hour by default and rotated automatically by istiod.</p>
+
+<h3>Enabling Strict mTLS Cluster-Wide</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Enforce mTLS for all services in the mesh (no plaintext)
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system     # mesh-wide policy
+spec:
+  mtls:
+    mode: STRICT</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Verify mTLS is active between pods
+istioctl x authz check &lt;pod-name&gt; -n production
+
+# Check a pod's SPIFFE identity
+kubectl exec -n production &lt;pod-name&gt; -c istio-proxy -- \
+  openssl s_client -connect &lt;target-service&gt;:&lt;port&gt; -showcerts 2>/dev/null | \
+  openssl x509 -noout -text | grep -A2 "Subject Alternative"
+# Should show: URI:spiffe://cluster.local/ns/production/sa/payments-sa
+
+# Check Citadel (istiod) cert rotation interval
+kubectl get configmap istio -n istio-system \
+  -o jsonpath='{.data.mesh}' | grep -i "workloadCertTtl\|certTtl"
+
+# Force rotate all workload certs (by restarting istiod)
+kubectl rollout restart deployment/istiod -n istio-system</code></pre>
+
+<h3>AuthorizationPolicy for Service-to-Service mTLS</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Allow payments-api to call database service only from the payments SA
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: database-allow-payments
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: database
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - "cluster.local/ns/production/sa/payments-sa"
+    to:
+    - operation:
+        ports: ["5432"]</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="vault-pki">HashiCorp Vault PKI Integration</h2>
+
+<p>For organizations requiring an enterprise CA, audit trail for all certificate issuances, or short-lived certificates (minutes not days), cert-manager integrates with Vault's PKI secrets engine.</p>
+
+<h3>cert-manager Vault ClusterIssuer</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: vault-pki
+spec:
+  vault:
+    server: https://vault.example.com
+    path: pki/sign/kubernetes-role       # Vault PKI sign endpoint
+    auth:
+      kubernetes:
+        mountPath: /v1/auth/kubernetes
+        role: cert-manager
+        secretRef:
+          name: vault-cert-manager-token
+          key: token</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Configure Vault PKI engine (one-time setup)
+vault secrets enable pki
+vault secrets tune -max-lease-ttl=8760h pki
+
+# Generate root CA inside Vault
+vault write -field=certificate pki/root/generate/internal \
+  common_name="example.com" \
+  ttl=87600h &gt; /tmp/vault-root-ca.crt
+
+# Create an intermediate CA for Kubernetes
+vault secrets enable -path=pki_int pki
+vault write -format=json pki_int/intermediate/generate/internal \
+  common_name="kubernetes.example.com Intermediate CA" | \
+  jq -r '.data.csr' &gt; /tmp/pki_int.csr
+
+vault write -format=json pki/root/sign-intermediate \
+  csr=@/tmp/pki_int.csr \
+  format=pem_bundle \
+  ttl=43800h | \
+  jq -r '.data.certificate' &gt; /tmp/signed_cert.pem
+
+vault write pki_int/intermediate/set-signed certificate=@/tmp/signed_cert.pem
+
+# Create a role for cert-manager
+vault write pki_int/roles/kubernetes-role \
+  allowed_domains="svc.cluster.local,example.com" \
+  allow_subdomains=true \
+  max_ttl=720h \
+  require_cn=false
+
+# Configure Kubernetes auth method in Vault
+vault auth enable kubernetes
+vault write auth/kubernetes/config \
+  kubernetes_host="https://kubernetes.default.svc" \
+  kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+  token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token
+
+vault write auth/kubernetes/role/cert-manager \
+  bound_service_account_names=cert-manager \
+  bound_service_account_namespaces=cert-manager \
+  policies=pki-policy \
+  ttl=1h</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Troubleshooting Certificate Issues</h2>
+
+<h3>Certificate Not Issuing / Stuck Pending</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Step 1: Check Certificate object status
+kubectl describe certificate &lt;name&gt; -n &lt;ns&gt;
+# Look for: Status.Conditions[] — Ready=False with Reason and Message
+
+# Step 2: Check the CertificateRequest
+kubectl get certificaterequest -n &lt;ns&gt; -l cert-manager.io/certificate-name=&lt;name&gt;
+kubectl describe certificaterequest &lt;cr-name&gt; -n &lt;ns&gt;
+
+# Step 3: For ACME — check Order and Challenge
+kubectl get order -n &lt;ns&gt;
+kubectl describe order &lt;order-name&gt; -n &lt;ns&gt;
+kubectl get challenge -n &lt;ns&gt;
+kubectl describe challenge &lt;challenge-name&gt; -n &lt;ns&gt;
+
+# Step 4: Check cert-manager controller logs for errors
+kubectl logs -n cert-manager \
+  -l app.kubernetes.io/component=controller \
+  --since=10m | grep -i "error\|failed"
+
+# Step 5: Check Issuer/ClusterIssuer is Ready
+kubectl get clusterissuer
+# STATUS column should be True/Ready
+kubectl describe clusterissuer letsencrypt-prod | grep -A5 Conditions
+
+# Step 6: For DNS-01 — verify solver has Route 53 permissions
+kubectl logs -n cert-manager \
+  -l app.kubernetes.io/component=controller \
+  --since=10m | grep -i "route53\|dns"</code></pre>
+
+<h3>Certificate Expired — Emergency Recovery</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Force immediate reissuance (cert-manager normally won't reissue a valid cert)
+# Method 1: add the force-renewal annotation
+kubectl annotate certificate &lt;name&gt; -n &lt;ns&gt; \
+  cert-manager.io/issuer-name- \
+  --overwrite
+kubectl annotate certificate &lt;name&gt; -n &lt;ns&gt; \
+  cert-manager.io/renew-before="8760h" \
+  --overwrite
+
+# Method 2: delete the Certificate's TLS Secret — cert-manager detects it's gone
+# and immediately issues a new one (brief outage during reissue)
+kubectl delete secret &lt;tls-secret-name&gt; -n &lt;ns&gt;
+
+# Method 3: cmctl (cert-manager CLI tool)
+cmctl renew &lt;certificate-name&gt; -n &lt;ns&gt;
+
+# Install cmctl
+curl -L https://github.com/cert-manager/cert-manager/releases/latest/download/cmctl-linux-amd64 \
+  -o /usr/local/bin/cmctl &amp;&amp; chmod +x /usr/local/bin/cmctl
+
+# Check all cert statuses at a glance
+cmctl status certificate -A</code></pre>
+
+<h3>Webhook Certificate Bootstrap Problem</h3>
+
+<div class="callout callout-warn">
+  <span class="callout-icon">⚠</span>
+  <div class="callout-body">
+    <strong>Chicken-and-Egg: cert-manager Webhook Needs a Certificate to Issue Certificates</strong>
+    <p>If cert-manager's webhook certificate expires or is missing, cert-manager's own webhook becomes unavailable, blocking all Certificate resource operations. The cainjector handles keeping the webhook CA bundle up to date. If you hit this state, delete the webhook temporarily: <code>kubectl delete validatingwebhookconfiguration cert-manager-webhook</code>, let cert-manager re-issue its own cert, then re-install cert-manager to restore the webhook.</p>
+  </div>
+</div>
+
+<h3>TLS Debugging with openssl</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Test TLS handshake and certificate chain from outside the cluster
+openssl s_client -connect payments.example.com:443 -showcerts &lt;/dev/null 2&gt;/dev/null | \
+  openssl x509 -noout -text | grep -E "Issuer:|Subject:|Not (Before|After)"
+
+# From inside the cluster — port-forward to the service and test
+kubectl port-forward svc/payments-api 8443:443 -n production &amp;
+openssl s_client -connect 127.0.0.1:8443 -servername payments-api \
+  &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -dates
+
+# Verify cert chain (both leaf and intermediates)
+openssl s_client -connect payments.example.com:443 \
+  -CAfile /etc/ssl/certs/ca-certificates.crt 2&gt;&amp;1 | \
+  grep -E "verify|Verification"
+
+# Check which SANs are in a certificate
+kubectl get secret payments-api-tls -n production \
+  -o jsonpath='{.data.tls\.crt}' | \
+  base64 -d | \
+  openssl x509 -noout -text | grep -A10 "Subject Alternative"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Certificate Alerting</h2>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: certificate-management-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: cert-manager.certificates
+    rules:
+
+    - alert: CertificateExpiryWarning
+      expr: |
+        certmanager_certificate_expiration_timestamp_seconds
+          - time() < 30 * 24 * 3600
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "Certificate expires in less than 30 days"
+        description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} expires in {{ $value | humanizeDuration }}."
+
+    - alert: CertificateExpiryCritical
+      expr: |
+        certmanager_certificate_expiration_timestamp_seconds
+          - time() < 7 * 24 * 3600
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Certificate expires in less than 7 days"
+        description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} expires in {{ $value | humanizeDuration }}. Immediate renewal required."
+
+    - alert: CertificateNotReady
+      expr: |
+        certmanager_certificate_ready_status{condition="False"} == 1
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "cert-manager Certificate is not Ready"
+        description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} has been in a non-Ready state for > 10 minutes."
+
+    - alert: CertificateRenewalFailed
+      expr: |
+        increase(certmanager_certificate_renewal_errors_total[1h]) > 0
+      labels:
+        severity: warning
+      annotations:
+        summary: "cert-manager certificate renewal failed"
+        description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} failed to renew. Check cert-manager controller logs."
+
+  - name: cert-manager.acme
+    rules:
+
+    - alert: ACMEOrderFailed
+      expr: |
+        certmanager_acme_client_request_count{status=~"4..|5.."} > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "ACME order HTTP error responses"
+        description: "cert-manager ACME client is receiving {{ $value }} error responses. Let's Encrypt rate limits or outage may be affecting certificate issuance."
+
+  - name: cert-manager.tls-secrets
+    rules:
+
+    - alert: TLSSecretExpiringSoon
+      expr: |
+        (
+          kube_secret_info{type="kubernetes.io/tls"}
+            * on (namespace, secret_name)
+          group_right()
+          label_replace(
+            certmanager_certificate_expiration_timestamp_seconds,
+            "secret_name", "$1", "name", "(.*)"
+          )
+        ) - time() < 14 * 24 * 3600
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "TLS Secret expires in less than 14 days"
+        description: "TLS Secret {{ $labels.secret_name }} in {{ $labels.namespace }} expires soon."
+
+  - name: cluster-pki
+    rules:
+
+    - alert: KubeAPIServerCertExpiringSoon
+      expr: |
+        apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+          and
+        histogram_quantile(0.01, rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))
+          < 7 * 24 * 3600
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kubernetes API server client certificate expires in < 7 days"
+        description: "A client certificate used with the API server expires in less than 7 days. Run `kubeadm certs renew all` on control plane nodes."</code></pre>
+
+<h3>cert-manager Grafana Dashboard Key Metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># Total certificates by Ready status
+count by (condition) (certmanager_certificate_ready_status)
+
+# Certificates expiring within N days
+count(
+  certmanager_certificate_expiration_timestamp_seconds - time()
+    < 30 * 24 * 3600
+)
+
+# ACME request rate by status
+sum by (status) (
+  rate(certmanager_acme_client_request_count[5m])
+)
+
+# Controller reconcile duration p99
+histogram_quantile(0.99,
+  sum by (le, controller) (
+    rate(certmanager_controller_sync_call_count_bucket[5m])
+  )
+)
+
+# Certificates successfully renewed in last 24h
+increase(certmanager_certificate_renewal_count_total[24h])</code></pre>
+
+<h3>Best Practices Summary</h3>
+
+<div class="card-grid">
+  <div class="card card-accent-green">
+    <h3>Use ClusterIssuers for Shared CAs</h3>
+    <p>Always define Let's Encrypt and internal CA issuers as <code>ClusterIssuer</code> — namespace-scoped <code>Issuer</code> requires duplication per namespace and creates operational overhead.</p>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>Staging Before Production</h3>
+    <p>Test all ACME configurations against <code>letsencrypt-staging</code> first. Let's Encrypt production has a rate limit of 5 duplicate certificates per domain per week — a misconfigured challenge burns these quickly.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>rotationPolicy: Always</h3>
+    <p>Set <code>privateKey.rotationPolicy: Always</code> on Certificate resources. Reusing the same private key on renewal means a compromised key stays valid indefinitely — each renewal should generate a fresh key pair.</p>
+  </div>
+  <div class="card card-accent-red">
+    <h3>Alert at 30 Days, Not 7</h3>
+    <p>Set warning alerts at 30 days expiry, critical at 7 days. cert-manager renews 30 days before expiry by default, but DNS propagation delays, ACME outages, or rate limits can stall renewal for days. 30-day warning gives time to intervene.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>DNS-01 for Internal Domains</h3>
+    <p>Use DNS-01 challenge for any domain that is not publicly reachable via HTTP — internal services, VPN-only dashboards, staging environments. HTTP-01 requires port 80 to be publicly accessible from Let's Encrypt servers.</p>
+  </div>
+  <div class="card card-accent-orange">
+    <h3>Audit Cluster PKI Annually</h3>
+    <p>Run <code>kubeadm certs check-expiration</code> at least annually on self-managed clusters. The cluster CA is 10 years, but leaf certs (API server, etcd) are 1 year. A missed annual renewal causes a hard cluster outage.</p>
+  </div>
+</div>
+
+<button id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+</div><!-- /#main -->
+
+<script>
+function filterNav(v){
+  const q=v.toLowerCase();
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=(!q||a.textContent.toLowerCase().includes(q))?'':'none';
+  });
+}
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+const main=document.getElementById('main');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{
+  backTop.classList.toggle('visible',main.scrollTop>400);
+});
+const tocLinks=document.querySelectorAll('#toc a');
+const sections=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('#toc a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:document.getElementById('main'),threshold:0.3});
+sections.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Incident Response — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--blue:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#ffa657;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--blue);text-decoration:none;}a:hover{text-decoration:underline;}
+.container{max-width:960px;margin:0 auto;padding:32px 24px;}
+h1{font-size:28px;font-weight:700;margin-bottom:8px;}
+h2{font-size:20px;font-weight:600;margin:32px 0 12px;color:var(--blue);}
+h3{font-size:16px;font-weight:600;margin:24px 0 8px;color:var(--text);}
+p{margin-bottom:12px;color:var(--text2);}
+pre{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;margin:12px 0;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;}
+.nav{display:flex;align-items:center;gap:16px;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);font-size:14px;}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(88,166,255,.15);color:var(--blue);}
+.sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;margin-right:8px;}
+.sev-p1{background:rgba(248,81,73,.2);color:var(--red);}
+.sev-p2{background:rgba(255,166,87,.2);color:var(--orange);}
+.sev-p3{background:rgba(210,153,34,.2);color:var(--yellow);}
+.sev-p4{background:rgba(63,185,80,.2);color:var(--green);}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);}
+tr:hover td{background:var(--bg2);}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav">
+  <a href="../COVERAGE.html">← Coverage</a>
+  <span>/</span>
+  <span>09 — Production Operations</span>
+  <span>/</span>
+  <span>09 — Incident Response</span>
+  <span class="badge">Section 09.09</span>
+</div>
+
+<h1>Incident Response</h1>
+<p>Structured procedures for detecting, triaging, communicating, and resolving production incidents — and running blameless postmortems afterward.</p>
+
+<h2>Severity Classification</h2>
+<table>
+  <tr><th>Severity</th><th>Definition</th><th>Response Time</th><th>Escalation</th></tr>
+  <tr><td><span class="sev sev-p1">P1</span>Critical</td><td>Complete outage; all users affected; revenue impact</td><td>Immediate (24/7)</td><td>On-call + Engineering Manager + VP</td></tr>
+  <tr><td><span class="sev sev-p2">P2</span>High</td><td>Major feature unavailable; &gt;20% users affected</td><td>&lt;15 min (24/7)</td><td>On-call + Engineering Manager</td></tr>
+  <tr><td><span class="sev sev-p3">P3</span>Medium</td><td>Degraded performance; &lt;20% users affected</td><td>&lt;2h (business hours)</td><td>On-call engineer</td></tr>
+  <tr><td><span class="sev sev-p4">P4</span>Low</td><td>Minor issue; workaround available</td><td>Next business day</td><td>Ticket + team Slack</td></tr>
+</table>
+
+<h2>Incident Response Lifecycle</h2>
+<pre><code>1. DETECT      Alert fires → PagerDuty pages on-call engineer
+2. ACKNOWLEDGE On-call acknowledges within 5 min (P1/P2) or 15 min (P3)
+3. TRIAGE      Assess severity, impact, blast radius
+4. COMMUNICATE Open incident channel, post initial status update
+5. INVESTIGATE Identify root cause while mitigating symptoms
+6. MITIGATE    Apply fix or workaround to restore service
+7. RESOLVE     Verify service restored, close incident
+8. POSTMORTEM  Blameless review within 5 business days (P1/P2)</code></pre>
+
+<h2>First 5 Minutes — P1 Response</h2>
+<pre><code># Immediately when paged:
+
+# 1. Acknowledge PagerDuty
+# 2. Open incident Slack channel: /incident P1 "payment service down"
+# 3. Post initial update in #incidents:
+#    "⚠️ INCIDENT: Payments service returning 503. Investigating. IC: @alice"
+
+# Quick diagnosis commands (run in parallel):
+kubectl get pods -n production | grep -v Running
+kubectl get events -n production --sort-by='.lastTimestamp' | tail -20
+kubectl top nodes
+kubectl get nodes -o wide
+
+# Check Grafana dashboard (bookmark these):
+# - API p99 latency
+# - Error rate
+# - Pod restart count
+# - Node CPU/memory</code></pre>
+
+<h2>Incident Commander Responsibilities</h2>
+<pre><code># Incident Commander (IC) is the single decision-maker during an incident.
+# IC does NOT have to be the most technical person — they coordinate.
+
+IC responsibilities:
+  - Open the incident channel and Zoom bridge
+  - Assign roles: Investigator, Communicator, Scribe
+  - Drive to mitigation (not necessarily root cause)
+  - Post status updates every 15 minutes (P1) or 30 minutes (P2)
+  - Decide when to escalate (engage more engineers)
+  - Decide when incident is resolved
+  - Ensure postmortem is scheduled
+
+Status update template (every 15 min during P1):
+  Status: INVESTIGATING | MITIGATING | RESOLVED
+  Impact: [describe what's broken and who's affected]
+  Last Action: [what we just tried]
+  Next Action: [what we're doing now]
+  ETA: [estimate if known, "unknown" if not]</code></pre>
+
+<h2>Common Kubernetes Incident Playbooks</h2>
+
+<h3>All Pods Crashing</h3>
+<pre><code>kubectl get pods -A | grep CrashLoop
+kubectl describe pod &lt;pod&gt; -n &lt;ns&gt;
+kubectl logs &lt;pod&gt; -n &lt;ns&gt; --previous
+
+# Common cause: bad deploy (wrong config, broken image)
+# Immediate mitigation:
+kubectl rollout undo deployment &lt;deploy&gt; -n &lt;ns&gt;
+# Verify rollback:
+kubectl rollout status deployment &lt;deploy&gt; -n &lt;ns&gt;
+
+# If Argo CD is auto-syncing back to broken state:
+kubectl patch application &lt;app&gt; -n argocd \
+  --type merge -p '{"spec":{"syncPolicy":{"automated":null}}}'</code></pre>
+
+<h3>Service Traffic Dropped to Zero</h3>
+<pre><code># Check endpoints
+kubectl get endpoints &lt;svc&gt; -n &lt;ns&gt;
+
+# Check pods
+kubectl get pods -n &lt;ns&gt; -l app=&lt;app&gt;
+
+# Trace the path
+kubectl run debug --image=nicolaka/netshoot --rm -it -n &lt;ns&gt; -- \
+  curl -v http://&lt;svc&gt;.&lt;ns&gt;.svc.cluster.local:&lt;port&gt;/healthz
+
+# If pods are unhealthy: rollback or restart
+kubectl rollout restart deployment &lt;deploy&gt; -n &lt;ns&gt;
+
+# If NetworkPolicy changed recently:
+kubectl get networkpolicy -n &lt;ns&gt;
+kubectl describe networkpolicy &lt;np&gt; -n &lt;ns&gt;</code></pre>
+
+<h3>Node Group Failure</h3>
+<pre><code>kubectl get nodes
+# Several nodes showing NotReady
+
+# Check if pods have rescheduled (they will if other nodes have capacity)
+kubectl get pods -A -o wide | grep &lt;dead-node&gt;
+
+# For cloud: check if ASG is replacing instances
+aws autoscaling describe-auto-scaling-groups \
+  --auto-scaling-group-names workers-asg \
+  --query 'AutoScalingGroups[0].{Desired:DesiredCapacity,Running:Instances[?LifecycleState==`InService`]|length(@)}'
+
+# Force pod migration from dead node (if pods stuck)
+kubectl delete node &lt;dead-node&gt;   # removes from API server → triggers rescheduling</code></pre>
+
+<h3>etcd / API Server Issues</h3>
+<pre><code># kubectl not responding: "The connection to the server was refused"
+
+# Check control plane (from a node that can reach it)
+curl -k https://&lt;api-server-ip&gt;:6443/healthz
+
+# EKS: check in console or:
+aws eks describe-cluster --name &lt;cluster&gt; --query 'cluster.status'
+
+# kubeadm: check if etcd is running
+kubectl get pod -n kube-system etcd-&lt;cp-node&gt;
+systemctl status etcd   # on control plane node
+
+# Emergency: if API server is down, kubelet continues running existing pods
+# Focus on restoring API server before touching any workloads</code></pre>
+
+<h2>Rollback Procedures</h2>
+<pre><code># Application rollback (Deployment)
+kubectl rollout history deployment &lt;deploy&gt; -n &lt;ns&gt;
+kubectl rollout undo deployment &lt;deploy&gt; -n &lt;ns&gt;
+kubectl rollout undo deployment &lt;deploy&gt; --to-revision=&lt;N&gt; -n &lt;ns&gt;
+
+# Argo CD rollback (disable auto-sync first)
+kubectl patch application &lt;app&gt; -n argocd \
+  --type merge -p '{"spec":{"syncPolicy":{"automated":null}}}'
+argocd app rollback &lt;app&gt; --revision &lt;N&gt;
+
+# Helm rollback
+helm history payments-api -n production
+helm rollback payments-api &lt;revision&gt; -n production
+
+# Rollback a ConfigMap change (restore from git)
+git show HEAD~1:k8s/production/configmap.yaml | kubectl apply -f -
+
+# Emergency image pin (bypass GitOps temporarily)
+kubectl set image deployment/payments-api \
+  payments-api=myrepo/payments-api:sha-abc123 \
+  -n production</code></pre>
+
+<h2>Communication Templates</h2>
+<pre><code># Initial status page update (within 5 min of incident declaration):
+"We are currently investigating reports of [brief description].
+Our team has been alerted and is actively working on a resolution.
+We will provide an update in 30 minutes or sooner."
+
+# Mid-incident update:
+"We have identified the root cause as [brief, non-technical].
+We are currently [action being taken].
+Estimated time to resolution: [ETA or unknown].
+Next update in 15 minutes."
+
+# Resolution:
+"This incident has been resolved as of [time].
+The issue was [brief explanation].
+All services are now operating normally.
+We will publish a full post-mortem within 5 business days."</code></pre>
+
+<h2>Blameless Postmortem Template</h2>
+<pre><code># Postmortem required for all P1 and P2 incidents
+# Due: within 5 business days
+
+## Incident Summary
+- Date/Time:
+- Duration:
+- Severity: P1/P2
+- Services Affected:
+- Impact: (users affected, requests failed, revenue)
+
+## Timeline
+| Time  | Event | Who |
+|-------|-------|-----|
+| 14:00 | Alert fired: error rate > 5% | PagerDuty |
+| 14:02 | On-call acknowledged | alice |
+| 14:08 | Identified bad deploy | alice, bob |
+| 14:15 | Rolled back deployment | alice |
+| 14:20 | Service restored | - |
+
+## Root Cause
+[Technical explanation of what broke and why]
+
+## Contributing Factors
+- [Factor 1: missing staging test]
+- [Factor 2: no canary deployment]
+
+## What Went Well
+- Alert fired immediately
+- Rollback was fast (2 min)
+
+## Action Items
+| Action | Owner | Due | Priority |
+|--------|-------|-----|----------|
+| Add integration test for X | Bob | 2025-02-01 | P1 |
+| Enable canary deployment | Alice | 2025-02-15 | P2 |
+| Improve runbook for Y | Charlie | 2025-02-08 | P3 |</code></pre>
+
+<h2>On-Call Hygiene</h2>
+<pre><code># After every incident:
+# 1. Ensure all action items are tracked (Linear/Jira tickets)
+# 2. Update runbook if gaps found
+# 3. Add/improve alerts if detection was slow
+# 4. Schedule postmortem within 24h (for P1)
+
+# Toil tracking:
+# Log every page that required manual action
+# Aggregate monthly: if any alert fires > 5 times → automate or fix
+
+# On-call metrics to review weekly:
+# - Mean Time to Acknowledge (MTTA): target < 5 min
+# - Mean Time to Resolve (MTTR): track by severity
+# - False positive alert rate: target < 5%
+# - Pages per on-call rotation: target < 5 actionable pages/week</code></pre>
+
+<h2>Related</h2>
+<ul style="color:var(--text2);padding-left:24px;">
+  <li><a href="./10-sre-practices.html">10 — SRE Practices</a> — SLOs, error budgets, toil</li>
+  <li><a href="../10-team-workflows/09-on-call.html">10.09 — On-Call</a> — PagerDuty setup and rotation</li>
+  <li><a href="../10-team-workflows/08-runbooks.html">10.08 — Runbooks</a> — runbook standards</li>
+  <li><a href="../12-troubleshooting/00-troubleshooting-overview.html">12 — Troubleshooting</a> — per-layer diagnostic playbooks</li>
+</ul>
+
+</div>
+</body>
+</html>

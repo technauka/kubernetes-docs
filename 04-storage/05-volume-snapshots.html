@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volume Snapshots | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sidebar-logo{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;}
+.sidebar-title{font-weight:600;font-size:14px;}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text);outline:none;}
+.sidebar-search input:focus{border-color:var(--accent);}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+.theme-toggle{background:none;border:none;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:8px;font-size:12px;}
+.topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:99;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--text);font-size:18px;}
+.breadcrumb{font-size:13px;color:var(--text3);}
+.breadcrumb span{color:var(--text2);}
+.topbar-right{margin-left:auto;}
+.back-to-top{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+.back-to-top.visible{opacity:1;}
+.main-wrapper{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;padding:64px 40px 80px;max-width:900px;min-width:0;overflow-y:auto;height:100vh;}
+.toc-sidebar{width:var(--toc-w);flex-shrink:0;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);background:var(--bg);}
+.toc-sidebar h4{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.toc-sidebar a{display:block;font-size:12px;color:var(--text3);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-sidebar a:hover{color:var(--text2);}
+.toc-sidebar a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-sidebar a.toc-h3{padding-left:16px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.3;}
+h2{font-size:22px;font-weight:600;margin:48px 0 16px;padding-top:8px;border-top:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:16px;color:var(--text2);}
+.lead{font-size:17px;color:var(--text2);margin-bottom:24px;}
+.page-meta{display:flex;gap:16px;margin-bottom:32px;flex-wrap:wrap;}
+.meta-badge{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.meta-badge.green{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.3);}
+.meta-badge.blue{background:rgba(88,166,255,.12);color:var(--accent);border-color:rgba(88,166,255,.3);}
+.meta-badge.yellow{background:rgba(210,153,34,.12);color:var(--yellow);border-color:rgba(210,153,34,.3);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin-bottom:20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;font-size:12px;border:1px solid var(--border);color:var(--text2);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:14px 16px;margin-bottom:20px;border-left:4px solid;display:flex;gap:10px;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;font-size:14px;}
+.callout-body strong{display:block;margin-bottom:4px;}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.tip{background:rgba(63,185,80,.08);border-color:var(--green);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px;overflow-x:auto;}
+.diagram pre{background:none;border:none;padding:0;margin:0;font-size:13px;color:var(--text2);}
+.section-nav{display:flex;justify-content:space-between;margin-top:64px;padding-top:24px;border-top:1px solid var(--border);}
+.section-nav a{display:flex;flex-direction:column;gap:4px;max-width:45%;}
+.section-nav a .nav-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.section-nav a .nav-title{font-size:14px;color:var(--accent);}
+.section-nav a.next{text-align:right;}
+ul.plain{color:var(--text2);padding-left:24px;margin-bottom:16px;font-size:14px;line-height:2;}
+ol.steps{color:var(--text2);padding-left:24px;margin-bottom:20px;font-size:14px;line-height:2.2;}
+@media(max-width:1100px){.toc-sidebar{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrapper{margin-left:0;}
+  .main-content{padding:64px 20px 80px;}
+  .topbar{left:0;}
+  .hamburger{display:block;}
+  .coverage-body{grid-template-columns:1fr !important;}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">K8s</div>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="sidebar-filter" placeholder="Filter topics…" oninput="filterNav(this.value)">
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">00 — Foundations</div>
+      <a href="../00-foundations/00-kubernetes-overview.html">Kubernetes Overview</a>
+      <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+      <a href="../00-foundations/02-api-machinery.html">API Machinery</a>
+      <a href="../00-foundations/03-kubectl-and-client.html">kubectl &amp; Client</a>
+      <a href="../00-foundations/04-objects-and-manifests.html">Objects &amp; Manifests</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 — Networking</div>
+      <a href="../03-networking/06-gateway-api.html">Gateway API</a>
+      <a href="../03-networking/07-network-policies.html">Network Policies</a>
+      <a href="../03-networking/09-load-balancing.html">Load Balancing</a>
+      <a href="../03-networking/10-service-mesh.html">Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 — Storage</div>
+      <a href="00-storage-overview.html">Storage Overview</a>
+      <a href="01-volumes.html">Volumes</a>
+      <a href="02-persistent-volumes.html">Persistent Volumes</a>
+      <a href="03-storage-classes.html">Storage Classes</a>
+      <a href="04-csi-drivers.html">CSI Drivers</a>
+      <a href="05-volume-snapshots.html" class="active">Volume Snapshots</a>
+      <a href="06-stateful-storage-patterns.html">Stateful Patterns</a>
+      <a href="07-storage-capacity.html">Storage Capacity</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 — Configuration</div>
+      <a href="../05-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../05-configuration/01-secrets.html">Secrets</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">☀️</span> Toggle theme
+    </button>
+  </div>
+</aside>
+
+<div class="topbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div class="breadcrumb">04 — Storage <span>/ Volume Snapshots</span></div>
+  <div class="topbar-right">
+    <button class="back-to-top" id="back-to-top" onclick="scrollToTop()">↑ Top</button>
+  </div>
+</div>
+
+<div class="main-wrapper">
+<main class="main-content" id="main-content">
+
+<h1>Volume Snapshots</h1>
+<p class="lead">Complete coverage of the Kubernetes volume snapshot API — the three custom resources, dynamic and pre-provisioned snapshot workflows, restore to new PVC, cross-namespace cloning, VolumeGroupSnapshot, application-consistent snapshots, scheduled snapshot automation, and production backup strategies with Velero.</p>
+
+<div class="page-meta">
+  <span class="meta-badge green">Section 04 of 13</span>
+  <span class="meta-badge blue">File 6 of 8</span>
+  <span class="meta-badge yellow">Platform Engineer</span>
+</div>
+
+<details class="coverage">
+  <summary>What This Page Covers</summary>
+  <div class="coverage-body">
+    <li>Snapshot API overview — not in core Kubernetes; requires CRD + snapshot controller installation</li>
+    <li>Three snapshot resources — VolumeSnapshotClass, VolumeSnapshot, VolumeSnapshotContent and their analogies to StorageClass/PVC/PV</li>
+    <li>VolumeSnapshotClass — driver, deletionPolicy (Delete/Retain), parameters, default annotation</li>
+    <li>VolumeSnapshot spec — volumeSnapshotClassName, source (PVC or VSC), status fields (readyToUse, restoreSize, creationTime, error)</li>
+    <li>VolumeSnapshotContent spec — deletionPolicy, driver, volumeSnapshotClassName, source (volumeHandle or snapshotHandle), volumeSnapshotRef</li>
+    <li>Dynamic snapshot workflow — full lifecycle from VolumeSnapshot creation to readyToUse</li>
+    <li>Pre-provisioned (static) snapshot — import existing cloud snapshot into Kubernetes</li>
+    <li>Snapshot controller architecture — common snapshot controller + CSI driver sidecar (external-snapshotter)</li>
+    <li>Restore workflow — dataSource PVC from VolumeSnapshot; capacity constraints; cross-StorageClass limitations</li>
+    <li>PVC clone vs snapshot restore — when to use each; cost and speed tradeoffs</li>
+    <li>Snapshot deletion semantics — Delete vs Retain policy; VSC finalizer; orphaned VSC</li>
+    <li>Cross-namespace snapshot sharing — VolumeSnapshotContent + dataSourceRef; namespace annotation gate</li>
+    <li>VolumeGroupSnapshot (alpha 1.27) — crash-consistent multi-PVC snapshot; VolumeGroupSnapshotClass/Content; labelSelector grouping</li>
+    <li>Application-consistent snapshots — quiesce hooks; pre/post snapshot hooks with Velero; filesystem freeze (fsfreeze); database flush patterns (PostgreSQL checkpoint, MySQL FLUSH TABLES)</li>
+    <li>Scheduled snapshots — CronJob pattern; snapshot retention policy; cleanup automation</li>
+    <li>Velero backup strategy — installation, backup schedule, PV snapshot + object backup, restore workflow, namespace mapping</li>
+    <li>Snapshot storage costs — incremental vs full snapshot billing; retention impact</li>
+    <li>Cloud provider snapshot support — EBS, GCE PD, Azure Disk, Ceph RBD snapshot characteristics</li>
+    <li>5 metrics + 4 alerting rules + 5 troubleshooting runbooks</li>
+    <li>8 best practices</li>
+  </div>
+</details>
+
+<!-- ============================================================ -->
+<h2 id="overview">Overview</h2>
+
+<p>Volume snapshots are <strong>not</strong> part of the core Kubernetes API. They are delivered as Custom Resource Definitions (CRDs) maintained by the Kubernetes SIG Storage team, alongside a snapshot controller that must be installed separately. Most managed Kubernetes offerings (EKS, GKE, AKS) pre-install these; self-managed clusters must install them manually.</p>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Installation required</strong> Before using snapshots, install: (1) the snapshot CRDs from <code>kubernetes-csi/external-snapshotter</code>, (2) the common snapshot controller Deployment, and (3) the CSI driver's <code>external-snapshotter</code> sidecar. Without these, VolumeSnapshot objects will be created but never acted on.</div>
+</div>
+
+<h3 id="analogy">Three Resources — The PV/PVC/StorageClass Analogy</h3>
+
+<table>
+  <tr><th>Snapshot Resource</th><th>Scope</th><th>Analogous To</th><th>Purpose</th></tr>
+  <tr><td><code>VolumeSnapshotClass</code></td><td>Cluster</td><td>StorageClass</td><td>Defines which CSI driver handles snapshots and deletion policy</td></tr>
+  <tr><td><code>VolumeSnapshot</code></td><td>Namespace</td><td>PersistentVolumeClaim</td><td>User request for a snapshot of a specific PVC</td></tr>
+  <tr><td><code>VolumeSnapshotContent</code></td><td>Cluster</td><td>PersistentVolume</td><td>The actual snapshot on the storage backend; created by controller or pre-provisioned</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="snapshot-controller">Snapshot Controller Architecture</h2>
+
+<div class="diagram">
+<pre>
+┌─────────────────────────────────────────────────────────────────────┐
+│  COMMON SNAPSHOT CONTROLLER (Deployment, cluster-wide)              │
+│                                                                     │
+│  Watches: VolumeSnapshot, VolumeSnapshotContent                     │
+│  Responsibilities:                                                  │
+│  - Binds VolumeSnapshot ↔ VolumeSnapshotContent (like PV binder)   │
+│  - Manages VSC finalizers                                           │
+│  - Handles deletion policy enforcement                              │
+│  - Does NOT call CSI directly                                       │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │ updates VSC status
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  CSI DRIVER: external-snapshotter SIDECAR (in controller Deployment) │
+│                                                                     │
+│  Watches: VolumeSnapshotContent (content.status.snapshotHandle=="") │
+│  Calls:   CSI CreateSnapshot / DeleteSnapshot / ListSnapshots       │
+│  Updates: VSC.status.snapshotHandle, VSC.status.readyToUse         │
+└─────────────────────────────────────────────────────────────────────┘
+
+Dynamic snapshot creation flow:
+  User creates VolumeSnapshot (ns: production, source: data-postgres-0)
+    │
+    ▼
+  Common controller creates VolumeSnapshotContent (cluster-scoped)
+  with snapshotHandle="" (pending)
+    │
+    ▼
+  external-snapshotter calls CSI CreateSnapshot(sourceVolumeId, parameters)
+    │ CSI driver calls cloud API (e.g., AWS ec2:CreateSnapshot)
+    ▼
+  VSC.status.snapshotHandle = "snap-0abc123"
+  VSC.status.readyToUse = true
+    │
+    ▼
+  VS.status.readyToUse = true
+  VS.status.restoreSize = 100Gi
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="vsc-class">VolumeSnapshotClass</h2>
+
+<pre><code>apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: csi-aws-vsc
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: ebs.csi.aws.com           # MUST match the CSI driver name
+deletionPolicy: Delete            # Delete | Retain
+parameters:
+  # Driver-specific snapshot parameters
+  tagSpecification_1: "environment=production"
+  tagSpecification_2: "managed-by=kubernetes"
+  # For Ceph RBD: csi.storage.k8s.io/snapshotter-secret-name: rook-csi-rbd-provisioner</code></pre>
+
+<h3 id="deletion-policy">deletionPolicy</h3>
+<table>
+  <tr><th>Policy</th><th>When VolumeSnapshot Deleted</th><th>When to Use</th></tr>
+  <tr><td><code>Delete</code></td><td>VolumeSnapshotContent and the backing cloud snapshot are both deleted</td><td>Default for most use cases; ensures no orphaned cloud snapshots</td></tr>
+  <tr><td><code>Retain</code></td><td>VolumeSnapshotContent and backing snapshot are preserved; admin must clean up</td><td>Compliance/audit requirements; long-lived snapshots that outlive the K8s object</td></tr>
+</table>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Default VolumeSnapshotClass per driver</strong> Like StorageClasses, you should designate exactly one default VolumeSnapshotClass per CSI driver. If your cluster has both EBS and Ceph, define one default for each driver. Multiple defaults with the same driver cause snapshot creation without explicit class to fail.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="volumesnapshot">VolumeSnapshot</h2>
+
+<pre><code>apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: postgres-snap-2024-01-15
+  namespace: production
+spec:
+  volumeSnapshotClassName: csi-aws-vsc    # which VolumeSnapshotClass to use
+  source:
+    persistentVolumeClaimName: data-postgres-0   # dynamic: snapshot this PVC
+    # OR for pre-provisioned (static):
+    # volumeSnapshotContentName: existing-vsc-name</code></pre>
+
+<h3 id="vs-status">VolumeSnapshot Status Fields</h3>
+
+<pre><code>kubectl get volumesnapshot postgres-snap-2024-01-15 -n production -o yaml
+
+status:
+  boundVolumeSnapshotContentName: snapcontent-abc-123-def   # bound VSC name
+  creationTime: "2024-01-15T10:30:00Z"
+  readyToUse: true              # true when snapshot is usable for restore
+  restoreSize: 100Gi            # minimum PVC size for restore
+  error: null                   # populated if snapshot creation failed
+    # message: "..."
+    # time: "..."</code></pre>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>readyToUse and cloud snapshot availability</strong> For EBS snapshots, <code>readyToUse: true</code> means the snapshot is in <code>completed</code> state in AWS and can be used for restore. However, EBS snapshots are incrementally stored in S3 — the first restore after snapshot creation may be slow (lazy-loading from S3). Use Fast Snapshot Restore (FSR) on EBS for latency-sensitive restore paths.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="vsc-content">VolumeSnapshotContent</h2>
+
+<pre><code>apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotContent
+metadata:
+  name: snapcontent-abc-123-def
+  finalizers:
+    - snapshot.storage.kubernetes.io/volumesnapshotcontent-bound-protection
+    - snapshot.storage.kubernetes.io/volumesnapshotcontent-deletion-protection
+spec:
+  deletionPolicy: Delete
+  driver: ebs.csi.aws.com
+  volumeSnapshotClassName: csi-aws-vsc
+  source:
+    volumeHandle: vol-0abc123def456789    # for dynamic (set by controller)
+    # OR for pre-provisioned:
+    # snapshotHandle: snap-0existingsnap  # existing cloud snapshot ID
+  volumeSnapshotRef:                       # binding to the VolumeSnapshot
+    name: postgres-snap-2024-01-15
+    namespace: production
+    uid: abc-def-123
+status:
+  snapshotHandle: snap-0new123def456      # cloud snapshot ID (set after creation)
+  readyToUse: true
+  restoreSize: 107374182400               # bytes</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="dynamic-workflow">Dynamic Snapshot Workflow</h2>
+
+<ol class="steps">
+  <li>Create <code>VolumeSnapshot</code> referencing source PVC and VolumeSnapshotClass</li>
+  <li>Common snapshot controller sees unbound VolumeSnapshot → creates VolumeSnapshotContent with empty <code>snapshotHandle</code></li>
+  <li><code>external-snapshotter</code> sidecar sees VSC with empty handle → calls CSI <code>CreateSnapshot(sourceVolumeId=vol-0abc123, parameters=...)</code></li>
+  <li>CSI driver calls cloud API (e.g., <code>ec2:CreateSnapshot</code>)</li>
+  <li>external-snapshotter polls until snapshot is ready → updates VSC.status.snapshotHandle and readyToUse=true</li>
+  <li>Common controller copies readyToUse status to VolumeSnapshot</li>
+  <li>VolumeSnapshot.status.readyToUse = true — snapshot is available for restore</li>
+</ol>
+
+<pre><code># Watch snapshot progress
+kubectl get volumesnapshot postgres-snap-2024-01-15 -n production -w
+# NAME                       READYTOUSE  SOURCEPVC          RESTORESIZE  SNAPSHOTCONTENT    AGE
+# postgres-snap-2024-01-15   false       data-postgres-0    <unset>      snapcontent-abc    5s
+# postgres-snap-2024-01-15   true        data-postgres-0    100Gi        snapcontent-abc    45s</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="preprovision">Pre-Provisioned (Static) Snapshots</h2>
+
+<p>Import an existing cloud snapshot into Kubernetes without creating a new one. Useful for disaster recovery scenarios where snapshots were created outside Kubernetes (e.g., AWS Backup, cloud-scheduled snapshots).</p>
+
+<pre><code># Step 1: Create VolumeSnapshotContent pointing to existing cloud snapshot
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotContent
+metadata:
+  name: imported-prod-snap
+spec:
+  deletionPolicy: Retain          # Retain: don't delete cloud snapshot when VSC is deleted
+  driver: ebs.csi.aws.com
+  volumeSnapshotClassName: csi-aws-vsc
+  source:
+    snapshotHandle: snap-0existing123abc    # existing AWS snapshot ID
+  volumeSnapshotRef:
+    name: imported-snap            # VolumeSnapshot to bind to
+    namespace: production
+    uid: &lt;will-be-set-after-VS-creation&gt;
+---
+# Step 2: Create VolumeSnapshot referencing the pre-provisioned VSC
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: imported-snap
+  namespace: production
+spec:
+  volumeSnapshotClassName: csi-aws-vsc
+  source:
+    volumeSnapshotContentName: imported-prod-snap   # bind to existing VSC</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>UID chicken-and-egg</strong> The VSC's <code>volumeSnapshotRef.uid</code> must match the VolumeSnapshot's UID. Since the UID is only assigned when the VS is created, create both objects and then patch the VSC to add the correct UID: <code>kubectl patch vsc imported-prod-snap --type=merge -p '{"spec":{"volumeSnapshotRef":{"uid":"&lt;vs-uid&gt;"}}}'</code></div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="restore">Restore to New PVC</h2>
+
+<p>Restore a VolumeSnapshot to a new PVC using <code>dataSource</code>. The restored PVC is a new independent volume pre-populated with the snapshot's data.</p>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-restored
+  namespace: production
+spec:
+  dataSource:
+    apiGroup: snapshot.storage.k8s.io
+    kind: VolumeSnapshot
+    name: postgres-snap-2024-01-15     # VolumeSnapshot in same namespace
+  accessModes: [ReadWriteOnce]
+  storageClassName: gp3-encrypted      # can be different from source SC
+                                       # but must use the same CSI driver
+  resources:
+    requests:
+      storage: 100Gi                   # must be ≥ snapshot's restoreSize</code></pre>
+
+<h3 id="restore-constraints">Restore Constraints</h3>
+<ul class="plain">
+  <li>The VolumeSnapshot must be in the <strong>same namespace</strong> as the target PVC (unless using cross-namespace via dataSourceRef)</li>
+  <li>The StorageClass used for restore must use the <strong>same CSI driver</strong> as the VolumeSnapshotClass</li>
+  <li>Target PVC capacity must be ≥ <code>restoreSize</code> from the snapshot status</li>
+  <li>The snapshot must be <code>readyToUse: true</code> before the PVC creation request arrives</li>
+</ul>
+
+<h3 id="clone-vs-restore">PVC Clone vs Snapshot Restore</h3>
+
+<table>
+  <tr><th>Aspect</th><th>PVC Clone (dataSource: PVC)</th><th>Snapshot Restore (dataSource: VolumeSnapshot)</th></tr>
+  <tr><td>Source must be Bound</td><td>Yes</td><td>No — snapshot is independent</td></tr>
+  <tr><td>Point-in-time</td><td>Best-effort (source still changing)</td><td>Yes — frozen moment in time</td></tr>
+  <tr><td>Cross-namespace</td><td>No (same namespace required)</td><td>Via dataSourceRef + VSC (1.26+)</td></tr>
+  <tr><td>Cloud cost</td><td>Full volume copy (same price as new volume)</td><td>Incremental from last snapshot (much cheaper over time)</td></tr>
+  <tr><td>Provisioning time</td><td>Fast (COW at cloud layer)</td><td>Can be slow (data restored from S3/object store)</td></tr>
+  <tr><td>Source StorageClass</td><td>Must match</td><td>Can differ (same driver, different parameters)</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="snapshot-deletion">Snapshot Deletion Semantics</h2>
+
+<p>Snapshot objects have two protective finalizers that control deletion order:</p>
+
+<ul class="plain">
+  <li><code>snapshot.storage.kubernetes.io/volumesnapshot-bound-protection</code> — on VolumeSnapshot; prevents VS deletion while it is bound to a VSC</li>
+  <li><code>snapshot.storage.kubernetes.io/volumesnapshotcontent-bound-protection</code> — on VSC; prevents VSC deletion while VS is bound</li>
+  <li><code>snapshot.storage.kubernetes.io/volumesnapshotcontent-deletion-protection</code> — on VSC; prevents VSC deletion until VS is deleted first</li>
+</ul>
+
+<div class="diagram">
+<pre>
+Deletion flow (deletionPolicy: Delete):
+
+kubectl delete volumesnapshot postgres-snap-2024-01-15
+  │
+  ▼
+VS deletion timestamp set; VS moves to "Deleting"
+  │ (common controller sees VS being deleted)
+  ▼
+Common controller removes bound-protection finalizer from VS
+VS is deleted from API server
+  │
+  ▼
+Common controller removes deletion-protection finalizer from VSC
+external-snapshotter calls CSI DeleteSnapshot(snapshotHandle=snap-0abc)
+  │
+  ▼
+Cloud snapshot deleted
+VSC deleted from API server
+
+Deletion flow (deletionPolicy: Retain):
+
+kubectl delete volumesnapshot postgres-snap-2024-01-15
+  → VS deleted
+  → VSC remains, cloud snapshot remains
+  → Admin must manually: kubectl delete vsc snapcontent-abc-123
+  → external-snapshotter does NOT call DeleteSnapshot (Retain policy)
+  → Cloud snapshot must be deleted manually in AWS/GCP/Azure console
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cross-namespace">Cross-Namespace Snapshot Sharing (1.26+)</h2>
+
+<p>By default, a VolumeSnapshot can only be used as a restore source within its own namespace. Cross-namespace restore uses <code>dataSourceRef</code> with a <code>VolumeSnapshotContent</code> reference and a namespace annotation gate.</p>
+
+<pre><code># Namespace must opt-in to cross-namespace data sources
+kubectl annotate namespace target-ns \
+  snapshot.storage.kubernetes.io/allow-volume-snapshot-content=true
+
+# In the target namespace, create PVC referencing the VSC directly
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: restored-from-other-ns
+  namespace: target-ns
+spec:
+  dataSourceRef:
+    apiGroup: snapshot.storage.k8s.io
+    kind: VolumeSnapshotContent       # cluster-scoped, no namespace restriction
+    name: snapcontent-abc-123-def
+  accessModes: [ReadWriteOnce]
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 100Gi</code></pre>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>Security model for cross-namespace</strong> The namespace annotation (<code>allow-volume-snapshot-content</code>) is the authorization gate. A namespace operator must explicitly allow cross-namespace restores — preventing workloads from restoring arbitrary snapshots from other namespaces. The VSC is cluster-scoped but the annotation check ensures the target namespace admin consents.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="volume-group-snapshot">VolumeGroupSnapshot (Alpha, 1.27+)</h2>
+
+<p>VolumeGroupSnapshot takes crash-consistent snapshots of multiple PVCs simultaneously — all in a single atomic operation at the storage backend. This is critical for databases that span multiple volumes (e.g., separate data and WAL volumes for PostgreSQL, or a Kafka broker with multiple partition volumes).</p>
+
+<pre><code># Install group snapshot CRDs (separate from regular snapshot CRDs)
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/main/client/config/crd/groupsnapshot.storage.k8s.io_volumegroupsnapshotclasses.yaml
+# ... and VolumeGroupSnapshotContent / VolumeGroupSnapshot CRDs
+
+apiVersion: groupsnapshot.storage.k8s.io/v1alpha1
+kind: VolumeGroupSnapshotClass
+metadata:
+  name: csi-aws-group-vsc
+driver: ebs.csi.aws.com
+deletionPolicy: Delete
+---
+apiVersion: groupsnapshot.storage.k8s.io/v1alpha1
+kind: VolumeGroupSnapshot
+metadata:
+  name: postgres-group-snap
+  namespace: production
+spec:
+  volumeGroupSnapshotClassName: csi-aws-group-vsc
+  source:
+    selector:
+      matchLabels:
+        app: postgres              # snapshot ALL PVCs with this label simultaneously
+        component: storage</code></pre>
+
+<p>The CSI driver must implement <code>CreateVolumeGroupSnapshot</code> RPC. The driver issues all individual snapshots in a single API call to the storage backend — guaranteeing consistency across volumes (no torn writes between data and WAL).</p>
+
+<!-- ============================================================ -->
+<h2 id="app-consistent">Application-Consistent Snapshots</h2>
+
+<p>Storage-level snapshots are crash-consistent (like pulling the power plug) — they capture the disk state atomically, but in-flight writes may be incomplete. For most databases this is acceptable with WAL replay on restart. For strict consistency, the application must be quiesced first.</p>
+
+<h3 id="fsfreeze">Filesystem Freeze</h3>
+
+<pre><code># Quiesce filesystem before snapshot, then unfreeze
+kubectl exec -it postgres-0 -n production -- bash -c "
+  # Flush and freeze filesystem
+  psql -c 'CHECKPOINT;'        # PostgreSQL: flush dirty buffers
+  fsfreeze --freeze /var/lib/postgresql/data
+
+  # Signal readiness (e.g., write a file that triggers snapshot via hook)
+  echo 'frozen' > /tmp/snapshot-ready
+"
+
+# After snapshot completes:
+kubectl exec -it postgres-0 -n production -- fsfreeze --unfreeze /var/lib/postgresql/data</code></pre>
+
+<h3 id="db-quiesce">Database Quiesce Patterns</h3>
+<table>
+  <tr><th>Database</th><th>Quiesce Command</th><th>Unquiesce</th></tr>
+  <tr><td>PostgreSQL</td><td><code>SELECT pg_start_backup('snap');</code> or <code>CHECKPOINT;</code></td><td><code>SELECT pg_stop_backup();</code></td></tr>
+  <tr><td>MySQL / MariaDB</td><td><code>FLUSH TABLES WITH READ LOCK;</code></td><td><code>UNLOCK TABLES;</code></td></tr>
+  <tr><td>MongoDB</td><td><code>db.fsyncLock()</code></td><td><code>db.fsyncUnlock()</code></td></tr>
+  <tr><td>General (Linux)</td><td><code>fsfreeze --freeze &lt;mountpoint&gt;</code></td><td><code>fsfreeze --unfreeze &lt;mountpoint&gt;</code></td></tr>
+</table>
+
+<h3 id="velero-hooks">Velero Pre/Post Snapshot Hooks</h3>
+
+<p>Velero supports executing commands in pod containers before and after taking volume snapshots, enabling application-consistent backups without custom tooling:</p>
+
+<pre><code>apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: postgres-consistent-backup
+  namespace: velero
+spec:
+  includedNamespaces: [production]
+  labelSelector:
+    matchLabels:
+      app: postgres
+  snapshotVolumes: true
+  hooks:
+    resources:
+    - name: postgres-hooks
+      includedNamespaces: [production]
+      labelSelector:
+        matchLabels:
+          app: postgres
+      pre:
+      - exec:
+          container: postgres
+          command:
+            - /bin/bash
+            - -c
+            - "psql -c 'CHECKPOINT;' && fsfreeze --freeze /var/lib/postgresql/data"
+          timeout: 30s
+          onError: Fail
+      post:
+      - exec:
+          container: postgres
+          command:
+            - /bin/bash
+            - -c
+            - "fsfreeze --unfreeze /var/lib/postgresql/data"
+          timeout: 10s
+          onError: Continue    # always unfreeze even if backup had issues</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="scheduled-snapshots">Scheduled Snapshots</h2>
+
+<p>Kubernetes has no built-in snapshot scheduling — implement it with a CronJob or a dedicated snapshot controller (Kasten K10, Velero schedules, or cloud-native solutions).</p>
+
+<h3 id="cronjob-snapshots">CronJob Snapshot Pattern</h3>
+
+<pre><code>apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-snapshot-daily
+  namespace: production
+spec:
+  schedule: "0 2 * * *"          # daily at 2 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: snapshot-creator
+          restartPolicy: OnFailure
+          containers:
+          - name: snapshot
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              DATE=$(date +%Y-%m-%d-%H%M)
+              cat <<EOF | kubectl apply -f -
+              apiVersion: snapshot.storage.k8s.io/v1
+              kind: VolumeSnapshot
+              metadata:
+                name: postgres-snap-${DATE}
+                namespace: production
+                labels:
+                  app: postgres
+                  backup-type: daily
+              spec:
+                volumeSnapshotClassName: csi-aws-vsc
+                source:
+                  persistentVolumeClaimName: data-postgres-0
+              EOF
+
+              # Retention: delete snapshots older than 7 days
+              kubectl get volumesnapshot -n production -l backup-type=daily \
+                --sort-by=.metadata.creationTimestamp -o name | head -n -7 | \
+                xargs -r kubectl delete -n production</code></pre>
+
+<pre><code>---
+# RBAC for snapshot-creator ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: snapshot-creator
+  namespace: production
+rules:
+- apiGroups: [snapshot.storage.k8s.io]
+  resources: [volumesnapshots]
+  verbs: [get, list, create, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: snapshot-creator
+  namespace: production
+subjects:
+- kind: ServiceAccount
+  name: snapshot-creator
+  namespace: production
+roleRef:
+  kind: Role
+  name: snapshot-creator
+  apiGroup: rbac.authorization.k8s.io</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="velero">Velero Backup Strategy</h2>
+
+<p>Velero provides a complete backup solution for Kubernetes — it backs up both object metadata (Deployments, Services, ConfigMaps, Secrets) and PV data (via CSI snapshots or Restic/Kopia file-level backup).</p>
+
+<h3 id="velero-install">Installation</h3>
+
+<pre><code># Install Velero with AWS EBS CSI snapshot support
+velero install \
+  --provider aws \
+  --plugins velero/velero-plugin-for-aws:v1.8.0 \
+  --bucket my-velero-backups \
+  --backup-location-config region=us-east-1 \
+  --snapshot-location-config region=us-east-1 \
+  --features=EnableCSI \                   # enable CSI snapshot integration
+  --use-volume-snapshots=true \
+  --secret-file ./credentials-velero       # AWS credentials with s3+ec2 permissions</code></pre>
+
+<h3 id="velero-schedule">Backup Schedule</h3>
+
+<pre><code># Create a scheduled backup for production namespace
+velero schedule create production-daily \
+  --schedule="0 3 * * *" \
+  --include-namespaces production \
+  --snapshot-volumes \
+  --ttl 720h0m0s                # retain backups for 30 days
+
+# List schedules and their status
+velero schedule get
+
+# Create an on-demand backup
+velero backup create prod-backup-manual \
+  --include-namespaces production \
+  --snapshot-volumes \
+  --wait</code></pre>
+
+<h3 id="velero-restore">Restore Workflow</h3>
+
+<pre><code># List available backups
+velero backup get
+
+# Restore entire namespace
+velero restore create --from-backup prod-backup-manual \
+  --include-namespaces production \
+  --wait
+
+# Restore to a different namespace
+velero restore create --from-backup prod-backup-manual \
+  --namespace-mappings production:production-restore \
+  --wait
+
+# Restore specific resources only
+velero restore create --from-backup prod-backup-manual \
+  --include-resources persistentvolumeclaims,pods \
+  --selector app=postgres \
+  --wait
+
+# Check restore status
+velero restore describe &lt;restore-name&gt;
+velero restore logs &lt;restore-name&gt;</code></pre>
+
+<h3 id="velero-file-backup">File-Level Backup with Kopia (No CSI Snapshot)</h3>
+
+<pre><code># For volumes without CSI snapshot support, use Kopia (built-in to Velero 1.10+)
+velero install \
+  --uploader-type kopia \          # or restic (legacy)
+  --use-node-agent \               # deploys node-agent DaemonSet
+  ...
+
+# Annotate pods to include specific volumes in file-level backup
+kubectl annotate pod postgres-0 \
+  backup.velero.io/backup-volumes=data,wal   # comma-separated volume names</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="snapshot-costs">Snapshot Storage Costs</h2>
+
+<p>Understanding snapshot cost models prevents surprise bills:</p>
+
+<table>
+  <tr><th>Cloud</th><th>Snapshot Cost Model</th><th>Key Insight</th></tr>
+  <tr><td>AWS EBS</td><td>Incremental — only blocks changed since last snapshot stored in S3</td><td>First snapshot = full volume; subsequent snapshots = delta. Cost grows with churn rate, not volume size.</td></tr>
+  <tr><td>GCE PD</td><td>Incremental (similar to EBS)</td><td>Regional snapshots cost 2× standard; standard snapshots replicated globally anyway.</td></tr>
+  <tr><td>Azure Disk</td><td>Incremental by default (Standard HDD billing for snapshot data)</td><td>Full snapshots available but rarely needed; incremental is the default since 2020.</td></tr>
+  <tr><td>Ceph RBD</td><td>COW (copy-on-write) — snapshot is just a reference; new writes stored separately</td><td>Snapshots "free" initially but flattening large old snapshots is expensive I/O.</td></tr>
+</table>
+
+<div class="callout tip">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body"><strong>Snapshot retention policy</strong> Keeping too many incremental snapshots is not just a cost issue — it creates a long chain that slows restore times (each restore replays all deltas). For EBS, AWS recommends keeping ≤7 daily snapshots per volume in a chain before doing a full "flatten" (creating a new snapshot from a restored volume). Monitor snapshot chain length via <code>aws ec2 describe-snapshots</code> and automate rotation.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cloud-support">Cloud Provider Snapshot Characteristics</h2>
+
+<table>
+  <tr><th>Driver</th><th>Snapshot Type</th><th>Consistency</th><th>Cross-Region</th><th>Max Snapshots/Volume</th></tr>
+  <tr><td>ebs.csi.aws.com</td><td>Incremental S3-backed</td><td>Crash-consistent</td><td>Manual copy-snapshot</td><td>100,000</td></tr>
+  <tr><td>pd.csi.storage.gke.io</td><td>Incremental (standard) or Regional</td><td>Crash-consistent</td><td>Standard snapshots are global</td><td>100 per disk</td></tr>
+  <tr><td>disk.csi.azure.com</td><td>Incremental by default</td><td>Crash-consistent</td><td>Manual copy to other region</td><td>500 per disk</td></tr>
+  <tr><td>rbd.csi.ceph.com</td><td>COW (Ceph RBD snapshot)</td><td>Crash-consistent</td><td>Mirror with rbd-mirror</td><td>Unlimited (practical: &lt;1000)</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics and Alerting</h2>
+
+<table>
+  <tr><th>Metric</th><th>Source</th><th>Alert Threshold</th></tr>
+  <tr><td><code>kube_volumesnapshot_info</code></td><td>kube-state-metrics</td><td>readyToUse=false for &gt;30m</td></tr>
+  <tr><td><code>kube_volumesnapshot_status_readytouse</code></td><td>kube-state-metrics</td><td>0 (not ready) for &gt;30m</td></tr>
+  <tr><td><code>snapshot_controller_operation_total_seconds</code></td><td>snapshot controller</td><td>P99 CreateSnapshot &gt; 5m</td></tr>
+  <tr><td><code>velero_backup_success_total</code></td><td>Velero</td><td>No successful backup in 25h (missed daily)</td></tr>
+  <tr><td><code>velero_backup_failure_total</code></td><td>Velero</td><td>&gt; 0 in any window</td></tr>
+</table>
+
+<h3>Alerting Rules</h3>
+<pre><code>groups:
+- name: volume-snapshots
+  rules:
+  - alert: VolumeSnapshotNotReady
+    expr: |
+      kube_volumesnapshot_info{ready_to_use="false"} == 1
+    for: 30m
+    labels: {severity: warning}
+    annotations:
+      summary: "VolumeSnapshot {{ $labels.namespace }}/{{ $labels.volumesnapshot }} not ready after 30m"
+
+  - alert: VolumeSnapshotFailed
+    expr: |
+      kube_volumesnapshot_info{ready_to_use="false"} == 1
+        and on(namespace, volumesnapshot)
+      kube_volumesnapshot_status_error_message != ""
+    for: 2m
+    labels: {severity: critical}
+    annotations:
+      summary: "VolumeSnapshot creation failed — check external-snapshotter logs"
+
+  - alert: VeleroBackupMissed
+    expr: |
+      time() - velero_backup_last_successful_timestamp{schedule="production-daily"} > 90000
+    labels: {severity: critical}
+    annotations:
+      summary: "Velero daily backup for production has not completed in >25h"
+
+  - alert: VeleroBackupFailed
+    expr: increase(velero_backup_failure_total[1h]) > 0
+    labels: {severity: warning}
+    annotations:
+      summary: "Velero backup failure detected"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<h3>Runbook: VolumeSnapshot Stuck Not Ready</h3>
+<pre><code># 1. Check VS status and events
+kubectl describe volumesnapshot &lt;name&gt; -n &lt;ns&gt;
+# status.error.message will indicate failure reason
+
+# 2. Check VSC status
+VSC=$(kubectl get vs &lt;name&gt; -n &lt;ns&gt; -o jsonpath='{.status.boundVolumeSnapshotContentName}')
+kubectl describe volumesnapshotcontent $VSC
+
+# 3. Check external-snapshotter logs (in CSI controller pod)
+kubectl logs -n kube-system \
+  $(kubectl get pod -n kube-system -l app=ebs-csi-controller -o name | head -1) \
+  -c csi-snapshotter --tail=100
+
+# Common errors:
+# "failed to create snapshot: ... ResourceNotFound" → source PVC PV no longer exists
+# "context deadline exceeded" → CSI driver unresponsive
+# "InvalidSnapshot.InUse" → cloud snapshot in use by AMI (AWS-specific)</code></pre>
+
+<h3>Runbook: Restore PVC Stuck Pending</h3>
+<pre><code># PVC with dataSource VolumeSnapshot is Pending
+kubectl describe pvc &lt;restore-pvc&gt; -n &lt;ns&gt;
+# Common causes:
+
+# 1. VolumeSnapshot not readyToUse yet
+kubectl get vs &lt;snap-name&gt; -n &lt;ns&gt; -o jsonpath='{.status.readyToUse}'
+# → false: wait for snapshot to complete before creating restore PVC
+
+# 2. StorageClass uses different driver than VolumeSnapshotClass
+kubectl get storageclass &lt;sc&gt; -o jsonpath='{.provisioner}'
+kubectl get volumesnapshotclass &lt;vsc&gt; -o jsonpath='{.driver}'
+# → must match
+
+# 3. PVC capacity less than restoreSize
+kubectl get vs &lt;snap-name&gt; -n &lt;ns&gt; -o jsonpath='{.status.restoreSize}'
+# → increase PVC resources.requests.storage to match</code></pre>
+
+<h3>Runbook: Snapshot Deletion Stuck (VSC in Terminating)</h3>
+<pre><code># VolumeSnapshotContent stuck in Terminating state
+kubectl describe vsc &lt;name&gt;
+# Check finalizers:
+kubectl get vsc &lt;name&gt; -o jsonpath='{.metadata.finalizers}'
+
+# Common cause: VS was deleted but VSC finalizer not removed
+# Check if bound VS still exists
+kubectl get vs --all-namespaces | grep &lt;vsc-name&gt;
+
+# If VS is truly gone but VSC is stuck:
+kubectl patch vsc &lt;name&gt; --type=json \
+  -p '[{"op":"remove","path":"/metadata/finalizers"}]'
+# WARNING: This may orphan the cloud snapshot — delete it manually in AWS/GCP/Azure</code></pre>
+
+<h3>Runbook: Velero Backup Failing</h3>
+<pre><code># Check backup details
+velero backup describe &lt;backup-name&gt; --details
+
+# Check Velero server logs
+kubectl logs -n velero deployment/velero --tail=100 | grep -i error
+
+# Common failures:
+# "no matches for kind VolumeSnapshot" → snapshot CRDs not installed; missing --features=EnableCSI
+# "backup storage location not available" → S3 bucket permissions or region mismatch
+# "timeout waiting for PodVolumeBackup" → Kopia/Restic agent timeout on large volumes;
+#   increase --pod-volume-operation-timeout flag
+
+# Test backup location connectivity
+velero backup-location get
+velero backup-location check default</code></pre>
+
+<h3>Runbook: Pre-Provisioned Snapshot Not Binding</h3>
+<pre><code># VS and VSC created but VS shows "invalid" or "error setting reference"
+kubectl describe vs &lt;name&gt; -n &lt;ns&gt;
+
+# Common cause: VSC.volumeSnapshotRef.uid does not match actual VS uid
+VS_UID=$(kubectl get vs &lt;name&gt; -n &lt;ns&gt; -o jsonpath='{.metadata.uid}')
+kubectl patch vsc &lt;vsc-name&gt; --type=merge \
+  -p "{\"spec\":{\"volumeSnapshotRef\":{\"uid\":\"$VS_UID\"}}}"
+
+# Also verify VSC driver matches VolumeSnapshotClass driver
+kubectl get vsc &lt;name&gt; -o jsonpath='{.spec.driver}'
+kubectl get vsc-class &lt;class-name&gt; -o jsonpath='{.driver}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol style="color:var(--text2);padding-left:24px;font-size:14px;line-height:2.2;">
+  <li><strong>Take a snapshot before every schema migration, data transformation, or major deployment</strong>. Cloud incremental snapshots complete in seconds and cost pennies. The worst-case rollback cost of not having one is measured in hours of data recovery.</li>
+  <li><strong>Use application-consistent snapshots for transactional databases</strong>. Crash-consistent snapshots are sufficient for databases with WAL (PostgreSQL, MySQL with InnoDB) — but quiescing removes any uncertainty and avoids long recovery replays.</li>
+  <li><strong>Test restores regularly</strong>. A snapshot that has never been tested is not a backup. Include a monthly restore drill in your SLA documentation — restore to a staging namespace and verify data integrity.</li>
+  <li><strong>Set deletionPolicy: Retain for compliance snapshots</strong>. Snapshots created for regulatory requirements should not be deleteable by namespace developers. Use <code>Retain</code> and restrict VSC deletion to cluster-admin only.</li>
+  <li><strong>Implement snapshot retention with automation</strong>. Manual snapshot accumulation is the most common cause of unexpected cloud storage costs. Automate retention (the CronJob pattern above, or Velero TTL) from day one.</li>
+  <li><strong>Align VolumeSnapshotClass driver to StorageClass provisioner</strong>. Mismatched drivers fail silently until restore time — the worst moment to discover the issue.</li>
+  <li><strong>Use VolumeGroupSnapshot for multi-volume databases</strong>. A PostgreSQL cluster with separate data/WAL volumes that are snapshotted at different times has a torn snapshot — WAL events after the data snapshot but before the WAL snapshot will be replayed, which is harmless but confusing. Group snapshots eliminate this window.</li>
+  <li><strong>Monitor snapshot readyToUse lag</strong>. A snapshot that takes 30+ minutes to become ready indicates a storage backend health issue. Alert on this before it becomes a restore-time surprise.</li>
+</ol>
+
+<!-- ============================================================ -->
+<div class="section-nav">
+  <a href="04-csi-drivers.html">
+    <span class="nav-label">← Previous</span>
+    <span class="nav-title">CSI Drivers</span>
+  </a>
+  <a href="06-stateful-storage-patterns.html" class="next">
+    <span class="nav-label">Next →</span>
+    <span class="nav-title">Stateful Storage Patterns</span>
+  </a>
+</div>
+
+</main>
+
+<aside class="toc-sidebar">
+  <h4>On This Page</h4>
+  <a href="#overview">Overview</a>
+  <a href="#analogy" class="toc-h3">Three Resources</a>
+  <a href="#snapshot-controller">Controller Architecture</a>
+  <a href="#vsc-class">VolumeSnapshotClass</a>
+  <a href="#deletion-policy" class="toc-h3">deletionPolicy</a>
+  <a href="#volumesnapshot">VolumeSnapshot</a>
+  <a href="#vs-status" class="toc-h3">Status Fields</a>
+  <a href="#vsc-content">VolumeSnapshotContent</a>
+  <a href="#dynamic-workflow">Dynamic Snapshot Workflow</a>
+  <a href="#preprovision">Pre-Provisioned Snapshots</a>
+  <a href="#restore">Restore to New PVC</a>
+  <a href="#restore-constraints" class="toc-h3">Constraints</a>
+  <a href="#clone-vs-restore" class="toc-h3">Clone vs Restore</a>
+  <a href="#snapshot-deletion">Deletion Semantics</a>
+  <a href="#cross-namespace">Cross-Namespace Sharing</a>
+  <a href="#volume-group-snapshot">VolumeGroupSnapshot</a>
+  <a href="#app-consistent">Application-Consistent</a>
+  <a href="#fsfreeze" class="toc-h3">Filesystem Freeze</a>
+  <a href="#db-quiesce" class="toc-h3">Database Quiesce</a>
+  <a href="#velero-hooks" class="toc-h3">Velero Hooks</a>
+  <a href="#scheduled-snapshots">Scheduled Snapshots</a>
+  <a href="#cronjob-snapshots" class="toc-h3">CronJob Pattern</a>
+  <a href="#velero">Velero Strategy</a>
+  <a href="#velero-install" class="toc-h3">Installation</a>
+  <a href="#velero-schedule" class="toc-h3">Schedules</a>
+  <a href="#velero-restore" class="toc-h3">Restore</a>
+  <a href="#snapshot-costs">Snapshot Costs</a>
+  <a href="#cloud-support">Cloud Support</a>
+  <a href="#metrics">Metrics &amp; Alerting</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<script>
+(function(){
+  const t=localStorage.getItem('k8s-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('theme-icon').textContent=t==='dark'?'☀️':'🌙';
+})();
+function toggleTheme(){
+  const c=document.documentElement.getAttribute('data-theme');
+  const n=c==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',n);
+  localStorage.setItem('k8s-theme',n);
+  document.getElementById('theme-icon').textContent=n==='dark'?'☀️':'🌙';
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>300));
+function scrollToTop(){main.scrollTo({top:0,behavior:'smooth'});}
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.onclick=()=>{
+    navigator.clipboard.writeText(pre.innerText.replace('Copy','').trim());
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  };
+  pre.appendChild(btn);
+});
+const tocLinks=document.querySelectorAll('.toc-sidebar a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(a=>a.classList.remove('active'));
+      const a=document.querySelector(`.toc-sidebar a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h=>obs.observe(h));
+function filterNav(val){
+  const q=val.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+</script>
+</body>
+</html>

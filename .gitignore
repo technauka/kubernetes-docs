@@ -1,0 +1,22 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Temporary files
+*.log
+*.tmp
+
+# Python virtual environments
+.env
+.venv
+
+# OS files
+Thumbs.db

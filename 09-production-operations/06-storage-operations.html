@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storage Operations | Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+#sidebar-header h1{font-size:14px;font-weight:600;color:var(--text);}
+#sidebar-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+#sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+#sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none;}
+#sidebar-search input:focus{border-color:var(--accent);}
+#sidebar-nav{overflow-y:auto;flex:1;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);}
+#main{flex:1;overflow-y:auto;padding:40px 48px;position:relative;}
+.page-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.page-header .breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.page-header .breadcrumb span{color:var(--text2);}
+.page-header h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-header .subtitle{color:var(--text2);font-size:16px;line-height:1.6;}
+.page-header .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+#toc{float:right;width:220px;margin:0 0 24px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;position:sticky;top:24px;}
+#toc h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+#toc a{display:block;font-size:12px;color:var(--text2);padding:3px 0;border-left:2px solid transparent;padding-left:8px;transition:all .15s;}
+#toc a:hover{color:var(--text);text-decoration:none;}
+#toc a.active{color:var(--accent);border-left-color:var(--accent);}
+#toc a.toc-h3{padding-left:18px;font-size:11px;}
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);clear:both;}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px;}
+h4{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;}
+p{color:var(--text2);line-height:1.7;margin-bottom:12px;}
+ul,ol{color:var(--text2);line-height:1.7;padding-left:20px;margin-bottom:12px;}
+li{margin-bottom:4px;}
+strong{color:var(--text);font-weight:600;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:12px;color:var(--text);line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);color:var(--text);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card-accent-blue{border-top:3px solid var(--accent);}
+.card-accent-green{border-top:3px solid var(--green);}
+.card-accent-yellow{border-top:3px solid var(--yellow);}
+.card-accent-red{border-top:3px solid var(--red);}
+.card-accent-purple{border-top:3px solid var(--purple);}
+.card-accent-orange{border-top:3px solid var(--orange);}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout-body p,.callout-body ul{font-size:13px;margin:0;}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.diagram .title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+#back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;z-index:100;}
+#back-top.visible{opacity:1;}
+#back-top:hover{background:var(--bg4);color:var(--text);}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Kubernetes Docs</h1>
+    <p>Production-Grade Reference</p>
+  </div>
+  <div id="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)" />
+  </div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Storage</div>
+      <a href="../05-storage/00-storage-overview.html">Storage Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/06-multi-tenancy.html">Multi-Tenancy</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="00-production-overview.html">Production Overview</a>
+      <a href="01-capacity-planning.html">Capacity Planning</a>
+      <a href="02-performance-tuning.html">Performance Tuning</a>
+      <a href="03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="04-security-hardening.html">Security Hardening</a>
+      <a href="05-network-operations.html">Network Operations</a>
+      <a href="06-storage-operations.html" class="active">Storage Operations</a>
+      <a href="07-certificate-management.html">Certificate Management</a>
+      <a href="08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="09-incident-response.html">Incident Response</a>
+      <a href="10-sre-practices.html">SRE Practices</a>
+    </div>
+  </nav>
+</div>
+
+<div id="main">
+
+<nav id="toc">
+  <h3>On This Page</h3>
+  <a href="#storage-stack">Storage Stack</a>
+  <a href="#pv-lifecycle">PV Lifecycle Ops</a>
+  <a href="#csi-ops">CSI Driver Operations</a>
+  <a href="#ebs-ops">EBS / Block Storage</a>
+  <a href="#efs-ops">EFS / Shared Storage</a>
+  <a href="#storage-performance">Storage Performance</a>
+  <a href="#pvc-resize">PVC Resize</a>
+  <a href="#storage-classes">StorageClass Tuning</a>
+  <a href="#stateful-ops">StatefulSet Operations</a>
+  <a href="#backup-ops">Backup Operations</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#alerts">Alerting</a>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">Production Operations <span>/ Storage Operations</span></div>
+  <h1>Storage Operations</h1>
+  <p class="subtitle">Managing persistent volumes, CSI drivers, StatefulSets, performance tuning, and storage incident response in production Kubernetes clusters.</p>
+  <div class="meta">
+    <span class="badge badge-blue">Section 09.06</span>
+    <span class="badge badge-yellow">StatefulSets</span>
+    <span class="badge badge-green">CSI</span>
+    <span class="badge badge-purple">Backup</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="storage-stack">Kubernetes Storage Stack</h2>
+
+<p>Storage in Kubernetes is layered: the Container Storage Interface (CSI) decouples driver logic from the kubelet, PersistentVolumes (PV) represent the physical resource, PersistentVolumeClaims (PVC) represent a request for storage, and StorageClasses define how PVs are dynamically provisioned.</p>
+
+<div class="diagram">
+  <div class="title">Storage Architecture — Request to Mount Path</div>
+<pre style="background:none;border:none;padding:0;margin:0;font-size:12px;line-height:1.8;">
+  Pod spec
+    └─► PersistentVolumeClaim  (namespace-scoped claim)
+          └─► StorageClass      (binding mode / provisioner / params)
+                └─► CSI Driver  (provisioner plugin in kube-system)
+                      ├─► Controller Plugin  (runs as Deployment)
+                      │     ├─ CreateVolume   (AWS EBS CreateVolume API call)
+                      │     ├─ AttachVolume   (attach EBS vol to EC2 node)
+                      │     └─ DeleteVolume   (GC on PVC delete)
+                      └─► Node Plugin         (runs as DaemonSet on every node)
+                            ├─ NodeStageVolume  (format + mount to staging path)
+                            └─ NodePublishVolume (bind-mount into pod's fs)
+
+  On-disk path:
+    /var/lib/kubelet/plugins/kubernetes.io/csi/...  (staging)
+    /var/lib/kubelet/pods/&lt;UID&gt;/volumes/...         (pod volume mount)
+</pre>
+</div>
+
+<h3>Storage Object States</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Object</th><th>State</th><th>Meaning</th><th>Common Cause</th></tr></thead>
+  <tbody>
+    <tr><td>PVC</td><td><code>Pending</code></td><td>No matching PV exists yet</td><td>WaitForFirstConsumer / no capacity / wrong SC</td></tr>
+    <tr><td>PVC</td><td><code>Bound</code></td><td>PV attached and ready</td><td>Normal operating state</td></tr>
+    <tr><td>PVC</td><td><code>Lost</code></td><td>Bound PV deleted or unreachable</td><td>Manual PV deletion, zone mismatch</td></tr>
+    <tr><td>PV</td><td><code>Available</code></td><td>Not yet bound to any PVC</td><td>Pre-provisioned static PV</td></tr>
+    <tr><td>PV</td><td><code>Bound</code></td><td>Claimed by a PVC</td><td>Normal</td></tr>
+    <tr><td>PV</td><td><code>Released</code></td><td>PVC deleted, PV not yet reclaimed</td><td>Retain reclaim policy</td></tr>
+    <tr><td>PV</td><td><code>Failed</code></td><td>Automated reclamation failed</td><td>Cloud volume deletion error</td></tr>
+    <tr><td>VolumeAttachment</td><td><code>Attached: false</code></td><td>CSI attach in progress or stuck</td><td>Node failure, CSI pod crash, AZ mismatch</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Quick-Reference Diagnostic Commands</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># List all PVCs with their phase and storage class
+kubectl get pvc -A -o wide
+
+# List PVs showing reclaim policy, capacity, access modes
+kubectl get pv -o custom-columns=\
+NAME:.metadata.name,\
+CAPACITY:.spec.capacity.storage,\
+ACCESS:.spec.accessModes[0],\
+POLICY:.spec.persistentVolumeReclaimPolicy,\
+STATUS:.status.phase,\
+CLAIM:.spec.claimRef.namespace
+
+# Find all PVCs that are NOT Bound
+kubectl get pvc -A --field-selector=status.phase!=Bound
+
+# Describe a specific PVC to see binding events and CSI details
+kubectl describe pvc &lt;pvc-name&gt; -n &lt;namespace&gt;
+
+# List VolumeAttachment objects (CSI controller attach status)
+kubectl get volumeattachment
+
+# Check CSI node driver registration
+kubectl get csinode &lt;node-name&gt; -o yaml
+
+# List StorageClasses and their provisioners
+kubectl get sc -o wide</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="pv-lifecycle">PV Lifecycle Operations</h2>
+
+<h3>Reclaim Policy Behaviour</h3>
+
+<div class="callout callout-warn">
+  <span class="callout-icon">⚠</span>
+  <div class="callout-body">
+    <strong>Delete vs Retain</strong>
+    <p>The default reclaim policy for dynamically provisioned PVs is <code>Delete</code> — the underlying cloud volume is destroyed when the PVC is deleted. For production databases, always use <code>Retain</code> or set a finalizer, and ensure Velero backups exist before any PVC delete.</p>
+  </div>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Patch a PV to change reclaim policy from Delete to Retain
+kubectl patch pv &lt;pv-name&gt; \
+  -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+
+# Patch ALL PVs that use gp3 storage class to Retain
+kubectl get pv -o json | \
+  jq -r '.items[] | select(.spec.storageClassName=="gp3") | .metadata.name' | \
+  xargs -I{} kubectl patch pv {} \
+    -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'</code></pre>
+
+<h3>Reclaiming a Released PV</h3>
+
+<p>When a PVC is deleted and the PV reclaim policy is <code>Retain</code>, the PV enters <code>Released</code> state. It cannot be automatically rebound until the <code>claimRef</code> is cleared:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Step 1: verify PV is in Released state
+kubectl get pv &lt;pv-name&gt;
+
+# Step 2: remove the claimRef so the PV becomes Available again
+kubectl patch pv &lt;pv-name&gt; --type json \
+  -p '[{"op":"remove","path":"/spec/claimRef"}]'
+
+# Step 3: create a new PVC that binds to this specific PV
+# Use volumeName in the PVC spec:</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-recovered
+  namespace: production
+spec:
+  storageClassName: gp3
+  volumeName: pvc-abc123        # pin to the specific PV
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 100Gi</code></pre>
+
+<h3>Reclaim Policy on StorageClass</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-retain
+provisioner: ebs.csi.aws.com
+reclaimPolicy: Retain          # &lt;-- preserve volume on PVC delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="csi-ops">CSI Driver Operations</h2>
+
+<h3>CSI Component Health Check</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># AWS EBS CSI Driver (typical install via EKS add-on or Helm)
+kubectl get pods -n kube-system -l app=ebs-csi-controller
+kubectl get pods -n kube-system -l app=ebs-csi-node
+
+# Check EBS CSI controller logs for provisioning errors
+kubectl logs -n kube-system \
+  -l app=ebs-csi-controller -c csi-provisioner --tail=50
+
+# Cilium uses its own storage — for EKS check aws-ebs-csi-driver add-on
+aws eks describe-addon \
+  --cluster-name &lt;cluster&gt; \
+  --addon-name aws-ebs-csi-driver \
+  --query 'addon.{status:status,version:addonVersion}'
+
+# Check CSI node plugin status on a specific node
+kubectl describe csinode &lt;node-name&gt;
+
+# EFS CSI Driver
+kubectl get pods -n kube-system -l app=efs-csi-controller
+kubectl get pods -n kube-system -l app=efs-csi-node</code></pre>
+
+<h3>CSI Controller vs Node Plugin Responsibilities</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Operation</th><th>Plugin</th><th>What it does</th><th>Failure symptom</th></tr></thead>
+  <tbody>
+    <tr><td>CreateVolume</td><td>Controller</td><td>Calls AWS EBS CreateVolume</td><td>PVC stuck Pending — "failed to provision volume"</td></tr>
+    <tr><td>AttachVolume</td><td>Controller</td><td>Attaches EBS vol to EC2 instance</td><td>VolumeAttachment stuck, pod stays Pending</td></tr>
+    <tr><td>DeleteVolume</td><td>Controller</td><td>Destroys cloud volume on PVC delete</td><td>Orphaned EBS volumes in AWS console</td></tr>
+    <tr><td>NodeStageVolume</td><td>Node</td><td>Formats filesystem + mounts to staging</td><td>Pod event: "failed to stage volume"</td></tr>
+    <tr><td>NodePublishVolume</td><td>Node</td><td>Bind-mounts staged path into pod</td><td>Pod stuck ContainerCreating, mount error</td></tr>
+    <tr><td>NodeExpandVolume</td><td>Node</td><td>Resizes filesystem after PVC expand</td><td>PVC resize stuck FileSystemResizePending</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Diagnosing a Stuck Pod (ContainerCreating / Volume Mount Failure)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Step 1: describe the stuck pod — look for events
+kubectl describe pod &lt;pod-name&gt; -n &lt;namespace&gt;
+# Common events:
+#   "Unable to attach or mount volumes"
+#   "Multi-Attach error for volume" — vol attached to another node
+#   "timed out waiting for the condition"
+
+# Step 2: check the VolumeAttachment object for the PV
+kubectl get volumeattachment | grep &lt;pv-name&gt;
+kubectl describe volumeattachment &lt;attachment-name&gt;
+
+# Step 3: if VolumeAttachment is stuck with the old node:
+# This happens when a node dies ungracefully — the vol is still
+# "attached" to the dead node from K8s perspective
+# Force-delete the VolumeAttachment (CSI controller will re-attach)
+kubectl delete volumeattachment &lt;attachment-name&gt;
+
+# Step 4: check the CSI controller pod for errors
+kubectl logs -n kube-system \
+  -l app=ebs-csi-controller -c csi-attacher --tail=100
+
+# Step 5: verify the EBS volume state in AWS
+aws ec2 describe-volumes \
+  --volume-ids &lt;vol-id&gt; \
+  --query 'Volumes[0].{State:State,Attachments:Attachments}'</code></pre>
+
+<div class="callout callout-danger">
+  <span class="callout-icon">!</span>
+  <div class="callout-body">
+    <strong>Multi-Attach Error (ReadWriteOnce)</strong>
+    <p>EBS volumes with <code>accessModes: ReadWriteOnce</code> can only be attached to one node at a time. If a pod is rescheduled to a different node while the old VolumeAttachment exists (node crashed, not drained), new attachment fails. Always drain nodes gracefully (<code>kubectl drain</code>) before terminating to allow clean VolumeAttachment cleanup.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ebs-ops">EBS / Block Storage Operations</h2>
+
+<h3>gp3 vs gp2 StorageClass</h3>
+
+<p>AWS EBS gp3 provides 3000 IOPS and 125 MB/s throughput baseline at no extra cost, decoupled from volume size. gp2 ties IOPS to size (3 IOPS/GB, max 16,000). For most workloads, migrating from gp2 to gp3 reduces cost and improves predictable performance.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer   # only provision in the AZ where pod lands
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+  type: gp3
+  iops: "3000"           # baseline — can go up to 16000
+  throughput: "125"      # MB/s — can go up to 1000
+  encrypted: "true"
+  kmsKeyId: "arn:aws:kms:us-east-1:123456789012:key/mrk-..."</code></pre>
+
+<h3>High-Performance StorageClass for Databases</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-high-iops
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+parameters:
+  type: gp3
+  iops: "16000"          # max gp3 IOPS
+  throughput: "1000"     # max gp3 throughput
+  encrypted: "true"</code></pre>
+
+<h3>Checking EBS Volume Metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Get the EBS volume ID from a PV
+kubectl get pv &lt;pv-name&gt; \
+  -o jsonpath='{.spec.csi.volumeHandle}'
+
+# Check CloudWatch EBS metrics
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/EBS \
+  --metric-name VolumeQueueLength \
+  --dimensions Name=VolumeId,Value=vol-0abc123 \
+  --start-time $(date -u -d '1 hour ago' +%FT%TZ) \
+  --end-time $(date -u +%FT%TZ) \
+  --period 300 \
+  --statistics Average</code></pre>
+
+<h3>PromQL: PVC Disk Saturation</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># PVC disk usage percentage
+(
+  kubelet_volume_stats_used_bytes
+    /
+  kubelet_volume_stats_capacity_bytes
+) * 100
+
+# PVCs above 80% full
+(
+  kubelet_volume_stats_used_bytes
+    /
+  kubelet_volume_stats_capacity_bytes
+) * 100 > 80
+
+# PVC inode usage percentage
+(
+  kubelet_volume_stats_inodes_used
+    /
+  kubelet_volume_stats_inodes
+) * 100
+
+# Available bytes
+kubelet_volume_stats_available_bytes{namespace="production"}
+
+# PVCs with less than 10% free
+(
+  kubelet_volume_stats_available_bytes
+    /
+  kubelet_volume_stats_capacity_bytes
+) * 100 < 10</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="efs-ops">EFS / Shared Storage Operations</h2>
+
+<p>Amazon EFS provides ReadWriteMany (RWX) access across multiple pods and nodes. It is NFS-based, with throughput automatically scaling. Use EFS for shared content, ML training data, and CMS uploads — not for databases (latency is 1-10ms vs EBS 0.1-1ms).</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sc
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap          # use EFS Access Points (isolated dirs per PVC)
+  fileSystemId: fs-0abc12345
+  directoryPerms: "700"
+  gidRangeStart: "1000"
+  gidRangeEnd: "2000"
+  basePath: "/dynamic_provisioning"</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-assets
+  namespace: production
+spec:
+  storageClassName: efs-sc
+  accessModes: [ReadWriteMany]      # multiple pods can mount simultaneously
+  resources:
+    requests:
+      storage: 5Gi                  # EFS ignores this — it scales elastically</code></pre>
+
+<h3>EFS Performance Troubleshooting</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># EFS NFS mount options — tuned for K8s (in EFS CSI driver StorageClass)
+# noresvport: don't use reserved source port (allows reconnect after timeout)
+# soft: NFS soft mount — return EIO on timeout instead of hanging forever
+# timeo=600: 60 second NFS timeout (10ths of seconds)
+# These are set in EFS CSI driver ConfigMap:
+kubectl describe configmap -n kube-system efs-csi-driver-config 2>/dev/null || true
+
+# Check EFS mount on a node running an EFS-backed pod
+NODE=$(kubectl get pod &lt;pod-name&gt; -o jsonpath='{.spec.nodeName}')
+kubectl debug node/$NODE -it --image=nicolaka/netshoot -- \
+  df -h | grep nfs
+
+# EFS throughput utilization via CloudWatch
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/EFS \
+  --metric-name MeteredIOBytes \
+  --dimensions Name=FileSystemId,Value=fs-0abc12345 \
+  --start-time $(date -u -d '1 hour ago' +%FT%TZ) \
+  --end-time $(date -u +%FT%TZ) \
+  --period 300 \
+  --statistics Sum</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="storage-performance">Storage Performance Analysis</h2>
+
+<h3>fio Benchmark — Block Storage (EBS)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Run fio benchmarks inside a pod using a PVC
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fio-benchmark
+  namespace: default
+spec:
+  containers:
+  - name: fio
+    image: nixery.dev/shell/fio
+    command:
+    - /bin/bash
+    - -c
+    - |
+      echo "=== Random Read 4K IOPS ==="
+      fio --name=randread --ioengine=libaio --iodepth=32 \
+        --rw=randread --bs=4k --direct=1 --numjobs=4 \
+        --size=1G --runtime=60 --filename=/data/test \
+        --output-format=json | \
+        python3 -c "import json,sys; d=json.load(sys.stdin); \
+          r=d['jobs'][0]['read']; \
+          print(f'IOPS: {r[\"iops\"]:.0f}, BW: {r[\"bw\"]/1024:.1f} MB/s, lat_p99: {r[\"lat_ns\"][\"percentile\"][\"99.000000\"]/1e6:.2f}ms')"
+
+      echo "=== Random Write 4K IOPS ==="
+      fio --name=randwrite --ioengine=libaio --iodepth=32 \
+        --rw=randwrite --bs=4k --direct=1 --numjobs=4 \
+        --size=1G --runtime=60 --filename=/data/test \
+        --output-format=json | \
+        python3 -c "import json,sys; d=json.load(sys.stdin); \
+          w=d['jobs'][0]['write']; \
+          print(f'IOPS: {w[\"iops\"]:.0f}, BW: {w[\"bw\"]/1024:.1f} MB/s, lat_p99: {w[\"lat_ns\"][\"percentile\"][\"99.000000\"]/1e6:.2f}ms')"
+
+      echo "=== Sequential Read 1M throughput ==="
+      fio --name=seqread --ioengine=libaio --iodepth=8 \
+        --rw=read --bs=1M --direct=1 --numjobs=1 \
+        --size=2G --runtime=30 --filename=/data/test
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: &lt;pvc-name&gt;
+  restartPolicy: Never</code></pre>
+
+<h3>Expected I/O Latencies by Storage Type</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Storage Type</th><th>Read p50</th><th>Read p99</th><th>Write p50</th><th>IOPS Limit</th><th>Use Case</th></tr></thead>
+  <tbody>
+    <tr><td>EBS gp3 (NVMe)</td><td>0.1ms</td><td>0.5ms</td><td>0.2ms</td><td>16,000</td><td>Databases, etcd</td></tr>
+    <tr><td>EBS io2 Block Express</td><td>&lt;0.1ms</td><td>0.2ms</td><td>&lt;0.1ms</td><td>256,000</td><td>Critical OLTP</td></tr>
+    <tr><td>EFS (NFS)</td><td>1ms</td><td>10ms</td><td>2ms</td><td>—</td><td>Shared, RWX</td></tr>
+    <tr><td>Local NVMe (instance store)</td><td>0.05ms</td><td>0.1ms</td><td>0.05ms</td><td>1M+</td><td>Kafka, ephemeral caches</td></tr>
+    <tr><td>emptyDir (tmpfs)</td><td>&lt;0.01ms</td><td>&lt;0.01ms</td><td>&lt;0.01ms</td><td>RAM-bound</td><td>Temp data, shared mem</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Node Storage Metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check node disk utilization
+kubectl top nodes  # doesn't show disk — use node_exporter
+
+# node_exporter disk metrics via PromQL:
+# Disk read/write bytes per second
+rate(node_disk_read_bytes_total{device=~"nvme.*|xvd.*"}[5m])
+rate(node_disk_written_bytes_total{device=~"nvme.*|xvd.*"}[5m])
+
+# Disk I/O await (ms per operation) — high = I/O saturation
+rate(node_disk_io_time_seconds_total{device=~"nvme.*|xvd.*"}[5m]) * 1000
+
+# Disk utilization percentage
+rate(node_disk_io_time_seconds_total{device=~"nvme.*|xvd.*"}[5m]) * 100
+
+# Root filesystem usage
+(node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"})
+  / node_filesystem_size_bytes{mountpoint="/"} * 100</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="pvc-resize">PVC Resize Operations</h2>
+
+<div class="callout callout-info">
+  <span class="callout-icon">ℹ</span>
+  <div class="callout-body">
+    <strong>Prerequisites for Online Resize</strong>
+    <p>The StorageClass must have <code>allowVolumeExpansion: true</code>. The CSI driver must support <code>EXPAND_VOLUME</code> capability. The volume filesystem resize (NodeExpandVolume) happens automatically when the pod restarts or for ext4/xfs if the node plugin supports online expansion. EBS CSI driver v1.0+ supports online resize for ext4 and XFS without pod restart.</p>
+  </div>
+</div>
+
+<h3>Resize a PVC</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Step 1: patch the PVC spec.resources.requests.storage
+kubectl patch pvc postgres-data -n production \
+  -p '{"spec":{"resources":{"requests":{"storage":"200Gi"}}}}'
+
+# Step 2: watch for the resize to complete
+kubectl get pvc postgres-data -n production -w
+# Status transitions:
+#   Bound (100Gi) → Bound (100Gi, FileSystemResizePending) → Bound (200Gi)
+
+# Step 3: if status stays at FileSystemResizePending,
+# a pod restart triggers the node-side filesystem expansion
+kubectl rollout restart deployment/postgres -n production
+
+# Step 4: verify new size inside the pod
+kubectl exec -n production deploy/postgres -- df -h /var/lib/postgresql/data</code></pre>
+
+<h3>Resize a StatefulSet PVC (requires manual steps)</h3>
+
+<p>StatefulSet VolumeClaimTemplates are immutable — Kubernetes will not resize them automatically. The workaround is to resize each PVC individually and then update the StatefulSet template.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Resize all PVCs in a StatefulSet (e.g., kafka-data-kafka-0,1,2...)
+STS_NAME=kafka
+NAMESPACE=kafka
+NEW_SIZE=200Gi
+
+# Step 1: patch each PVC
+kubectl get pvc -n $NAMESPACE -l app=$STS_NAME \
+  -o jsonpath='{.items[*].metadata.name}' | \
+  tr ' ' '\n' | \
+  while read pvc; do
+    echo "Resizing $pvc..."
+    kubectl patch pvc $pvc -n $NAMESPACE \
+      -p "{\"spec\":{\"resources\":{\"requests\":{\"storage\":\"$NEW_SIZE\"}}}}"
+  done
+
+# Step 2: delete the StatefulSet WITHOUT deleting pods (--cascade=orphan)
+kubectl delete sts $STS_NAME -n $NAMESPACE --cascade=orphan
+
+# Step 3: re-apply the StatefulSet with updated volumeClaimTemplates size
+# Edit your manifest to reflect NEW_SIZE, then:
+kubectl apply -f kafka-statefulset.yaml -n $NAMESPACE
+
+# Step 4: rolling restart to trigger filesystem expansion
+kubectl rollout restart statefulset/$STS_NAME -n $NAMESPACE</code></pre>
+
+<div class="callout callout-warn">
+  <span class="callout-icon">⚠</span>
+  <div class="callout-body">
+    <strong>You Cannot Shrink a PVC</strong>
+    <p>PVC storage requests can only grow, never shrink. To reduce storage size you must create a new smaller PVC, copy data, and swap the mount — there is no in-place shrink in Kubernetes or EBS.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="storage-classes">StorageClass Tuning</h2>
+
+<h3>WaitForFirstConsumer — Why It Matters</h3>
+
+<p>With <code>volumeBindingMode: Immediate</code>, a PVC triggers volume creation before a pod is scheduled. The volume may land in AZ-A while the pod gets scheduled to AZ-B — causing a permanent mount failure. <code>WaitForFirstConsumer</code> delays provisioning until the pod's target node is known, aligning the volume's AZ with the pod's AZ.</p>
+
+<div class="diagram">
+  <div class="title">WaitForFirstConsumer — Binding Flow</div>
+<pre style="background:none;border:none;padding:0;margin:0;font-size:12px;line-height:1.8;">
+  Immediate (BAD for multi-AZ):
+    PVC created → CSI provisions vol in AZ-A → Pod scheduled to AZ-B → MOUNT FAIL
+
+  WaitForFirstConsumer (CORRECT):
+    PVC created → status: Pending (no vol yet)
+    Pod scheduled → Scheduler picks node in AZ-B
+    CSI notified of target node AZ → provisions vol in AZ-B → PVC binds → pod mounts ✓
+</pre>
+</div>
+
+<h3>StorageClass Reference Table</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Name</th><th>Provisioner</th><th>Use Case</th><th>Reclaim</th><th>Binding Mode</th></tr></thead>
+  <tbody>
+    <tr><td><code>gp3</code> (default)</td><td>ebs.csi.aws.com</td><td>General workloads</td><td>Delete</td><td>WaitForFirstConsumer</td></tr>
+    <tr><td><code>gp3-retain</code></td><td>ebs.csi.aws.com</td><td>Databases (stateful)</td><td>Retain</td><td>WaitForFirstConsumer</td></tr>
+    <tr><td><code>gp3-high-iops</code></td><td>ebs.csi.aws.com</td><td>High-throughput DBs</td><td>Retain</td><td>WaitForFirstConsumer</td></tr>
+    <tr><td><code>efs-sc</code></td><td>efs.csi.aws.com</td><td>Shared RWX access</td><td>Delete</td><td>Immediate</td></tr>
+    <tr><td><code>local-storage</code></td><td>kubernetes.io/no-provisioner</td><td>Local NVMe (Kafka)</td><td>Retain</td><td>WaitForFirstConsumer</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Local StorageClass for High-Performance Workloads</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-nvme
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+
+---
+# Pre-provision a Local PV (one per NVMe disk per node)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-nvme-node1
+spec:
+  capacity:
+    storage: 1000Gi
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-nvme
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/nvme0n1       # pre-formatted and mounted on the node
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["node-with-nvme-1"]</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="stateful-ops">StatefulSet Operations</h2>
+
+<h3>StatefulSet Rolling Updates</h3>
+
+<p>StatefulSets update pods in reverse ordinal order (N-1, N-2, ..., 0) by default. Each pod is updated, waits to become Ready, then the next is updated. This respects quorum for distributed systems like Kafka, Zookeeper, and etcd.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Trigger a rolling update (after editing the StatefulSet spec)
+kubectl rollout restart statefulset/kafka -n kafka
+
+# Monitor rollout progress
+kubectl rollout status statefulset/kafka -n kafka
+
+# Pause a rolling update (useful if intermediate state is healthy and you want to canary)
+kubectl rollout pause statefulset/kafka -n kafka
+
+# Resume
+kubectl rollout resume statefulset/kafka -n kafka
+
+# Rollback to previous revision
+kubectl rollout undo statefulset/kafka -n kafka</code></pre>
+
+<h3>Partition-Based Canary for StatefulSets</h3>
+
+<p>The <code>partition</code> field in <code>updateStrategy.rollingUpdate</code> limits updates to pods with ordinal ≥ partition. This lets you update a subset first:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Set partition=2 on a 3-replica StatefulSet (only pod-2 gets updated)
+kubectl patch statefulset kafka -n kafka \
+  -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":2}}}}'
+
+# After validating pod-2 is healthy, lower partition to 1 (update pod-2, pod-1)
+kubectl patch statefulset kafka -n kafka \
+  -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":1}}}}'
+
+# Lower to 0 to complete the update
+kubectl patch statefulset kafka -n kafka \
+  -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":0}}}}'</code></pre>
+
+<h3>Force-Delete a Stuck StatefulSet Pod</h3>
+
+<div class="callout callout-danger">
+  <span class="callout-icon">!</span>
+  <div class="callout-body">
+    <strong>Force-Delete Is Risky for Stateful Applications</strong>
+    <p>Force-deleting a StatefulSet pod (e.g., after node failure) may result in two pods with the same identity running simultaneously if the original pod is still alive on a partitioned node. Only force-delete when the node is confirmed dead (terminated in cloud console, not just NotReady).</p>
+  </div>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Standard delete (waits for graceful termination — may block if node is dead)
+kubectl delete pod kafka-2 -n kafka
+
+# Force delete (bypasses graceful shutdown — only when node is confirmed dead)
+kubectl delete pod kafka-2 -n kafka --force --grace-period=0</code></pre>
+
+<h3>Headless Service and DNS for StatefulSets</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-headless
+  namespace: kafka
+spec:
+  clusterIP: None                      # headless — no VIP, DNS returns pod IPs
+  publishNotReadyAddresses: true       # important: include unready pods in DNS
+  selector:
+    app: kafka
+  ports:
+  - name: kafka
+    port: 9092</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># DNS format for StatefulSet pods:
+# &lt;pod-name&gt;.&lt;service-name&gt;.&lt;namespace&gt;.svc.cluster.local
+# kafka-0.kafka-headless.kafka.svc.cluster.local
+# kafka-1.kafka-headless.kafka.svc.cluster.local
+
+# Verify headless DNS from within the cluster
+kubectl run dns-test --image=nicolaka/netshoot --rm -it -- \
+  dig kafka-0.kafka-headless.kafka.svc.cluster.local</code></pre>
+
+<h3>StatefulSet Mininum Availability with PodDisruptionBudget</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-pdb
+  namespace: kafka
+spec:
+  selector:
+    matchLabels:
+      app: kafka
+  minAvailable: 2          # for a 3-replica Kafka — always keep quorum (2/3)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="backup-ops">Storage Backup Operations</h2>
+
+<p>See <a href="03-disaster-recovery.html">Disaster Recovery</a> for the full Velero setup. This section focuses on storage-specific backup patterns and volume snapshot operations.</p>
+
+<h3>VolumeSnapshot — CSI Snapshot</h3>
+
+<p>VolumeSnapshots create a point-in-time snapshot of a PVC using the cloud provider's native snapshot API (EBS snapshot for gp3 volumes). They are faster and cheaper than full Velero backups for block storage.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Install the CSI snapshot controller CRDs and controller
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.0.1/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.0.1/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.0.1/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.0.1/deploy/kubernetes/snapshot-controller/
+
+# Create a VolumeSnapshotClass for EBS
+kubectl apply -f - &lt;&lt;'EOF'
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: ebs-vsc
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: ebs.csi.aws.com
+deletionPolicy: Retain         # keep the EBS snapshot even if VSC is deleted
+parameters:
+  tagSpecification_1: "Key=ManagedBy,Value=K8s"
+EOF</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: postgres-data-snap-20260524
+  namespace: production
+spec:
+  volumeSnapshotClassName: ebs-vsc
+  source:
+    persistentVolumeClaimName: postgres-data</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check snapshot status
+kubectl get volumesnapshot -n production
+kubectl describe volumesnapshot postgres-data-snap-20260524 -n production
+# readyToUse: true means the EBS snapshot is complete
+
+# Restore from a VolumeSnapshot to a new PVC
+kubectl apply -f - &lt;&lt;'EOF'
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-restored
+  namespace: production
+spec:
+  storageClassName: gp3-retain
+  dataSource:
+    name: postgres-data-snap-20260524
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 100Gi
+EOF</code></pre>
+
+<h3>Automated Snapshot CronJob</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-snapshot
+  namespace: production
+spec:
+  schedule: "0 */6 * * *"      # every 6 hours
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: snapshot-creator
+          restartPolicy: OnFailure
+          containers:
+          - name: snap
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/bash
+            - -c
+            - |
+              SNAP_NAME="postgres-data-snap-$(date +%Y%m%d-%H%M%S)"
+              kubectl apply -f - &lt;&lt;EOF
+              apiVersion: snapshot.storage.k8s.io/v1
+              kind: VolumeSnapshot
+              metadata:
+                name: $SNAP_NAME
+                namespace: production
+                labels:
+                  app: postgres
+                  managed-by: cronjob
+              spec:
+                volumeSnapshotClassName: ebs-vsc
+                source:
+                  persistentVolumeClaimName: postgres-data
+              EOF
+              echo "Created snapshot: $SNAP_NAME"
+
+              # Prune snapshots older than 7 days
+              kubectl get volumesnapshot -n production \
+                -l managed-by=cronjob \
+                -o json | \
+              python3 -c "
+              import json, sys, subprocess
+              from datetime import datetime, timezone, timedelta
+              items = json.load(sys.stdin)['items']
+              cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+              for s in items:
+                  ts = datetime.fromisoformat(s['metadata']['creationTimestamp'].replace('Z','+00:00'))
+                  if ts < cutoff:
+                      name = s['metadata']['name']
+                      print(f'Deleting old snapshot: {name}')
+                      subprocess.run(['kubectl','delete','volumesnapshot',name,'-n','production'])
+              "</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Storage Troubleshooting Playbook</h2>
+
+<h3>PVC Stuck in Pending</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Describe PVC for events
+kubectl describe pvc &lt;pvc-name&gt; -n &lt;ns&gt;
+
+# Common causes and checks:
+# 1. WaitForFirstConsumer — normal until a pod is scheduled
+kubectl get pvc &lt;pvc-name&gt; -n &lt;ns&gt; -o jsonpath='{.metadata.annotations}'
+
+# 2. No StorageClass matching the requested class
+kubectl get sc                    # verify the SC exists
+kubectl get pvc &lt;pvc-name&gt; -n &lt;ns&gt; -o jsonpath='{.spec.storageClassName}'
+
+# 3. CSI provisioner pod crashed / not running
+kubectl get pods -n kube-system -l app=ebs-csi-controller
+kubectl logs -n kube-system -l app=ebs-csi-controller -c csi-provisioner
+
+# 4. IRSA permissions — EBS CSI controller needs ec2:CreateVolume
+aws iam simulate-principal-policy \
+  --policy-source-arn arn:aws:iam::123456789012:role/ebs-csi-role \
+  --action-names ec2:CreateVolume \
+  --query 'EvaluationResults[0].EvalDecision'
+
+# 5. Insufficient capacity in the AZ (for gp3 this is rare)
+# Check AWS service health dashboard</code></pre>
+
+<h3>Pod Stuck in ContainerCreating (Mount Failure)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Get the full error
+kubectl describe pod &lt;pod-name&gt; -n &lt;ns&gt; | grep -A 30 Events
+
+# Scenario A: "Multi-Attach error" — volume attached to another node
+kubectl get volumeattachment | grep &lt;pv-name&gt;
+# Check if old attachment is on a dead node — if so, force-delete it:
+kubectl delete volumeattachment &lt;attachment-name&gt;
+
+# Scenario B: "Unable to mount volumes" — node plugin issue
+# Check node plugin pod on the target node:
+TARGET_NODE=$(kubectl get pod &lt;pod-name&gt; -n &lt;ns&gt; -o jsonpath='{.spec.nodeName}')
+kubectl get pods -n kube-system -l app=ebs-csi-node \
+  -o wide | grep $TARGET_NODE
+kubectl logs -n kube-system -l app=ebs-csi-node \
+  --field-selector spec.nodeName=$TARGET_NODE -c ebs-plugin
+
+# Scenario C: "timeout expired waiting for volumes to be attached/mounted"
+# kubelet may be having issues — check kubelet status on node
+kubectl debug node/$TARGET_NODE -it --image=nicolaka/netshoot -- \
+  journalctl -u kubelet --no-pager -n 100
+
+# Scenario D: filesystem corrupted — check dmesg for I/O errors
+kubectl debug node/$TARGET_NODE -it --image=nicolaka/netshoot -- \
+  dmesg | tail -50 | grep -i "error\|fail\|corrupt"</code></pre>
+
+<h3>PVC Resize Stuck at FileSystemResizePending</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check PVC conditions
+kubectl get pvc &lt;pvc-name&gt; -n &lt;ns&gt; -o jsonpath='{.status.conditions}'
+
+# FileSystemResizePending means cloud volume is resized,
+# but filesystem inside has not been expanded yet.
+# This requires the CSI node plugin to run NodeExpandVolume.
+
+# Option 1: rolling restart the pod (triggers NodePublishVolume → NodeExpandVolume)
+kubectl rollout restart deployment/&lt;name&gt; -n &lt;ns&gt;
+
+# Option 2: check if node plugin is healthy on the pod's node
+TARGET_NODE=$(kubectl get pod &lt;pod-name&gt; -n &lt;ns&gt; -o jsonpath='{.spec.nodeName}')
+kubectl logs -n kube-system \
+  $(kubectl get pods -n kube-system -l app=ebs-csi-node \
+    -o wide | grep $TARGET_NODE | awk '{print $1}') \
+  -c ebs-plugin --tail=50
+
+# Manual resize from inside the pod (last resort — ext4 only)
+kubectl exec -n &lt;ns&gt; &lt;pod-name&gt; -- resize2fs /dev/&lt;device&gt;</code></pre>
+
+<h3>Orphaned EBS Volume Detection</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Find EBS volumes tagged with kubernetes.io/created-for/pvc that have no attachment
+aws ec2 describe-volumes \
+  --filters "Name=status,Values=available" \
+             "Name=tag-key,Values=kubernetes.io/created-for/pvc/name" \
+  --query 'Volumes[*].{VolumeId:VolumeId,Size:Size,Created:CreateTime,PVC:Tags[?Key==`kubernetes.io/created-for/pvc/name`].Value|[0]}' \
+  --output table
+
+# Cross-reference with K8s PVs to find truly orphaned volumes
+# (PV deleted but cloud volume wasn't cleaned up)
+PVOLS=$(kubectl get pv -o jsonpath='{.items[*].spec.csi.volumeHandle}' | tr ' ' '\n' | sort)
+aws ec2 describe-volumes \
+  --filters "Name=tag-key,Values=kubernetes.io/created-for/pvc/name" \
+  --query 'Volumes[*].VolumeId' \
+  --output text | tr '\t' '\n' | sort | \
+  comm -23 - <(echo "$PVOLS")</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Storage Alerting</h2>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: storage-operations-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: storage.pvc
+    interval: 60s
+    rules:
+
+    - alert: PVCDiskUsageHigh
+      expr: |
+        (
+          kubelet_volume_stats_used_bytes
+            /
+          kubelet_volume_stats_capacity_bytes
+        ) * 100 > 80
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "PVC disk usage above 80%"
+        description: "PVC {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is {{ $value | printf \"%.1f\" }}% full."
+
+    - alert: PVCDiskUsageCritical
+      expr: |
+        (
+          kubelet_volume_stats_used_bytes
+            /
+          kubelet_volume_stats_capacity_bytes
+        ) * 100 > 95
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "PVC disk usage above 95% — imminent OOM/crash"
+        description: "PVC {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is {{ $value | printf \"%.1f\" }}% full. Immediate action required."
+
+    - alert: PVCInodeUsageHigh
+      expr: |
+        (
+          kubelet_volume_stats_inodes_used
+            /
+          kubelet_volume_stats_inodes
+        ) * 100 > 80
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "PVC inode usage above 80%"
+        description: "PVC {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} has {{ $value | printf \"%.1f\" }}% inodes used. Many small files may exhaust inodes before disk space."
+
+    - alert: PVCPendingTooLong
+      expr: |
+        kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "PVC stuck in Pending for > 10 minutes"
+        description: "PVC {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} has been Pending for over 10 minutes. Check CSI provisioner logs."
+
+    - alert: PVCInLostState
+      expr: |
+        kube_persistentvolumeclaim_status_phase{phase="Lost"} == 1
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "PVC is in Lost state — data may be inaccessible"
+        description: "PVC {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is Lost. The underlying PV may have been deleted. Immediate investigation required."
+
+  - name: storage.node
+    rules:
+
+    - alert: NodeDiskHighIOWait
+      expr: |
+        rate(node_disk_io_time_seconds_total{device=~"nvme.*|xvd.*|sd.*"}[5m]) * 100 > 80
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Node disk I/O utilization above 80%"
+        description: "Node {{ $labels.instance }} disk {{ $labels.device }} I/O utilization is {{ $value | printf \"%.1f\" }}%."
+
+    - alert: NodeRootDiskFull
+      expr: |
+        (
+          node_filesystem_size_bytes{mountpoint="/"}
+            - node_filesystem_free_bytes{mountpoint="/"}
+        ) / node_filesystem_size_bytes{mountpoint="/"} * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Node root disk above 85% full"
+        description: "Node {{ $labels.instance }} root filesystem is {{ $value | printf \"%.1f\" }}% full. Container image layers and logs may be filling disk."
+
+    - alert: PersistentVolumeClaimWithoutSnapshot
+      expr: |
+        kube_persistentvolumeclaim_info{storageclass=~"gp3-retain|gp3-high-iops"}
+          unless on (namespace, persistentvolumeclaim)
+        (
+          label_replace(
+            kube_volumesnapshot_spec_source_persistent_volume_claim_name,
+            "persistentvolumeclaim", "$1", "source_pvc_name", "(.*)"
+          )
+        )
+      for: 24h
+      labels:
+        severity: warning
+      annotations:
+        summary: "Retain-policy PVC has no VolumeSnapshot in 24 hours"
+        description: "PVC {{ $labels.persistentvolumeclaim }} in {{ $labels.namespace }} uses a retain policy but has no recent snapshot."</code></pre>
+
+<h3>Best Practices Summary</h3>
+
+<div class="card-grid">
+  <div class="card card-accent-green">
+    <h3>Use WaitForFirstConsumer</h3>
+    <p>Always set <code>volumeBindingMode: WaitForFirstConsumer</code> on StorageClasses in multi-AZ clusters. Immediate binding causes cross-AZ volume mounts which fail silently until pod scheduling.</p>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>Retain Policy for Databases</h3>
+    <p>Set <code>reclaimPolicy: Retain</code> on StorageClasses used by databases and stateful workloads. Accidental PVC deletion should not destroy production data — a human must explicitly release the PV.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>Snapshot Before Resize</h3>
+    <p>Always create a VolumeSnapshot before expanding a PVC. Filesystem expansion is usually safe, but if a node crashes during resize the volume may be left in a partially-expanded state. Snapshot provides rollback.</p>
+  </div>
+  <div class="card card-accent-red">
+    <h3>Monitor Inodes Too</h3>
+    <p>Disk space metrics are not sufficient. A volume can fill its inode table (too many small files) while still having GBs of free space. Alert on both <code>kubelet_volume_stats_used_bytes</code> and <code>kubelet_volume_stats_inodes_used</code>.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>Graceful Node Drain</h3>
+    <p>Never hard-terminate nodes with attached volumes. Use <code>kubectl drain</code> to cleanly unmount volumes and delete VolumeAttachment objects. Force-deleting VolumeAttachments causes the next pod to wait for the 6-minute attach timeout.</p>
+  </div>
+  <div class="card card-accent-orange">
+    <h3>Local Storage for Kafka</h3>
+    <p>Kafka brokers get dramatically better throughput on instance-store NVMe (1M+ IOPS) vs EBS (16K IOPS). Use local-storage StorageClass with DaemonSet pre-provisioning and topology constraints to ensure pods land on NVMe nodes.</p>
+  </div>
+</div>
+
+<button id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+</div><!-- /#main -->
+
+<script>
+function filterNav(v){
+  const q=v.toLowerCase();
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=(!q||a.textContent.toLowerCase().includes(q))?'':'none';
+  });
+}
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+const main=document.getElementById('main');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{
+  backTop.classList.toggle('visible',main.scrollTop>400);
+});
+const tocLinks=document.querySelectorAll('#toc a');
+const sections=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('#toc a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:document.getElementById('main'),threshold:0.3});
+sections.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

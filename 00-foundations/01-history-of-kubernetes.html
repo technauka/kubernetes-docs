@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>01 · History of Kubernetes | K8s Internals</title>
+<meta name="description" content="Complete history of Kubernetes: from Google Borg and Omega, to open-source launch, CNCF graduation, and every major release milestone that shaped today's platform."/>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--border2:#484f58;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#58a6ff;--accent2:#1f6feb;--accent-hover:#79c0ff;
+  --green:#3fb950;--red:#f85149;--yellow:#d29922;--orange:#db6d28;
+  --purple:#bc8cff;--pink:#f778ba;--teal:#39d353;
+  --code-bg:#161b22;--code-border:#30363d;
+  --sidebar-w:280px;--toc-w:240px;
+  --shadow:0 1px 3px rgba(0,0,0,.4);--shadow-lg:0 8px 32px rgba(0,0,0,.6);
+}
+:root[data-theme="light"]{
+  --bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;
+  --border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text2:#57606a;--text3:#6e7781;
+  --accent:#0969da;--accent2:#0550ae;--accent-hover:#0550ae;
+  --green:#1a7f37;--red:#cf222e;--yellow:#9a6700;--orange:#bc4c00;
+  --purple:#8250df;--pink:#bf3989;--teal:#116329;
+  --code-bg:#f6f8fa;--code-border:#d0d7de;
+  --shadow:0 1px 3px rgba(0,0,0,.12);--shadow-lg:0 8px 32px rgba(0,0,0,.15);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;flex-direction:column;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-hover);text-decoration:underline}
+h1,h2,h3,h4,h5,h6{line-height:1.3;font-weight:600;color:var(--text)}
+h1{font-size:2rem;margin-bottom:1rem}
+h2{font-size:1.5rem;margin:2.5rem 0 .75rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.2rem;margin:2rem 0 .5rem;color:var(--accent)}
+h4{font-size:1rem;margin:1.5rem 0 .4rem;color:var(--text2)}
+p{margin-bottom:1rem;color:var(--text)}
+ul,ol{margin:.5rem 0 1rem 1.5rem}
+li{margin:.25rem 0}
+code{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:.85em;background:var(--code-bg);border:1px solid var(--code-border);border-radius:4px;padding:.1em .35em;color:var(--pink)}
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;padding:1.25rem;overflow-x:auto;margin:1rem 0;position:relative}
+pre code{background:none;border:none;padding:0;color:var(--text);font-size:.85rem;line-height:1.6}
+blockquote{border-left:4px solid var(--accent2);background:var(--bg2);padding:.75rem 1rem;margin:1rem 0;border-radius:0 6px 6px 0;color:var(--text2)}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+th{background:var(--bg3);padding:.6rem .9rem;text-align:left;border:1px solid var(--border);font-weight:600;color:var(--text)}
+td{padding:.55rem .9rem;border:1px solid var(--border);color:var(--text2)}
+tr:hover td{background:var(--bg2)}
+hr{border:none;border-top:1px solid var(--border);margin:2rem 0}
+.layout{display:flex;flex:1}
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;z-index:100}
+.main-content{flex:1;min-width:0;display:flex;flex-direction:column}
+.article-wrap{max-width:860px;margin:0 auto;padding:2.5rem 2rem 4rem;flex:1;width:100%}
+.toc-panel{width:var(--toc-w);min-width:var(--toc-w);position:sticky;top:0;height:100vh;overflow-y:auto;padding:1.5rem 1rem;border-left:1px solid var(--border);background:var(--bg2)}
+@media(max-width:1200px){.toc-panel{display:none}}
+@media(max-width:900px){.sidebar{position:fixed;transform:translateX(-100%);transition:transform .25s;z-index:200}.sidebar.open{transform:translateX(0)}.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}.sidebar-overlay.show{display:block}.article-wrap{padding:1.5rem 1rem 3rem}}
+.topnav{background:var(--bg2);border-bottom:1px solid var(--border);padding:.6rem 1.25rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:150}
+.topnav .menu-btn{display:none;background:none;border:none;color:var(--text);font-size:1.25rem;cursor:pointer;padding:.25rem}
+@media(max-width:900px){.topnav .menu-btn{display:block}}
+.topnav .brand{font-weight:700;font-size:1rem;color:var(--accent);white-space:nowrap}
+.topnav .search-wrap{flex:1;max-width:480px;position:relative}
+.topnav .search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:.4rem .75rem .4rem 2rem;color:var(--text);font-size:.875rem}
+.topnav .search-wrap input:focus{outline:none;border-color:var(--accent)}
+.topnav .search-wrap .si{position:absolute;left:.6rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.85rem;pointer-events:none}
+.topnav .spacer{flex:1}
+.theme-btn{background:none;border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:.35rem .6rem;cursor:pointer;font-size:.85rem;white-space:nowrap}
+.theme-btn:hover{background:var(--bg3)}
+.breadcrumb{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;font-size:.8rem;color:var(--text3);margin-bottom:1.5rem}
+.breadcrumb a{color:var(--text2)}
+.sidebar-header{padding:1rem 1rem .5rem;border-bottom:1px solid var(--border)}
+.sidebar-header .logo{font-weight:700;font-size:1rem;color:var(--accent)}
+.sidebar-header .sub{font-size:.75rem;color:var(--text3)}
+.sidebar-search{padding:.6rem .75rem;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:.35rem .6rem;color:var(--text);font-size:.8rem}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+.sidebar-nav{padding:.5rem 0;flex:1}
+.sidebar-nav .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:.6rem 1rem .2rem}
+.sidebar-nav a{display:block;padding:.3rem 1rem .3rem 1.25rem;font-size:.83rem;color:var(--text2);border-left:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-nav a:hover{background:var(--bg3);color:var(--text);text-decoration:none}
+.sidebar-nav a.active{background:var(--bg3);color:var(--accent);border-left-color:var(--accent)}
+.toc-panel h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:.75rem}
+.toc-panel ol{list-style:none;margin:0;padding:0}
+.toc-panel ol li{margin:.15rem 0}
+.toc-panel ol li a{font-size:.8rem;color:var(--text2);padding:.15rem 0;display:block}
+.toc-panel ol li a:hover{color:var(--accent);text-decoration:none}
+.toc-panel ol li a.active{color:var(--accent);font-weight:600}
+.toc-panel ol li.l2{padding-left:1rem}
+.toc-panel ol li.l3{padding-left:2rem}
+.doc-nav{display:flex;gap:1rem;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+.doc-nav a{flex:1;display:flex;flex-direction:column;gap:.2rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;transition:border-color .15s}
+.doc-nav a:hover{border-color:var(--accent);text-decoration:none}
+.doc-nav .label{font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.doc-nav .title{font-size:.9rem;color:var(--accent);font-weight:600}
+.doc-nav .next-link{text-align:right}
+.callout{border-radius:8px;padding:1rem 1.25rem;margin:1.25rem 0;border-left:4px solid}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);color:var(--text)}
+.callout.warn{background:rgba(210,153,34,.1);border-color:var(--yellow);color:var(--text)}
+.callout.danger{background:rgba(248,81,73,.1);border-color:var(--red);color:var(--text)}
+.callout.tip{background:rgba(63,185,80,.08);border-color:var(--green);color:var(--text)}
+.callout strong{display:block;margin-bottom:.35rem}
+.badge{display:inline-block;font-size:.7rem;font-weight:700;padding:.15em .5em;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle;margin-left:.35rem}
+.badge.new{background:var(--green);color:#000}
+.badge.stable{background:var(--accent2);color:#fff}
+.badge.milestone{background:var(--purple);color:#fff}
+details{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:1rem 0;overflow:hidden}
+details summary{padding:.75rem 1rem;cursor:pointer;font-weight:600;color:var(--text);list-style:none;display:flex;justify-content:space-between;align-items:center;user-select:none}
+details summary::after{content:"▶";font-size:.75rem;color:var(--text3);transition:transform .2s}
+details[open] summary::after{transform:rotate(90deg)}
+details summary:hover{background:var(--bg3)}
+details .details-body{padding:.75rem 1rem 1rem}
+.diagram-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;overflow-x:auto;text-align:center}
+.diagram-wrap .caption{font-size:.8rem;color:var(--text3);margin-top:.75rem;font-style:italic}
+.copy-btn{position:absolute;top:.6rem;right:.6rem;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-size:.72rem;padding:.25rem .55rem;cursor:pointer;opacity:0;transition:opacity .15s}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg3);color:var(--text)}
+#back-top{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:300;box-shadow:var(--shadow-lg);transition:background .15s}
+#back-top.show{display:flex}
+#back-top:hover{background:var(--accent)}
+mark{background:rgba(210,153,34,.35);color:var(--text);border-radius:2px;padding:0 .1em}
+.file-meta{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:2rem;font-size:.83rem;display:grid;gap:.4rem}
+.file-meta strong{color:var(--text3);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}
+.file-meta .tags{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.15rem}
+.file-meta .tag{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:.15em .6em;font-size:.75rem;color:var(--text2)}
+.dep-graph{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1.5rem 0}
+.dep-graph h4{margin-bottom:.75rem;color:var(--accent)}
+.dep-tree{list-style:none;padding:0;margin:0}
+.dep-tree li{padding:.25rem 0;font-size:.83rem;color:var(--text2);padding-left:1.2rem;border-left:2px solid var(--border);margin-left:.5rem}
+.dep-tree li::before{content:"→ ";color:var(--accent)}
+/* Timeline */
+.timeline{position:relative;padding-left:2rem;margin:2rem 0}
+.timeline::before{content:'';position:absolute;left:.6rem;top:0;bottom:0;width:2px;background:var(--border2)}
+.timeline-item{position:relative;margin-bottom:2rem}
+.timeline-item::before{content:'';position:absolute;left:-1.75rem;top:.4rem;width:12px;height:12px;border-radius:50%;background:var(--accent2);border:2px solid var(--bg)}
+.timeline-item.milestone::before{background:var(--purple);width:16px;height:16px;left:-1.85rem;top:.25rem}
+.timeline-item .year{font-size:.75rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem}
+.timeline-item h4{margin:0 0 .35rem;font-size:1rem;color:var(--text)}
+.timeline-item p{margin:0;font-size:.88rem;color:var(--text2)}
+/* Architecture comparison grid */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin:1.5rem 0}
+@media(max-width:700px){.compare-grid{grid-template-columns:1fr}}
+.compare-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.compare-box h4{font-size:.9rem;margin:0 0 .5rem;padding-bottom:.35rem;border-bottom:1px solid var(--border)}
+.compare-box ul{padding-left:1rem;margin:0}
+.compare-box ul li{font-size:.82rem;color:var(--text2);margin:.2rem 0}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <button class="menu-btn" id="menuBtn" aria-label="Toggle sidebar">☰</button>
+  <span class="brand">☸ K8s Internals</span>
+  <div class="search-wrap">
+    <span class="si">🔍</span>
+    <input type="text" id="globalSearch" placeholder="Search topics…" autocomplete="off"/>
+  </div>
+  <span class="spacer"></span>
+  <button class="theme-btn" id="themeBtn">☀ Light</button>
+</nav>
+
+<div class="layout">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">☸ Kubernetes Internals</div>
+    <div class="sub">Production-grade deep-dive</div>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="sidebarSearch" placeholder="Filter pages…" autocomplete="off"/>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav">
+    <div class="section-label">00 · Foundations</div>
+    <a href="00-introduction.html">00 · Introduction</a>
+    <a href="01-history-of-kubernetes.html" class="active">01 · History</a>
+    <a href="02-container-orchestration.html">02 · Container Orchestration</a>
+    <a href="03-cluster-architecture-overview.html">03 · Cluster Architecture</a>
+    <a href="04-kubernetes-api-model.html">04 · API Model</a>
+    <div class="section-label">01 · Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">00 · Overview</a>
+    <a href="../01-control-plane/01-kube-apiserver.html">01 · kube-apiserver</a>
+    <a href="../01-control-plane/02-etcd.html">02 · etcd</a>
+    <a href="../01-control-plane/03-kube-scheduler.html">03 · Scheduler</a>
+    <a href="../01-control-plane/04-kube-controller-manager.html">04 · Controller Manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">05 · Cloud Controller</a>
+    <a href="../01-control-plane/06-admission-controllers.html">06 · Admission Controllers</a>
+    <a href="../01-control-plane/07-api-aggregation.html">07 · API Aggregation</a>
+    <div class="section-label">02 · Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">00 · Worker Node</a>
+    <a href="../02-node-components/01-kubelet.html">01 · kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">02 · kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime-interface.html">03 · CRI</a>
+    <a href="../02-node-components/04-containerd-crio-docker.html">04 · containerd/CRI-O</a>
+    <a href="../02-node-components/05-linux-kernel-cgroups-namespaces.html">05 · cgroups/Namespaces</a>
+    <a href="../02-node-components/06-node-lifecycle.html">06 · Node Lifecycle</a>
+    <a href="../02-node-components/07-windows-worker-nodes.html">07 · Windows Nodes</a>
+    <div class="section-label">03 · Networking</div>
+    <a href="../03-networking/00-networking-overview.html">00 · Overview</a>
+    <a href="../03-networking/01-cni-architecture.html">01 · CNI</a>
+    <a href="../03-networking/02-pod-networking.html">02 · Pod Networking</a>
+    <a href="../03-networking/03-service-networking.html">03 · Service Networking</a>
+    <a href="../03-networking/04-kube-proxy-iptables-ipvs-ebpf.html">04 · kube-proxy modes</a>
+    <a href="../03-networking/05-dns-coredns.html">05 · DNS / CoreDNS</a>
+    <a href="../03-networking/06-ingress.html">06 · Ingress</a>
+    <a href="../03-networking/07-gateway-api.html">07 · Gateway API</a>
+    <a href="../03-networking/08-network-policies.html">08 · Network Policies</a>
+    <a href="../03-networking/09-overlay-networking.html">09 · Overlay Networking</a>
+    <a href="../03-networking/10-ebpf-deep-dive.html">10 · eBPF</a>
+    <a href="../03-networking/11-istio-linkerd-service-mesh.html">11 · Service Mesh</a>
+    <div class="section-label">04 · Storage</div>
+    <a href="../04-storage/00-storage-overview.html">00 · Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">01 · PVs</a>
+    <a href="../04-storage/02-persistent-volume-claims.html">02 · PVCs</a>
+    <a href="../04-storage/03-storage-classes.html">03 · Storage Classes</a>
+    <a href="../04-storage/04-container-storage-interface.html">04 · CSI</a>
+    <a href="../04-storage/05-dynamic-provisioning.html">05 · Dynamic Provisioning</a>
+    <a href="../04-storage/06-stateful-workloads.html">06 · Stateful Workloads</a>
+    <a href="../04-storage/07-backup-disaster-recovery.html">07 · Backup/DR</a>
+    <div class="section-label">05 · Workloads</div>
+    <a href="../05-workloads/00-workloads-overview.html">00 · Overview</a>
+    <a href="../05-workloads/01-pods.html">01 · Pods</a>
+    <a href="../05-workloads/02-multi-container-pods.html">02 · Multi-container</a>
+    <a href="../05-workloads/03-init-containers.html">03 · Init Containers</a>
+    <a href="../05-workloads/04-sidecars.html">04 · Sidecars</a>
+    <a href="../05-workloads/05-ephemeral-containers.html">05 · Ephemeral</a>
+    <a href="../05-workloads/06-replicasets.html">06 · ReplicaSets</a>
+    <a href="../05-workloads/07-deployments.html">07 · Deployments</a>
+    <a href="../05-workloads/08-statefulsets.html">08 · StatefulSets</a>
+    <a href="../05-workloads/09-daemonsets.html">09 · DaemonSets</a>
+    <a href="../05-workloads/10-jobs-cronjobs.html">10 · Jobs/CronJobs</a>
+    <a href="../05-workloads/11-autoscaling.html">11 · Autoscaling</a>
+    <div class="section-label">06 · Security</div>
+    <a href="../06-security/00-security-overview.html">00 · Overview</a>
+    <a href="../06-security/01-authentication.html">01 · Authentication</a>
+    <a href="../06-security/02-authorization.html">02 · Authorization</a>
+    <a href="../06-security/03-rbac.html">03 · RBAC</a>
+    <a href="../06-security/04-serviceaccounts.html">04 · ServiceAccounts</a>
+    <a href="../06-security/05-certificates-tls.html">05 · Certificates/TLS</a>
+    <a href="../06-security/06-secrets-management.html">06 · Secrets</a>
+    <a href="../06-security/07-pod-security-standards.html">07 · Pod Security</a>
+    <a href="../06-security/08-opa-gatekeeper.html">08 · OPA/Gatekeeper</a>
+    <a href="../06-security/09-kyverno.html">09 · Kyverno</a>
+    <a href="../06-security/10-runtime-security.html">10 · Runtime Security</a>
+    <a href="../06-security/11-supply-chain-security.html">11 · Supply Chain</a>
+    <div class="section-label">07 · Observability</div>
+    <a href="../07-observability/00-observability-overview.html">00 · Overview</a>
+    <a href="../07-observability/01-logging.html">01 · Logging</a>
+    <a href="../07-observability/02-monitoring.html">02 · Monitoring</a>
+    <a href="../07-observability/03-prometheus.html">03 · Prometheus</a>
+    <a href="../07-observability/04-alertmanager.html">04 · Alertmanager</a>
+    <a href="../07-observability/05-tracing.html">05 · Tracing</a>
+    <a href="../07-observability/06-opentelemetry.html">06 · OpenTelemetry</a>
+    <a href="../07-observability/07-debugging-production-issues.html">07 · Debugging</a>
+    <div class="section-label">08 · Platform Eng.</div>
+    <a href="../08-platform-engineering/00-platform-engineering-overview.html">00 · Overview</a>
+    <a href="../08-platform-engineering/01-gitops.html">01 · GitOps</a>
+    <a href="../08-platform-engineering/02-argocd.html">02 · ArgoCD</a>
+    <a href="../08-platform-engineering/03-fluxcd.html">03 · FluxCD</a>
+    <a href="../08-platform-engineering/04-helm.html">04 · Helm</a>
+    <a href="../08-platform-engineering/05-kustomize.html">05 · Kustomize</a>
+    <a href="../08-platform-engineering/06-operators-crds.html">06 · Operators/CRDs</a>
+    <a href="../08-platform-engineering/07-webhooks.html">07 · Webhooks</a>
+    <a href="../08-platform-engineering/08-multi-cluster-management.html">08 · Multi-cluster</a>
+    <a href="../08-platform-engineering/09-federation.html">09 · Federation</a>
+    <a href="../08-platform-engineering/10-cluster-api.html">10 · Cluster API</a>
+    <div class="section-label">09 · Production Ops</div>
+    <a href="../09-production-operations/00-production-overview.html">00 · Overview</a>
+    <a href="../09-production-operations/01-high-availability.html">01 · HA</a>
+    <a href="../09-production-operations/02-cluster-upgrades.html">02 · Upgrades</a>
+    <a href="../09-production-operations/03-capacity-planning.html">03 · Capacity</a>
+    <a href="../09-production-operations/04-failure-scenarios.html">04 · Failure Scenarios</a>
+    <a href="../09-production-operations/05-node-failures.html">05 · Node Failures</a>
+    <a href="../09-production-operations/06-pod-evictions.html">06 · Pod Evictions</a>
+    <a href="../09-production-operations/07-performance-tuning.html">07 · Perf Tuning</a>
+    <a href="../09-production-operations/08-cost-optimization.html">08 · Cost</a>
+    <a href="../09-production-operations/09-production-checklists.html">09 · Checklists</a>
+    <a href="../09-production-operations/10-real-world-incident-analysis.html">10 · Incidents</a>
+    <div class="section-label">10 · Team Workflows</div>
+    <a href="../10-team-workflows/00-team-overview.html">00 · Overview</a>
+    <a href="../10-team-workflows/01-platform-engineers.html">01 · Platform Eng.</a>
+    <a href="../10-team-workflows/02-devops-teams.html">02 · DevOps</a>
+    <a href="../10-team-workflows/03-sre-teams.html">03 · SRE</a>
+    <a href="../10-team-workflows/04-security-teams.html">04 · Security</a>
+    <a href="../10-team-workflows/05-application-developers.html">05 · App Devs</a>
+    <a href="../10-team-workflows/06-data-engineering.html">06 · Data Eng.</a>
+    <a href="../10-team-workflows/07-mlops-teams.html">07 · MLOps</a>
+    <a href="../10-team-workflows/08-networking-teams.html">08 · Networking</a>
+    <a href="../10-team-workflows/09-infrastructure-operations.html">09 · Infra Ops</a>
+    <div class="section-label">11 · API Flows</div>
+    <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html">00 · Overview</a>
+    <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-sequence.html">01 · Pod Creation</a>
+    <a href="../11-api-flows-and-sequence-diagrams/02-kubelet-api-calls.html">02 · Kubelet Calls</a>
+    <a href="../11-api-flows-and-sequence-diagrams/03-authentication-flow.html">03 · Auth Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/04-authorization-flow.html">04 · Authz Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/05-scheduler-sequence.html">05 · Scheduler</a>
+    <a href="../11-api-flows-and-sequence-diagrams/06-controller-reconciliation-loop.html">06 · Reconciliation</a>
+    <a href="../11-api-flows-and-sequence-diagrams/07-service-routing-flow.html">07 · Service Routing</a>
+    <a href="../11-api-flows-and-sequence-diagrams/08-dns-resolution-flow.html">08 · DNS Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/09-storage-attach-mount-flow.html">09 · Storage Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/10-container-startup-sequence.html">10 · Container Start</a>
+    <a href="../11-api-flows-and-sequence-diagrams/11-node-registration-flow.html">11 · Node Reg.</a>
+    <a href="../11-api-flows-and-sequence-diagrams/12-certificate-bootstrap-flow.html">12 · Cert Bootstrap</a>
+    <a href="../11-api-flows-and-sequence-diagrams/13-ingress-request-flow.html">13 · Ingress Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-packet-flow.html">14 · Packet Flow</a>
+    <div class="section-label">12 · Troubleshooting</div>
+    <a href="../12-troubleshooting/00-troubleshooting-overview.html">00 · Overview</a>
+    <a href="../12-troubleshooting/01-pod-failures.html">01 · Pod Failures</a>
+    <a href="../12-troubleshooting/02-networking-issues.html">02 · Networking</a>
+    <a href="../12-troubleshooting/03-dns-issues.html">03 · DNS</a>
+    <a href="../12-troubleshooting/04-storage-issues.html">04 · Storage</a>
+    <a href="../12-troubleshooting/05-performance-issues.html">05 · Performance</a>
+    <a href="../12-troubleshooting/06-security-issues.html">06 · Security</a>
+    <a href="../12-troubleshooting/07-etcd-failures.html">07 · etcd</a>
+    <a href="../12-troubleshooting/08-control-plane-failures.html">08 · Control Plane</a>
+    <a href="../12-troubleshooting/09-node-notready.html">09 · NotReady</a>
+    <a href="../12-troubleshooting/10-crashloopbackoff-analysis.html">10 · CrashLoopBackOff</a>
+  </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- MAIN -->
+<div class="main-content">
+<article class="article-wrap" id="articleWrap">
+
+<nav class="breadcrumb">
+  <a href="00-introduction.html">K8s Internals</a>
+  <span>›</span>
+  <a href="00-introduction.html">00 · Foundations</a>
+  <span>›</span>
+  <span>01 · History of Kubernetes</span>
+</nav>
+
+<!-- File Meta -->
+<div class="file-meta">
+  <div><strong>File Path</strong><code>00-foundations/01-history-of-kubernetes.html</code></div>
+  <div><strong>Prerequisites</strong><span><a href="00-introduction.html">00-introduction.html</a> — core concepts and terminology</span></div>
+  <div><strong>Concepts Covered</strong>
+    <div class="tags">
+      <span class="tag">Google Borg</span><span class="tag">Google Omega</span>
+      <span class="tag">Kubernetes origin</span><span class="tag">CNCF donation</span>
+      <span class="tag">Release history</span><span class="tag">Design decisions</span>
+      <span class="tag">API evolution</span><span class="tag">Community governance</span>
+      <span class="tag">Borg vs K8s architecture</span><span class="tag">Key contributors</span>
+      <span class="tag">Major feature milestones</span><span class="tag">Ecosystem growth</span>
+    </div>
+  </div>
+  <div><strong>Related Files</strong>
+    <div class="tags">
+      <span class="tag"><a href="00-introduction.html">00-introduction</a></span>
+      <span class="tag"><a href="02-container-orchestration.html">02-container-orchestration</a></span>
+      <span class="tag"><a href="03-cluster-architecture-overview.html">03-cluster-architecture</a></span>
+      <span class="tag"><a href="../01-control-plane/01-kube-apiserver.html">kube-apiserver</a></span>
+      <span class="tag"><a href="../01-control-plane/02-etcd.html">etcd</a></span>
+    </div>
+  </div>
+</div>
+
+<h1 id="top">History of Kubernetes</h1>
+<p>
+Kubernetes did not emerge in a vacuum. It carries over a decade of hard-won operational
+knowledge from running the world's largest fleets of containers at Google. Understanding
+this lineage is not merely academic — the architectural decisions made in Borg and Omega
+explain <em>why</em> Kubernetes works the way it does today, and why certain design choices
+that seem unusual have deep roots in production experience at scale.
+</p>
+
+<div class="callout info">
+  <strong>Why this history matters for engineers</strong>
+  When you hit a Kubernetes design limitation or wonder why a feature works a certain way,
+  tracing it back to Borg's operational constraints or Omega's transaction model
+  gives you the mental model to predict behaviour, choose the right workaround, and make
+  better architectural decisions.
+</div>
+
+<!-- ======================================================= -->
+<h2 id="borg">1 · Google Borg (2003–2013)</h2>
+
+<h3 id="borg-origin">1.1 Origin and Purpose</h3>
+<p>
+Around 2003, Google's infrastructure team built the first version of what would become
+<strong>Borg</strong>. The immediate trigger was the rapid growth of Google's internal services —
+the Web search crawler, Gmail, Maps, YouTube — each of which needed to run on thousands of
+machines simultaneously. Managing this by hand was impossible.
+</p>
+<p>
+Borg's design goal was to maximise utilisation of Google's data centre hardware while
+providing a reliable, scalable runtime for both <em>long-running services</em>
+(user-facing production jobs) and <em>batch workloads</em>
+(MapReduce, analytics jobs) on the same shared fleet of machines.
+</p>
+
+<h3 id="borg-architecture">1.2 Borg Architecture</h3>
+
+<div class="compare-grid">
+  <div class="compare-box">
+    <h4 style="color:var(--accent)">Borgmaster</h4>
+    <ul>
+      <li>Centralised control plane</li>
+      <li>Replicated 5× for HA (Paxos)</li>
+      <li>Handles all scheduling</li>
+      <li>Stores state in Paxos-replicated log</li>
+      <li>Serves read/write API (not HTTP)</li>
+      <li>Equivalent: kube-apiserver + scheduler + etcd</li>
+    </ul>
+  </div>
+  <div class="compare-box">
+    <h4 style="color:var(--green)">Borglet</h4>
+    <ul>
+      <li>Agent on every machine</li>
+      <li>Launches/stops tasks</li>
+      <li>Reports machine state to Borgmaster</li>
+      <li>Restarts failed tasks locally</li>
+      <li>Manages local cgroup resources</li>
+      <li>Equivalent: kubelet</li>
+    </ul>
+  </div>
+  <div class="compare-box">
+    <h4 style="color:var(--yellow)">Borg Scheduler</h4>
+    <ul>
+      <li>Feasibility checking (like K8s filter plugins)</li>
+      <li>Scoring with worst-fit packing by default</li>
+      <li>Resource reclamation: buys back unused reservations</li>
+      <li>Priority and quota system</li>
+      <li>Equivalent: kube-scheduler</li>
+    </ul>
+  </div>
+</div>
+
+<h3 id="borg-key-concepts">1.3 Borg Key Concepts That Influenced Kubernetes</h3>
+
+<table>
+  <thead><tr><th>Borg concept</th><th>Kubernetes equivalent</th><th>Lesson learned</th></tr></thead>
+  <tbody>
+    <tr><td>Job (set of identical Tasks)</td><td>ReplicaSet / Deployment</td><td>Grouping identical tasks simplifies management</td></tr>
+    <tr><td>Task</td><td>Pod / Container</td><td>The atomic scheduling unit</td></tr>
+    <tr><td>Alloc (resource envelope shared by tasks)</td><td>Pod (shared network/cgroup envelope for containers)</td><td>Co-located containers should share IPC and network</td></tr>
+    <tr><td>Priority classes (prod vs. batch)</td><td>PriorityClass, QoS classes</td><td>Mixed workloads need preemption and tiered eviction</td></tr>
+    <tr><td>Resource reclamation (compaction)</td><td>VPA, resource requests vs. limits</td><td>Applications over-request; reclaim unused capacity</td></tr>
+    <tr><td>BNS (Borg Naming Service)</td><td>Service + CoreDNS</td><td>Service discovery must be cluster-native, not DNS-only</td></tr>
+    <tr><td>Sigma (Borg UI/debugger)</td><td>kubectl, Dashboard</td><td>Operators need rich introspection tooling</td></tr>
+    <tr><td>Faborg (failure injection)</td><td>Chaos engineering tools</td><td>Build for failure, not just availability</td></tr>
+    <tr><td>ConfigFile (job description language)</td><td>Kubernetes YAML manifests</td><td>Declarative job descriptions beat imperative scripts</td></tr>
+  </tbody>
+</table>
+
+<h3 id="borg-lessons">1.4 Lessons Borg Taught Google (and Kubernetes)</h3>
+
+<details>
+  <summary>The 10 most important operational lessons from Borg</summary>
+  <div class="details-body">
+  <ol>
+    <li>
+      <strong>Don't expose raw machine IDs to users.</strong>
+      Borg users could see which machine a task ran on and sometimes hard-coded assumptions
+      about it. This created fragility. Kubernetes abstracts node identity — workloads
+      should be location-agnostic.
+    </li>
+    <li>
+      <strong>Allocs (pods) are the right unit of co-location.</strong>
+      Tasks that needed to communicate or share data should run as a group with shared
+      resources. This became the Pod — the fundamental scheduling atom in K8s.
+    </li>
+    <li>
+      <strong>Introspection is critical at scale.</strong>
+      Sigma (Borg's dashboarding/debugging system) was the most heavily used internal tool.
+      K8s invested in <code>kubectl describe</code>, events, and the metrics API from day one.
+    </li>
+    <li>
+      <strong>The master is the bottleneck.</strong>
+      Borgmaster's monolithic architecture limited scale. K8s addressed this with watch
+      semantics (not poll), horizontal API server scaling, and etcd as a separate store.
+    </li>
+    <li>
+      <strong>Users want higher-level abstractions.</strong>
+      Raw Borg jobs were too low-level. Users built frameworks on top. K8s formalised
+      this as Deployments, StatefulSets, DaemonSets — and made them extensible via CRDs.
+    </li>
+    <li>
+      <strong>Configuration sprawl is a real problem.</strong>
+      BCL (Borg Configuration Language) became too complex. K8s YAML, combined with
+      Helm/Kustomize/CUE, gives structured templating without an embedded language.
+    </li>
+    <li>
+      <strong>Resource reclamation matters enormously.</strong>
+      Real utilisation is often 10–30% of requested. Borg reclaimed unused reservations.
+      K8s exposes this via requests vs. limits, and VPA automatically right-sizes.
+    </li>
+    <li>
+      <strong>Priority and preemption are necessary for mixed workloads.</strong>
+      Running batch next to production requires a clear priority hierarchy and controlled
+      preemption. K8s PriorityClass + preemption implement this.
+    </li>
+    <li>
+      <strong>Treat infrastructure as code.</strong>
+      Borg job files were versioned in source control at Google. K8s doubles down on this
+      — GitOps (ArgoCD/Flux) is the standard operating model.
+    </li>
+    <li>
+      <strong>Health checking must be cluster-native.</strong>
+      External health monitors that SSH into machines do not scale. Liveness and readiness
+      probes run inside the kubelet, which is co-located with the workload.
+    </li>
+  </ol>
+  </div>
+</details>
+
+<!-- ======================================================= -->
+<h2 id="omega">2 · Google Omega (2011–2013)</h2>
+
+<h3 id="omega-purpose">2.1 What Omega Was</h3>
+<p>
+While Borg continued evolving, a separate Google infrastructure team designed
+<strong>Omega</strong> as a research prototype to address Borg's architectural limitations.
+Omega was published academically in the 2013 EuroSys paper
+<em>"Omega: flexible, scalable schedulers for large compute clusters"</em>.
+</p>
+
+<h3 id="omega-innovations">2.2 Omega's Key Innovations</h3>
+
+<table>
+  <thead><tr><th>Innovation</th><th>Description</th><th>K8s impact</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Shared-state scheduling</td>
+      <td>All schedulers see the full cluster state via a shared, consistent in-memory store — no single scheduler bottleneck. Multiple schedulers run in parallel with optimistic concurrency (OCC).</td>
+      <td>K8s allows multiple schedulers via <code>schedulerName</code>. The scheduler framework plugin model comes from Omega's extensibility ideas.</td>
+    </tr>
+    <tr>
+      <td>Optimistic concurrency control</td>
+      <td>Schedulers speculatively assign tasks; a transaction commits only if no conflicts occurred. Conflicts trigger retry, not blocking.</td>
+      <td>K8s uses <code>resourceVersion</code> optimistic locking on API objects. Etcd's MVCC is the underlying mechanism.</td>
+    </tr>
+    <tr>
+      <td>No central scheduler lock</td>
+      <td>Borg's scheduler held a global lock. Omega's OCC model eliminated this, allowing 10× throughput.</td>
+      <td>K8s API server is horizontally scalable; controllers and schedulers run independently using watch + compare-and-swap.</td>
+    </tr>
+    <tr>
+      <td>Cell state visibility</td>
+      <td>All components can read the full cluster state — enables richer scheduling decisions (e.g., topology awareness).</td>
+      <td>K8s's watch API makes full cluster state available to any authorised client, enabling topology-aware scheduling, custom schedulers, and cluster-autoscaler.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="omega-vs-borg-vs-k8s">2.3 Architecture Comparison: Borg vs Omega vs Kubernetes</h3>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" style="max-width:720px;width:100%">
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#8b949e"/>
+    </marker>
+  </defs>
+  <!-- BORG -->
+  <rect x="10" y="10" width="210" height="270" rx="8" fill="#161b22" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="115" y="35" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">BORG</text>
+  <rect x="25" y="50" width="180" height="50" rx="5" fill="#1f6feb" opacity=".8"/>
+  <text x="115" y="73" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Borgmaster (5×, Paxos)</text>
+  <text x="115" y="89" text-anchor="middle" fill="#a5d6ff" font-size="9">Scheduler + State + API (monolith)</text>
+  <rect x="25" y="115" width="80" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="65" y="133" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">Borglet</text>
+  <text x="65" y="148" text-anchor="middle" fill="#8b949e" font-size="9">Machine agent</text>
+  <rect x="120" y="115" width="85" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="162" y="133" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">Borglet</text>
+  <text x="162" y="148" text-anchor="middle" fill="#8b949e" font-size="9">Machine agent</text>
+  <text x="115" y="200" text-anchor="middle" fill="#6e7681" font-size="9">• Monolithic control plane</text>
+  <text x="115" y="215" text-anchor="middle" fill="#6e7681" font-size="9">• Single scheduler (locked)</text>
+  <text x="115" y="230" text-anchor="middle" fill="#6e7681" font-size="9">• Internal-only API</text>
+  <text x="115" y="245" text-anchor="middle" fill="#6e7681" font-size="9">• Paxos for HA</text>
+  <text x="115" y="260" text-anchor="middle" fill="#6e7681" font-size="9">• 2003–present (Google internal)</text>
+
+  <!-- OMEGA -->
+  <rect x="250" y="10" width="210" height="270" rx="8" fill="#161b22" stroke="#bc8cff" stroke-width="1.5"/>
+  <text x="355" y="35" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="700">OMEGA</text>
+  <rect x="265" y="50" width="180" height="50" rx="5" fill="#21262d" stroke="#bc8cff" stroke-opacity=".5"/>
+  <text x="355" y="73" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="600">Shared-State Store</text>
+  <text x="355" y="89" text-anchor="middle" fill="#8b949e" font-size="9">Consistent in-memory cell state</text>
+  <rect x="265" y="115" width="80" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="305" y="133" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">Scheduler A</text>
+  <text x="305" y="148" text-anchor="middle" fill="#8b949e" font-size="8">Batch jobs</text>
+  <rect x="360" y="115" width="80" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="400" y="133" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">Scheduler B</text>
+  <text x="400" y="148" text-anchor="middle" fill="#8b949e" font-size="8">Service jobs</text>
+  <text x="355" y="200" text-anchor="middle" fill="#6e7681" font-size="9">• Parallel schedulers (OCC)</text>
+  <text x="355" y="215" text-anchor="middle" fill="#6e7681" font-size="9">• No global scheduler lock</text>
+  <text x="355" y="230" text-anchor="middle" fill="#6e7681" font-size="9">• Research prototype</text>
+  <text x="355" y="245" text-anchor="middle" fill="#6e7681" font-size="9">• 2013 EuroSys paper</text>
+  <text x="355" y="260" text-anchor="middle" fill="#6e7681" font-size="9">• Never deployed at scale</text>
+
+  <!-- KUBERNETES -->
+  <rect x="490" y="10" width="220" height="270" rx="8" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="600" y="35" text-anchor="middle" fill="#3fb950" font-size="13" font-weight="700">KUBERNETES</text>
+  <rect x="505" y="50" width="190" height="50" rx="5" fill="#21262d" stroke="#3fb950" stroke-opacity=".4"/>
+  <text x="600" y="70" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">kube-apiserver</text>
+  <text x="600" y="86" text-anchor="middle" fill="#8b949e" font-size="9">REST API + Watch + etcd</text>
+  <rect x="505" y="115" width="80" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="545" y="133" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">scheduler</text>
+  <text x="545" y="148" text-anchor="middle" fill="#8b949e" font-size="8">plugin framework</text>
+  <rect x="600" y="115" width="85" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="642" y="133" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">controllers</text>
+  <text x="642" y="148" text-anchor="middle" fill="#8b949e" font-size="8">30+ reconcilers</text>
+  <text x="600" y="200" text-anchor="middle" fill="#6e7681" font-size="9">• Decoupled components</text>
+  <text x="600" y="215" text-anchor="middle" fill="#6e7681" font-size="9">• Open standard REST API</text>
+  <text x="600" y="230" text-anchor="middle" fill="#6e7681" font-size="9">• etcd (Raft) for HA</text>
+  <text x="600" y="245" text-anchor="middle" fill="#6e7681" font-size="9">• CRD extensibility</text>
+  <text x="600" y="260" text-anchor="middle" fill="#6e7681" font-size="9">• 2014–present (open source)</text>
+
+  <!-- Arrows -->
+  <line x1="220" y1="155" x2="248" y2="155" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#a)"/>
+  <text x="234" y="148" text-anchor="middle" fill="#6e7681" font-size="8">informed</text>
+  <line x1="460" y1="155" x2="488" y2="155" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#a)"/>
+  <text x="474" y="148" text-anchor="middle" fill="#6e7681" font-size="8">influenced</text>
+</svg>
+<div class="caption">Figure 1 — Architectural evolution: Borg (monolithic, internal) → Omega (parallel schedulers, OCC, research) → Kubernetes (open, decoupled, extensible).</div>
+</div>
+
+<!-- ======================================================= -->
+<h2 id="kubernetes-birth">3 · Birth of Kubernetes (2013–2014)</h2>
+
+<h3 id="origin-story">3.1 The Origin Story</h3>
+<p>
+In mid-2013, three engineers who had worked on Borg and Omega at Google —
+<strong>Joe Beda</strong>, <strong>Brendan Burns</strong>, and <strong>Craig McLuckie</strong>
+— began a skunkworks project internally to build an open-source container orchestrator.
+Their insight was that Docker's container format was becoming an industry standard,
+but nobody had built the orchestration layer for it yet.
+</p>
+<p>
+They were joined by <strong>Brian Grant</strong> (who led much of the API design),
+<strong>Tim Hockin</strong> (networking), and many others. The project was internally
+code-named <strong>"Project Seven"</strong> (a reference to Star Trek's Seven of Nine —
+a Borg character, fittingly).
+</p>
+
+<h3 id="design-principles">3.2 Founding Design Principles</h3>
+<p>
+The founding team made several explicit architectural decisions that deliberately
+diverged from Borg:
+</p>
+
+<table>
+  <thead><tr><th>Decision</th><th>Borg approach</th><th>Kubernetes approach</th><th>Rationale</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>API surface</td>
+      <td>Internal RPC, not HTTP</td>
+      <td>Public REST API over HTTPS</td>
+      <td>Open ecosystem; any language can speak HTTP</td>
+    </tr>
+    <tr>
+      <td>State storage</td>
+      <td>Paxos-replicated in-memory in Borgmaster</td>
+      <td>External etcd (Raft)</td>
+      <td>Decouple storage from control plane; API servers are stateless</td>
+    </tr>
+    <tr>
+      <td>Job model</td>
+      <td>Single "Job" concept</td>
+      <td>Multiple resource types (Pod, RC, Service, etc.)</td>
+      <td>Different workloads need different management semantics</td>
+    </tr>
+    <tr>
+      <td>Networking</td>
+      <td>Custom Google fabric</td>
+      <td>CNI plugin interface</td>
+      <td>Cloud-agnostic; any network fabric can implement CNI</td>
+    </tr>
+    <tr>
+      <td>Storage</td>
+      <td>Google's Colossus (GFS)</td>
+      <td>CSI plugin interface</td>
+      <td>Vendor-neutral; EBS, GCP PD, Ceph, NFS all work the same</td>
+    </tr>
+    <tr>
+      <td>Identity model</td>
+      <td>Internal Loas/GAIA</td>
+      <td>Pluggable auth (x509, OIDC, tokens)</td>
+      <td>Works with any existing enterprise identity system</td>
+    </tr>
+    <tr>
+      <td>Label system</td>
+      <td>Named "labels" in Borg, not queryable across jobs</td>
+      <td>First-class labels with selectors</td>
+      <td>Flexible grouping, decouples controllers from specific resource names</td>
+    </tr>
+    <tr>
+      <td>Extension model</td>
+      <td>Fork Borg (very hard)</td>
+      <td>CRDs + Webhooks + Aggregation API</td>
+      <td>Users can extend without forking the core</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="first-commit">3.3 First Public Commit and Launch</h3>
+
+<div class="timeline">
+  <div class="timeline-item milestone">
+    <div class="year">June 2014</div>
+    <h4>First public commit — Kubernetes v0.1</h4>
+    <p>
+      Joe Beda made the first public commit to GitHub on June 6, 2014.
+      The initial codebase had ~14,000 lines of Go. The core concepts were already there:
+      Pods, Replication Controllers, Services, and a REST API.
+      Google announced the project at DockerCon 2014.
+    </p>
+  </div>
+  <div class="timeline-item">
+    <div class="year">July 2014</div>
+    <h4>Microsoft, Red Hat, IBM, Docker join</h4>
+    <p>
+      Within one month of the announcement, major vendors committed to contributing.
+      This was the first sign that K8s would become the industry standard rather than
+      a Google-proprietary system.
+    </p>
+  </div>
+  <div class="timeline-item">
+    <div class="year">November 2014</div>
+    <h4>v0.4 — Namespaces, resource quotas, persistent volumes</h4>
+    <p>
+      Early features that are still core today: Namespaces for multi-tenancy,
+      ResourceQuotas to limit namespace consumption, and the first PersistentVolume
+      implementation (GCE PD-backed).
+    </p>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<h2 id="v1-release">4 · Kubernetes v1.0 and CNCF (2015)</h2>
+
+<div class="timeline">
+  <div class="timeline-item milestone">
+    <div class="year">July 2015</div>
+    <h4>Kubernetes v1.0 Released <span class="badge stable">STABLE</span></h4>
+    <p>
+      Announced at OSCON 2015, v1.0 was declared production-ready.
+      Along with the release, Google and the Linux Foundation announced the
+      <strong>Cloud Native Computing Foundation (CNCF)</strong>, with Kubernetes
+      as its first seed project. This was a strategic move: by donating K8s to a
+      neutral foundation, Google signalled that no single vendor would control it —
+      which accelerated enterprise adoption.
+    </p>
+  </div>
+  <div class="timeline-item">
+    <div class="year">November 2015</div>
+    <h4>KubeCon North America I — 500 attendees</h4>
+    <p>
+      The first KubeCon had 500 attendees. By 2023 it regularly draws 10,000+ in person
+      and tens of thousands virtually. This growth arc mirrors the explosive adoption of K8s
+      across the industry.
+    </p>
+  </div>
+  <div class="timeline-item">
+    <div class="year">2015–2016</div>
+    <h4>v1.1 – v1.3: Horizontal autoscaling, federation, node resource management</h4>
+    <p>
+      v1.1 added Horizontal Pod Autoscaler (HPA) and HTTP-based health checks.
+      v1.2 added ConfigMaps, Ingress, DaemonSets, and rolling deployments (Deployments object).
+      v1.3 added PodDisruptionBudgets, init containers (alpha), and the first CSI prototype (flexVolume).
+    </p>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<h2 id="version-milestones">5 · Major Version Milestones (1.0 → 1.32)</h2>
+
+<details>
+  <summary>Full milestone table — v1.0 through v1.32 with key features</summary>
+  <div class="details-body">
+  <table>
+    <thead>
+      <tr><th>Version</th><th>Date</th><th>Key features / changes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>v1.0</code></td><td>Jul 2015</td><td>GA release, CNCF donation. Pods, RCs, Services, Namespaces, basic auth.</td></tr>
+      <tr><td><code>v1.1</code></td><td>Nov 2015</td><td>HPA, HTTP probes, resource limits on containers.</td></tr>
+      <tr><td><code>v1.2</code></td><td>Mar 2016</td><td>Deployments GA, ConfigMaps, Ingress (beta), DaemonSets, PetSets (alpha). 1000-node clusters.</td></tr>
+      <tr><td><code>v1.3</code></td><td>Jul 2016</td><td>Init containers (alpha), PodDisruptionBudgets, flexVolume, Cluster Federation (alpha). 2000-node clusters.</td></tr>
+      <tr><td><code>v1.4</code></td><td>Sep 2016</td><td>PodPresets, kubeadm (alpha), ScheduledJobs (CronJob predecessor). PetSets renamed StatefulSets.</td></tr>
+      <tr><td><code>v1.5</code></td><td>Dec 2016</td><td>StatefulSets (beta), kubefed (federation), Windows node support (alpha), RBAC (beta).</td></tr>
+      <tr><td><code>v1.6</code></td><td>Mar 2017</td><td>RBAC GA, etcd v3 default, 5000-node clusters, dynamic volume provisioning (beta).</td></tr>
+      <tr><td><code>v1.7</code></td><td>Jun 2017</td><td>Network Policy GA, StatefulSets GA, API aggregation layer, kubeadm GA.</td></tr>
+      <tr><td><code>v1.8</code></td><td>Sep 2017</td><td>RBAC GA, CronJob beta, Priority and Preemption, Volume snapshots (alpha).</td></tr>
+      <tr><td><code>v1.9</code></td><td>Dec 2017</td><td>Workloads API GA (Deployments, DaemonSets, ReplicaSets, StatefulSets stable under apps/v1). CRI stable.</td></tr>
+      <tr><td><code>v1.10</code></td><td>Mar 2018</td><td>External cloud provider support (cloud-controller-manager alpha). CSI (beta). Lease API.</td></tr>
+      <tr><td><code>v1.11</code></td><td>Jun 2018</td><td>IPVS kube-proxy (stable), CoreDNS default DNS. Dynamic kubelet config.</td></tr>
+      <tr><td><code>v1.12</code></td><td>Sep 2018</td><td>RuntimeClass (alpha), TLS bootstrapping improvements, CSI (stable).</td></tr>
+      <tr><td><code>v1.13</code></td><td>Dec 2018</td><td>kubeadm GA, CSI GA, CoreDNS GA. SimplestKubernetesRelease™ — fewest features, highest quality.</td></tr>
+      <tr><td><code>v1.14</code></td><td>Mar 2019</td><td>Windows nodes (stable), PersistentLocalVolumes GA, kubectl plugin mechanism (stable).</td></tr>
+      <tr><td><code>v1.15</code></td><td>Jun 2019</td><td>CRD structural schemas, CustomResourceWebhookConversion, go module support.</td></tr>
+      <tr><td><code>v1.16</code></td><td>Sep 2019</td><td>CRD GA (v1), deprecated beta Deployments/DaemonSets/ReplicaSets (apps/v1beta), endpoint slices (alpha).</td></tr>
+      <tr><td><code>v1.17</code></td><td>Dec 2019</td><td>Cloud provider labels GA, Volume snapshots (beta), CSI migration (alpha, moving in-tree to CSI).</td></tr>
+      <tr><td><code>v1.18</code></td><td>Mar 2020</td><td>Topology manager (beta), Server-side apply (beta), IngressClass resource, HPA v2 (beta).</td></tr>
+      <tr><td><code>v1.19</code></td><td>Aug 2020</td><td>Ingress GA, Immutable Secrets/ConfigMaps, EndpointSlices (beta), Storage capacity tracking (alpha).</td></tr>
+      <tr><td><code>v1.20</code></td><td>Dec 2020</td><td><strong>Docker shim deprecation announced.</strong> CronJob GA, API Priority and Fairness (beta), graceful node shutdown (alpha).</td></tr>
+      <tr><td><code>v1.21</code></td><td>Apr 2021</td><td>CronJob GA, Immutable Secrets GA, PodDisruptionBudget GA, EndpointSlices GA, IPv4/IPv6 dual-stack (stable).</td></tr>
+      <tr><td><code>v1.22</code></td><td>Aug 2021</td><td>Server-side apply GA, ephemeral containers (beta), memory manager (beta), <strong>removal of beta Ingress/RBAC/CRD APIs</strong>.</td></tr>
+      <tr><td><code>v1.23</code></td><td>Dec 2021</td><td>FlexVolume deprecated, HPA v2 GA, IPv4/IPv6 dual-stack GA, PodSecurity admission (beta, replacing PSP).</td></tr>
+      <tr><td><code>v1.24</code></td><td>May 2022</td><td><strong>Docker shim removed.</strong> Ephemeral containers GA, gRPC probes (beta), PodSecurity (stable), OpenAPI v3.</td></tr>
+      <tr><td><code>v1.25</code></td><td>Aug 2022</td><td><strong>PodSecurityPolicy removed</strong> (deprecated since 1.21). CSI migration complete for most in-tree providers. cgroup v2 (stable).</td></tr>
+      <tr><td><code>v1.26</code></td><td>Dec 2022</td><td>Cross-namespace VolumeDataSource (alpha), CPUManager static policy improvements, ValidatingAdmissionPolicy (alpha).</td></tr>
+      <tr><td><code>v1.27</code></td><td>Apr 2023</td><td>SeccompDefault GA, In-place pod resource resize (alpha), node log access API (alpha).</td></tr>
+      <tr><td><code>v1.28</code></td><td>Aug 2023</td><td>Retroactive default StorageClass (GA), NodeSwap (beta), sidecar containers (alpha, KEP-753).</td></tr>
+      <tr><td><code>v1.29</code></td><td>Dec 2023</td><td>ReadWriteOncePod PV access mode (GA), KV audit log (beta), LoadBalancer IP mode (alpha).</td></tr>
+      <tr><td><code>v1.30</code></td><td>Apr 2024</td><td>Structured auth config (beta), ValidatingAdmissionPolicy GA, AppArmor GA, sidecar containers (beta).</td></tr>
+      <tr><td><code>v1.31</code></td><td>Aug 2024</td><td>AppArmor stable, persistent volume last phase transition time GA, nftables kube-proxy (beta).</td></tr>
+      <tr><td><code>v1.32</code></td><td>Dec 2024</td><td>Asynchronous preemption (alpha), mutating admission policies (alpha), DRA structured parameters (beta).</td></tr>
+    </tbody>
+  </table>
+  </div>
+</details>
+
+<!-- ======================================================= -->
+<h2 id="removal-of-dockershim">6 · The Docker Shim Removal — A Case Study in API Evolution</h2>
+
+<p>
+One of the most misunderstood events in Kubernetes history is the removal of the Docker shim
+in v1.24. This section explains exactly what happened and why it was the right decision.
+</p>
+
+<h3 id="dockershim-what">6.1 What Was the Docker Shim?</h3>
+<p>
+When Kubernetes introduced the <strong>Container Runtime Interface (CRI)</strong> in v1.5,
+Docker did not natively implement CRI. To continue supporting Docker, the Kubernetes team
+added a <em>shim</em> — a translation layer built into the kubelet that converted CRI calls
+into Docker API calls. This shim was maintained inside the kubelet source tree.
+</p>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 680 180" xmlns="http://www.w3.org/2000/svg" style="max-width:680px;width:100%">
+  <defs>
+    <marker id="ad" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/>
+    </marker>
+    <marker id="adr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#f85149"/>
+    </marker>
+  </defs>
+  <!-- BEFORE (v1.23 and earlier) -->
+  <text x="10" y="20" fill="#d29922" font-size="11" font-weight="700">BEFORE v1.24 (with dockershim):</text>
+  <rect x="10" y="30" width="90" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="55" y="55" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="600">kubelet</text>
+  <line x1="100" y1="50" x2="135" y2="50" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ad)"/>
+  <text x="117" y="44" text-anchor="middle" fill="#8b949e" font-size="8">CRI gRPC</text>
+  <rect x="135" y="30" width="120" height="40" rx="5" fill="#f85149" opacity=".3" stroke="#f85149" stroke-width="1.5"/>
+  <text x="195" y="50" text-anchor="middle" fill="#f85149" font-size="10" font-weight="600">dockershim</text>
+  <text x="195" y="64" text-anchor="middle" fill="#f85149" font-size="8">(inside kubelet)</text>
+  <line x1="255" y1="50" x2="290" y2="50" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ad)"/>
+  <text x="272" y="44" text-anchor="middle" fill="#8b949e" font-size="8">Docker API</text>
+  <rect x="290" y="30" width="90" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="335" y="55" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="600">dockerd</text>
+  <line x1="380" y1="50" x2="415" y2="50" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ad)"/>
+  <rect x="415" y="30" width="100" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="465" y="48" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="600">containerd</text>
+  <text x="465" y="63" text-anchor="middle" fill="#8b949e" font-size="8">(via docker)</text>
+  <line x1="515" y1="50" x2="550" y2="50" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ad)"/>
+  <rect x="550" y="30" width="80" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="590" y="55" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="600">runc / OCI</text>
+
+  <!-- AFTER -->
+  <text x="10" y="120" fill="#3fb950" font-size="11" font-weight="700">AFTER v1.24 (direct CRI — simpler, faster):</text>
+  <rect x="10" y="130" width="90" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="55" y="155" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="600">kubelet</text>
+  <line x1="100" y1="150" x2="175" y2="150" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ad)"/>
+  <text x="137" y="144" text-anchor="middle" fill="#3fb950" font-size="8">CRI gRPC (direct)</text>
+  <rect x="175" y="130" width="100" height="40" rx="5" fill="#21262d" stroke="#3fb950" stroke-opacity=".6"/>
+  <text x="225" y="148" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">containerd</text>
+  <text x="225" y="163" text-anchor="middle" fill="#8b949e" font-size="8">or CRI-O</text>
+  <line x1="275" y1="150" x2="340" y2="150" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ad)"/>
+  <rect x="340" y="130" width="80" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="380" y="155" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="600">runc / OCI</text>
+  <text x="460" y="150" fill="#6e7681" font-size="10">2 fewer hops = lower latency</text>
+  <text x="460" y="165" fill="#6e7681" font-size="10">Fewer moving parts = easier debug</text>
+</svg>
+<div class="caption">Figure 2 — Docker shim removal: before (kubelet→shim→dockerd→containerd→runc) vs after (kubelet→containerd→runc). Containers kept running; only the shim was removed.</div>
+</div>
+
+<div class="callout warn">
+  <strong>Common misconception: "Kubernetes dropped Docker support"</strong>
+  Kubernetes did NOT stop running Docker-built images. Docker images are OCI-compliant
+  container images; they run perfectly on containerd or CRI-O. What was removed was the
+  special-case shim that translated Kubernetes CRI calls into the Docker daemon API.
+  If you build images with Docker, they continue to work unchanged.
+</div>
+
+<h3 id="dockershim-timeline">6.2 Removal Timeline</h3>
+<table>
+  <thead><tr><th>Version</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>v1.5 (Dec 2016)</td><td>CRI interface introduced; dockershim added as compatibility layer</td></tr>
+    <tr><td>v1.20 (Dec 2020)</td><td>dockershim deprecated; warning added to kubelet logs</td></tr>
+    <tr><td>v1.23 (Dec 2021)</td><td>Last release with dockershim in-tree</td></tr>
+    <tr><td>v1.24 (May 2022)</td><td>dockershim removed from kubelet. cri-dockerd external shim available for Docker users.</td></tr>
+  </tbody>
+</table>
+
+<!-- ======================================================= -->
+<h2 id="cncf-ecosystem">7 · CNCF Ecosystem Growth</h2>
+
+<p>
+Kubernetes' donation to the CNCF in 2015 seeded an entire ecosystem of complementary projects.
+The CNCF now has 160+ projects spanning every layer of the cloud-native stack.
+</p>
+
+<h3 id="cncf-landscape">7.1 Key CNCF Projects by Layer</h3>
+<table>
+  <thead><tr><th>Layer</th><th>Graduated CNCF projects</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Runtime</td><td>containerd, CRI-O</td><td>CRI-compliant container runtimes</td></tr>
+    <tr><td>Networking</td><td>CNI (spec), Cilium, Calico (sandbox)</td><td>Pod networking, NetworkPolicy, eBPF</td></tr>
+    <tr><td>Storage</td><td>Rook, Longhorn</td><td>Cloud-native distributed storage</td></tr>
+    <tr><td>Service mesh</td><td>Istio (2023), Linkerd (incubating)</td><td>mTLS, traffic management, observability</td></tr>
+    <tr><td>Monitoring</td><td>Prometheus, Thanos</td><td>Metrics collection, long-term storage</td></tr>
+    <tr><td>Tracing</td><td>OpenTelemetry, Jaeger</td><td>Distributed tracing, OTLP</td></tr>
+    <tr><td>Logging</td><td>Fluentd, Fluentbit</td><td>Log aggregation and routing</td></tr>
+    <tr><td>GitOps / CD</td><td>ArgoCD (incubating), Flux (graduated)</td><td>Declarative continuous delivery</td></tr>
+    <tr><td>Package management</td><td>Helm</td><td>Kubernetes application packaging</td></tr>
+    <tr><td>Policy</td><td>OPA (Graduated)</td><td>Policy-as-code for admission, authorization</td></tr>
+    <tr><td>Security</td><td>Falco, TUF, in-toto</td><td>Runtime threat detection, supply chain</td></tr>
+    <tr><td>Cluster lifecycle</td><td>Cluster API</td><td>Declarative cluster provisioning</td></tr>
+    <tr><td>Registry</td><td>Harbor</td><td>Container image registry with scanning</td></tr>
+  </tbody>
+</table>
+
+<h3 id="competing-orchestrators">7.2 The Container Orchestrator Wars (2015–2017)</h3>
+<p>
+Kubernetes did not become the de-facto standard without competition.
+Three orchestrators competed from 2015 to 2017:
+</p>
+
+<details>
+  <summary>Docker Swarm, Apache Mesos, and Kubernetes — comparative analysis</summary>
+  <div class="details-body">
+  <table>
+    <thead>
+      <tr><th>Dimension</th><th>Docker Swarm</th><th>Apache Mesos + Marathon</th><th>Kubernetes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Origin</td><td>Docker Inc., 2015</td><td>Twitter/AirBnB/Apple, 2009/2014</td><td>Google, 2014</td></tr>
+      <tr><td>Ease of setup</td><td>Extremely easy (built into Docker)</td><td>Complex multi-component stack</td><td>Moderate; kubeadm simplified this</td></tr>
+      <tr><td>Scheduling model</td><td>Simple, host-affinity only</td><td>Two-level (Mesos + Marathon). Very flexible for heterogeneous workloads.</td><td>Rich multi-constraint scheduler with plugin framework</td></tr>
+      <tr><td>API</td><td>Docker Compose-like YAML, Docker API</td><td>Marathon REST API, Mesos API</td><td>Open versioned REST API, CRDs</td></tr>
+      <tr><td>Networking</td><td>Docker overlay network</td><td>Custom; CNI support added later</td><td>CNI from the start</td></tr>
+      <tr><td>Extensibility</td><td>Limited</td><td>High (frameworks), but complex</td><td>Very high (CRDs, webhooks, operators)</td></tr>
+      <tr><td>Ecosystem</td><td>Docker-centric</td><td>Datacenter-oriented, Hadoop/Spark focus</td><td>CNCF, vendor-neutral, cloud-native</td></tr>
+      <tr><td>Outcome</td><td>Deprecated; Docker Inc. acquired by Mirantis 2019</td><td>Still used at scale in some enterprises; D2iQ (formerly Mesosphere) pivoted to Kubernetes</td><td>Industry standard as of 2018–2019</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Kubernetes won for several reasons: rich API, strong community, CNCF neutrality,
+    powerful extensibility (CRDs), and managed Kubernetes services from all major cloud
+    providers (GKE 2015, AKS 2017, EKS 2018) that removed the operational complexity.
+  </p>
+  </div>
+</details>
+
+<!-- ======================================================= -->
+<h2 id="managed-kubernetes">8 · Managed Kubernetes Services</h2>
+
+<p>
+The most significant accelerator for enterprise Kubernetes adoption was managed services —
+cloud providers abstracting away control plane management entirely.
+</p>
+
+<table>
+  <thead><tr><th>Service</th><th>Provider</th><th>GA date</th><th>Notable features</th></tr></thead>
+  <tbody>
+    <tr><td>GKE (Google Kubernetes Engine)</td><td>Google Cloud</td><td>Aug 2015</td><td>Autopilot mode, Workload Identity, GKE Sandbox (gVisor), integrated logging</td></tr>
+    <tr><td>AKS (Azure Kubernetes Service)</td><td>Microsoft Azure</td><td>Jun 2018</td><td>Virtual nodes (ACI), Azure AD integration, confidential computing nodes</td></tr>
+    <tr><td>EKS (Elastic Kubernetes Service)</td><td>AWS</td><td>Jun 2018</td><td>Fargate serverless nodes, IAM for ServiceAccounts, EKS Anywhere (bare metal)</td></tr>
+    <tr><td>DOKS (DigitalOcean Kubernetes)</td><td>DigitalOcean</td><td>May 2019</td><td>Simplified cluster management for smaller teams</td></tr>
+    <tr><td>OKE (Oracle Container Engine)</td><td>Oracle Cloud</td><td>2018</td><td>Virtual nodes, free control plane</td></tr>
+    <tr><td>ROKS (Red Hat OpenShift on IBM Cloud)</td><td>IBM Cloud</td><td>2019</td><td>OpenShift layer (SCC, Routes, Operators) on top of Kubernetes</td></tr>
+  </tbody>
+</table>
+
+<h3 id="k8s-distributions">8.1 On-Premises Distributions</h3>
+<table>
+  <thead><tr><th>Distribution</th><th>Vendor</th><th>Key differentiator</th></tr></thead>
+  <tbody>
+    <tr><td>OpenShift</td><td>Red Hat</td><td>Enterprise hardening, SCCs, Routes, built-in CI/CD (Tekton), Operator Framework</td></tr>
+    <tr><td>Rancher (RKE/RKE2)</td><td>SUSE</td><td>Multi-cluster management, simplified UI, Rancher Desktop for local dev</td></tr>
+    <tr><td>Tanzu Kubernetes Grid</td><td>VMware/Broadcom</td><td>vSphere integration, Carvel tooling, regulated industry focus</td></tr>
+    <tr><td>k3s</td><td>Rancher/SUSE</td><td>Lightweight (&lt;100MB binary), SQLite or etcd, ARM support, edge/IoT</td></tr>
+    <tr><td>microk8s</td><td>Canonical</td><td>Single-binary snap, add-on ecosystem, Ubuntu-native</td></tr>
+    <tr><td>kind (Kubernetes IN Docker)</td><td>SIG Testing</td><td>Local testing clusters inside Docker containers; CI/CD pipeline standard</td></tr>
+    <tr><td>minikube</td><td>Community</td><td>Single-node local dev cluster, multi-driver (Docker, QEMU, VirtualBox)</td></tr>
+  </tbody>
+</table>
+
+<!-- ======================================================= -->
+<h2 id="governance">9 · Community Governance and SIGs</h2>
+
+<p>
+Kubernetes is governed by the <strong>CNCF Technical Oversight Committee (TOC)</strong>
+and the <strong>Kubernetes Steering Committee</strong>. The project is divided into
+<strong>Special Interest Groups (SIGs)</strong> and <strong>Working Groups (WGs)</strong>,
+each owning a specific domain.
+</p>
+
+<h3 id="key-sigs">9.1 Key SIGs and Their Scope</h3>
+<table>
+  <thead><tr><th>SIG</th><th>Domain</th><th>Key deliverables</th></tr></thead>
+  <tbody>
+    <tr><td>SIG API Machinery</td><td>Core API server, CRDs, webhooks, client-go</td><td>API versioning, server-side apply, CRD validation, watch semantics</td></tr>
+    <tr><td>SIG Apps</td><td>Workload APIs</td><td>Deployments, StatefulSets, DaemonSets, Jobs, CronJobs</td></tr>
+    <tr><td>SIG Node</td><td>kubelet, CRI, cgroups, resource management</td><td>kubelet, resource manager, device plugins, topology manager</td></tr>
+    <tr><td>SIG Network</td><td>CNI, Services, Ingress, Gateway API, DNS, NetworkPolicy</td><td>kube-proxy, EndpointSlices, dual-stack, network policy spec</td></tr>
+    <tr><td>SIG Storage</td><td>CSI, PV/PVC lifecycle, volume plugins</td><td>CSI spec, dynamic provisioning, volume snapshots, volume health</td></tr>
+    <tr><td>SIG Scheduling</td><td>kube-scheduler, scheduler framework</td><td>Scheduling framework, topology-aware scheduling, descheduler</td></tr>
+    <tr><td>SIG Auth</td><td>RBAC, AuthN/AuthZ, Secrets, admission, certificates</td><td>RBAC, TokenRequest API, BoundServiceAccount tokens, audit</td></tr>
+    <tr><td>SIG Security</td><td>Pod security, supply chain, security policy</td><td>PodSecurity admission, security benchmarks, SLSA compliance</td></tr>
+    <tr><td>SIG Instrumentation</td><td>Metrics, logging, events, tracing</td><td>metrics-server, structured logging, OpenTelemetry integration</td></tr>
+    <tr><td>SIG Cluster Lifecycle</td><td>kubeadm, cluster bootstrap, upgrades</td><td>kubeadm, cluster-api, upgrade tooling</td></tr>
+    <tr><td>SIG Multicluster</td><td>Federation, multi-cluster service, Cluster API</td><td>MCS (Multi-Cluster Services), KubeFed, Cluster API</td></tr>
+    <tr><td>SIG Windows</td><td>Windows node support</td><td>Windows containerd, GMSA, HostProcess containers</td></tr>
+    <tr><td>WG Batch</td><td>Batch workloads at scale</td><td>JobSet, indexed jobs, pod failure policy, job backoff</td></tr>
+    <tr><td>WG Structured Logging</td><td>Contextual logging</td><td>Contextual logging, structured JSON output</td></tr>
+  </tbody>
+</table>
+
+<h3 id="kep-process">9.2 The KEP Process — How Features Get Added</h3>
+<p>
+All significant changes to Kubernetes go through a
+<strong>Kubernetes Enhancement Proposal (KEP)</strong>. This is a design document
+that follows a lifecycle:
+</p>
+
+<pre><code class="language-text">Provisional → Implementable → Implemented → Deferred / Withdrawn
+
+KEP lifecycle stages:
+  Alpha   (opt-in, hidden behind feature gate) — one release minimum
+  Beta    (on by default, may have API changes) — two releases minimum
+  Stable  (GA, cannot be removed without deprecation period)
+
+Feature gates control alpha/beta features:
+  --feature-gates=NewFeature=true     # Enable in kubelet/apiserver
+</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<pre><code class="language-bash"># List all feature gates and their status in your cluster
+kubectl get --raw /healthz/ping
+# Or check apiserver flags:
+ps aux | grep kube-apiserver | grep feature-gates
+
+# Check feature gate defaults for your version
+# https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ======================================================= -->
+<h2 id="api-deprecation-policy">10 · API Deprecation and Removal Policy</h2>
+
+<p>
+One of the most operationally important aspects of Kubernetes history is its
+<strong>API deprecation policy</strong>. Understanding this prevents surprise
+breakage during upgrades.
+</p>
+
+<table>
+  <thead><tr><th>API maturity</th><th>Deprecation notice required</th><th>Minimum support period after deprecation</th></tr></thead>
+  <tbody>
+    <tr><td>GA (v1, v2…)</td><td>Yes, via release notes</td><td>12 months OR 3 releases (whichever is longer)</td></tr>
+    <tr><td>Beta (v1beta1, v1beta2…)</td><td>Yes</td><td>9 months OR 3 releases (whichever is longer)</td></tr>
+    <tr><td>Alpha (v1alpha1…)</td><td>No guarantee; may disappear in any release</td><td>None — always opt-in, never enabled by default</td></tr>
+  </tbody>
+</table>
+
+<div class="callout danger">
+  <strong>Notable breaking removals that caught teams off-guard</strong>
+  <ul>
+    <li><code>v1.16</code>: <code>extensions/v1beta1</code> Deployments, ReplicaSets, DaemonSets removed. Replacement: <code>apps/v1</code>.</li>
+    <li><code>v1.22</code>: <code>networking.k8s.io/v1beta1</code> Ingress removed. Replacement: <code>networking.k8s.io/v1</code>.</li>
+    <li><code>v1.25</code>: PodSecurityPolicy removed. Replacement: PodSecurity admission controller.</li>
+    <li><code>v1.25</code>: <code>batch/v1beta1</code> CronJob removed. Replacement: <code>batch/v1</code>.</li>
+  </ul>
+  Always run <code>kubectl convert</code> and review deprecated API usage before upgrading.
+</div>
+
+<pre><code class="language-bash"># Detect deprecated API usage in your cluster before upgrading
+# Option 1: pluto (recommended tool)
+pluto detect-all-in-cluster --target-versions k8s=v1.26
+
+# Option 2: Kubernetes built-in audit log with deprecated API filter
+kubectl get --raw /metrics | grep apiserver_requested_deprecated_apis
+
+# Option 3: kubent (kube no-trouble)
+kubent</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ======================================================= -->
+<h2 id="production-implications">11 · Production Implications of Kubernetes History</h2>
+
+<p>
+Understanding this history directly impacts how you run Kubernetes in production:
+</p>
+
+<details>
+  <summary>7 production lessons from K8s architectural history</summary>
+  <div class="details-body">
+  <ol>
+    <li>
+      <strong>The declarative API is non-negotiable.</strong>
+      The entire ecosystem — GitOps, operators, autoscalers — depends on it.
+      Avoid imperative <code>kubectl run</code> or <code>kubectl create</code>
+      in production; always use <code>kubectl apply -f</code> with versioned manifests.
+    </li>
+    <li>
+      <strong>etcd is the source of truth.</strong>
+      The Borg lesson: store state outside the control plane components.
+      Back up etcd. Treat it as your most critical service — it IS your cluster.
+      Without etcd, you cannot recover the cluster state.
+    </li>
+    <li>
+      <strong>Controllers are eventually consistent.</strong>
+      Like Borg's reconciliation loops, Kubernetes controllers do not guarantee
+      immediate consistency. A <code>kubectl apply</code> returns success when
+      the API server accepts the write — not when the change has fully propagated.
+      Design your tooling around watch + status checking, not timing assumptions.
+    </li>
+    <li>
+      <strong>The watch API scales better than polling.</strong>
+      Both Borg and Omega learned that polling creates thundering herds.
+      K8s controllers use informers (List+Watch with local cache).
+      Your own operators should do the same — use controller-runtime or client-go informers.
+    </li>
+    <li>
+      <strong>Upgrades require version skew awareness.</strong>
+      K8s's support policy (N-2 skew) is strict for good reasons — the Borg team
+      learned that running mixed versions creates impossible-to-debug race conditions.
+      Always upgrade control plane first, then nodes, never skip minor versions.
+    </li>
+    <li>
+      <strong>Labels and selectors decouple services from implementation.</strong>
+      Borg's tight coupling between job name and service discovery was a maintenance
+      burden. K8s label selectors mean you can replace all Pods in a Deployment
+      without changing any Service configuration — blue/green is just a label swap.
+    </li>
+    <li>
+      <strong>Extension points exist for a reason — use them.</strong>
+      CRDs, admission webhooks, and scheduler plugins are the designed extension
+      points. Adding features by forking K8s (as some operators tried early on)
+      creates an unmaintainable upgrade nightmare. The operator pattern solved this.
+    </li>
+  </ol>
+  </div>
+</details>
+
+<!-- ======================================================= -->
+<hr/>
+<h2 id="next-files">Next Files to Study</h2>
+
+<div class="dep-graph">
+  <h4>Dependency Graph — recommended reading order from this file</h4>
+  <ul class="dep-tree">
+    <li><a href="02-container-orchestration.html">00-foundations/02-container-orchestration.html</a> — Linux primitives (cgroups, namespaces) that make containers possible</li>
+    <li><a href="03-cluster-architecture-overview.html">00-foundations/03-cluster-architecture-overview.html</a> — Full component interaction diagram and HA topology</li>
+    <li><a href="04-kubernetes-api-model.html">00-foundations/04-kubernetes-api-model.html</a> — API versioning, watch semantics, etcd key encoding</li>
+    <li><a href="../01-control-plane/02-etcd.html">01-control-plane/02-etcd.html</a> — Raft consensus, etcd internals, backup/restore</li>
+    <li><a href="../09-production-operations/02-cluster-upgrades.html">09-production-operations/02-cluster-upgrades.html</a> — Safe upgrade procedures informed by version history</li>
+  </ul>
+</div>
+
+<h2 id="references">References</h2>
+<ul>
+  <li><em>Large-scale cluster management at Google with Borg</em> — Verma et al., EuroSys 2015. The foundational paper.</li>
+  <li><em>Omega: flexible, scalable schedulers for large compute clusters</em> — Schwarzkopf et al., EuroSys 2013.</li>
+  <li><em>Borg, Omega, and Kubernetes</em> — Burns, Grant, Oppenheimer, Brewer, Wilkes. ACM Queue, 2016. The best single overview of the lineage.</li>
+  <li>Kubernetes GitHub — <em>github.com/kubernetes/kubernetes</em> — CHANGELOG.md for per-version history</li>
+  <li>Kubernetes Enhancement Proposals — <em>github.com/kubernetes/enhancements</em></li>
+  <li>CNCF Landscape — <em>landscape.cncf.io</em></li>
+  <li>Kubernetes release notes — <em>kubernetes.io/docs/setup/release/notes</em></li>
+  <li><em>The Kubernetes Book</em> — Nigel Poulton (updated annually)</li>
+</ul>
+
+<!-- PREV/NEXT -->
+<div class="doc-nav">
+  <a href="00-introduction.html">
+    <span class="label">← Previous</span>
+    <span class="title">00 · Introduction</span>
+  </a>
+  <a href="02-container-orchestration.html" class="next-link">
+    <span class="label">Next →</span>
+    <span class="title">02 · Container Orchestration</span>
+  </a>
+</div>
+
+</article>
+</div><!-- main-content -->
+
+<!-- TOC PANEL -->
+<aside class="toc-panel" id="tocPanel">
+  <h4>On this page</h4>
+  <ol id="tocList">
+    <li class="l1"><a href="#borg">1 · Google Borg</a></li>
+    <li class="l2"><a href="#borg-origin">1.1 Origin</a></li>
+    <li class="l2"><a href="#borg-architecture">1.2 Architecture</a></li>
+    <li class="l2"><a href="#borg-key-concepts">1.3 Key Concepts</a></li>
+    <li class="l2"><a href="#borg-lessons">1.4 Lessons</a></li>
+    <li class="l1"><a href="#omega">2 · Google Omega</a></li>
+    <li class="l2"><a href="#omega-purpose">2.1 Purpose</a></li>
+    <li class="l2"><a href="#omega-innovations">2.2 Innovations</a></li>
+    <li class="l2"><a href="#omega-vs-borg-vs-k8s">2.3 Comparison</a></li>
+    <li class="l1"><a href="#kubernetes-birth">3 · Birth of K8s</a></li>
+    <li class="l2"><a href="#origin-story">3.1 Origin Story</a></li>
+    <li class="l2"><a href="#design-principles">3.2 Design Principles</a></li>
+    <li class="l2"><a href="#first-commit">3.3 First Commit</a></li>
+    <li class="l1"><a href="#v1-release">4 · v1.0 and CNCF</a></li>
+    <li class="l1"><a href="#version-milestones">5 · Version Milestones</a></li>
+    <li class="l1"><a href="#removal-of-dockershim">6 · Docker Shim Removal</a></li>
+    <li class="l2"><a href="#dockershim-what">6.1 What was it</a></li>
+    <li class="l2"><a href="#dockershim-timeline">6.2 Timeline</a></li>
+    <li class="l1"><a href="#cncf-ecosystem">7 · CNCF Ecosystem</a></li>
+    <li class="l2"><a href="#cncf-landscape">7.1 CNCF Projects</a></li>
+    <li class="l2"><a href="#competing-orchestrators">7.2 Orchestrator Wars</a></li>
+    <li class="l1"><a href="#managed-kubernetes">8 · Managed K8s</a></li>
+    <li class="l2"><a href="#k8s-distributions">8.1 Distributions</a></li>
+    <li class="l1"><a href="#governance">9 · Governance</a></li>
+    <li class="l2"><a href="#key-sigs">9.1 SIGs</a></li>
+    <li class="l2"><a href="#kep-process">9.2 KEP Process</a></li>
+    <li class="l1"><a href="#api-deprecation-policy">10 · Deprecation Policy</a></li>
+    <li class="l1"><a href="#production-implications">11 · Production Lessons</a></li>
+    <li class="l1"><a href="#next-files">Next Files</a></li>
+    <li class="l1"><a href="#references">References</a></li>
+  </ol>
+</aside>
+</div><!-- layout -->
+
+<button id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const themeBtn=document.getElementById('themeBtn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const cur=root.getAttribute('data-theme');
+  const nxt=cur==='dark'?'light':'dark';
+  root.setAttribute('data-theme',nxt);
+  themeBtn.textContent=nxt==='dark'?'☀ Light':'☾ Dark';
+  localStorage.setItem('k8s-theme',nxt);
+});
+const sidebar=document.getElementById('sidebar');
+const overlay=document.getElementById('sidebarOverlay');
+const menuBtn=document.getElementById('menuBtn');
+menuBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('show');});
+overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('show');});
+const backTop=document.getElementById('back-top');
+window.addEventListener('scroll',()=>backTop.classList.toggle('show',window.scrollY>400));
+backTop.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+function copyCode(btn){
+  const code=btn.previousElementSibling||btn.closest('pre').querySelector('code');
+  navigator.clipboard.writeText(code.textContent).then(()=>{btn.textContent='copied!';setTimeout(()=>btn.textContent='copy',1800);});
+}
+const gs=document.getElementById('globalSearch');
+gs.addEventListener('input',function(){const q=this.value.trim();removeHL();if(q)hlText(document.getElementById('articleWrap'),q);});
+function hlText(root,q){const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');walkT(root,re);}
+function removeHL(){document.querySelectorAll('mark.search-hl').forEach(m=>m.replaceWith(document.createTextNode(m.textContent)));}
+function walkT(node,re){if(node.nodeType===3){if(re.test(node.textContent)){const s=document.createElement('span');s.innerHTML=node.textContent.replace(re,'<mark class="search-hl">$1</mark>');node.parentNode.replaceChild(s,node);}}else if(node.nodeType===1&&!['SCRIPT','STYLE','PRE','CODE'].includes(node.tagName)){[...node.childNodes].forEach(c=>walkT(c,re));}}
+const ss=document.getElementById('sidebarSearch');
+ss.addEventListener('input',function(){const q=this.value.toLowerCase();document.querySelectorAll('#sidebarNav a').forEach(a=>{a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';});});
+const tocLinks=document.querySelectorAll('#tocList a');
+const sections=[...document.querySelectorAll('h2[id],h3[id]')];
+const io=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){tocLinks.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`#tocList a[href="#${e.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-10% 0px -80% 0px'});
+sections.forEach(s=>io.observe(s));
+</script>
+</body>
+</html>

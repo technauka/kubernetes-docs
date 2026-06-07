@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Observability Overview | Kubernetes Documentation</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#30363d;
+  --border:#30363d; --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --accent:#58a6ff; --accent2:#388bfd; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --orange:#d18616; --code-bg:#161b22;
+}
+[data-theme="light"] {
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eaeef2; --bg4:#d0d7de;
+  --border:#d0d7de; --text:#24292f; --text2:#57606a; --text3:#6e7781;
+  --accent:#0969da; --accent2:#0550ae; --green:#1a7f37; --yellow:#9a6700;
+  --red:#cf222e; --purple:#8250df; --orange:#953800; --code-bg:#f6f8fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-filter{padding:12px 16px;border-bottom:1px solid var(--border);}
+.sidebar-filter input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;}
+.sidebar-filter input:focus{outline:none;border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+
+.main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
+.page-header{margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.breadcrumb{font-size:13px;color:var(--text3);margin-bottom:12px;}
+.breadcrumb a{color:var(--text3);}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;margin-bottom:12px;}
+.page-desc{font-size:16px;color:var(--text2);line-height:1.6;}
+.meta-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.tag{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--text2);}
+.tag.int{border-color:var(--yellow);color:var(--yellow);}
+
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{margin:0 0 16px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'SF Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+.copy-btn:hover{color:var(--text);}
+
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid;}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.warning{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-size:13px;font-weight:700;margin-bottom:6px;}
+.callout.danger .callout-title{color:var(--red);}
+.callout.warning .callout-title{color:var(--yellow);}
+.callout.info .callout-title{color:var(--accent);}
+.callout.success .callout-title{color:var(--green);}
+.callout p{margin-bottom:0;font-size:14px;}
+
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);border-bottom:1px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 10px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card.info{border-color:var(--accent);}
+.card.warning{border-color:var(--yellow);}
+.card.success{border-color:var(--green);}
+.card.danger{border-color:var(--red);}
+
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'SF Mono','Fira Code',monospace;font-size:13px;line-height:1.8;overflow-x:auto;}
+.diagram .box{display:inline-block;border:1px solid var(--border);padding:4px 12px;border-radius:4px;background:var(--bg3);}
+.diagram .box.green{border-color:var(--green);color:var(--green);}
+.diagram .box.blue{border-color:var(--accent);color:var(--accent);}
+.diagram .box.yellow{border-color:var(--yellow);color:var(--yellow);}
+.diagram .box.purple{border-color:var(--purple);color:var(--purple);}
+.diagram .box.red{border-color:var(--red);color:var(--red);}
+
+.signal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0;}
+.signal-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;}
+.signal-icon{font-size:28px;margin-bottom:12px;}
+.signal-name{font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text);}
+.signal-desc{font-size:13px;color:var(--text2);}
+.signal-card.metrics{border-color:var(--accent);}
+.signal-card.logs{border-color:var(--green);}
+.signal-card.traces{border-color:var(--purple);}
+
+.section-nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:24px 0;}
+.section-link{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;display:block;transition:border-color .15s;}
+.section-link:hover{border-color:var(--accent);text-decoration:none;}
+.section-link .sl-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.section-link .sl-desc{font-size:12px;color:var(--text3);}
+
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden;}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;border-top:1px solid var(--border);}
+.coverage-body li{font-size:13px;color:var(--text2);}
+
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:32px;}
+.toc-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{font-size:13px;margin-bottom:4px;}
+.toc a{color:var(--text2);}
+.toc a:hover{color:var(--accent);}
+.toc a.active{color:var(--accent);}
+
+.toolbar{position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:100;}
+.toolbar button{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+.toolbar button:hover{color:var(--text);}
+.back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;}
+.back-to-top.visible{opacity:1;}
+
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;}
+@media(max-width:768px){
+  .hamburger{display:block;}
+  .sidebar{position:fixed;left:-280px;top:0;z-index:150;transition:left .25s;}
+  .sidebar.open{left:0;}
+  .main{padding:24px 20px;}
+  .signal-grid{grid-template-columns:1fr;}
+}
+.k{color:#ff7b72;} .s{color:#a5d6ff;} .c{color:#8b949e;font-style:italic;} .n{color:#ffa657;} .cm{color:#3fb950;}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">K8s <span>Docs</span></div>
+  </div>
+  <div class="sidebar-filter">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="00-observability-overview.html" class="active">Observability Overview</a>
+    <a href="01-metrics.html">Metrics &amp; Prometheus</a>
+    <a href="02-logging.html">Logging</a>
+    <a href="03-tracing.html">Distributed Tracing</a>
+    <a href="04-events.html">Kubernetes Events</a>
+    <a href="05-dashboards.html">Dashboards &amp; Grafana</a>
+    <a href="06-alerting.html">Alerting</a>
+    <a href="07-profiling.html">Profiling &amp; Continuous Profiling</a>
+  </div>
+</nav>
+
+<main class="main" id="main">
+  <div class="toolbar">
+    <button onclick="toggleTheme()">Theme</button>
+  </div>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="../index.html">Home</a> › Observability Overview</div>
+    <h1>Observability Overview</h1>
+    <p class="page-desc">The three pillars of observability in Kubernetes — metrics, logs, and traces — plus events, dashboards, alerting, and profiling. Architecture, signal relationships, tooling landscape, and the instrumentation strategy for production clusters.</p>
+    <div class="meta-tags">
+      <span class="tag int">Intermediate</span>
+      <span class="tag">Observability</span>
+      <span class="tag">Operations</span>
+      <span class="tag">OpenTelemetry</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">On This Page</div>
+    <ol>
+      <li><a href="#why-observability">Why Observability</a></li>
+      <li><a href="#three-pillars">The Three Pillars</a></li>
+      <li><a href="#k8s-layers">Kubernetes Observability Layers</a></li>
+      <li><a href="#opentelemetry">OpenTelemetry</a></li>
+      <li><a href="#signal-correlation">Signal Correlation</a></li>
+      <li><a href="#tooling-landscape">Tooling Landscape</a></li>
+      <li><a href="#instrumentation-strategy">Instrumentation Strategy</a></li>
+      <li><a href="#slos">SLOs, SLIs, and Error Budgets</a></li>
+      <li><a href="#cost">Observability Cost Management</a></li>
+      <li><a href="#section-guide">Section Guide</a></li>
+    </ol>
+  </div>
+
+  <details class="coverage">
+    <summary>Coverage Checklist</summary>
+    <ul class="coverage-body">
+      <li>Why observability: MTTR, cardinality, unknown unknowns</li>
+      <li>Three pillars: metrics, logs, traces</li>
+      <li>Fourth signal: events</li>
+      <li>Kubernetes observability layers: infra/platform/workload/app</li>
+      <li>OpenTelemetry: OTel SDK, Collector, OTLP protocol</li>
+      <li>OTel Collector pipeline: receivers/processors/exporters</li>
+      <li>Signal correlation: exemplars, trace ID in logs</li>
+      <li>Tooling landscape: Prometheus, Loki, Tempo, Jaeger, Grafana</li>
+      <li>PLG stack vs LGTM stack vs vendor solutions</li>
+      <li>Instrumentation strategy: auto vs manual</li>
+      <li>SLIs, SLOs, error budgets, burn rate alerts</li>
+      <li>Observability cost: cardinality explosion, sampling, retention</li>
+      <li>Section guide with links to detail pages</li>
+    </ul>
+  </details>
+
+  <!-- ───── WHY OBSERVABILITY ───── -->
+  <h2 id="why-observability">Why Observability</h2>
+
+  <p>Monitoring asks "is this thing healthy?" — a binary answer based on known failure modes. Observability asks "why is this behaving this way?" — allowing exploration of unknown unknowns without deploying new instrumentation.</p>
+
+  <div class="card-grid">
+    <div class="card info">
+      <h4>Reduce MTTR</h4>
+      <p>The primary value of observability is reducing mean time to recovery. Correlated signals (metrics → logs → traces) let engineers identify root cause in minutes instead of hours of blind kubectl commands.</p>
+    </div>
+    <div class="card info">
+      <h4>Understand Distributed Systems</h4>
+      <p>Kubernetes workloads are inherently distributed. A latency spike in one service may be caused by a slow database, a noisy neighbor, a GC pause, or network congestion — only traces reveal the actual causal chain.</p>
+    </div>
+    <div class="card info">
+      <h4>Capacity and Cost Planning</h4>
+      <p>Historical metrics enable right-sizing (CPU/memory requests), predicting when the next node is needed, and identifying expensive operations before they impact SLOs.</p>
+    </div>
+    <div class="card warning">
+      <h4>Kubernetes Adds Complexity</h4>
+      <p>Ephemeral pods, dynamic IPs, rolling deployments, and auto-scaling make traditional host-based monitoring insufficient. Observability must work at the workload level, not the instance level.</p>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <div class="callout-title">Observability vs Monitoring</div>
+    <p>Monitoring is checking for known failure states (is memory &gt; 90%?). Observability is the ability to ask arbitrary questions about system behavior using the data it emits — without deploying new code. In practice, you need both: monitoring for alerting on known-bad states, observability for investigating unknown causes.</p>
+  </div>
+
+  <!-- ───── THREE PILLARS ───── -->
+  <h2 id="three-pillars">The Three Pillars</h2>
+
+  <div class="signal-grid">
+    <div class="signal-card metrics">
+      <div class="signal-icon">📊</div>
+      <div class="signal-name">Metrics</div>
+      <div class="signal-desc">Numeric measurements over time. Aggregated, low-cardinality, cheap to store. Best for alerting on trends, capacity, and SLO burn rate.</div>
+    </div>
+    <div class="signal-card logs">
+      <div class="signal-icon">📋</div>
+      <div class="signal-name">Logs</div>
+      <div class="signal-desc">Timestamped, structured or unstructured text events. High fidelity, high volume. Best for debugging specific incidents and auditing.</div>
+    </div>
+    <div class="signal-card traces">
+      <div class="signal-icon">🔗</div>
+      <div class="signal-name">Traces</div>
+      <div class="signal-desc">Distributed call graphs with timing. Shows the path of a single request across all services. Best for understanding latency and service dependencies.</div>
+    </div>
+  </div>
+
+  <h3>Signal Comparison</h3>
+
+  <table>
+    <thead><tr><th>Property</th><th>Metrics</th><th>Logs</th><th>Traces</th></tr></thead>
+    <tbody>
+      <tr><td>Granularity</td><td>Aggregated (counters, gauges, histograms)</td><td>Per-event</td><td>Per-request</td></tr>
+      <tr><td>Cardinality</td><td>Low (by design)</td><td>Very high</td><td>High (per trace ID)</td></tr>
+      <tr><td>Storage cost</td><td>Low</td><td>High</td><td>Medium (with sampling)</td></tr>
+      <tr><td>Query pattern</td><td>Aggregations, rate/range queries</td><td>Full-text search, filter</td><td>Trace ID lookup, service dependency maps</td></tr>
+      <tr><td>Best for</td><td>Alerting, dashboards, SLOs</td><td>Debugging, auditing, context</td><td>Latency analysis, dependency mapping</td></tr>
+      <tr><td>Kubernetes source</td><td>cAdvisor, kube-state-metrics, app /metrics</td><td>stdout/stderr → log collector</td><td>App instrumentation (OTel SDK)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The Fourth Signal: Events</h3>
+
+  <p>Kubernetes Events are a native signal type — structured records of state changes in the cluster (pod scheduled, container crashed, image pulled, node pressure). They are often overlooked but are invaluable for correlating infrastructure changes with application symptoms. See <a href="04-events.html">Kubernetes Events</a> for the full treatment.</p>
+
+  <!-- ───── K8S LAYERS ───── -->
+  <h2 id="k8s-layers">Kubernetes Observability Layers</h2>
+
+  <p>Observability in Kubernetes spans four distinct layers, each with different data sources, tooling, and ownership.</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── Observability layers (top to bottom = user-visible to infrastructure) ──</span>
+<br>
+<br><span class="box purple">Layer 4: Application</span>
+<br>  Signals: custom business metrics, structured logs, distributed traces
+<br>  Ownership: application teams
+<br>  Tools: OTel SDK (auto + manual instrumentation), app /metrics endpoint
+<br>  Examples: request rate, payment latency, cart abandonment rate
+<br>   │
+<br><span class="box blue">Layer 3: Workload / Platform</span>
+<br>  Signals: pod CPU/memory, container restarts, HPA scaling events
+<br>  Ownership: platform team
+<br>  Tools: kube-state-metrics, cAdvisor, Prometheus
+<br>  Examples: OOMKill rate, pod pending duration, deployment rollout status
+<br>   │
+<br><span class="box yellow">Layer 2: Kubernetes Control Plane</span>
+<br>  Signals: API server latency, etcd health, scheduler queue depth
+<br>  Ownership: platform/SRE team
+<br>  Tools: component /metrics endpoints, audit logs
+<br>  Examples: apiserver_request_duration, etcd_object_counts
+<br>   │
+<br><span class="box green">Layer 1: Infrastructure / Nodes</span>
+<br>  Signals: node CPU/memory/disk/network, kernel metrics
+<br>  Ownership: infrastructure team
+<br>  Tools: node_exporter, cloud provider metrics
+<br>  Examples: node_cpu_seconds_total, node_filesystem_avail_bytes
+  </div>
+
+  <h3>Key Data Sources per Layer</h3>
+
+  <table>
+    <thead><tr><th>Layer</th><th>Component</th><th>Exposes</th><th>Scraped By</th></tr></thead>
+    <tbody>
+      <tr><td>Application</td><td>App /metrics endpoint</td><td>Custom Prometheus metrics</td><td>Prometheus ServiceMonitor</td></tr>
+      <tr><td>Application</td><td>App stdout/stderr</td><td>Structured JSON logs</td><td>Fluent Bit / Fluentd</td></tr>
+      <tr><td>Application</td><td>OTel SDK</td><td>Traces (OTLP)</td><td>OTel Collector</td></tr>
+      <tr><td>Workload</td><td>cAdvisor (in kubelet)</td><td>Container CPU/mem/net</td><td>Prometheus (kubelet /metrics/cadvisor)</td></tr>
+      <tr><td>Workload</td><td>kube-state-metrics</td><td>Kubernetes object state</td><td>Prometheus</td></tr>
+      <tr><td>Control Plane</td><td>kube-apiserver /metrics</td><td>API request latency/count</td><td>Prometheus</td></tr>
+      <tr><td>Control Plane</td><td>etcd /metrics</td><td>etcd health, latency, size</td><td>Prometheus</td></tr>
+      <tr><td>Control Plane</td><td>kube-scheduler /metrics</td><td>Scheduling latency, queue depth</td><td>Prometheus</td></tr>
+      <tr><td>Node</td><td>node_exporter</td><td>OS-level metrics (CPU, mem, disk, net)</td><td>Prometheus</td></tr>
+      <tr><td>Node</td><td>kubelet /metrics</td><td>kubelet operations, pod lifecycle</td><td>Prometheus</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── OPENTELEMETRY ───── -->
+  <h2 id="opentelemetry">OpenTelemetry</h2>
+
+  <p>OpenTelemetry (OTel) is the CNCF standard for vendor-neutral instrumentation and telemetry collection. It unifies metrics, logs, and traces under a single SDK, wire protocol (OTLP), and collection pipeline (OTel Collector).</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── OpenTelemetry architecture ─────────────────────────────────────────</span>
+<br>
+<br><span class="box blue">Application</span>
+<br>  └── <span class="box">OTel SDK</span>  (Go/Java/Python/Node/Rust/...)
+<br>      ├── Auto-instrumentation: HTTP, gRPC, DB, messaging frameworks
+<br>      ├── Manual instrumentation: custom spans, metrics, logs
+<br>      └── Exports via <span style="color:var(--accent)">OTLP (gRPC or HTTP)</span>
+<br>                          │
+<br>                          ▼
+<br><span class="box yellow">OTel Collector</span>  (DaemonSet or Deployment)
+<br>  ├── <span class="box">Receivers</span>:  OTLP, Prometheus, Jaeger, Zipkin, Fluent Forward, hostmetrics
+<br>  ├── <span class="box">Processors</span>: batch, memory_limiter, resource, attributes, filter, sampling
+<br>  └── <span class="box">Exporters</span>:  Prometheus, OTLP (to backend), Loki, Jaeger, Tempo, stdout
+<br>                          │
+<br>          ┌───────────────┼─────────────────┐
+<br>          ▼               ▼                 ▼
+<br><span class="box green">Prometheus</span>    <span class="box purple">Tempo / Jaeger</span>   <span class="box green">Loki</span>
+<br>(metrics)       (traces)              (logs)
+<br>          │               │                 │
+<br>          └───────────────▼─────────────────┘
+<br>                    <span class="box blue">Grafana</span>
+  </div>
+
+  <h3>OTel Collector Pipeline</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># otel-collector-config.yaml</span>
+<span class="k">receivers</span>:
+  <span class="k">otlp</span>:
+    <span class="k">protocols</span>:
+      <span class="k">grpc</span>:
+        <span class="k">endpoint</span>: <span class="s">0.0.0.0:4317</span>
+      <span class="k">http</span>:
+        <span class="k">endpoint</span>: <span class="s">0.0.0.0:4318</span>
+  <span class="k">prometheus</span>:
+    <span class="k">config</span>:
+      <span class="k">scrape_configs</span>:
+      - <span class="k">job_name</span>: <span class="s">otel-collector</span>
+        <span class="k">static_configs</span>:
+        - <span class="k">targets</span>: [<span class="s">localhost:8888</span>]
+  <span class="k">hostmetrics</span>:
+    <span class="k">collection_interval</span>: <span class="s">30s</span>
+    <span class="k">scrapers</span>:
+      <span class="k">cpu</span>: {}
+      <span class="k">memory</span>: {}
+      <span class="k">filesystem</span>: {}
+
+<span class="k">processors</span>:
+  <span class="k">batch</span>:
+    <span class="k">timeout</span>: <span class="s">5s</span>
+    <span class="k">send_batch_size</span>: <span class="n">1000</span>
+  <span class="k">memory_limiter</span>:
+    <span class="k">check_interval</span>: <span class="s">1s</span>
+    <span class="k">limit_mib</span>: <span class="n">400</span>
+    <span class="k">spike_limit_mib</span>: <span class="n">100</span>
+  <span class="k">resource</span>:
+    <span class="k">attributes</span>:
+    - <span class="k">key</span>: <span class="s">k8s.cluster.name</span>
+      <span class="k">value</span>: <span class="s">production</span>
+      <span class="k">action</span>: <span class="s">upsert</span>
+
+<span class="k">exporters</span>:
+  <span class="k">prometheusremotewrite</span>:
+    <span class="k">endpoint</span>: <span class="s">http://prometheus:9090/api/v1/write</span>
+  <span class="k">otlp/tempo</span>:
+    <span class="k">endpoint</span>: <span class="s">tempo:4317</span>
+    <span class="k">tls</span>:
+      <span class="k">insecure</span>: <span class="s">true</span>
+  <span class="k">loki</span>:
+    <span class="k">endpoint</span>: <span class="s">http://loki:3100/loki/api/v1/push</span>
+
+<span class="k">service</span>:
+  <span class="k">pipelines</span>:
+    <span class="k">metrics</span>:
+      <span class="k">receivers</span>: [<span class="s">otlp</span>, <span class="s">prometheus</span>, <span class="s">hostmetrics</span>]
+      <span class="k">processors</span>: [<span class="s">memory_limiter</span>, <span class="s">batch</span>, <span class="s">resource</span>]
+      <span class="k">exporters</span>: [<span class="s">prometheusremotewrite</span>]
+    <span class="k">traces</span>:
+      <span class="k">receivers</span>: [<span class="s">otlp</span>]
+      <span class="k">processors</span>: [<span class="s">memory_limiter</span>, <span class="s">batch</span>, <span class="s">resource</span>]
+      <span class="k">exporters</span>: [<span class="s">otlp/tempo</span>]
+    <span class="k">logs</span>:
+      <span class="k">receivers</span>: [<span class="s">otlp</span>]
+      <span class="k">processors</span>: [<span class="s">memory_limiter</span>, <span class="s">batch</span>, <span class="s">resource</span>]
+      <span class="k">exporters</span>: [<span class="s">loki</span>]</code></pre>
+
+  <h3>OTel Operator for Kubernetes</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Install OTel Operator</span>
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm install opentelemetry-operator open-telemetry/opentelemetry-operator \
+  --namespace opentelemetry-operator-system \
+  --create-namespace
+
+<span class="c"># OpenTelemetryCollector CRD — operator manages collector lifecycle</span>
+<span class="k">apiVersion</span>: <span class="s">opentelemetry.io/v1alpha1</span>
+<span class="k">kind</span>: <span class="s">OpenTelemetryCollector</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">otel-collector</span>
+<span class="k">spec</span>:
+  <span class="k">mode</span>: <span class="s">daemonset</span>   <span class="c"># daemonset | deployment | sidecar | statefulset</span>
+  <span class="k">config</span>: |
+    <span class="c"># inline OTel Collector config (see above)</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Instrumentation CRD: auto-instrument pods without code changes</span>
+<span class="k">apiVersion</span>: <span class="s">opentelemetry.io/v1alpha1</span>
+<span class="k">kind</span>: <span class="s">Instrumentation</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">auto-instrumentation</span>
+  <span class="k">namespace</span>: <span class="s">production</span>
+<span class="k">spec</span>:
+  <span class="k">exporter</span>:
+    <span class="k">endpoint</span>: <span class="s">http://otel-collector:4317</span>
+  <span class="k">propagators</span>: [<span class="s">tracecontext</span>, <span class="s">baggage</span>, <span class="s">b3</span>]
+  <span class="k">sampler</span>:
+    <span class="k">type</span>: <span class="s">parentbased_traceidratio</span>
+    <span class="k">argument</span>: <span class="s">"0.1"</span>   <span class="c"># 10% sampling</span>
+  <span class="k">java</span>:
+    <span class="k">image</span>: <span class="s">ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.32.0</span>
+  <span class="k">nodejs</span>:
+    <span class="k">image</span>: <span class="s">ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.41.1</span>
+  <span class="k">python</span>:
+    <span class="k">image</span>: <span class="s">ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.41b0</span>
+  <span class="k">go</span>:
+    <span class="k">image</span>: <span class="s">ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go:v0.9.0-alpha</span>
+
+<span class="c"># Opt pod into auto-instrumentation via annotation:</span>
+<span class="c"># instrumentation.opentelemetry.io/inject-java: "true"</span>
+<span class="c"># instrumentation.opentelemetry.io/inject-nodejs: "true"</span></code></pre>
+
+  <!-- ───── SIGNAL CORRELATION ───── -->
+  <h2 id="signal-correlation">Signal Correlation</h2>
+
+  <p>The power of observability comes from correlating signals — jumping from a metric alert to the relevant logs and traces for the same time window and request.</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── Signal correlation flow ────────────────────────────────────────────</span>
+<br>
+<br><span class="box red">Alert fires</span>: p99 latency &gt; 500ms
+<br>  │
+<br>  ▼ (click on metric data point in Grafana)
+<br><span class="box blue">Metrics panel</span>: latency spike at 14:32:15
+<br>  │
+<br>  ├── <span style="color:var(--accent)">Exemplar</span>: trace_id=abc123  ← embedded in Prometheus histogram
+<br>  │   └──▶ <span class="box purple">Tempo trace</span>: full request path, 847ms total
+<br>  │        ├── payment-svc: 12ms
+<br>  │        ├── inventory-svc: 823ms  ← ← SLOW
+<br>  │        └── notification-svc: 8ms
+<br>  │
+<br>  └── <span style="color:var(--accent)">Derived log query</span>: trace_id=abc123
+<br>      └──▶ <span class="box green">Loki logs</span>: "DB connection pool exhausted" at inventory-svc
+  </div>
+
+  <h3>Exemplars: Linking Metrics to Traces</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Prometheus exemplar: attach trace_id to histogram observation</span>
+<span class="c"># (Go example with prometheus/client_golang)</span>
+httpDuration.With(labels).ObserveWithExemplar(
+    duration,
+    prometheus.Labels{"traceID": traceID},
+)
+
+<span class="c"># Enable exemplar storage in Prometheus</span>
+<span class="c"># prometheus.yaml</span>
+storage:
+  exemplars:
+    max-exemplars: 100000</code></pre>
+
+  <h3>Trace ID in Logs</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Inject trace ID into structured logs (Go + Zap + OTel)</span>
+span := trace.SpanFromContext(ctx)
+logger.Info("processing request",
+    zap.String("trace_id", span.SpanContext().TraceID().String()),
+    zap.String("span_id",  span.SpanContext().SpanID().String()),
+    zap.String("service",  "payment-svc"),
+)
+
+<span class="c"># Log output (JSON):</span>
+{
+  "level": "info",
+  "ts": "2024-01-15T14:32:15.123Z",
+  "msg": "processing request",
+  "trace_id": "abc123def456...",
+  "span_id": "0102030405060708",
+  "service": "payment-svc"
+}
+
+<span class="c"># Loki query: find logs for a specific trace</span>
+{namespace="production"} | json | trace_id = "abc123def456..."</code></pre>
+
+  <!-- ───── TOOLING LANDSCAPE ───── -->
+  <h2 id="tooling-landscape">Tooling Landscape</h2>
+
+  <h3>CNCF Open Source Stack (LGTM)</h3>
+
+  <table>
+    <thead><tr><th>Signal</th><th>Collection</th><th>Storage</th><th>Query / Visualization</th></tr></thead>
+    <tbody>
+      <tr><td>Metrics</td><td>Prometheus, OTel Collector</td><td>Prometheus TSDB, Thanos, Cortex, Mimir</td><td>Grafana, PromQL</td></tr>
+      <tr><td>Logs</td><td>Fluent Bit, Fluentd, Promtail, OTel Collector</td><td>Loki</td><td>Grafana, LogQL</td></tr>
+      <tr><td>Traces</td><td>OTel SDK, OTel Collector</td><td>Tempo, Jaeger, Zipkin</td><td>Grafana, Jaeger UI</td></tr>
+      <tr><td>Events</td><td>kube-events-exporter, eventrouter</td><td>Loki, Elasticsearch</td><td>Grafana, Kibana</td></tr>
+      <tr><td>Profiles</td><td>Pyroscope agent, eBPF profilers</td><td>Pyroscope</td><td>Grafana (Pyroscope plugin)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Stack Comparison</h3>
+
+  <table>
+    <thead><tr><th>Stack</th><th>Components</th><th>Strengths</th><th>Weaknesses</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>LGTM</strong> (self-hosted)</td>
+        <td>Loki + Grafana + Tempo + Mimir</td>
+        <td>Fully open source, tightly integrated, cost-effective at scale</td>
+        <td>Operational complexity; each component needs HA</td>
+      </tr>
+      <tr>
+        <td><strong>Prometheus + ELK</strong></td>
+        <td>Prometheus + Elasticsearch + Kibana</td>
+        <td>Mature, large community, full-text search</td>
+        <td>Elasticsearch resource-intensive; two separate UIs</td>
+      </tr>
+      <tr>
+        <td><strong>Grafana Cloud</strong></td>
+        <td>Hosted LGTM stack</td>
+        <td>Zero ops for backend; generous free tier</td>
+        <td>Data leaves cluster; cost at scale</td>
+      </tr>
+      <tr>
+        <td><strong>Datadog</strong></td>
+        <td>Unified SaaS platform</td>
+        <td>Best-in-class UX; APM + infra in one product</td>
+        <td>Expensive; data sent to vendor; vendor lock-in</td>
+      </tr>
+      <tr>
+        <td><strong>New Relic</strong></td>
+        <td>Unified SaaS platform</td>
+        <td>Simple pricing; NRQL query language</td>
+        <td>Vendor lock-in; data sent to vendor</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-title">kube-prometheus-stack: The Quick Start</div>
+    <p>The <code>kube-prometheus-stack</code> Helm chart (formerly <code>prometheus-operator</code>) installs Prometheus Operator, Prometheus, Alertmanager, Grafana, kube-state-metrics, and node_exporter in one command with pre-built dashboards for Kubernetes. It is the standard starting point for Kubernetes metrics observability. See <a href="01-metrics.html">Metrics &amp; Prometheus</a> for the full installation guide.</p>
+  </div>
+
+  <!-- ───── INSTRUMENTATION STRATEGY ───── -->
+  <h2 id="instrumentation-strategy">Instrumentation Strategy</h2>
+
+  <h3>Auto-Instrumentation vs Manual Instrumentation</h3>
+
+  <table>
+    <thead><tr><th>Approach</th><th>How</th><th>Coverage</th><th>Effort</th><th>When to Use</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Auto-instrumentation</td>
+        <td>OTel Operator Instrumentation CRD; language agents (Java agent, Node.js require hook)</td>
+        <td>HTTP, gRPC, DB, messaging — framework-level</td>
+        <td>Low (annotation per pod)</td>
+        <td>All new services; existing services without time budget</td>
+      </tr>
+      <tr>
+        <td>Manual instrumentation</td>
+        <td>OTel SDK: <code>tracer.Start()</code>, <code>span.SetAttribute()</code>, custom metrics</td>
+        <td>Business logic, custom spans, domain metrics</td>
+        <td>High (per-operation code changes)</td>
+        <td>Business-critical paths where auto-instrumentation misses context</td>
+      </tr>
+      <tr>
+        <td>eBPF-based</td>
+        <td>Pixie, Hubble, Tetragon — kernel-level tracing</td>
+        <td>Network, syscalls, DNS, HTTP (without TLS decryption)</td>
+        <td>Zero (no code changes)</td>
+        <td>Observing workloads you cannot instrument (third-party, legacy)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>What to Instrument First</h3>
+
+  <div class="card-grid">
+    <div class="card success">
+      <h4>1. RED Metrics (Every Service)</h4>
+      <p><strong>Rate</strong>: requests per second<br><strong>Errors</strong>: failed requests per second<br><strong>Duration</strong>: request latency distribution (p50/p99)<br>These three metrics cover 80% of all SLO alerting.</p>
+    </div>
+    <div class="card success">
+      <h4>2. USE Metrics (Every Resource)</h4>
+      <p><strong>Utilization</strong>: % time busy<br><strong>Saturation</strong>: queue depth / wait time<br><strong>Errors</strong>: error rate<br>Apply to: CPU, memory, disk I/O, network.</p>
+    </div>
+    <div class="card info">
+      <h4>3. Business Metrics</h4>
+      <p>Domain-specific KPIs: orders per minute, payment success rate, active users. These are the metrics your business cares about when SLOs are expressed in business terms.</p>
+    </div>
+    <div class="card info">
+      <h4>4. Deep-Dive Traces</h4>
+      <p>Add manual spans for complex multi-step business operations (checkout flow, authentication chain) where auto-instrumentation doesn't capture enough context.</p>
+    </div>
+  </div>
+
+  <!-- ───── SLOS ───── -->
+  <h2 id="slos">SLOs, SLIs, and Error Budgets</h2>
+
+  <p>SLOs (Service Level Objectives) transform raw metrics into business-facing reliability targets. They are the bridge between engineering observability and product/business requirements.</p>
+
+  <table>
+    <thead><tr><th>Term</th><th>Definition</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>SLI</strong> (Service Level Indicator)</td><td>A metric that measures reliability from the user's perspective</td><td>Percentage of requests with latency &lt; 200ms</td></tr>
+      <tr><td><strong>SLO</strong> (Service Level Objective)</td><td>Target value or range for an SLI over a rolling window</td><td>99.9% of requests complete in &lt; 200ms over 30 days</td></tr>
+      <tr><td><strong>Error Budget</strong></td><td>1 - SLO = allowed failure budget per window</td><td>0.1% of 30-day requests = ~43 min of allowed downtime</td></tr>
+      <tr><td><strong>Burn Rate</strong></td><td>Rate at which error budget is consumed</td><td>Burn rate 2 = consuming budget twice as fast as allowed</td></tr>
+      <tr><td><strong>SLA</strong> (Service Level Agreement)</td><td>Contractual commitment to external customers</td><td>99.9% uptime SLA (stricter than internal SLO)</td></tr>
+    </tbody>
+  </table>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Multi-window burn rate alert (Google SRE approach)</span>
+<span class="c"># Fires when error budget is being consumed faster than sustainable</span>
+
+<span class="c"># Short window (fast detection) + long window (sustained burn)</span>
+- <span class="k">alert</span>: <span class="s">SLOBurnRateHigh</span>
+  <span class="k">expr</span>: |
+    (
+      <span class="c"># 1h burn rate > 14.4x (uses 2% budget in 1h at this rate)</span>
+      job:slo_errors:rate1h{job="payment-svc"} / 0.001 > 14.4
+    ) and (
+      <span class="c"># 5m burn rate > 14.4x (ensures it's sustained)</span>
+      job:slo_errors:rate5m{job="payment-svc"} / 0.001 > 14.4
+    )
+  <span class="k">severity</span>: <span class="s">page</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"SLO burn rate critical — paging"</span></code></pre>
+
+  <!-- ───── COST ───── -->
+  <h2 id="cost">Observability Cost Management</h2>
+
+  <p>Observability infrastructure can become one of the largest operational costs in a Kubernetes platform. Understanding the cost drivers enables targeted optimization.</p>
+
+  <h3>Cost Drivers and Mitigations</h3>
+
+  <table>
+    <thead><tr><th>Driver</th><th>Impact</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>High-cardinality metrics</td><td>Prometheus memory/storage explosion; slow queries</td><td>Drop high-cardinality labels; use recording rules; Prometheus label limits</td></tr>
+      <tr><td>Log volume</td><td>Loki/Elasticsearch storage and ingestion cost</td><td>Log sampling for high-volume debug logs; drop noisy log lines at Fluent Bit level</td></tr>
+      <tr><td>100% trace sampling</td><td>Trace storage scales linearly with traffic</td><td>Head-based sampling (10%); tail-based sampling (OTel Collector); always-sample errors</td></tr>
+      <tr><td>Metrics retention</td><td>Long retention = large disk; rarely queried after 90d</td><td>Tiered retention: 15d hot, 90d warm, 1y cold (Thanos object storage)</td></tr>
+      <tr><td>Prometheus cardinality per pod</td><td>Each pod restart adds new time series</td><td>kube-state-metrics: limit label cardinality; drop pod-hash labels</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <div class="callout-title">Cardinality Explosion</div>
+    <p>The most common Prometheus operational crisis. Adding a high-cardinality label (user ID, request ID, session ID) to a metric multiplies series count by the label's cardinality. A metric with 1,000 time series becomes 1,000,000 time series if you add a user_id label with 1,000 users. This causes OOM kills on the Prometheus pod. See <a href="01-metrics.html">Metrics &amp; Prometheus</a> for cardinality management techniques.</p>
+  </div>
+
+  <!-- ───── SECTION GUIDE ───── -->
+  <h2 id="section-guide">Section Guide</h2>
+
+  <div class="section-nav">
+    <a href="01-metrics.html" class="section-link">
+      <div class="sl-title">Metrics &amp; Prometheus</div>
+      <div class="sl-desc">Prometheus architecture, ServiceMonitor, PromQL, recording rules, kube-prometheus-stack, Thanos/Mimir for scale</div>
+    </a>
+    <a href="02-logging.html" class="section-link">
+      <div class="sl-title">Logging</div>
+      <div class="sl-desc">Fluent Bit DaemonSet, Loki, LogQL, structured logging, log aggregation patterns, retention</div>
+    </a>
+    <a href="03-tracing.html" class="section-link">
+      <div class="sl-title">Distributed Tracing</div>
+      <div class="sl-desc">OTel SDK, Tempo/Jaeger, sampling strategies, trace propagation, service dependency maps</div>
+    </a>
+    <a href="04-events.html" class="section-link">
+      <div class="sl-title">Kubernetes Events</div>
+      <div class="sl-desc">Event anatomy, kube-events-exporter, event-driven alerting, incident correlation</div>
+    </a>
+    <a href="05-dashboards.html" class="section-link">
+      <div class="sl-title">Dashboards &amp; Grafana</div>
+      <div class="sl-desc">Grafana setup, dashboard-as-code (Grafonnet), USE/RED dashboard templates, multi-cluster views</div>
+    </a>
+    <a href="06-alerting.html" class="section-link">
+      <div class="sl-title">Alerting</div>
+      <div class="sl-desc">Alertmanager, routing, grouping, inhibition, silence, PagerDuty integration, burn rate alerts</div>
+    </a>
+    <a href="07-profiling.html" class="section-link">
+      <div class="sl-title">Profiling</div>
+      <div class="sl-desc">Continuous profiling with Pyroscope, pprof endpoints, eBPF-based profiling, flame graphs</div>
+    </a>
+  </div>
+
+  <button class="back-to-top" id="back-to-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+</main>
+
+<script>
+function toggleTheme(){
+  const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  if(t !== 'dark') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('k8s-theme', t);
+}
+(function(){
+  const t = localStorage.getItem('k8s-theme');
+  if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+})();
+
+function copyCode(btn){
+  const pre = btn.parentElement;
+  const code = pre.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display = a.textContent.toLowerCase().includes(v.toLowerCase()) ? '' : 'none';
+  });
+}
+
+const main = document.getElementById('main');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{
+  btt.classList.toggle('visible', main.scrollTop > 400);
+});
+
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    const id = e.target.id;
+    const link = document.querySelector(`.toc a[href="#${id}"]`);
+    if(link) link.classList.toggle('active', e.isIntersecting);
+  });
+},{root: main, rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('h2[id]').forEach(h=>observer.observe(h));
+</script>
+</body>
+</html>

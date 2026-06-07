@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Container Runtime — K8s Internals</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code{font-family:'JetBrains Mono','Fira Code','Cascadia Code',monospace;font-size:.85em;background:var(--code-bg);padding:.15em .35em;border-radius:4px;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem 1.4rem;overflow-x:auto;position:relative;margin:1rem 0;}
+pre code{background:none;padding:0;font-size:.82em;line-height:1.65;}
+h1{font-size:2rem;font-weight:700;line-height:1.25;margin-bottom:.5rem;}
+h2{font-size:1.45rem;font-weight:700;margin:2.5rem 0 .8rem;padding-bottom:.4rem;border-bottom:1px solid var(--border);}
+h3{font-size:1.15rem;font-weight:600;margin:1.8rem 0 .5rem;}
+h4{font-size:1rem;font-weight:600;margin:1.4rem 0 .4rem;color:var(--text2);}
+p{margin:.6rem 0;}
+ul,ol{margin:.5rem 0 .5rem 1.6rem;}
+li{margin:.25rem 0;}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.88em;}
+th{background:var(--bg3);padding:.55rem .8rem;text-align:left;font-weight:600;border:1px solid var(--border);}
+td{padding:.5rem .8rem;border:1px solid var(--border);vertical-align:top;}
+tr:nth-child(even) td{background:var(--bg2);}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1rem;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:.75rem;}
+.topbar-right{display:flex;align-items:center;gap:.75rem;}
+.hamburger{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:.25rem;}
+.topbar-logo{font-weight:700;font-size:1rem;white-space:nowrap;}
+.topbar-logo span{color:var(--accent);}
+.breadcrumb{display:flex;align-items:center;gap:.35rem;font-size:.82em;color:var(--text2);}
+.breadcrumb span{color:var(--text3);}
+.search-wrap input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.35rem .7rem;color:var(--text);font-size:.83em;width:200px;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.82em;}
+.layout{display:flex;height:calc(100vh - 52px);}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;transition:transform .25s;}
+.sidebar-search{padding:.75rem;}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;color:var(--text);font-size:.82em;}
+nav{padding:.5rem 0 2rem;}
+.nav-section{margin-bottom:.25rem;}
+.nav-section-title{padding:.4rem 1rem .2rem;font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:flex;align-items:center;gap:.5rem;padding:.32rem 1rem;font-size:.83em;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);text-decoration:none;}
+.nav-section a.active{background:var(--bg4);color:var(--accent);font-weight:600;}
+.num{font-size:.72em;color:var(--text3);min-width:1.8em;}
+.main-content{flex:1;overflow-y:auto;padding:2rem 2.5rem 4rem;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:1rem .75rem;}
+.toc-panel h4{font-size:.72em;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:.5rem;}
+.toc-panel a{display:block;font-size:.8em;color:var(--text2);padding:.22rem .4rem;border-radius:4px;transition:background .15s,color .15s;}
+.toc-panel a:hover{color:var(--accent);text-decoration:none;}
+.toc-panel a.active{color:var(--accent);background:var(--bg3);}
+.toc-panel a.toc-h3{padding-left:1rem;font-size:.77em;color:var(--text3);}
+.file-meta{display:flex;gap:.75rem;flex-wrap:wrap;margin:.75rem 0 1.5rem;font-size:.8em;color:var(--text3);}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.2rem .55rem;font-size:.78em;}
+.callout{border-radius:8px;padding:1rem 1.2rem;margin:1.2rem 0;border-left:4px solid;}
+.callout.note{background:color-mix(in srgb,var(--accent) 8%,var(--bg2));border-color:var(--accent);}
+.callout.warn{background:color-mix(in srgb,var(--yellow) 8%,var(--bg2));border-color:var(--yellow);}
+.callout.danger{background:color-mix(in srgb,var(--red) 8%,var(--bg2));border-color:var(--red);}
+.callout.success{background:color-mix(in srgb,var(--green) 8%,var(--bg2));border-color:var(--green);}
+.callout-title{font-weight:700;font-size:.85em;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;}
+.callout.note .callout-title{color:var(--accent);}
+.callout.warn .callout-title{color:var(--yellow);}
+.callout.danger .callout-title{color:var(--red);}
+.callout.success .callout-title{color:var(--green);}
+details{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:.8rem 0;}
+details summary{padding:.75rem 1rem;cursor:pointer;font-weight:600;font-size:.9em;list-style:none;display:flex;align-items:center;gap:.5rem;}
+details summary::before{content:'▶';font-size:.7em;transition:transform .2s;color:var(--text3);}
+details[open] summary::before{transform:rotate(90deg);}
+.details-body{padding:0 1.2rem 1rem;}
+.flow-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.75rem 0;}
+.flow-box{padding:.45rem .9rem;border-radius:6px;font-size:.82em;font-weight:600;border:1px solid var(--border);white-space:nowrap;}
+.flow-box.cp{background:color-mix(in srgb,var(--accent) 15%,var(--bg3));border-color:var(--accent);color:var(--accent);}
+.flow-box.ok{background:color-mix(in srgb,var(--green) 15%,var(--bg3));border-color:var(--green);color:var(--green);}
+.flow-box.warn{background:color-mix(in srgb,var(--yellow) 15%,var(--bg3));border-color:var(--yellow);color:var(--yellow);}
+.flow-box.node{background:color-mix(in srgb,var(--purple) 15%,var(--bg3));border-color:var(--purple);color:var(--purple);}
+.flow-box.cloud{background:color-mix(in srgb,var(--orange) 15%,var(--bg3));border-color:var(--orange);color:var(--orange);}
+.flow-box.neutral{background:var(--bg3);color:var(--text2);}
+.flow-box.etcd{background:color-mix(in srgb,var(--red) 12%,var(--bg3));border-color:var(--red);color:var(--red);}
+.flow-arrow{color:var(--text3);font-size:1rem;}
+.component-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;margin:1rem 0;}
+.component-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;}
+.component-card h4{margin:0 0 .4rem;font-size:.9em;color:var(--accent);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:1rem 0;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;}
+.copy-btn{position:absolute;top:.5rem;right:.5rem;background:var(--bg4);border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:.2rem .55rem;font-size:.75em;cursor:pointer;}
+.copy-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.back-to-top{position:fixed;bottom:2rem;right:2rem;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .25s;z-index:200;}
+.back-to-top.visible{opacity:1;pointer-events:all;}
+.nav-footer{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-btn{display:inline-flex;align-items:center;gap:.5rem;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:.6rem 1.1rem;border-radius:8px;font-size:.88em;cursor:pointer;text-decoration:none;transition:border-color .2s,color .2s;}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
+.nav-btn.next{margin-left:auto;}
+mark.search-hl{background:var(--yellow);color:#000;border-radius:2px;padding:0 .1em;}
+svg text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+@media(max-width:1100px){.toc-panel{display:none;}}
+@media(max-width:768px){.sidebar{position:fixed;top:52px;left:0;height:calc(100vh - 52px);z-index:90;transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-content{padding:1.5rem 1.2rem 3rem;}.grid-2,.grid-3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger">&#9776;</button>
+    <span class="topbar-logo"><span>K8s</span> Internals</span>
+    <nav class="breadcrumb">
+      <a href="../00-foundations/00-introduction.html">Home</a><span>›</span>
+      <a href="00-worker-node-overview.html">Node Components</a><span>›</span>
+      <span>Container Runtime</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap"><input id="search-input" type="search" placeholder="Search…" autocomplete="off"/></div>
+    <button class="theme-btn" id="theme-btn">☀ Light</button>
+  </div>
+</div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="../01-control-plane/00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="../01-control-plane/01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="../01-control-plane/02-etcd.html"><span class="num">02</span>etcd</a>
+      <a href="../01-control-plane/03-kube-scheduler.html"><span class="num">03</span>kube-scheduler</a>
+      <a href="../01-control-plane/04-kube-controller-manager.html"><span class="num">04</span>kube-controller-manager</a>
+      <a href="../01-control-plane/05-cloud-controller-manager.html"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="../01-control-plane/06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="../01-control-plane/07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="02-kube-proxy.html"><span class="num">02</span>kube-proxy</a>
+      <a href="03-container-runtime.html" class="active"><span class="num">03</span>Container Runtime</a>
+      <a href="04-cri-interface.html"><span class="num">04</span>CRI Interface</a>
+      <a href="05-node-lifecycle.html"><span class="num">05</span>Node Lifecycle</a>
+      <a href="06-node-resource-management.html"><span class="num">06</span>Node Resource Mgmt</a>
+      <a href="07-windows-worker-nodes.html"><span class="num">07</span>Windows Worker Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="../03-networking/00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="../03-networking/01-pod-networking.html"><span class="num">01</span>Pod Networking</a>
+      <a href="../03-networking/02-cni-plugins.html"><span class="num">02</span>CNI Plugins</a>
+      <a href="../03-networking/03-services.html"><span class="num">03</span>Services</a>
+      <a href="../03-networking/04-kube-proxy-internals.html"><span class="num">04</span>kube-proxy Internals</a>
+      <a href="../03-networking/05-dns-coredns.html"><span class="num">05</span>DNS &amp; CoreDNS</a>
+      <a href="../03-networking/06-ingress-controllers.html"><span class="num">06</span>Ingress Controllers</a>
+      <a href="../03-networking/07-gateway-api.html"><span class="num">07</span>Gateway API</a>
+      <a href="../03-networking/08-network-policies.html"><span class="num">08</span>Network Policies</a>
+      <a href="../03-networking/09-ipv4-ipv6-dual-stack.html"><span class="num">09</span>IPv4/IPv6 Dual Stack</a>
+      <a href="../03-networking/10-ebpf-networking.html"><span class="num">10</span>eBPF Networking</a>
+      <a href="../03-networking/11-istio-linkerd-service-mesh.html"><span class="num">11</span>Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-csi-drivers.html"><span class="num">04</span>CSI Drivers</a>
+      <a href="../04-storage/05-statefulsets-storage.html"><span class="num">05</span>StatefulSets &amp; Storage</a>
+      <a href="../04-storage/06-volume-snapshots.html"><span class="num">06</span>Volume Snapshots</a>
+      <a href="../04-storage/07-backup-disaster-recovery.html"><span class="num">07</span>Backup &amp; DR</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html"><span class="num">01</span>Pods</a>
+      <a href="../05-workloads/02-deployments.html"><span class="num">02</span>Deployments</a>
+      <a href="../05-workloads/03-replicasets.html"><span class="num">03</span>ReplicaSets</a>
+      <a href="../05-workloads/04-statefulsets.html"><span class="num">04</span>StatefulSets</a>
+      <a href="../05-workloads/05-daemonsets.html"><span class="num">05</span>DaemonSets</a>
+      <a href="../05-workloads/06-jobs-cronjobs.html"><span class="num">06</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/07-init-containers.html"><span class="num">07</span>Init Containers</a>
+      <a href="../05-workloads/08-sidecar-containers.html"><span class="num">08</span>Sidecar Containers</a>
+      <a href="../05-workloads/09-pod-lifecycle.html"><span class="num">09</span>Pod Lifecycle</a>
+      <a href="../05-workloads/10-resource-management.html"><span class="num">10</span>Resource Management</a>
+      <a href="../05-workloads/11-autoscaling.html"><span class="num">11</span>Autoscaling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-rbac.html"><span class="num">01</span>RBAC</a>
+      <a href="../06-security/02-service-accounts.html"><span class="num">02</span>Service Accounts</a>
+      <a href="../06-security/03-pod-security.html"><span class="num">03</span>Pod Security</a>
+      <a href="../06-security/04-network-policies-security.html"><span class="num">04</span>Network Policy Security</a>
+      <a href="../06-security/05-secrets-management.html"><span class="num">05</span>Secrets Management</a>
+      <a href="../06-security/06-certificate-management.html"><span class="num">06</span>Certificate Management</a>
+      <a href="../06-security/07-audit-logging.html"><span class="num">07</span>Audit Logging</a>
+      <a href="../06-security/08-image-security.html"><span class="num">08</span>Image Security</a>
+      <a href="../06-security/09-runtime-security.html"><span class="num">09</span>Runtime Security</a>
+      <a href="../06-security/10-compliance-benchmarks.html"><span class="num">10</span>Compliance Benchmarks</a>
+      <a href="../06-security/11-supply-chain-security.html"><span class="num">11</span>Supply Chain Security</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics-prometheus.html"><span class="num">01</span>Metrics &amp; Prometheus</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Tracing</a>
+      <a href="../07-observability/04-events.html"><span class="num">04</span>Events</a>
+      <a href="../07-observability/05-alerting.html"><span class="num">05</span>Alerting</a>
+      <a href="../07-observability/06-dashboards.html"><span class="num">06</span>Dashboards</a>
+      <a href="../07-observability/07-debugging-production-issues.html"><span class="num">07</span>Debugging Production</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-engineering-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/01-helm.html"><span class="num">01</span>Helm</a>
+      <a href="../08-platform-engineering/02-kustomize.html"><span class="num">02</span>Kustomize</a>
+      <a href="../08-platform-engineering/03-gitops-argocd.html"><span class="num">03</span>GitOps &amp; ArgoCD</a>
+      <a href="../08-platform-engineering/04-flux.html"><span class="num">04</span>Flux</a>
+      <a href="../08-platform-engineering/05-operators.html"><span class="num">05</span>Operators</a>
+      <a href="../08-platform-engineering/06-crds.html"><span class="num">06</span>CRDs</a>
+      <a href="../08-platform-engineering/07-multi-tenancy.html"><span class="num">07</span>Multi-Tenancy</a>
+      <a href="../08-platform-engineering/08-cost-management.html"><span class="num">08</span>Cost Management</a>
+      <a href="../08-platform-engineering/09-developer-experience.html"><span class="num">09</span>Developer Experience</a>
+      <a href="../08-platform-engineering/10-cluster-api.html"><span class="num">10</span>Cluster API</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/01-cluster-sizing.html"><span class="num">01</span>Cluster Sizing</a>
+      <a href="../09-production-operations/02-high-availability.html"><span class="num">02</span>High Availability</a>
+      <a href="../09-production-operations/03-cluster-upgrades.html"><span class="num">03</span>Cluster Upgrades</a>
+      <a href="../09-production-operations/04-etcd-operations.html"><span class="num">04</span>etcd Operations</a>
+      <a href="../09-production-operations/05-node-management.html"><span class="num">05</span>Node Management</a>
+      <a href="../09-production-operations/06-resource-quotas.html"><span class="num">06</span>Resource Quotas</a>
+      <a href="../09-production-operations/07-limit-ranges.html"><span class="num">07</span>Limit Ranges</a>
+      <a href="../09-production-operations/08-pod-disruption-budgets.html"><span class="num">08</span>Pod Disruption Budgets</a>
+      <a href="../09-production-operations/09-capacity-planning.html"><span class="num">09</span>Capacity Planning</a>
+      <a href="../09-production-operations/10-real-world-incident-analysis.html"><span class="num">10</span>Incident Analysis</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-team-overview.html"><span class="num">00</span>Team Overview</a>
+      <a href="../10-team-workflows/01-kubectl-advanced.html"><span class="num">01</span>kubectl Advanced</a>
+      <a href="../10-team-workflows/02-kubeconfig.html"><span class="num">02</span>kubeconfig</a>
+      <a href="../10-team-workflows/03-namespaces-tenancy.html"><span class="num">03</span>Namespaces &amp; Tenancy</a>
+      <a href="../10-team-workflows/04-cicd-pipelines.html"><span class="num">04</span>CI/CD Pipelines</a>
+      <a href="../10-team-workflows/05-policy-as-code.html"><span class="num">05</span>Policy as Code</a>
+      <a href="../10-team-workflows/06-local-development.html"><span class="num">06</span>Local Development</a>
+      <a href="../10-team-workflows/07-testing-strategies.html"><span class="num">07</span>Testing Strategies</a>
+      <a href="../10-team-workflows/08-documentation-practices.html"><span class="num">08</span>Documentation</a>
+      <a href="../10-team-workflows/09-infrastructure-operations.html"><span class="num">09</span>Infrastructure Ops</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html"><span class="num">00</span>API Flow Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-deployment-rollout-flow.html"><span class="num">02</span>Deployment Rollout</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-service-endpoint-flow.html"><span class="num">03</span>Service Endpoint Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduling-decision-flow.html"><span class="num">04</span>Scheduling Decision</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-hpa-scaling-flow.html"><span class="num">05</span>HPA Scaling Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-pvc-binding-flow.html"><span class="num">06</span>PVC Binding Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-secret-projection-flow.html"><span class="num">07</span>Secret Projection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-admission-webhook-flow.html"><span class="num">08</span>Admission Webhook Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-rbac-authorization-flow.html"><span class="num">09</span>RBAC Auth Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-node-registration-flow.html"><span class="num">10</span>Node Registration</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-crd-reconcile-flow.html"><span class="num">11</span>CRD Reconcile Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-garbage-collection-flow.html"><span class="num">12</span>Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-certificate-rotation-flow.html"><span class="num">13</span>Cert Rotation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-packet-flow.html"><span class="num">14</span>Cross-Node Packet Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Troubleshooting Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-network-issues.html"><span class="num">02</span>Network Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html"><span class="num">03</span>Storage Issues</a>
+      <a href="../12-troubleshooting/04-control-plane-issues.html"><span class="num">04</span>Control Plane Issues</a>
+      <a href="../12-troubleshooting/05-performance-issues.html"><span class="num">05</span>Performance Issues</a>
+      <a href="../12-troubleshooting/06-security-issues.html"><span class="num">06</span>Security Issues</a>
+      <a href="../12-troubleshooting/07-cluster-upgrade-issues.html"><span class="num">07</span>Upgrade Issues</a>
+      <a href="../12-troubleshooting/08-etcd-issues.html"><span class="num">08</span>etcd Issues</a>
+      <a href="../12-troubleshooting/09-dns-issues.html"><span class="num">09</span>DNS Issues</a>
+      <a href="../12-troubleshooting/10-crashloopbackoff-analysis.html"><span class="num">10</span>CrashLoopBackOff</a>
+    </div>
+  </nav>
+</aside>
+
+<main class="main-content" id="main-content">
+<h1 id="top">Container Runtime</h1>
+<div class="file-meta">
+  <span class="tag">Node Components</span>
+  <span class="tag">containerd</span>
+  <span class="tag">OCI</span>
+  <span class="tag">runc</span>
+  <span class="tag">Images</span>
+  <span>02-node-components / 03-container-runtime.html</span>
+</div>
+
+<p>The container runtime is the software layer that actually creates and manages containers on a node. It sits between kubelet (which expresses <em>intent</em> — "run this container from this image with these resource limits") and the Linux kernel (which enforces namespaces and cgroups). kubelet talks to the runtime through the <strong>Container Runtime Interface (CRI)</strong> — a gRPC API documented in detail in <a href="04-cri-interface.html">04-cri-interface</a>. This page covers the runtimes themselves: their architecture, configuration, image handling, snapshotters, and OCI runtime execution.</p>
+
+<h2 id="ecosystem">Runtime Ecosystem</h2>
+
+<svg viewBox="0 0 820 310" width="100%" style="max-width:820px;display:block;margin:1.5rem 0;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#8b949e"/></marker>
+    <marker id="ah-grn" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3fb950"/></marker>
+    <marker id="ah-pur" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#bc8cff"/></marker>
+  </defs>
+
+  <!-- kubelet -->
+  <rect x="320" y="10" width="180" height="50" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="2"/>
+  <text x="410" y="32" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">kubelet</text>
+  <text x="410" y="50" text-anchor="middle" fill="#8b949e" font-size="10">CRI gRPC client</text>
+
+  <!-- containerd -->
+  <rect x="120" y="100" width="170" height="55" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="2"/>
+  <text x="205" y="122" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">containerd</text>
+  <text x="205" y="140" text-anchor="middle" fill="#8b949e" font-size="10">CRI server (cri plugin)</text>
+
+  <!-- CRI-O -->
+  <rect x="320" y="100" width="170" height="55" rx="8" fill="#21262d" stroke="#bc8cff" stroke-width="1.5"/>
+  <text x="405" y="122" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">CRI-O</text>
+  <text x="405" y="140" text-anchor="middle" fill="#8b949e" font-size="10">Kubernetes-only CRI server</text>
+
+  <!-- Docker (legacy) -->
+  <rect x="520" y="100" width="170" height="55" rx="8" fill="#21262d" stroke="#6e7681" stroke-width="1"/>
+  <text x="605" y="122" text-anchor="middle" fill="#6e7681" font-size="11" font-weight="700">dockershim (removed)</text>
+  <text x="605" y="140" text-anchor="middle" fill="#6e7681" font-size="9">Kubernetes 1.24+: use containerd</text>
+
+  <!-- OCI Runtime layer -->
+  <rect x="20" y="200" width="140" height="55" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="90" y="222" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">runc</text>
+  <text x="90" y="238" text-anchor="middle" fill="#8b949e" font-size="9">reference OCI runtime</text>
+  <text x="90" y="252" text-anchor="middle" fill="#6e7681" font-size="9">libcontainer (Go)</text>
+
+  <rect x="175" y="200" width="140" height="55" rx="6" fill="#21262d" stroke="#d29922" stroke-width="1.2"/>
+  <text x="245" y="222" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">crun</text>
+  <text x="245" y="238" text-anchor="middle" fill="#8b949e" font-size="9">C-based OCI runtime</text>
+  <text x="245" y="252" text-anchor="middle" fill="#6e7681" font-size="9">faster startup, less memory</text>
+
+  <rect x="330" y="200" width="160" height="55" rx="6" fill="#21262d" stroke="#bc8cff" stroke-width="1.2"/>
+  <text x="410" y="222" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">kata-containers</text>
+  <text x="410" y="238" text-anchor="middle" fill="#8b949e" font-size="9">VM-based sandbox</text>
+  <text x="410" y="252" text-anchor="middle" fill="#6e7681" font-size="9">strong isolation</text>
+
+  <rect x="505" y="200" width="160" height="55" rx="6" fill="#21262d" stroke="#d18616" stroke-width="1.2"/>
+  <text x="585" y="222" text-anchor="middle" fill="#d18616" font-size="11" font-weight="700">gVisor (runsc)</text>
+  <text x="585" y="238" text-anchor="middle" fill="#8b949e" font-size="9">user-space kernel</text>
+  <text x="585" y="252" text-anchor="middle" fill="#6e7681" font-size="9">syscall interception</text>
+
+  <rect x="680" y="200" width="120" height="55" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+  <text x="740" y="222" text-anchor="middle" fill="#8b949e" font-size="11" font-weight="700">wasm</text>
+  <text x="740" y="238" text-anchor="middle" fill="#6e7681" font-size="9">SpinKube/runwasi</text>
+  <text x="740" y="252" text-anchor="middle" fill="#6e7681" font-size="9">(emerging)</text>
+
+  <!-- Arrows kubelet → runtimes -->
+  <line x1="370" y1="60" x2="260" y2="98" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ah-grn)"/>
+  <line x1="410" y1="60" x2="410" y2="98" stroke="#bc8cff" stroke-width="1.2" marker-end="url(#ah-pur)"/>
+  <line x1="450" y1="60" x2="550" y2="98" stroke="#8b949e" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+
+  <!-- Arrows containerd → OCI runtimes -->
+  <line x1="180" y1="155" x2="110" y2="198" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+  <line x1="205" y1="155" x2="245" y2="198" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+  <line x1="235" y1="155" x2="380" y2="198" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+  <line x1="250" y1="155" x2="550" y2="198" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+
+  <text x="410" y="290" text-anchor="middle" fill="#6e7681" font-size="10">OCI Runtime Interface — all OCI runtimes implement the same spec</text>
+</svg>
+
+<h2 id="containerd">containerd — The Standard Runtime</h2>
+
+<p>containerd (donated to CNCF by Docker, now graduated) is the dominant container runtime for Kubernetes. It was originally extracted from Docker as the "low-level" component handling image management and container execution, while Docker's higher-level UX was stripped away. Kubernetes talks to containerd via its <strong>built-in CRI plugin</strong> (since containerd 1.1, no longer a separate process).</p>
+
+<h3>containerd Internal Architecture</h3>
+
+<div class="flow-row">
+  <div class="flow-box cp">kubelet (CRI gRPC)</div><div class="flow-arrow">→</div>
+  <div class="flow-box ok">containerd CRI plugin</div><div class="flow-arrow">→</div>
+  <div class="flow-box ok">containerd core (metadata, snapshots, events)</div><div class="flow-arrow">→</div>
+  <div class="flow-box node">containerd-shim-runc-v2</div><div class="flow-arrow">→</div>
+  <div class="flow-box neutral">runc (OCI)</div><div class="flow-arrow">→</div>
+  <div class="flow-box ok">container process</div>
+</div>
+
+<h3>The containerd Shim</h3>
+
+<p>The <strong>containerd shim</strong> (<code>containerd-shim-runc-v2</code>) is a small process that lives between containerd and each container's OCI runtime. One shim instance exists per pod sandbox. Its role:</p>
+
+<ul>
+  <li>Serves as the process parent for containers. If containerd restarts, the shim keeps the container alive.</li>
+  <li>Handles container I/O: collects stdout/stderr from the container process and makes it available to <code>kubectl logs</code>.</li>
+  <li>Implements the TTY/exec protocol for <code>kubectl exec</code>.</li>
+  <li>Reaps zombie processes in the container's PID namespace (acts as init if <code>shareProcessNamespace: false</code>).</li>
+</ul>
+
+<div class="callout note">
+<div class="callout-title">containerd restarts are safe for running containers</div>
+Because the shim is independent of containerd, restarting the containerd daemon does not kill running containers. This is essential for node-level upgrades of containerd without disrupting workloads. The shim reconnects to the new containerd instance after restart.
+</div>
+
+<h2 id="containerd-config">containerd Configuration</h2>
+
+<pre><code class="language-bash"># Default config location
+/etc/containerd/config.toml
+
+# Generate default config
+containerd config default > /etc/containerd/config.toml</code></pre>
+
+<pre><code class="language-toml">version = 2
+
+[grpc]
+  address = "/run/containerd/containerd.sock"
+  uid = 0
+  gid = 0
+
+[plugins."io.containerd.grpc.v1.cri"]
+  # Must match kubelet cgroupDriver
+  sandbox_image = "registry.k8s.io/pause:3.9"
+
+  [plugins."io.containerd.grpc.v1.cri".containerd]
+    snapshotter = "overlayfs"     # overlayfs | zfs | btrfs | devmapper
+    default_runtime_name = "runc"
+    discard_unpacked_layers = true
+
+    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+      runtime_type = "io.containerd.runc.v2"
+
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+        SystemdCgroup = true       # CRITICAL: must match kubelet cgroupDriver
+
+    # Register an alternate runtime for sandboxed workloads
+    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.kata]
+      runtime_type = "io.containerd.kata.v2"
+
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
+        endpoint = ["https://mirror.gcr.io", "https://registry-1.docker.io"]
+
+    [plugins."io.containerd.grpc.v1.cri".registry.configs]
+      [plugins."io.containerd.grpc.v1.cri".registry.configs."private.registry.example.com".auth]
+        username = "user"
+        password = "pass"
+      [plugins."io.containerd.grpc.v1.cri".registry.configs."private.registry.example.com".tls]
+        ca_file = "/etc/containerd/certs/ca.crt"
+
+[plugins."io.containerd.grpc.v1.cri".cni]
+  bin_dir = "/opt/cni/bin"
+  conf_dir = "/etc/cni/net.d"
+
+[metrics]
+  address = "127.0.0.1:1338"    # Prometheus metrics
+
+[debug]
+  level = "info"                 # debug | info | warn | error</code></pre>
+
+<div class="callout danger">
+<div class="callout-title">SystemdCgroup must match kubelet's cgroupDriver</div>
+If containerd has <code>SystemdCgroup = true</code> but kubelet has <code>cgroupDriver: cgroupfs</code> (or vice versa), containers will fail to start with cryptic cgroup errors. Always verify both sides after installing or upgrading either component. The current setting can be checked with <code>crictl info | grep -i cgroup</code>.
+</div>
+
+<h2 id="oci-spec">OCI Standards</h2>
+
+<p>The Open Container Initiative (OCI) defines two standards that all compliant runtimes and registries must implement:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>OCI Image Specification</h4>
+    <p>Defines the format of a container image: a manifest (JSON), a configuration object (JSON, containing entrypoint, env, labels, etc.), and one or more content-addressable filesystem layers (tarballs, compressed with gzip or zstd).</p>
+    <ul>
+      <li>Images are <strong>content-addressed</strong> by SHA256 digest of their manifest</li>
+      <li>Layers are deduplicated across images sharing the same base</li>
+      <li>Multi-arch images use an <strong>Image Index</strong> (manifest list) that maps platform (os/arch) to per-platform manifests</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>OCI Runtime Specification</h4>
+    <p>Defines the format of the container configuration JSON (<code>config.json</code>) passed to the runtime when creating a container, and the lifecycle operations the runtime must implement.</p>
+    <ul>
+      <li><code>create</code> — set up namespaces and cgroups, but do not start process</li>
+      <li><code>start</code> — execute the process inside the configured environment</li>
+      <li><code>state</code> — query container state</li>
+      <li><code>kill</code> — send a signal to the container process</li>
+      <li><code>delete</code> — destroy the container and clean up resources</li>
+    </ul>
+  </div>
+</div>
+
+<h2 id="image-layers">Image Layers and Snapshotters</h2>
+
+<p>Container images are stored as a stack of immutable, content-addressable layers. When a container starts, a writable layer (the <em>container layer</em>) is added on top. All reads below that layer are served from the read-only image layers using a <strong>snapshotter</strong> (the mechanism for stacking layers).</p>
+
+<svg viewBox="0 0 680 280" width="100%" style="max-width:680px;display:block;margin:1.5rem 0;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">
+  <!-- Container writable layer -->
+  <rect x="60" y="20" width="560" height="45" rx="6" fill="#21262d" stroke="#f85149" stroke-width="1.5"/>
+  <text x="340" y="42" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">Container writable layer (ephemeral)</text>
+  <text x="340" y="57" text-anchor="middle" fill="#8b949e" font-size="9.5">overlayfs upperdir — deleted when container removed</text>
+
+  <!-- App layer -->
+  <rect x="60" y="80" width="560" height="40" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="340" y="98" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">Image layer 3 — app binaries (sha256:abc…)</text>
+  <text x="340" y="113" text-anchor="middle" fill="#6e7681" font-size="9.5">read-only, shared across containers using same image</text>
+
+  <!-- Runtime layer -->
+  <rect x="60" y="132" width="560" height="40" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="340" y="150" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">Image layer 2 — runtime deps (sha256:def…)</text>
+  <text x="340" y="166" text-anchor="middle" fill="#6e7681" font-size="9.5">read-only</text>
+
+  <!-- Base OS layer -->
+  <rect x="60" y="184" width="560" height="40" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="340" y="202" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">Image layer 1 — base OS (sha256:ghi…)</text>
+  <text x="340" y="218" text-anchor="middle" fill="#6e7681" font-size="9.5">read-only, shared across ALL containers using same base image</text>
+
+  <!-- overlayfs label -->
+  <rect x="620" y="80" width="50" height="145" rx="4" fill="#161b22" stroke="#8b949e" stroke-width="1"/>
+  <text x="645" y="165" text-anchor="middle" fill="#8b949e" font-size="9" transform="rotate(-90,645,165)">overlayfs merge (lowerdir + upperdir)</text>
+
+  <text x="340" y="265" text-anchor="middle" fill="#6e7681" font-size="10">Filesystem seen by container process = union of all layers</text>
+</svg>
+
+<h3>Snapshotters</h3>
+
+<table>
+  <thead><tr><th>Snapshotter</th><th>Mechanism</th><th>Use case</th><th>Requirements</th></tr></thead>
+  <tbody>
+    <tr><td><code>overlayfs</code></td><td>Linux overlay filesystem (kernel 3.18+)</td><td>Default for most Linux distros; efficient copy-on-write</td><td>Kernel overlayfs support; NOT available on some older kernels or NFS rootfs</td></tr>
+    <tr><td><code>native</code></td><td>Full copy of each layer (no COW)</td><td>Fallback when overlayfs unavailable</td><td>Disk-intensive; high storage usage</td></tr>
+    <tr><td><code>zfs</code></td><td>ZFS clones/snapshots</td><td>High I/O workloads; excellent snapshot performance</td><td>ZFS installed on node; not common in cloud VMs</td></tr>
+    <tr><td><code>btrfs</code></td><td>Btrfs subvolumes/snapshots</td><td>COW with efficient snapshots</td><td>btrfs filesystem for container storage</td></tr>
+    <tr><td><code>devmapper</code></td><td>Device Mapper thin-provisioning</td><td>RHEL/CentOS legacy compatibility</td><td>Complex setup; mostly superseded by overlayfs</td></tr>
+    <tr><td><code>stargz</code> (Nydus)</td><td>Lazy image pulling (eStargz)</td><td>Large images with slow cold-start — fetch only needed layers</td><td>Requires compatible registry; remote snapshotter</td></tr>
+  </tbody>
+</table>
+
+<h2 id="image-pull">Image Pulling and Registry Authentication</h2>
+
+<p>When kubelet instructs containerd to run a container, containerd checks whether the image already exists locally. If not, it pulls the image from the registry. The pull process:</p>
+
+<ol>
+  <li><strong>Resolve manifest</strong> — fetch the image manifest from the registry using the image reference (name + tag or digest).</li>
+  <li><strong>Check platform</strong> — if the manifest is a multi-arch index, select the manifest matching the node's <code>os/arch</code>.</li>
+  <li><strong>Download missing layers</strong> — compare manifest layer digests against the local content store; pull only layers not already present.</li>
+  <li><strong>Verify digests</strong> — each layer is verified against its SHA256 digest after download.</li>
+  <li><strong>Unpack</strong> — layers are unpacked into the snapshotter.</li>
+</ol>
+
+<h3>imagePullPolicy</h3>
+
+<table>
+  <thead><tr><th>Policy</th><th>Behavior</th><th>Use case</th></tr></thead>
+  <tbody>
+    <tr><td><code>Always</code></td><td>Always contact the registry before starting. Pulls if digest has changed.</td><td>Mutable tags (like <code>:latest</code>); ensures freshness</td></tr>
+    <tr><td><code>IfNotPresent</code></td><td>Only pull if the image is not present locally. Default for versioned tags.</td><td>Production — avoids unnecessary registry calls</td></tr>
+    <tr><td><code>Never</code></td><td>Never pull. Fails if image not present locally.</td><td>Air-gapped environments where images are pre-loaded</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+<div class="callout-title">Using :latest or mutable tags in production</div>
+If <code>imagePullPolicy: IfNotPresent</code> is used with a mutable tag like <code>:latest</code>, different nodes in the cluster may be running different actual image versions — whichever version was cached when each node last pulled. Always use immutable image digests or versioned tags in production.
+</div>
+
+<h3>Registry Authentication</h3>
+
+<p>Kubernetes supports three mechanisms for providing registry credentials:</p>
+
+<div class="component-grid">
+  <div class="component-card">
+    <h4>imagePullSecrets on Pod</h4>
+    <pre><code class="language-yaml">spec:
+  imagePullSecrets:
+    - name: regcred
+# Secret type: kubernetes.io/dockerconfigjson
+kubectl create secret docker-registry regcred \
+  --docker-server=registry.example.com \
+  --docker-username=user \
+  --docker-password=pass</code></pre>
+  </div>
+  <div class="component-card">
+    <h4>ServiceAccount imagePullSecrets</h4>
+    <pre><code class="language-yaml">apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-sa
+imagePullSecrets:
+  - name: regcred
+# All pods using this SA inherit these credentials</code></pre>
+  </div>
+  <div class="component-card">
+    <h4>Node-level credential config</h4>
+    <p>containerd's <code>registry.configs</code> section or a <code>.docker/config.json</code> on the node applies to all pods. Used for internal mirrors and air-gapped environments. See containerd config above.</p>
+  </div>
+  <div class="component-card">
+    <h4>Cloud IAM (IRSA / Workload Identity)</h4>
+    <p>On EKS/GKE/AKS, nodes have IAM roles that grant ECR/GCR/ACR pull permissions automatically. No Kubernetes secrets needed. Credentials are refreshed automatically by cloud credential helpers.</p>
+  </div>
+</div>
+
+<h2 id="oci-runtimes">OCI Runtimes</h2>
+
+<h3>runc — Reference Implementation</h3>
+
+<p><code>runc</code> is the reference implementation of the OCI Runtime Specification, written in Go, maintained by the Open Container Initiative. It uses <code>libcontainer</code> (a Go library) to set up Linux namespaces and cgroups. runc is a short-lived CLI tool — it is invoked once per container create/start/delete operation, not as a persistent daemon.</p>
+
+<pre><code class="language-bash"># runc is typically at:
+which runc   # /usr/local/bin/runc or /usr/bin/runc
+
+# Check version
+runc --version
+# runc version 1.1.12
+# commit: v1.1.12-0-g51d5e946
+# spec: 1.0.2-dev
+
+# List containers managed by runc directly (for debugging)
+runc list --root /run/containerd/runc/default/</code></pre>
+
+<h3>crun — High-Performance Alternative</h3>
+
+<p><code>crun</code> is a C implementation of the OCI runtime spec. It has lower memory usage (~10x less than runc) and faster startup time (~2x faster), making it attractive for high-density nodes or serverless workloads. It is the default OCI runtime on Fedora/RHEL and is fully compatible with the same OCI spec as runc.</p>
+
+<pre><code class="language-toml"># Use crun instead of runc in containerd config.toml
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+  BinaryName = "/usr/bin/crun"   # Override binary</code></pre>
+
+<h3>Sandboxed Runtimes</h3>
+
+<p>For workloads requiring stronger isolation than Linux namespaces provide (multi-tenant platforms, untrusted code execution), sandboxed runtimes create an additional isolation layer:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>kata-containers</h4>
+    <p>Runs each pod inside a lightweight VM (using QEMU, Cloud Hypervisor, or Firecracker). The container process runs inside the VM's kernel, providing strong isolation. The pod has a private kernel — a container escape would require a VM escape.</p>
+    <ul>
+      <li>~100ms additional startup time</li>
+      <li>~128MB additional memory overhead per pod</li>
+      <li>Requires nested virtualization (or bare metal with VT-x)</li>
+      <li>Transparent to Kubernetes — same pod spec, different RuntimeClass</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>gVisor (runsc)</h4>
+    <p>Intercepts syscalls from the container process and handles them in a user-space kernel written in Go (the <em>Sentry</em>). Container processes never directly call the Linux kernel — they go through gVisor's Sentry instead.</p>
+    <ul>
+      <li>~5-50ms additional latency per syscall</li>
+      <li>Not all syscalls supported (but covers most common ones)</li>
+      <li>Does not require virtualization hardware</li>
+      <li>Used in production at Google (GKE Autopilot runs on gVisor)</li>
+    </ul>
+  </div>
+</div>
+
+<h2 id="runtimeclass">RuntimeClass</h2>
+
+<p><code>RuntimeClass</code> is the Kubernetes mechanism for selecting which OCI runtime to use per pod. A cluster can have multiple runtimes registered, and pods select one via <code>spec.runtimeClassName</code>.</p>
+
+<pre><code class="language-yaml"># Define available runtimes
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: kata-qemu
+handler: kata               # Maps to containerd runtime config name
+overhead:
+  podFixed:
+    memory: "140Mi"         # Extra memory reserved per pod for VM overhead
+    cpu: "250m"             # Scheduler accounts for this in resource requests
+scheduling:
+  nodeSelector:
+    runtime: kata           # Only schedule on nodes with kata installed
+  tolerations:
+    - key: runtime
+      operator: Equal
+      value: kata
+      effect: NoSchedule
+---
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: gvisor
+handler: runsc
+---
+# Use in a pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: untrusted-workload
+spec:
+  runtimeClassName: kata-qemu    # or gvisor
+  containers:
+    - name: app
+      image: myapp:v1</code></pre>
+
+<div class="callout note">
+<div class="callout-title">RuntimeClass overhead is added to scheduling requests</div>
+The <code>overhead.podFixed</code> field tells the scheduler to add extra resource requests to the pod's declared requests when placing it. This ensures nodes are not over-committed with sandboxed pods whose actual resource usage (including the VM/Sentry overhead) exceeds what the container spec declares.
+</div>
+
+<h2 id="crictl">crictl — Runtime Debugging Tool</h2>
+
+<p><code>crictl</code> is the CLI tool for interacting with any CRI-compatible runtime directly, bypassing kubectl. It is the primary tool for debugging containers at the node level.</p>
+
+<pre><code class="language-bash"># Configure crictl to use containerd
+cat > /etc/crictl.yaml << 'EOF'
+runtime-endpoint: unix:///run/containerd/containerd.sock
+image-endpoint: unix:///run/containerd/containerd.sock
+timeout: 10
+debug: false
+EOF
+
+# List pods (sandboxes)
+crictl pods
+
+# List containers
+crictl ps -a        # -a includes stopped containers
+
+# List images
+crictl images
+
+# Pull an image manually
+crictl pull registry.k8s.io/pause:3.9
+
+# Inspect a container
+crictl inspect <container-id>
+
+# Get container logs
+crictl logs <container-id>
+crictl logs -f <container-id>       # follow
+
+# Exec into a running container
+crictl exec -it <container-id> /bin/sh
+
+# Get pod stats
+crictl statsp
+
+# Remove all stopped containers
+crictl rm $(crictl ps -a -q --state exited)
+
+# Remove unused images
+crictl rmi --prune</code></pre>
+
+<h2 id="image-management">Image Management and Disk Pressure</h2>
+
+<p>Images are stored in containerd's content store at <code>/var/lib/containerd/</code>. Disk pressure from images is one of the most common node issues in production.</p>
+
+<pre><code class="language-bash"># Check total image storage
+du -sh /var/lib/containerd/
+du -sh /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/
+
+# List images with sizes
+crictl images --verbose | grep -E "IMAGE|SIZE"
+
+# containerd native tool (ctr) for lower-level inspection
+ctr --namespace k8s.io images ls
+ctr --namespace k8s.io snapshots ls | wc -l
+
+# Inspect disk usage per container snapshot
+ctr --namespace k8s.io snapshots usage
+
+# Force image garbage collection (kubelet GC must be configured)
+# kubelet auto-GCs based on imageGCHighThresholdPercent
+# To manually force: restart kubelet or trigger via kubelet API
+
+# Identify large images pulling excessive disk
+crictl images -o json | jq -r '.images[] | [.repoTags[0], .size] | @tsv' \
+  | sort -k2 -n -r | head -10</code></pre>
+
+<h2 id="cgroup-driver">cgroup Driver Consistency</h2>
+
+<p>Both kubelet and containerd must use the same cgroup driver. The two options are:</p>
+
+<table>
+  <thead><tr><th>Driver</th><th>Cgroup hierarchy</th><th>Recommended</th></tr></thead>
+  <tbody>
+    <tr><td><code>systemd</code></td><td>Cgroups are managed as systemd units/slices. Hierarchy: <code>system.slice/kubepods.slice/besteffort.slice/pod&lt;uid&gt;/&lt;container&gt;</code></td><td>Yes — use on systemd-based distros (Ubuntu 22.04+, RHEL 8+, Fedora)</td></tr>
+    <tr><td><code>cgroupfs</code></td><td>kubelet writes directly to <code>/sys/fs/cgroup/</code>. Hierarchy: <code>/kubepods/besteffort/pod&lt;uid&gt;/&lt;container&gt;</code></td><td>Legacy — avoid on cgroups v2; can cause double-management issues with systemd</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># Verify cgroup driver agreement
+# kubelet:
+cat /var/lib/kubelet/config.yaml | grep cgroupDriver
+
+# containerd:
+crictl info | grep -i cgroup
+# or:
+grep -A3 "runc.options" /etc/containerd/config.toml | grep SystemdCgroup
+
+# Check if cgroups v2 is active
+stat -fc %T /sys/fs/cgroup/
+# tmpfs = cgroups v1
+# cgroup2fs = cgroups v2</code></pre>
+
+<h2 id="metrics">Prometheus Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Source</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>container_tasks_state</code></td><td>cAdvisor</td><td>Container process states (running, sleeping, stopped, etc.)</td></tr>
+    <tr><td><code>container_memory_working_set_bytes</code></td><td>cAdvisor</td><td>Working set memory — what the OOM killer uses for eviction decisions</td></tr>
+    <tr><td><code>container_cpu_usage_seconds_total</code></td><td>cAdvisor</td><td>Cumulative CPU time; rate = current CPU usage</td></tr>
+    <tr><td><code>container_fs_usage_bytes</code></td><td>cAdvisor</td><td>Container writable layer disk usage</td></tr>
+    <tr><td><code>containerd_snapshots_total</code></td><td>containerd</td><td>Total snapshots in the content store (proxy for image count)</td></tr>
+  </tbody>
+</table>
+
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<details>
+<summary>Runbook 1: Image pull failure — ErrImagePull / ImagePullBackOff</summary>
+<div class="details-body">
+<pre><code class="language-bash"># 1. Get pod events
+kubectl describe pod my-pod | grep -A10 Events
+
+# 2. Common causes:
+# a) Image doesn't exist or wrong tag
+crictl pull myapp:v99   # Test pull directly
+# Fix: check image name spelling and registry
+
+# b) Registry auth failure (401)
+# Events: "unauthorized: authentication required"
+kubectl get secret regcred -o jsonpath='{.data.\.dockerconfigjson}' \
+  | base64 -d | jq .
+# Fix: recreate secret with correct credentials
+
+# c) Registry unreachable (network issue)
+# Test from node:
+curl -v https://registry.example.com/v2/
+# Fix: check DNS, firewall, proxy settings on node
+
+# d) Certificate error (TLS)
+# Events: "x509: certificate signed by unknown authority"
+# Fix: add CA to containerd registry config or node trust store
+# In /etc/containerd/config.toml:
+# [registry.configs."registry.example.com".tls]
+#   ca_file = "/etc/ssl/certs/custom-ca.crt"
+
+# e) Rate limiting (Docker Hub)
+# Events: "toomanyrequests: You have reached your pull rate limit"
+# Fix: use registry mirror, or authenticate with Docker Hub credentials</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Runbook 2: containerd unresponsive — pods stuck creating</summary>
+<div class="details-body">
+<pre><code class="language-bash"># 1. Check containerd service
+systemctl status containerd
+journalctl -u containerd -n 50 --no-pager
+
+# 2. Test CRI socket
+crictl ps --timeout 3s
+# If times out: containerd is not responding
+
+# 3. Check for deadlocks or high load
+top -p $(pidof containerd)
+strace -p $(pidof containerd) -c -f &   # Summary of syscalls
+
+# 4. Check containerd goroutine dump
+kill -USR1 $(pidof containerd)
+# Goroutine dump appears in containerd logs
+
+# 5. Check for disk full (common root cause)
+df -h /var/lib/containerd
+df -h /run/containerd
+
+# 6. Restart containerd (safe — running containers survive via shim)
+systemctl restart containerd
+
+# 7. If still unresponsive after restart, check kernel messages
+dmesg | tail -20 | grep -E "containerd|cgroup|oom"</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Runbook 3: cgroup driver mismatch — containers fail to start</summary>
+<div class="details-body">
+<pre><code class="language-bash"># Symptom: kubelet logs show errors like:
+# "failed to create containerd task: failed to create shim task:
+#  OCI runtime create failed: ... cgroupv2: cgroup path ... is not valid"
+# OR pods stuck in ContainerCreating forever
+
+# 1. Check both sides
+cat /var/lib/kubelet/config.yaml | grep cgroupDriver
+crictl info | grep -A2 cgroupDriver
+
+# 2. Fix containerd config
+vim /etc/containerd/config.toml
+# Set: SystemdCgroup = true   (if kubelet uses systemd)
+# OR:  SystemdCgroup = false  (if kubelet uses cgroupfs)
+
+# 3. Restart containerd
+systemctl restart containerd
+
+# 4. Verify agreement
+crictl info | grep cgroupDriver
+# Should match kubelet config
+
+# 5. Check cgroups v2 (requires systemd driver)
+stat -fc %T /sys/fs/cgroup/
+# cgroup2fs → must use systemd driver</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Runbook 4: Disk full — image storage exhausted</summary>
+<div class="details-body">
+<pre><code class="language-bash"># Symptom: DiskPressure on node, new pods cannot start
+
+# 1. Check disk usage
+df -h /var/lib/containerd
+
+# 2. Find large images
+crictl images -o json | jq -r '.images[] |
+  "\(.size | . / 1048576 | floor)MB\t\(.repoTags[0])"' \
+  | sort -rn | head -20
+
+# 3. Remove unused images immediately
+crictl rmi --prune
+
+# 4. Find containers with large writable layers
+crictl stats -a | sort -k4 -rn | head -10
+
+# 5. Remove exited containers holding disk
+crictl rm $(crictl ps -aq --state exited)
+
+# 6. If kubelet imageGC is not working, check thresholds
+cat /var/lib/kubelet/config.yaml | grep -E "imageGC|High|Low"
+# Lower threshold: imageGCHighThresholdPercent: 70
+
+# 7. Emergency: remove all unused containerd data
+# WARNING: this removes stopped containers and unused images
+ctr --namespace k8s.io images prune --all</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Runbook 5: RuntimeClass not working — pod using wrong runtime</summary>
+<div class="details-body">
+<pre><code class="language-bash"># 1. Verify RuntimeClass object exists
+kubectl get runtimeclass
+kubectl describe runtimeclass kata-qemu
+
+# 2. Verify containerd has the handler configured
+grep -A5 "kata" /etc/containerd/config.toml
+
+# 3. Check if kata/gvisor binary is installed
+which containerd-shim-kata-v2   # or
+ls /usr/local/bin/containerd-shim-*
+
+# 4. Check pod's runtimeClassName is set
+kubectl get pod my-pod -o jsonpath='{.spec.runtimeClassName}'
+
+# 5. Check pod events for runtime errors
+kubectl describe pod my-pod | grep -A10 Events
+# "failed to create containerd task: ... kata: ... binary not found"
+
+# 6. Verify node selector in RuntimeClass matches node labels
+kubectl describe runtimeclass kata-qemu | grep -A5 Scheduling
+kubectl get node worker-1 --show-labels | grep runtime
+
+# 7. Check nested virtualization (for kata-qemu on cloud VMs)
+grep -c vmx /proc/cpuinfo   # Should be > 0
+# On AWS: metal instances or those with nested-virt enabled
+# On GCP: --enable-nested-virtualization node flag</code></pre>
+</div>
+</details>
+
+<h2 id="best-practices">Production Best Practices</h2>
+
+<ol>
+  <li><strong>Use containerd 1.7+ with cgroups v2 and <code>SystemdCgroup = true</code>.</strong> cgroups v2 provides better memory accounting, I/O rate limiting, and pressure events. Ensure both kubelet and containerd use <code>systemd</code> cgroup driver.</li>
+  <li><strong>Pin image digests in production, not tags.</strong> Tags are mutable; <code>myapp@sha256:abc123</code> is immutable. This ensures reproducible deployments and prevents accidental pulls of different versions across nodes.</li>
+  <li><strong>Configure containerd registry mirrors for Docker Hub.</strong> Docker Hub has aggressive rate limits (100 pulls/6h for unauthenticated, 200 for free accounts). Use <code>mirror.gcr.io</code> or a private registry mirror to avoid <code>ImagePullBackOff</code> at scale.</li>
+  <li><strong>Set <code>discard_unpacked_layers = true</code> in containerd config.</strong> This removes intermediate decompressed layer data after unpacking, saving significant disk space (typically 30-50% of image store size).</li>
+  <li><strong>Use RuntimeClass with <code>overhead</code> for sandboxed runtimes.</strong> Without overhead registration, the scheduler treats kata-containers pods as if they have no VM overhead, leading to node over-commitment and out-of-memory failures on the hypervisor.</li>
+  <li><strong>Monitor containerd metrics and watch for slow CRI calls.</strong> <code>kubelet_cri_operation_duration_seconds</code> (exposed by kubelet for CRI calls) should be well under 1s for container create/start operations. Slow CRI calls cascade into PLEG health failures.</li>
+  <li><strong>Pre-pull critical images on nodes using DaemonSets or node startup scripts.</strong> Large images (500MB+) can delay pod startup by 30-60s on cold nodes. Pre-pulling ensures images are available before the first pod requires them.</li>
+  <li><strong>Avoid <code>imagePullPolicy: Always</code> for immutably-tagged images in production.</strong> It adds registry latency to every pod start, increases registry load, and provides no benefit if the image digest hasn't changed.</li>
+</ol>
+
+<div class="nav-footer">
+  <a href="02-kube-proxy.html" class="nav-btn">← kube-proxy</a>
+  <a href="04-cri-interface.html" class="nav-btn next">CRI Interface →</a>
+</div>
+</main>
+
+<aside class="toc-panel" id="toc-panel">
+  <h4>On this page</h4>
+  <a href="#ecosystem">Runtime Ecosystem</a>
+  <a href="#containerd">containerd Architecture</a>
+  <a href="#containerd-config">containerd Configuration</a>
+  <a href="#oci-spec">OCI Standards</a>
+  <a href="#image-layers">Image Layers &amp; Snapshotters</a>
+  <a href="#image-pull">Image Pulling &amp; Auth</a>
+  <a href="#oci-runtimes">OCI Runtimes</a>
+  <a href="#runtimeclass">RuntimeClass</a>
+  <a href="#crictl">crictl — Debugging Tool</a>
+  <a href="#image-management">Image Management</a>
+  <a href="#cgroup-driver">cgroup Driver Consistency</a>
+  <a href="#metrics">Prometheus Metrics</a>
+  <a href="#troubleshooting">Troubleshooting Runbooks</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<button class="back-to-top" id="back-to-top">↑</button>
+
+<script>
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');btn.className='copy-btn';btn.textContent='Copy';
+  pre.style.position='relative';pre.appendChild(btn);
+  btn.addEventListener('click',()=>{navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('.toc-panel a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+document.getElementById('search-input').addEventListener('input',function(){
+  const q=this.value.trim();
+  main.querySelectorAll('mark.search-hl').forEach(m=>{
+    const p=m.parentNode;p.replaceChild(document.createTextNode(m.textContent),m);p.normalize();
+  });
+  if(!q)return;
+  const walk=document.createTreeWalker(main,NodeFilter.SHOW_TEXT);
+  const nodes=[];let n;
+  while((n=walk.nextNode()))nodes.push(n);
+  const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  nodes.forEach(node=>{
+    if(!node.textContent.match(re))return;
+    const span=document.createElement('span');
+    span.innerHTML=node.textContent.replace(re,m=>'<mark class="search-hl">'+m+'</mark>');
+    node.parentNode.replaceChild(span,node);
+  });
+});
+</script>
+</body>
+</html>

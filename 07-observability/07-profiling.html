@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Continuous Profiling — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+/* sidebar */
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.07)}
+/* main */
+main{flex:1;overflow-y:auto;padding:0;max-width:960px}
+.content{padding:40px 48px 80px}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:36px}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px}
+.breadcrumb a{color:var(--text3)}
+h1{font-size:32px;font-weight:700;line-height:1.2;margin-bottom:10px}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--text2)}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:14px;color:var(--text2)}
+ul,ol{margin:0 0 14px 20px;color:var(--text2)}
+li{margin-bottom:4px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:'JetBrains Mono','Fira Code',monospace;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;background:var(--bg3);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+/* callouts */
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout strong{display:block;margin-bottom:4px;font-size:13px}
+.callout p{margin:0;font-size:13px}
+/* tables */
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+td{padding:9px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,.02)}
+/* cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin:0 0 8px;color:var(--text);font-size:14px;text-transform:none;letter-spacing:0}
+.card p{margin:0;font-size:13px}
+.card .tag{margin-top:8px;display:inline-block}
+/* section nav */
+.section-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:13px;color:var(--text2);transition:all .15s}
+.section-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+/* toc */
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:0 0 32px;display:inline-block;min-width:280px;max-width:420px}
+.toc-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:18px}
+.toc li{margin-bottom:3px;font-size:13px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+/* top bar */
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;line-height:1}
+/* back to top */
+.btt{position:fixed;bottom:32px;right:32px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200}
+/* coverage */
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden}
+details.coverage summary{padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;flex-shrink:0}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+.coverage-body li{font-size:12px;color:var(--text2);margin-bottom:2px}
+/* profile type indicator */
+.profile-type{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-right:4px}
+.pt-cpu{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+.pt-mem{background:rgba(88,166,255,.15);color:var(--accent);border:1px solid rgba(88,166,255,.3)}
+.pt-gor{background:rgba(188,140,255,.15);color:var(--purple);border:1px solid rgba(188,140,255,.3)}
+.pt-block{background:rgba(210,153,34,.15);color:var(--yellow);border:1px solid rgba(210,153,34,.3)}
+.pt-ebpf{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+@media(max-width:768px){.sidebar{display:none;position:fixed;z-index:300;height:100vh}.sidebar.open{display:flex}.topbar{display:flex}.content{padding:24px 20px 60px}.coverage-body{grid-template-columns:1fr}.card-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter…" id="nav-filter"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Overview</a>
+    <a href="../01-getting-started/01-core-concepts.html">Core Concepts</a>
+    <a href="../01-getting-started/02-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/03-kubectl-basics.html">kubectl Basics</a>
+    <a href="../01-getting-started/04-first-deployment.html">First Deployment</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../02-workloads/00-pods.html">Pods</a>
+    <a href="../02-workloads/01-deployments.html">Deployments</a>
+    <a href="../02-workloads/02-statefulsets.html">StatefulSets</a>
+    <a href="../02-workloads/03-daemonsets.html">DaemonSets</a>
+    <a href="../02-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../02-workloads/05-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="../02-workloads/06-vertical-pod-autoscaler.html">VPA</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+    <a href="../03-networking/03-network-policies.html">Network Policies</a>
+    <a href="../03-networking/04-dns.html">DNS</a>
+    <a href="../03-networking/05-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">PV &amp; PVC</a>
+    <a href="../04-storage/02-storage-classes.html">StorageClasses</a>
+    <a href="../04-storage/03-stateful-storage-patterns.html">Stateful Patterns</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="../05-security/00-security-overview.html">Overview</a>
+    <a href="../05-security/01-rbac.html">RBAC</a>
+    <a href="../05-security/02-pod-security.html">Pod Security</a>
+    <a href="../05-security/03-network-security.html">Network Security</a>
+    <a href="../05-security/04-secrets-management.html">Secrets Management</a>
+    <a href="../05-security/05-supply-chain-security.html">Supply Chain</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../06-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../06-configuration/01-resource-management.html">Resources</a>
+    <a href="../06-configuration/02-scheduling.html">Scheduling</a>
+    <a href="../06-configuration/03-helm.html">Helm</a>
+    <a href="../06-configuration/04-kustomize.html">Kustomize</a>
+    <a href="../06-configuration/05-admission-controllers.html">Admission</a>
+    <a href="../06-configuration/06-crd-operators.html">CRDs &amp; Operators</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="00-observability-overview.html">Overview</a>
+    <a href="01-metrics.html">Metrics</a>
+    <a href="02-logging.html">Logging</a>
+    <a href="03-tracing.html">Distributed Tracing</a>
+    <a href="04-events.html">Events</a>
+    <a href="05-dashboards.html">Dashboards</a>
+    <a href="06-alerting.html">Alerting</a>
+    <a href="07-profiling.html" class="active">Continuous Profiling</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Platform Engineering</div>
+    <a href="../08-platform-engineering/00-platform-overview.html">Overview</a>
+    <a href="../08-platform-engineering/01-cluster-provisioning.html">Cluster Provisioning</a>
+    <a href="../08-platform-engineering/02-gitops.html">GitOps</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span style="font-size:14px;font-weight:600;color:var(--text)">Continuous Profiling</span>
+</div>
+
+<main id="main">
+<div class="content">
+
+<div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-observability-overview.html">Observability</a> › Continuous Profiling</div>
+
+<div class="page-header">
+  <h1>Continuous Profiling</h1>
+  <div class="page-meta">
+    <span>The fifth observability signal</span>
+    <span class="tag">pprof</span>
+    <span class="tag">Pyroscope</span>
+    <span class="tag">eBPF</span>
+    <span class="tag">Flame Graphs</span>
+    <span class="tag">Platform Engineer</span>
+  </div>
+</div>
+
+<div class="section-nav">
+  <a href="00-observability-overview.html">← Overview</a>
+  <a href="01-metrics.html">Metrics</a>
+  <a href="02-logging.html">Logging</a>
+  <a href="03-tracing.html">Tracing</a>
+  <a href="05-dashboards.html">Dashboards</a>
+  <a href="06-alerting.html">Alerting</a>
+</div>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#what-is-profiling">What Is Continuous Profiling?</a></li>
+    <li><a href="#profile-types">Profile Types Reference</a></li>
+    <li><a href="#go-pprof">Go: pprof Endpoints &amp; Analysis</a></li>
+    <li><a href="#language-profilers">Language-Specific Profilers</a></li>
+    <li><a href="#pyroscope">Grafana Pyroscope</a></li>
+    <li><a href="#ebpf-profiling">eBPF-Based Profiling</a></li>
+    <li><a href="#k8s-component-profiling">Kubernetes Component Profiling</a></li>
+    <li><a href="#flame-graphs">Reading Flame Graphs</a></li>
+    <li><a href="#traces-profiles">Linking Traces to Profiles</a></li>
+    <li><a href="#alerting-profiling">Alerting &amp; Anomaly Detection</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="what-is-profiling">1. What Is Continuous Profiling?</h2>
+
+<p>Profiling answers the question <em>where is time and memory being spent?</em> — a question that metrics, logs, and traces cannot fully answer. Metrics tell you a service is slow. Traces narrow it to a function call. Profiling shows which exact line of code consumed 37% of CPU.</p>
+
+<p><strong>Continuous profiling</strong> means collecting profiles in production constantly, not just during a debug session. Profiles are stored indexed by service/version/time, enabling comparison across deploys and correlation with incidents.</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>Metrics tell you <em>what</em></h4>
+    <p>CPU 90%, p99 latency 2s, memory 4 GiB. Aggregate, low-cardinality, no code-level detail.</p>
+    <span class="tag">prometheus</span>
+  </div>
+  <div class="card">
+    <h4>Traces tell you <em>where</em></h4>
+    <p>Request took 2s: 1.8s in <code>db.Query()</code>. Span-level, single-request granularity.</p>
+    <span class="tag">tempo / jaeger</span>
+  </div>
+  <div class="card">
+    <h4>Profiles tell you <em>why</em></h4>
+    <p><code>db.Query()</code> spent 1.4s in JSON serialisation of a 50-field struct. Function-level hot path.</p>
+    <span class="tag">pyroscope / pprof</span>
+  </div>
+</div>
+
+<h3>Continuous vs On-Demand Profiling</h3>
+
+<table>
+  <tr><th>Dimension</th><th>On-Demand</th><th>Continuous</th></tr>
+  <tr><td>Trigger</td><td>Manual (incident or debug session)</td><td>Always running — timed samples</td></tr>
+  <tr><td>Overhead</td><td>High during collection (can be &gt;10%)</td><td>Low constant overhead (0.5–2%)</td></tr>
+  <tr><td>Reproducibility</td><td>Difficult — must reproduce the issue</td><td>Profiles captured during the original event</td></tr>
+  <tr><td>Historical comparison</td><td>None</td><td>Compare any two timestamps or commits</td></tr>
+  <tr><td>Kubernetes fit</td><td>Poor — pods are ephemeral</td><td>Excellent — samples labelled by pod/node</td></tr>
+</table>
+
+<h3>The Observability Stack with Profiling</h3>
+
+<pre><code>Alert fires (Alertmanager)
+  │
+  ▼
+Metric spike  ──────── Grafana / Prometheus
+  │  (exemplar)
+  ▼
+Trace (Tempo / Jaeger) — which function was slow?
+  │  (profile_id link)
+  ▼
+Profile (Pyroscope) — which line consumed CPU/memory?
+  │
+  ▼
+Code fix + deploy — compare profiles before/after</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="profile-types">2. Profile Types Reference</h2>
+
+<table>
+  <tr><th>Profile Type</th><th>What It Measures</th><th>Languages</th><th>Typical Use Case</th></tr>
+  <tr>
+    <td><span class="profile-type pt-cpu">cpu</span></td>
+    <td>CPU time consumed by each function (sampled at 100 Hz)</td>
+    <td>Go, Java, Python, Rust, .NET, Ruby</td>
+    <td>High CPU usage, latency regression</td>
+  </tr>
+  <tr>
+    <td><span class="profile-type pt-mem">heap</span></td>
+    <td>Live heap allocations (bytes allocated / objects in use)</td>
+    <td>Go, Java (heap dump), .NET</td>
+    <td>Memory leak, OOM root cause</td>
+  </tr>
+  <tr>
+    <td><span class="profile-type pt-mem">allocs</span></td>
+    <td>All memory allocations including those already freed</td>
+    <td>Go</td>
+    <td>GC pressure, excessive short-lived objects</td>
+  </tr>
+  <tr>
+    <td><span class="profile-type pt-gor">goroutine</span></td>
+    <td>Stack traces of all current goroutines</td>
+    <td>Go</td>
+    <td>Goroutine leak, deadlock investigation</td>
+  </tr>
+  <tr>
+    <td><span class="profile-type pt-block">mutex</span></td>
+    <td>Contended mutex lock wait time</td>
+    <td>Go</td>
+    <td>Lock contention under concurrency</td>
+  </tr>
+  <tr>
+    <td><span class="profile-type pt-block">block</span></td>
+    <td>Blocking operations (channel receives, syscalls)</td>
+    <td>Go</td>
+    <td>Channel deadlocks, slow I/O paths</td>
+  </tr>
+  <tr>
+    <td><span class="profile-type pt-ebpf">wall</span></td>
+    <td>Wall-clock time (CPU + I/O wait)</td>
+    <td>Go, Java (async-profiler), eBPF</td>
+    <td>Distinguishing I/O-bound vs CPU-bound work</td>
+  </tr>
+  <tr>
+    <td><span class="profile-type pt-cpu">threadcreate</span></td>
+    <td>Stack traces that led to OS thread creation</td>
+    <td>Go</td>
+    <td>Excessive cgo or syscall thread spawning</td>
+  </tr>
+  <tr>
+    <td><span class="profile-type pt-ebpf">eBPF CPU</span></td>
+    <td>CPU samples from OS kernel (zero instrumentation)</td>
+    <td>Any (Go/C/C++/Rust/Java)</td>
+    <td>Cross-language profiling, kernel overhead</td>
+  </tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>Sampling Profilers vs Instrumented Profilers</strong>
+  <p>Sampling profilers (pprof, async-profiler, eBPF) interrupt the process at a fixed rate (e.g., 100 Hz) and record the call stack. Overhead is proportional to sample rate. Instrumented profilers (JVM TI, .NET ETW) inject code at every method entry/exit — exact counts but 5–20× overhead. Always prefer sampling for production continuous profiling.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="go-pprof">3. Go: pprof Endpoints &amp; Analysis</h2>
+
+<h3>Enabling the pprof HTTP Server</h3>
+
+<pre><code>// main.go — register net/http/pprof handlers on a separate port
+import (
+    "net/http"
+    _ "net/http/pprof" // registers /debug/pprof/* handlers as side effect
+)
+
+func main() {
+    // Application server on :8080
+    go func() {
+        http.ListenAndServe(":6060", nil) // pprof on :6060
+    }()
+    // ...
+}</code></pre>
+
+<div class="callout callout-danger">
+  <strong>Never expose pprof on the public-facing port</strong>
+  <p>pprof endpoints reveal heap contents, goroutine stacks (may contain request data), and allow CPU load spikes. Bind to a separate port (e.g., <code>:6060</code>) and restrict via NetworkPolicy to only the profiling scraper DaemonSet or admin namespace.</p>
+</div>
+
+<h3>pprof HTTP Endpoints</h3>
+
+<table>
+  <tr><th>Endpoint</th><th>Profile</th><th>Duration</th></tr>
+  <tr><td><code>/debug/pprof/profile?seconds=30</code></td><td>CPU (30s sample)</td><td>Required: seconds param</td></tr>
+  <tr><td><code>/debug/pprof/heap</code></td><td>Heap (live allocations)</td><td>Instant snapshot</td></tr>
+  <tr><td><code>/debug/pprof/allocs</code></td><td>All allocations since start</td><td>Instant snapshot</td></tr>
+  <tr><td><code>/debug/pprof/goroutine</code></td><td>All goroutine stacks</td><td>Instant snapshot</td></tr>
+  <tr><td><code>/debug/pprof/mutex</code></td><td>Mutex contention</td><td>Instant (requires mutex fraction)</td></tr>
+  <tr><td><code>/debug/pprof/block</code></td><td>Block/channel waits</td><td>Instant (requires block rate)</td></tr>
+  <tr><td><code>/debug/pprof/threadcreate</code></td><td>Thread creation stack traces</td><td>Instant snapshot</td></tr>
+  <tr><td><code>/debug/pprof/trace?seconds=5</code></td><td>Go runtime execution trace</td><td>Required: seconds param</td></tr>
+</table>
+
+<h3>Enabling Mutex and Block Profiling</h3>
+
+<pre><code>import "runtime"
+
+func init() {
+    // Report 1/5 of all mutex contention events (fraction = 5)
+    runtime.SetMutexProfileFraction(5)
+    // Report 1/1 of all blocking events (rate = 1 ns threshold)
+    runtime.SetBlockProfileRate(1)
+}</code></pre>
+
+<h3>Collecting and Analysing Profiles with go tool pprof</h3>
+
+<pre><code># Download CPU profile (30s sample) from a pod
+kubectl port-forward pod/myapp-7d9f8b6c4-xk2p9 6060:6060 &
+
+# CPU profile
+go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
+
+# Heap profile
+go tool pprof http://localhost:6060/debug/pprof/heap
+
+# Interactive pprof commands:
+(pprof) top10              # top 10 functions by flat/cumulative time
+(pprof) web                # open flame graph in browser (requires graphviz)
+(pprof) list FunctionName  # annotated source listing
+(pprof) traces             # sample-level call stacks
+(pprof) tree               # tree view of cumulative costs
+(pprof) svg                # output SVG call graph
+
+# Save for later comparison:
+go tool pprof -output before.pb.gz http://localhost:6060/debug/pprof/heap
+# After deploy:
+go tool pprof -output after.pb.gz http://localhost:6060/debug/pprof/heap
+# Diff:
+go tool pprof -diff_base before.pb.gz after.pb.gz</code></pre>
+
+<h3>Continuous pprof Collection via Pyroscope SDK (Go)</h3>
+
+<pre><code>import (
+    "github.com/grafana/pyroscope-go"
+)
+
+func initProfiling() {
+    pyroscope.Start(pyroscope.Config{
+        ApplicationName: "order-service",
+        ServerAddress:   "http://pyroscope.observability.svc:4040",
+        Logger:          pyroscope.StandardLogger,
+        Tags: map[string]string{
+            "pod":       os.Getenv("POD_NAME"),
+            "namespace": os.Getenv("POD_NAMESPACE"),
+            "version":   os.Getenv("APP_VERSION"),
+        },
+        ProfileTypes: []pyroscope.ProfileType{
+            pyroscope.ProfileCPU,
+            pyroscope.ProfileAllocObjects,
+            pyroscope.ProfileAllocSpace,
+            pyroscope.ProfileInuseObjects,
+            pyroscope.ProfileInuseSpace,
+            pyroscope.ProfileGoroutines,
+            pyroscope.ProfileMutexCount,
+            pyroscope.ProfileMutexDuration,
+            pyroscope.ProfileBlockCount,
+            pyroscope.ProfileBlockDuration,
+        },
+    })
+}</code></pre>
+
+<h3>Labels for Per-Request Profiling</h3>
+
+<p>Pyroscope labels (and pprof runtime labels) allow attributing CPU time to a specific tenant, endpoint, or user — without separate profiling runs.</p>
+
+<pre><code>import (
+    "github.com/grafana/pyroscope-go"
+    "runtime/pprof"
+)
+
+func handleRequest(w http.ResponseWriter, r *http.Request) {
+    tenantID := r.Header.Get("X-Tenant-ID")
+    endpoint := r.URL.Path
+
+    // Dynamic labels — profile data is segmented by these in Pyroscope
+    pyroscope.TagWrapper(r.Context(), pyroscope.Labels(
+        "tenant_id", tenantID,
+        "endpoint", endpoint,
+    ), func(ctx context.Context) {
+        // All CPU time while this closure executes is tagged
+        processRequest(ctx, w, r)
+    })
+}</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="language-profilers">4. Language-Specific Profilers</h2>
+
+<h3>Java: async-profiler &amp; JFR</h3>
+
+<p>async-profiler is an async-safe sampling profiler for JVM that uses <code>AsyncGetCallTrace</code> API (avoids safepoint bias present in older profilers like YourKit in sampling mode) and <code>perf_events</code> for CPU samples.</p>
+
+<pre><code># Attach async-profiler to a running JVM (via agent)
+# In Dockerfile or K8s initContainer, download async-profiler
+RUN wget https://github.com/async-profiler/async-profiler/releases/download/v3.0/async-profiler-3.0-linux-x64.tar.gz
+
+# Kubernetes: mount via initContainer, attach via profiler container
+# Or use Pyroscope Java agent for continuous collection:
+java -javaagent:/opt/pyroscope.jar \
+     -Dpyroscope.server.address=http://pyroscope.observability.svc:4040 \
+     -Dpyroscope.application.name=payment-service \
+     -Dpyroscope.format=jfr \
+     -Dpyroscope.profiler.event=cpu \
+     -jar app.jar</code></pre>
+
+<pre><code># application.properties for Pyroscope Spring Boot integration
+pyroscope.server.address=http://pyroscope.observability.svc:4040
+pyroscope.application.name=${spring.application.name}
+pyroscope.format=jfr
+pyroscope.profiling.interval=10ms
+pyroscope.labels.pod=${POD_NAME}
+pyroscope.labels.namespace=${POD_NAMESPACE}</code></pre>
+
+<h4>JVM Flight Recorder (JFR) — Built-in since JDK 11</h4>
+
+<pre><code># Start JFR recording in a running pod
+kubectl exec -it pod/payment-svc-abc123 -- \
+  jcmd 1 JFR.start duration=60s filename=/tmp/recording.jfr settings=profile
+
+# Copy and analyse with JDK Mission Control
+kubectl cp payment-svc-abc123:/tmp/recording.jfr ./recording.jfr
+jmc -open recording.jfr</code></pre>
+
+<h3>Python: py-spy</h3>
+
+<p>py-spy is a sampling profiler for Python that reads the CPython process memory without requiring code changes or a Python interpreter restart.</p>
+
+<pre><code># Install py-spy in your Python container (or as ephemeral container)
+pip install py-spy
+
+# Attach to a running Python process (PID 1 in container)
+py-spy record --output profile.svg --duration 30 --pid 1
+
+# For continuous collection with Pyroscope:
+pip install pyroscope-io</code></pre>
+
+<pre><code"># Python app — Pyroscope SDK
+import pyroscope
+
+pyroscope.configure(
+    application_name="ml-inference",
+    server_address="http://pyroscope.observability.svc:4040",
+    tags={
+        "pod": os.environ.get("POD_NAME", ""),
+        "version": os.environ.get("APP_VERSION", ""),
+    },
+)
+
+# Tag per-request
+with pyroscope.tag_wrapper({"endpoint": "/predict", "model": model_name}):
+    result = run_inference(payload)</code></pre>
+
+<h3>Node.js: Clinic.js &amp; 0x</h3>
+
+<pre><code># Install profiling tools
+npm install -g clinic 0x
+
+# Production-safe: Pyroscope Node.js SDK
+npm install @pyroscope/nodejs</code></pre>
+
+<pre><code>// index.js — Pyroscope SDK for Node.js
+const Pyroscope = require('@pyroscope/nodejs');
+
+Pyroscope.init({
+  serverAddress: 'http://pyroscope.observability.svc:4040',
+  appName: 'api-gateway',
+  tags: {
+    pod: process.env.POD_NAME || '',
+    namespace: process.env.POD_NAMESPACE || '',
+  },
+});
+Pyroscope.start();</code></pre>
+
+<h3>Rust: pprof-rs</h3>
+
+<pre><code"># Cargo.toml
+[dependencies]
+pprof = { version = "0.13", features = ["flamegraph", "protobuf-codec"] }
+
+# Expose /debug/pprof endpoint via actix-web or axum handler
+use pprof::ProfilerGuardBuilder;
+
+async fn cpu_profile() -> impl Responder {
+    let guard = ProfilerGuardBuilder::default()
+        .frequency(100)
+        .blocklist(&["libc", "libgcc", "pthread"])
+        .build()
+        .unwrap();
+    tokio::time::sleep(Duration::from_secs(30)).await;
+    let report = guard.report().build().unwrap();
+    let mut body = Vec::new();
+    report.pprof().unwrap().encode(&mut body).unwrap();
+    HttpResponse::Ok().content_type("application/octet-stream").body(body)
+}</code></pre>
+
+<h3>.NET: dotnet-trace &amp; Pyroscope</h3>
+
+<pre><code># dotnet-trace (built-in .NET diagnostic tool)
+dotnet-trace collect --process-id 1 --duration 00:00:30
+
+# Pyroscope .NET agent (via environment variable injection)
+# In Kubernetes Pod spec:
+env:
+- name: CORECLR_ENABLE_PROFILING
+  value: "1"
+- name: CORECLR_PROFILER
+  value: "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}"
+- name: CORECLR_PROFILER_PATH
+  value: /pyroscope/Pyroscope.Profiler.Native.so
+- name: PYROSCOPE_SERVER_ADDRESS
+  value: http://pyroscope.observability.svc:4040
+- name: PYROSCOPE_APPLICATION_NAME
+  value: cart-service</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="pyroscope">5. Grafana Pyroscope</h2>
+
+<h3>Architecture</h3>
+
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│                    Pyroscope Cluster                     │
+│                                                          │
+│  Push (SDK)          Pull (scrape)                       │
+│  ┌────────┐         ┌────────────────┐                   │
+│  │ app    │──push──▶│  distributor   │                   │
+│  │ SDK    │         └───────┬────────┘                   │
+│  └────────┘                 │ fan-out                    │
+│                    ┌────────▼────────┐                   │
+│  ┌────────────┐   │    ingester      │ (WAL + ring)      │
+│  │ Pyroscope  │───│    (3 replicas)  │                   │
+│  │ scrape     │   └────────┬─────────┘                   │
+│  │ (pprof pull│            │ flush                       │
+│  │  targets)  │   ┌────────▼────────┐                   │
+│  └────────────┘   │   object store  │ (S3 / GCS)        │
+│                    │   (blocks)      │                   │
+│                    └────────┬────────┘                   │
+│                    ┌────────▼────────┐                   │
+│                    │  store-gateway  │ (cache + query)   │
+│                    └────────┬────────┘                   │
+│                    ┌────────▼────────┐                   │
+│                    │ query-frontend  │◀── Grafana        │
+│                    └─────────────────┘                   │
+└─────────────────────────────────────────────────────────┘</code></pre>
+
+<h3>Helm Install — Pyroscope Distributed</h3>
+
+<pre><code>helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+helm upgrade --install pyroscope grafana/pyroscope \
+  --namespace observability \
+  --create-namespace \
+  --values pyroscope-values.yaml</code></pre>
+
+<h3>pyroscope-values.yaml (Production)</h3>
+
+<pre><code>pyroscope:
+  replicationFactor: 3
+
+  storage:
+    backend: s3
+    s3:
+      bucket_name: my-pyroscope-profiles
+      region: us-east-1
+      # Use IRSA — no access keys in cluster
+
+  components:
+    distributor:
+      replicas: 2
+      resources:
+        requests: {cpu: 500m, memory: 512Mi}
+        limits: {memory: 1Gi}
+
+    ingester:
+      replicas: 3
+      persistence:
+        enabled: true
+        size: 20Gi
+      resources:
+        requests: {cpu: 1, memory: 2Gi}
+        limits: {memory: 4Gi}
+
+    querier:
+      replicas: 2
+      resources:
+        requests: {cpu: 1, memory: 1Gi}
+        limits: {memory: 2Gi}
+
+    query-frontend:
+      replicas: 2
+
+    store-gateway:
+      replicas: 3
+      persistence:
+        enabled: true
+        size: 50Gi
+
+    compactor:
+      replicas: 1
+      persistence:
+        enabled: true
+        size: 50Gi
+
+  limits:
+    # Global defaults
+    max_sample_age: 24h
+    # Per-tenant overrides via ConfigMap
+
+  retention:
+    default: 720h  # 30 days
+
+  # Scrape pprof endpoints from pods with annotation
+  scrapeConfigs:
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+        - role: pod
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_scrape]
+          action: keep
+          regex: "true"
+        - source_labels: [__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port]
+          action: replace
+          target_label: __address__
+          regex: (.+)
+          replacement: "${1}:$1"
+          # Override with annotation port
+        - source_labels: [__meta_kubernetes_pod_name]
+          target_label: pod
+        - source_labels: [__meta_kubernetes_namespace]
+          target_label: namespace
+        - source_labels: [__meta_kubernetes_pod_label_app]
+          target_label: service_name
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/pyroscope-s3-role</code></pre>
+
+<h3>Pod Annotations for Pull-Mode Scraping</h3>
+
+<pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+spec:
+  template:
+    metadata:
+      annotations:
+        # Enable CPU profiling scrape
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/cpu.port: "6060"
+        profiles.grafana.com/cpu.path: "/debug/pprof/profile"
+        # Enable memory profiling scrape
+        profiles.grafana.com/memory.scrape: "true"
+        profiles.grafana.com/memory.port: "6060"
+        profiles.grafana.com/memory.path: "/debug/pprof/heap"
+        # Enable goroutine profiling scrape
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/goroutine.port: "6060"
+        profiles.grafana.com/goroutine.path: "/debug/pprof/goroutine"</code></pre>
+
+<h3>Grafana Data Source for Pyroscope</h3>
+
+<pre><code>apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-pyroscope
+  namespace: observability
+  labels:
+    grafana_datasource: "1"
+data:
+  pyroscope.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Pyroscope
+        type: grafana-pyroscope-datasource
+        url: http://pyroscope.observability.svc:4040
+        isDefault: false
+        jsonData:
+          minStep: "15s"</code></pre>
+
+<h3>Pyroscope Query Language (FlameQL)</h3>
+
+<pre><code># Select CPU profiles for the order-service
+{service_name="order-service"}
+
+# Filter by namespace and pod
+{service_name="order-service", namespace="production", pod=~"order-service-.*"}
+
+# Filter by dynamic label (set via SDK TagWrapper)
+{service_name="order-service", endpoint="/api/checkout"}
+
+# Compare two time ranges (diff mode in Grafana UI):
+# baseline: 2024-01-15T10:00:00Z / 2024-01-15T10:30:00Z
+# comparison: 2024-01-15T11:00:00Z / 2024-01-15T11:30:00Z</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="ebpf-profiling">6. eBPF-Based Profiling</h2>
+
+<p>eBPF profilers run in the Linux kernel and capture CPU stack traces for every process on a node — including native code, JVM internals, and kernel functions — without any application instrumentation. This makes them ideal for profiling languages where SDK injection is impractical (C/C++, Rust) or for getting a full-system view.</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>Grafana Alloy (eBPF profiler)</h4>
+    <p>Part of the Grafana observability stack. DaemonSet agent that uses eBPF perf events + DWARF unwinding. Ships profiles directly to Pyroscope.</p>
+    <span class="tag pt-ebpf">recommended</span>
+  </div>
+  <div class="card">
+    <h4>Parca Agent</h4>
+    <p>CNCF project. eBPF CPU profiling DaemonSet. Stores profiles in Parca server (similar to Pyroscope). Open source, BPF CO-RE (no kernel header deps).</p>
+    <span class="tag">CNCF</span>
+  </div>
+  <div class="card">
+    <h4>Pixie</h4>
+    <p>CNCF project. eBPF-based auto-telemetry (metrics + traces + profiles + network maps) with no instrumentation. Strong Go/Java/C++ support.</p>
+    <span class="tag">CNCF</span>
+  </div>
+  <div class="card">
+    <h4>Elastic Universal Profiling</h4>
+    <p>Commercial eBPF profiler in Elastic Stack. Full-stack profiling from kernel to application. Correlates with Elastic APM traces.</p>
+    <span class="tag">commercial</span>
+  </div>
+</div>
+
+<h3>Grafana Alloy eBPF Profiling DaemonSet</h3>
+
+<pre><code>helm upgrade --install alloy grafana/alloy \
+  --namespace observability \
+  --values alloy-values.yaml</code></pre>
+
+<pre><code># alloy-values.yaml (eBPF profiling config)
+alloy:
+  configMap:
+    content: |
+      // eBPF CPU profiler — no app instrumentation required
+      pyroscope.ebpf "all_pods" {
+        targets_only      = false          // profile all processes
+        demangle          = "full"         // C++ symbol demangling
+        python_enabled    = true           // Python frame unwinding
+        collect_interval  = "15s"
+
+        forward_to = [pyroscope.write.default.receiver]
+      }
+
+      // Kubernetes pod enrichment — add namespace/pod/service labels
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      pyroscope.write "default" {
+        endpoint {
+          url = "http://pyroscope.observability.svc:4040"
+        }
+        external_labels = {
+          "cluster" = "production",
+        }
+      }
+
+daemonset:
+  enabled: true
+
+# Required Linux capabilities for eBPF
+podSecurityContext:
+  runAsUser: 0
+
+containerSecurityContext:
+  privileged: true          # eBPF requires elevated privileges
+  capabilities:
+    add:
+      - SYS_ADMIN
+      - SYS_PTRACE
+      - NET_ADMIN</code></pre>
+
+<div class="callout callout-warn">
+  <strong>eBPF Privileges</strong>
+  <p>eBPF profilers require <code>SYS_ADMIN</code> and <code>SYS_PTRACE</code> capabilities. They must run as root (UID 0) and use <code>hostPID: true</code> to see all container processes. This is expected for node-level agents — apply strict NetworkPolicy and RBAC so the DaemonSet ServiceAccount cannot access application secrets or APIs beyond what's needed for pod label enrichment.</p>
+</div>
+
+<h3>eBPF vs SDK Profiling Comparison</h3>
+
+<table>
+  <tr><th>Dimension</th><th>SDK / Pull (pprof)</th><th>eBPF Agent (Alloy/Parca)</th></tr>
+  <tr><td>Instrumentation required</td><td>Yes (import SDK or add agent JVM arg)</td><td>None</td></tr>
+  <tr><td>Languages supported</td><td>Per-SDK (Go, Java, Python, .NET, Node)</td><td>All (C, Go, Rust, Java, Python, Node)</td></tr>
+  <tr><td>Profile types</td><td>CPU, heap, allocs, goroutine, mutex, block</td><td>CPU (wall), some memory via USDT probes</td></tr>
+  <tr><td>Per-request labels</td><td>Yes (TagWrapper / runtime labels)</td><td>No (pod/container level only)</td></tr>
+  <tr><td>Kernel visibility</td><td>Userspace only</td><td>Full kernel + userspace stacks</td></tr>
+  <tr><td>JVM Java frames</td><td>Full (JVM knows method names)</td><td>Partial without javaagent; use perf-map-agent</td></tr>
+  <tr><td>Container overhead</td><td>Low per app (~1–2% CPU)</td><td>Low per node (~0.5% per profiled process)</td></tr>
+  <tr><td>Zero-day coverage</td><td>Only opted-in services</td><td>Every process on the node automatically</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="k8s-component-profiling">7. Kubernetes Component Profiling</h2>
+
+<p>All core Kubernetes components expose pprof endpoints natively — enabling profiling of the control plane itself when diagnosing API server latency, scheduler queue depth, or etcd compaction pauses.</p>
+
+<h3>Accessing Component pprof Endpoints</h3>
+
+<pre><code># kube-apiserver — requires authentication
+# Port-forward via kubectl proxy or direct pod port-forward
+kubectl -n kube-system port-forward pod/kube-apiserver-controlplane-0 6443:6443
+
+# CPU profile of the API server (30s)
+curl -sk --cert /etc/kubernetes/pki/admin.crt \
+         --key  /etc/kubernetes/pki/admin.key \
+         "https://localhost:6443/debug/pprof/profile?seconds=30" \
+         > apiserver.pprof
+
+go tool pprof apiserver.pprof</code></pre>
+
+<pre><code># kube-scheduler (insecure port 10251 or secure port 10259)
+kubectl -n kube-system port-forward pod/kube-scheduler-controlplane-0 10259:10259
+curl -sk "https://localhost:10259/debug/pprof/heap" --cert ... > scheduler-heap.pprof
+
+# kube-controller-manager (port 10257)
+kubectl -n kube-system port-forward pod/kube-controller-manager-controlplane-0 10257:10257
+curl -sk "https://localhost:10257/debug/pprof/goroutine?debug=1" --cert ...
+
+# kubelet (port 10250 on each node)
+NODE_IP=$(kubectl get node worker-1 -o jsonpath='{.status.addresses[0].address}')
+curl -sk "https://${NODE_IP}:10250/debug/pprof/profile?seconds=30" \
+     --header "Authorization: Bearer $(kubectl create token default)" > kubelet.pprof
+
+# etcd (port 2379 — requires etcd client cert)
+kubectl -n kube-system exec etcd-controlplane-0 -- \
+  curl -sk "https://localhost:2379/debug/pprof/heap" \
+       --cert /etc/kubernetes/pki/etcd/server.crt \
+       --key  /etc/kubernetes/pki/etcd/server.key > etcd-heap.pprof</code></pre>
+
+<h3>Common Control Plane Profiling Scenarios</h3>
+
+<table>
+  <tr><th>Symptom</th><th>Component</th><th>Profile Type</th><th>What to Look For</th></tr>
+  <tr><td>API server high latency</td><td>kube-apiserver</td><td>CPU + goroutine</td><td>etcd calls, admission webhook latency, LIST serialisation</td></tr>
+  <tr><td>Scheduler queue growing</td><td>kube-scheduler</td><td>CPU + goroutine</td><td>Predicate/scoring plugins, priority queue operations</td></tr>
+  <tr><td>etcd high memory</td><td>etcd</td><td>heap</td><td>Large objects in watch cache, compaction lag, mvcc index</td></tr>
+  <tr><td>Controller manager slow</td><td>kube-controller-manager</td><td>CPU</td><td>GC loops, requeue storms, informer cache resync</td></tr>
+  <tr><td>Node CPU spike</td><td>kubelet</td><td>CPU + goroutine</td><td>Image pulls, pod lifecycle, CRI calls, eviction checks</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="flame-graphs">8. Reading Flame Graphs</h2>
+
+<p>A flame graph shows all stack traces collected during the profiling period, merged and sorted alphabetically at each level. The x-axis represents <em>proportion of sampled time</em> (not wall-clock order). The y-axis represents call depth (root at bottom in traditional flame graphs, or top in Pyroscope's icicle graphs).</p>
+
+<pre><code>Reading a flame graph:
+
+  ┌──────────────────────────────────────────────────────┐
+  │                     runtime.main                     │  ← root (widest = most time)
+  ├──────────────────────────┬───────────────────────────┤
+  │    http.(*ServeMux).     │    runtime.gcBgMarkWorker │  ← GC taking ~30% CPU!
+  │    ServeHTTP  (70%)      │    (30%)                  │
+  ├──────────┬───────────────┤                           │
+  │ handler  │ middleware.Do │                           │
+  │ (45%)    │ (25%)         │                           │
+  ├───┬──────┤               │                           │
+  │db │json  │               │                           │
+  │   │.Marshal               │                           │
+  └───┴──────┴───────────────┴───────────────────────────┘
+
+Width   = proportion of total samples where this function was on the stack
+Tall    = deep call stack (not necessarily slow)
+Wide    = this function (or its callees) uses a lot of CPU
+Plateau = the function itself (not its callees) is using the CPU
+Color   = arbitrary (typically indicates package/module/type in Pyroscope)</code></pre>
+
+<div class="callout callout-info">
+  <strong>Identifying Hot Functions</strong>
+  <p>Look for wide frames at the <em>top</em> of the flame graph (or bottom of an icicle graph) — these are "leaf" functions that consume time themselves rather than passing it to callees. A wide frame in the middle means a common call path, but the cost may be in its children. Use the <strong>diff mode</strong> in Pyroscope to highlight functions that grew between a before/after comparison.</p>
+</div>
+
+<h3>Pyroscope Diff Workflow</h3>
+
+<pre><code># Using Pyroscope HTTP API to compare two time ranges
+# Baseline: before deploy (T-1h to T-30m)
+# Comparison: after deploy (T-10m to now)
+
+curl "http://pyroscope.observability.svc:4040/render?
+  query=order-service.cpu%7Bnamespace%3D%22production%22%7D
+  &from=now-1h&until=now-30m
+  &format=json" > baseline.json
+
+curl "http://pyroscope.observability.svc:4040/render?
+  query=order-service.cpu%7Bnamespace%3D%22production%22%7D
+  &from=now-10m&until=now
+  &format=json" > after.json
+
+# Or use Grafana Explore → Pyroscope datasource → Diff mode (select two date ranges)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="traces-profiles">9. Linking Traces to Profiles</h2>
+
+<p>Pyroscope supports attaching a <code>profile_id</code> label to profiles at the same time a trace span is active. This allows Grafana Tempo to show a "View Profile" link directly from a trace span, drilling into the exact CPU usage during that request.</p>
+
+<h3>Go: Profiling a Specific Trace Span</h3>
+
+<pre><code>import (
+    "github.com/grafana/otel-profiling-go"
+    "go.opentelemetry.io/otel"
+)
+
+// In your HTTP handler, after setting up OTel tracer and Pyroscope:
+func handleCheckout(w http.ResponseWriter, r *http.Request) {
+    ctx, span := otel.Tracer("order-service").Start(r.Context(), "checkout")
+    defer span.End()
+
+    // otelpyroscope middleware attaches span context to Pyroscope labels
+    // so profiles can be linked to this specific trace ID
+    ctx = otelpyroscope.Start(ctx)
+    defer otelpyroscope.Stop(ctx)
+
+    // The CPU time of processCheckout is now labelled with:
+    // profile_id = span.TraceID (correlates with Tempo)
+    processCheckout(ctx, w, r)
+}</code></pre>
+
+<h3>Grafana Tempo → Pyroscope Integration</h3>
+
+<pre><code># grafana/provisioning/datasources/tempo.yaml
+apiVersion: 1
+datasources:
+  - name: Tempo
+    type: tempo
+    url: http://tempo-query-frontend.observability.svc:3100
+    jsonData:
+      tracesToProfiles:
+        datasourceUid: pyroscope
+        tags:
+          - key: service.name
+            value: service_name
+        profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
+        customQuery: false</code></pre>
+
+<p>With this configuration, Tempo trace spans show a "Profile" button. Clicking it opens Pyroscope filtered to the same <code>service_name</code> and time window as the trace span — giving a CPU flame graph for the exact duration of the slow request.</p>
+
+<h3>Correlation Flow</h3>
+
+<pre><code>1. Alert: "p99 checkout latency > 3s for last 10 min"
+              │
+2. Grafana → Tempo trace search
+   → Find a slow checkout trace (2.8s)
+   → Identify slow span: "process_payment" (2.4s)
+              │
+3. Click "View Profile" on the span
+   → Pyroscope flame graph for that 2.4s window
+   → 68% of CPU in json.Marshal(*PaymentResponse)
+   → PaymentResponse has 120 fields, most nil
+              │
+4. Fix: return only populated fields / use proto instead of JSON
+   → Deploy → compare Pyroscope profiles before/after
+   → json.Marshal reduced from 68% → 4% of CPU
+   → p99 latency: 2.8s → 180ms</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="alerting-profiling">10. Alerting &amp; Anomaly Detection</h2>
+
+<h3>Pyroscope Self-Metrics (Prometheus)</h3>
+
+<pre><code># Pyroscope exposes Prometheus metrics on :4040/metrics
+pyroscope_ingester_profiles_received_total    # profiles being pushed
+pyroscope_distributor_received_samples_total  # samples received
+pyroscope_querier_query_duration_seconds      # query latency histogram
+pyroscope_compactor_block_cleanup_failures_total
+pyroscope_ring_members{name="ingester",state="ACTIVE"}  # ring health</code></pre>
+
+<h3>PrometheusRule — Pyroscope Health</h3>
+
+<pre><code>apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pyroscope-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: pyroscope
+      interval: 1m
+      rules:
+        - alert: PyroscopeIngesterDown
+          expr: |
+            count(pyroscope_ring_members{name="ingester",state="ACTIVE"}) < 2
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Pyroscope ingester ring below quorum"
+            description: "Only {{ $value }} ingesters active, expected ≥ 2"
+
+        - alert: PyroscopeDroppingProfiles
+          expr: |
+            rate(pyroscope_distributor_received_samples_total{status="dropped"}[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pyroscope distributor is dropping profiles"
+
+        - alert: PyroscopeQueryLatencyHigh
+          expr: |
+            histogram_quantile(0.99,
+              rate(pyroscope_querier_query_duration_seconds_bucket[5m])
+            ) > 30
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pyroscope p99 query latency > 30s"</code></pre>
+
+<h3>Detecting CPU Regressions via Pyroscope API</h3>
+
+<p>Because Pyroscope stores profiles as time series, you can query aggregated CPU time and alert on regressions using Prometheus-style metric queries if you enable Pyroscope's metric export.</p>
+
+<pre><code># pyroscope-values.yaml — enable metric exporter
+pyroscope:
+  extraConfig:
+    metric_store:
+      enabled: true
+      # Aggregates CPU samples as prometheus metrics:
+      # pyroscope_app_cpu_seconds_total{service_name, namespace}
+
+# Then alert on CPU regression:
+- alert: ServiceCPURegressionDetected
+  expr: |
+    (
+      rate(pyroscope_app_cpu_seconds_total{namespace="production"}[30m])
+      /
+      rate(pyroscope_app_cpu_seconds_total{namespace="production"}[30m] offset 1h)
+    ) > 1.5
+  for: 15m
+  labels:
+    severity: warning
+  annotations:
+    summary: "{{ $labels.service_name }} CPU increased >50% vs 1h ago"
+    description: "CPU regression detected — compare profiles in Pyroscope"
+    runbook: "https://runbooks.internal/cpu-regression"</code></pre>
+
+<h3>NetworkPolicy: Restrict pprof Access</h3>
+
+<pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-pprof-only-from-pyroscope
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      profiles.grafana.com/cpu.scrape: "true"
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alloy
+      ports:
+        - port: 6060
+          protocol: TCP</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">11. Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>1. Use SDK for heap + goroutine; eBPF for CPU</h4>
+    <p>eBPF gives zero-instrumentation CPU visibility across all services. SDK (pprof/Pyroscope) gives heap, allocs, goroutine, mutex profiles that eBPF cannot collect from userspace.</p>
+  </div>
+  <div class="card">
+    <h4>2. Add dynamic labels at request boundaries</h4>
+    <p>Use <code>pyroscope.TagWrapper</code> / <code>runtime/pprof.Do</code> to tag CPU time by <code>endpoint</code>, <code>tenant</code>, <code>queue</code>. Otherwise all requests merge into an unfiltered flame graph.</p>
+  </div>
+  <div class="card">
+    <h4>3. Separate pprof port from app port</h4>
+    <p>Bind pprof to <code>:6060</code> (or similar). Add a NetworkPolicy that only allows the Pyroscope scraper to reach it. Never expose pprof through Ingress.</p>
+  </div>
+  <div class="card">
+    <h4>4. Enable mutex and block profiling deliberately</h4>
+    <p>Call <code>runtime.SetMutexProfileFraction(5)</code> and <code>SetBlockProfileRate(1)</code> only in services where you suspect contention. These add ~1–3% overhead.</p>
+  </div>
+  <div class="card">
+    <h4>5. Compare profiles across deploys, not just time</h4>
+    <p>Store the git SHA as a Pyroscope label. Use Pyroscope diff mode with <code>version="v1.4.2"</code> vs <code>version="v1.4.3"</code> to attribute CPU changes to a specific commit.</p>
+  </div>
+  <div class="card">
+    <h4>6. Profile control plane components during incidents</h4>
+    <p>API server, scheduler, and etcd have built-in pprof. High API latency is often a LIST cardinality issue visible as <code>json.Marshal</code> in the API server heap profile.</p>
+  </div>
+  <div class="card">
+    <h4>7. Use Pyroscope diff for post-deploy regression check</h4>
+    <p>Make profile comparison part of your deployment runbook: collect a 10-minute CPU profile before the deploy and after, confirm no function gained >20% CPU share.</p>
+  </div>
+  <div class="card">
+    <h4>8. Set retention to 30 days minimum</h4>
+    <p>Profiles older than the incident won't help diagnose root cause. 30 days retains enough history for seasonal pattern analysis (e.g., end-of-month batch jobs).</p>
+  </div>
+</div>
+
+<h3>Profiling Overhead Reference</h3>
+
+<table>
+  <tr><th>Profiler</th><th>CPU Overhead</th><th>Memory Overhead</th><th>Notes</th></tr>
+  <tr><td>Go pprof CPU (pull, 100 Hz)</td><td>~1–2%</td><td>Negligible</td><td>Only during active sample collection</td></tr>
+  <tr><td>Go pprof heap (pull)</td><td>~0.5%</td><td>Proportional to live heap</td><td>Always active when enabled</td></tr>
+  <tr><td>Go mutex profile (fraction=5)</td><td>~1–3%</td><td>Low</td><td>Reports 1/5 contention events</td></tr>
+  <tr><td>Pyroscope Go SDK (push, 100 Hz)</td><td>~1–3%</td><td>~50 MiB</td><td>Continuous with periodic upload</td></tr>
+  <tr><td>Java async-profiler (100 Hz)</td><td>~1–2%</td><td>~30 MiB agent</td><td>JFR format reduces overhead vs JVMTI</td></tr>
+  <tr><td>Python py-spy (100 Hz)</td><td>~2–5%</td><td>Negligible (external)</td><td>Does not require code changes</td></tr>
+  <tr><td>eBPF CPU (Alloy/Parca)</td><td>~0.5–1% per node</td><td>~100 MiB agent</td><td>Covers all processes on node</td></tr>
+</table>
+
+<details class="coverage">
+  <summary>Coverage Checklist</summary>
+  <ul class="coverage-body">
+    <li>Continuous vs on-demand profiling comparison</li>
+    <li>Profiling as the fifth observability signal</li>
+    <li>Metric → Trace → Profile correlation flow</li>
+    <li>Profile types reference table (CPU/heap/allocs/goroutine/mutex/block/wall/eBPF)</li>
+    <li>Sampling vs instrumented profiler overhead comparison</li>
+    <li>Go net/http/pprof HTTP endpoints reference</li>
+    <li>pprof server on separate port + danger callout</li>
+    <li>go tool pprof CLI commands (top10/web/list/traces/diff_base)</li>
+    <li>Mutex and block profiling enablement (SetMutexProfileFraction/SetBlockProfileRate)</li>
+    <li>Pyroscope Go SDK (Config/ProfileTypes/Tags/TagWrapper)</li>
+    <li>Dynamic per-request labels with pyroscope.TagWrapper</li>
+    <li>Java async-profiler attach + JFR recording commands</li>
+    <li>Pyroscope Java javaagent config (application.properties)</li>
+    <li>Python py-spy + Pyroscope SDK with tag_wrapper</li>
+    <li>Node.js @pyroscope/nodejs SDK</li>
+    <li>Rust pprof-rs HTTP endpoint via actix-web</li>
+    <li>.NET dotnet-trace + Pyroscope env var injection</li>
+    <li>Pyroscope architecture diagram (distributor/ingester/S3/store-gateway/querier)</li>
+    <li>Pyroscope Helm install (distributed mode)</li>
+    <li>pyroscope-values.yaml (S3/replication/retention/limits/per-component resources/IRSA)</li>
+    <li>Pod annotations for pull-mode scraping (cpu/memory/goroutine)</li>
+    <li>Grafana Pyroscope data source provisioning YAML</li>
+    <li>FlameQL query examples (service/namespace/dynamic labels/diff)</li>
+    <li>eBPF profiling overview and tool comparison (Alloy/Parca/Pixie/Elastic)</li>
+    <li>Grafana Alloy eBPF DaemonSet values YAML</li>
+    <li>SYS_ADMIN/SYS_PTRACE privilege warning</li>
+    <li>eBPF vs SDK profiling comparison table</li>
+    <li>kube-apiserver pprof access (cert auth curl command)</li>
+    <li>kube-scheduler/controller-manager/kubelet/etcd pprof commands</li>
+    <li>Control plane profiling scenarios table</li>
+    <li>Flame graph anatomy and reading guide</li>
+    <li>Pyroscope diff workflow (HTTP API before/after comparison)</li>
+    <li>Trace → Profile linking (otelpyroscope middleware in Go)</li>
+    <li>Grafana Tempo → Pyroscope data source tracesToProfiles config</li>
+    <li>End-to-end correlation flow (alert → trace → profile → code fix)</li>
+    <li>Pyroscope self-metrics reference</li>
+    <li>PrometheusRule for Pyroscope health (ingester/drop/query latency)</li>
+    <li>CPU regression alerting via metric export</li>
+    <li>NetworkPolicy restricting pprof access to Pyroscope scraper only</li>
+    <li>8 best practices with cards</li>
+    <li>Profiling overhead reference table</li>
+  </ul>
+</details>
+
+</div>
+</main>
+
+<button class="btt" id="btt" title="Back to top">↑</button>
+
+<script>
+const sidebar = document.getElementById('sidebar');
+document.getElementById('hamburger').addEventListener('click', () => sidebar.classList.toggle('open'));
+document.getElementById('btt').addEventListener('click', () => document.getElementById('main').scrollTo({top:0,behavior:'smooth'}));
+document.getElementById('main').addEventListener('scroll', function(){
+  document.getElementById('btt').style.display = this.scrollTop > 400 ? 'flex' : 'none';
+});
+
+// copy buttons
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn'; btn.textContent = 'copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.innerText.replace(/^copy\n/,''));
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+
+// nav filter
+document.getElementById('nav-filter').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+// TOC IntersectionObserver
+const tocLinks = document.querySelectorAll('.toc a');
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+}, {root: document.getElementById('main'), rootMargin: '-20% 0px -70% 0px'});
+headings.forEach(h => obs.observe(h));
+</script>
+</body>
+</html>

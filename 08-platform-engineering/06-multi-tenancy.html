@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Tenancy | Kubernetes Platform Engineering</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px}
+.sidebar-subtitle{font-size:11px;color:var(--text3);margin-top:2px}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:6px 16px 4px}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover,.nav-section a.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent);text-decoration:none}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+main{margin-left:280px;flex:1;padding:40px 48px;max-width:1100px}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px}
+.hero{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:12px;padding:36px 40px;margin-bottom:40px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);color:var(--accent);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:14px}
+.hero h1{font-size:32px;font-weight:800;line-height:1.2;margin-bottom:12px;background:linear-gradient(90deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text2);font-size:16px;max-width:700px;margin-bottom:16px}
+.hero-meta{display:flex;gap:24px;flex-wrap:wrap}
+.hero-meta span{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px}
+h2{font-size:22px;font-weight:700;color:var(--text);margin:44px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h2:first-of-type{margin-top:0}
+h3{font-size:17px;font-weight:600;color:var(--text);margin:28px 0 12px}
+h4{font-size:15px;font-weight:600;color:var(--accent);margin:20px 0 8px}
+p{color:var(--text2);margin-bottom:14px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg3);color:var(--text)}
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;display:flex;gap:12px;align-items:flex-start}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3)}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3)}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3)}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3)}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:14px;color:var(--text2)}
+.callout-body strong{color:var(--text)}
+.table-wrap{overflow-x:auto;margin:20px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card h4{margin:0 0 8px;font-size:14px;color:var(--text)}
+.card p{font-size:13px;color:var(--text2);margin:0}
+.card.green{border-top:3px solid var(--green)}
+.card.yellow{border-top:3px solid var(--yellow)}
+.card.red{border-top:3px solid var(--red)}
+.card.purple{border-top:3px solid var(--purple)}
+.card.blue{border-top:3px solid var(--accent)}
+.card.orange{border-top:3px solid var(--orange)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:20px 0}
+@media(max-width:800px){.two-col{grid-template-columns:1fr}}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:40px}
+.toc h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin:0 0 12px}
+.toc ol{padding-left:20px}
+.toc li{margin:5px 0}
+.toc a{font-size:13px;color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.8}
+.back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50}
+.back-top.visible{opacity:1}
+.back-top:hover{color:var(--accent)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;vertical-align:middle;margin-left:6px}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+.step-list{counter-reset:steps;list-style:none;padding:0;margin:16px 0}
+.step-list li{counter-increment:steps;display:flex;gap:14px;margin-bottom:16px}
+.step-list li::before{content:counter(steps);background:var(--accent);color:#000;font-weight:700;font-size:12px;min-width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-list li p{margin:0;font-size:14px;color:var(--text2)}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:48px}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;display:inline-block}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border)}
+@media(max-width:700px){.coverage-body{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{margin-left:0;padding:24px 16px}}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">⎈ Kubernetes Docs</div>
+    <div class="sidebar-subtitle">Production-Grade Reference</div>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="00-platform-overview.html">00 · Overview</a>
+      <a href="01-cluster-provisioning.html">01 · Cluster Provisioning</a>
+      <a href="02-gitops.html">02 · GitOps</a>
+      <a href="03-ci-cd-pipelines.html">03 · CI/CD Pipelines</a>
+      <a href="04-developer-portal.html">04 · Developer Portal</a>
+      <a href="05-policy-enforcement.html">05 · Policy Enforcement</a>
+      <a href="06-multi-tenancy.html" class="active">06 · Multi-Tenancy</a>
+      <a href="07-cost-management.html">07 · Cost Management</a>
+      <a href="08-service-catalog.html">08 · Service Catalog</a>
+      <a href="09-secrets-automation.html">09 · Secrets Automation</a>
+      <a href="10-platform-apis.html">10 · Platform APIs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Quick Links</div>
+      <a href="../index.html">← Home</a>
+      <a href="../COVERAGE.html">Coverage Dashboard</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">78 of 91 files generated · 86%</div>
+</aside>
+
+<main id="main">
+
+<div class="hero">
+  <div class="hero-badge">🏢 Multi-Tenancy</div>
+  <h1>Multi-Tenancy in Kubernetes</h1>
+  <p>Complete guide to isolating tenants on shared Kubernetes clusters — namespace tenancy models, RBAC design, ResourceQuota, LimitRange, NetworkPolicy, Hierarchical Namespaces, virtual clusters, and the Capsule &amp; Loft operator patterns.</p>
+  <div class="hero-meta">
+    <span>🔐 RBAC Isolation</span>
+    <span>📦 Namespace Tenancy</span>
+    <span>🌐 NetworkPolicy</span>
+    <span>💰 ResourceQuota</span>
+    <span>🏗️ vcluster</span>
+    <span>🌿 Capsule</span>
+  </div>
+</div>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#tenancy-models">Tenancy Models</a></li>
+    <li><a href="#namespace-design">Namespace Design</a></li>
+    <li><a href="#rbac">RBAC for Tenants</a></li>
+    <li><a href="#resource-isolation">Resource Isolation</a></li>
+    <li><a href="#network-isolation">Network Isolation</a></li>
+    <li><a href="#hierarchical-namespaces">Hierarchical Namespaces</a></li>
+    <li><a href="#capsule">Capsule Operator</a></li>
+    <li><a href="#vcluster">Virtual Clusters (vcluster)</a></li>
+    <li><a href="#namespace-provisioning">Self-Service Namespace Provisioning</a></li>
+    <li><a href="#monitoring">Per-Tenant Monitoring</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="tenancy-models">Tenancy Models</h2>
+
+<p>Kubernetes multi-tenancy is not a single feature but a spectrum of isolation strategies. The right model depends on your trust level, regulatory requirements, blast-radius tolerance, and team autonomy needs.</p>
+
+<div class="arch-diagram">
+                    ISOLATION SPECTRUM
+
+ Soft (shared cluster)                     Hard (dedicated)
+ ◄─────────────────────────────────────────────────────────►
+ │                    │                    │                │
+ Namespace            Namespace +          vcluster         Dedicated
+ per-team             Capsule/HNC          (virtual K8s)    cluster
+ (RBAC only)          (quotas/policy/      (soft isolation  (full kernel/
+                       NetworkPolicy)       with own API)    node isolation)
+
+ Cost: $             Cost: $               Cost: $$         Cost: $$$
+ Isolation: Low      Isolation: Medium     Isolation: High  Isolation: Max
+ Ops overhead: Low   Ops overhead: Medium  Ops overhead: Low Ops overhead: High
+</div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model</th><th>Isolation Mechanism</th><th>Tenant Trust</th><th>Best For</th><th>Not For</th></tr></thead>
+<tbody>
+<tr><td>Namespace per team</td><td>RBAC only</td><td>High (internal teams)</td><td>Single org, controlled developers</td><td>External/untrusted tenants</td></tr>
+<tr><td>Namespace + policy</td><td>RBAC + Quota + NetworkPolicy + PSA</td><td>Medium</td><td>Multiple teams on shared platform</td><td>Hostile tenants, compliance-heavy</td></tr>
+<tr><td>Capsule Tenant</td><td>Above + tenant-owner RBAC + Ingress/StorageClass scoping</td><td>Medium-Low</td><td>Self-service multi-team platforms</td><td>Regulatory isolation requirements</td></tr>
+<tr><td>vcluster</td><td>Virtual K8s API server per tenant (pods on shared nodes)</td><td>Low-Medium</td><td>Dev environments, CI, ISV testing</td><td>Hostile workloads (shared kernel)</td></tr>
+<tr><td>Dedicated cluster</td><td>Separate control plane + nodes</td><td>Any</td><td>PCI/HIPAA/strict compliance, enterprise customers</td><td>Cost-sensitive, many small tenants</td></tr>
+<tr><td>Dedicated nodes</td><td>NodeSelector/Taints + RBAC</td><td>Medium</td><td>GPU tenants, high-memory workloads</td><td>Full kernel isolation</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-danger">
+  <div class="callout-icon">🚨</div>
+  <div class="callout-body"><strong>Kubernetes is not a secure multi-tenant boundary by default.</strong> Namespaces provide organizational separation, not security isolation. A privileged container on a shared node can escape to the host. If your tenants are untrusted or hostile, use dedicated nodes (taint-based), dedicated clusters, or hardware virtualization (Kata Containers / gVisor) — not just namespaces.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="namespace-design">Namespace Design</h2>
+
+<p>The namespace is the fundamental unit of tenancy in Kubernetes. Good namespace design is the foundation of everything else — RBAC, quotas, network policies, and monitoring all apply at the namespace boundary.</p>
+
+<h3>Namespace Naming Conventions</h3>
+
+<pre><code class="language-bash"># Pattern: {team}-{service}-{environment}
+payments-api-production
+payments-api-staging
+payments-worker-production
+platform-tools-shared
+
+# Alternative: {org-unit}/{team}/{env} compressed
+myorg-platform-prod
+myorg-payments-staging
+myorg-analytics-dev
+
+# System namespaces (never put tenant workloads here)
+kube-system          # K8s system components
+kube-public          # cluster-info ConfigMap
+kube-node-lease      # node heartbeat leases
+monitoring           # prometheus-stack
+argocd               # Argo CD
+kyverno              # policy engine
+cert-manager         # certificate management
+ingress-nginx        # ingress controller</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Required Namespace Labels</h3>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments-api-production
+  labels:
+    # Ownership (required by policy — see 05-policy-enforcement.html)
+    team: payments
+    env: production
+    cost-center: CC-4892
+    # Pod Security Standards
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted
+    # Monitoring
+    prometheus.io/scrape: "true"
+    # Tenant grouping (used by Capsule / HNC)
+    tenant: payments-tribe
+  annotations:
+    # Human-readable metadata
+    team-email: payments-team@company.com
+    slack-channel: "#payments-alerts"
+    oncall-rotation: pagerduty-schedule-P123456
+    runbook: https://wiki.company.com/payments/runbooks</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Namespace Topology Patterns</h3>
+
+<div class="two-col">
+  <div class="card blue">
+    <h4>One Namespace per Service × Env</h4>
+    <p>Fine-grained isolation. Each service in each environment gets its own namespace. Works well for microservices. Can lead to namespace sprawl (&gt;100 namespaces) but gives precise quota and RBAC control.</p>
+    <p style="margin-top:8px"><code>payments-api-prod</code><br><code>payments-api-staging</code><br><code>payments-worker-prod</code></p>
+  </div>
+  <div class="card purple">
+    <h4>One Namespace per Team × Env</h4>
+    <p>All services for a team share a namespace per environment. Simpler to manage, but services within the team share quota and network policies. Good starting point for smaller orgs.</p>
+    <p style="margin-top:8px"><code>payments-production</code><br><code>payments-staging</code><br><code>analytics-production</code></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="rbac">RBAC for Tenants</h2>
+
+<p>RBAC is the primary access control mechanism for tenant isolation. The key principle: tenants get namespace-scoped Roles (never ClusterRoles with cluster-wide permissions), and platform engineers hold the ClusterRoles needed to manage shared infrastructure.</p>
+
+<h3>Standard Tenant Role Tiers</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Role Name</th><th>Allowed Resources</th><th>Denied Resources</th><th>Assigned To</th></tr></thead>
+<tbody>
+<tr><td><code>tenant-admin</code></td><td>All namespace resources except ResourceQuota/LimitRange/NetworkPolicy</td><td>ResourceQuota, LimitRange, NetworkPolicy, RoleBinding to cluster-admin</td><td>Team leads</td></tr>
+<tr><td><code>tenant-developer</code></td><td>Deployments, Services, Ingresses, ConfigMaps, Secrets (read), Jobs, CronJobs, HPA, PVC</td><td>RBAC resources, Quota, NetworkPolicy</td><td>Engineers</td></tr>
+<tr><td><code>tenant-viewer</code></td><td>Get/list/watch all namespace resources (read-only)</td><td>All create/update/delete/patch</td><td>On-call, stakeholders</td></tr>
+<tr><td><code>tenant-ci</code></td><td>Deployments (patch/update), ConfigMaps (create/update), Pods (get/list), Jobs (create)</td><td>Secrets write, RBAC, delete Deployments</td><td>CI/CD service accounts</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>ClusterRole: tenant-developer</h3>
+
+<pre><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tenant-developer
+  labels:
+    rbac.platform.io/managed: "true"
+rules:
+# Workloads
+- apiGroups: ["apps"]
+  resources: ["deployments","statefulsets","daemonsets","replicasets"]
+  verbs: ["get","list","watch","create","update","patch","delete"]
+- apiGroups: [""]
+  resources: ["pods","pods/log","pods/exec","pods/portforward"]
+  verbs: ["get","list","watch","create","delete"]
+- apiGroups: ["batch"]
+  resources: ["jobs","cronjobs"]
+  verbs: ["get","list","watch","create","update","patch","delete"]
+# Config and secrets (read secrets, write configmaps)
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get","list","watch","create","update","patch","delete"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get","list","watch"]   # create/update via ESO only
+# Networking
+- apiGroups: [""]
+  resources: ["services","endpoints"]
+  verbs: ["get","list","watch","create","update","patch","delete"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get","list","watch","create","update","patch","delete"]
+# Storage
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get","list","watch","create","delete"]
+# Autoscaling
+- apiGroups: ["autoscaling"]
+  resources: ["horizontalpodautoscalers"]
+  verbs: ["get","list","watch","create","update","patch","delete"]
+# Observability (read-only)
+- apiGroups: ["monitoring.coreos.com"]
+  resources: ["servicemonitors","prometheusrules","podmonitors"]
+  verbs: ["get","list","watch","create","update","patch","delete"]
+# Events
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get","list","watch"]</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>RoleBinding: Assign Team to Namespace</h3>
+
+<pre><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: payments-team-developer
+  namespace: payments-api-production
+subjects:
+# Bind an Okta/OIDC group
+- kind: Group
+  name: "okta-group:payments-engineers"
+  apiGroup: rbac.authorization.k8s.io
+# Also bind specific service accounts
+- kind: ServiceAccount
+  name: payments-ci-deployer
+  namespace: payments-api-production
+roleRef:
+  kind: ClusterRole
+  name: tenant-developer
+  apiGroup: rbac.authorization.k8s.io</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>ClusterRole: tenant-ci (for CI/CD service accounts)</h3>
+
+<pre><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tenant-ci
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments","statefulsets"]
+  verbs: ["get","list","watch","patch","update"]
+- apiGroups: [""]
+  resources: ["pods","pods/log"]
+  verbs: ["get","list","watch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get","list","watch","create","update","patch"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get","list","watch","create","delete"]
+- apiGroups: ["argoproj.io"]
+  resources: ["rollouts"]
+  verbs: ["get","list","watch","patch","update"]
+# Needed for rollout status checks
+- apiGroups: ["argoproj.io"]
+  resources: ["analysisruns","experiments"]
+  verbs: ["get","list","watch"]</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Preventing Privilege Escalation via RBAC</h3>
+
+<pre><code class="language-yaml"># Kyverno policy: prevent tenants from creating RoleBindings
+# to cluster-admin or platform-reserved ClusterRoles
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-rolebinding-clusterroles
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: block-cluster-admin-binding
+    match:
+      any:
+      - resources:
+          kinds: ["RoleBinding","ClusterRoleBinding"]
+          operations: ["CREATE","UPDATE"]
+    validate:
+      message: "Binding to cluster-admin or platform ClusterRoles is not allowed."
+      deny:
+        conditions:
+          any:
+          - key: "{{ request.object.roleRef.name }}"
+            operator: In
+            value: ["cluster-admin","system:masters","platform-admin"]</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="resource-isolation">Resource Isolation</h2>
+
+<p>Without resource controls, a single noisy tenant can starve the entire cluster. ResourceQuota caps total consumption per namespace; LimitRange sets defaults and bounds per container.</p>
+
+<h3>ResourceQuota Tiers</h3>
+
+<pre><code class="language-yaml"># Small team namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tenant-quota-small
+  namespace: analytics-dev
+spec:
+  hard:
+    # Compute
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    # Pod count prevents fork bombs
+    pods: "40"
+    # Storage
+    requests.storage: 100Gi
+    persistentvolumeclaims: "10"
+    # K8s object limits
+    count/deployments.apps: "20"
+    count/services: "20"
+    count/configmaps: "50"
+    count/secrets: "30"
+    count/ingresses.networking.k8s.io: "10"
+    # Restrict LoadBalancer (expensive) and NodePort
+    services.loadbalancers: "0"
+    services.nodeports: "0"
+---
+# Large production namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tenant-quota-large
+  namespace: payments-api-production
+spec:
+  hard:
+    requests.cpu: "32"
+    requests.memory: 64Gi
+    limits.cpu: "64"
+    limits.memory: 128Gi
+    pods: "200"
+    requests.storage: 1Ti
+    persistentvolumeclaims: "50"
+    count/deployments.apps: "100"
+    count/services: "100"
+    services.loadbalancers: "2"   # limited but allowed for prod</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>LimitRange: Container Defaults</h3>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tenant-limits
+  namespace: payments-api-production
+spec:
+  limits:
+  # Container defaults (applied when no resources spec is set)
+  - type: Container
+    default:          # limit (max) default
+      cpu: "500m"
+      memory: 512Mi
+    defaultRequest:   # request default
+      cpu: "100m"
+      memory: 128Mi
+    max:              # hard ceiling per container
+      cpu: "4"
+      memory: 8Gi
+    min:              # minimum (prevents setting zero)
+      cpu: "10m"
+      memory: 32Mi
+    maxLimitRequestRatio:  # limits cannot be more than 4× requests
+      cpu: "4"
+      memory: "4"
+  # Pod-level limit (sum of all containers)
+  - type: Pod
+    max:
+      cpu: "8"
+      memory: 16Gi
+  # PVC storage bounds
+  - type: PersistentVolumeClaim
+    max:
+      storage: 50Gi
+    min:
+      storage: 1Gi</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>PriorityClass for Tenant Tiers</h3>
+
+<pre><code class="language-yaml"># Platform team creates these; tenants reference them
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: platform-critical
+value: 1000000
+globalDefault: false
+description: "Platform system components. Never preempted."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: production-high
+value: 100
+globalDefault: false
+description: "Production workloads — preempts batch/dev"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: production-default
+value: 50
+globalDefault: true
+description: "Default for workloads without explicit priority"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: batch-low
+value: 10
+preemptionPolicy: Never   # won't preempt others even if higher priority available
+description: "Batch jobs: use leftover capacity only"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<pre><code class="language-yaml"># Kyverno: enforce tenants use allowed PriorityClasses
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-priority-classes
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: check-priority-class
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+          operations: ["CREATE"]
+    exclude:
+      any:
+      - resources:
+          namespaces: ["kube-system","monitoring","argocd"]
+    validate:
+      message: "Only production-high, production-default, or batch-low PriorityClasses allowed."
+      deny:
+        conditions:
+          any:
+          - key: "{{ request.object.spec.priorityClassName || 'production-default' }}"
+            operator: AnyNotIn
+            value: ["production-high","production-default","batch-low",""]</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="network-isolation">Network Isolation</h2>
+
+<p>NetworkPolicies provide the network-layer tenant fence. By default, all pods in a cluster can reach all other pods regardless of namespace. You must explicitly create deny-all ingress + deny-all egress policies and then open only what each tenant needs.</p>
+
+<h3>Baseline Tenant NetworkPolicy Set</h3>
+
+<pre><code class="language-yaml"># 1. Deny all ingress and egress by default
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: payments-api-production
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress","Egress"]
+  # No rules = deny all
+---
+# 2. Allow DNS (required for all pods)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: payments-api-production
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+# 3. Allow intra-namespace traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: payments-api-production
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress","Egress"]
+  ingress:
+  - from:
+    - podSelector: {}   # any pod in same namespace
+  egress:
+  - to:
+    - podSelector: {}
+---
+# 4. Allow ingress from NGINX ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-controller
+  namespace: payments-api-production
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+    ports:
+    - port: 8080
+    - port: 8443
+---
+# 5. Allow Prometheus scraping
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: payments-api-production
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: monitoring
+    ports:
+    - port: 8080   # metrics port</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Cross-Namespace Service Communication</h3>
+
+<pre><code class="language-yaml"># Allow payments-api to call payments-worker in a different namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-payments-api
+  namespace: payments-worker-production   # applied in TARGET namespace
+spec:
+  podSelector:
+    matchLabels:
+      app: worker
+  policyTypes: ["Ingress"]
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: payments-api-production
+      podSelector:
+        matchLabels:
+          app: api   # AND condition: namespace AND pod label
+    ports:
+    - port: 9000
+      protocol: TCP</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>NetworkPolicy requires a CNI that implements it.</strong> Flannel does NOT enforce NetworkPolicy. Use Calico, Cilium, Weave, or AWS VPC CNI with Calico network policy. Validate your NetworkPolicy enforcement with a tool like <code>netshoot</code> or <code>kubectl-netpol</code> before trusting it.</div>
+</div>
+
+<h3>Cilium NetworkPolicy (Advanced)</h3>
+
+<pre><code class="language-yaml"># Cilium extends NetworkPolicy with L7 HTTP rules
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: payments-api-l7
+  namespace: payments-api-production
+spec:
+  endpointSelector:
+    matchLabels:
+      app: payments-api
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: frontend
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: "POST"
+          path: "^/api/v1/payments$"   # only this specific endpoint
+        - method: "GET"
+          path: "^/api/v1/payments/[0-9]+$"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="hierarchical-namespaces">Hierarchical Namespaces (HNC)</h2>
+
+<p>HNC (<code>hierarchical-namespace-controller</code>) adds a parent-child namespace tree. Resources like RoleBindings, NetworkPolicies, and LimitRanges propagate from parent to children automatically — eliminating manual duplication across namespaces that belong to the same tenant tree.</p>
+
+<h3>Install HNC</h3>
+
+<pre><code class="language-bash">kubectl apply -f https://github.com/kubernetes-sigs/hierarchical-namespaces/releases/download/v1.1.0/default.yaml
+
+# HNC adds the kubectl-hns plugin
+kubectl krew install hns</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Create Namespace Hierarchy</h3>
+
+<pre><code class="language-bash"># Create root tenant namespace
+kubectl create ns payments-tribe
+
+# Create child namespaces under the tenant root
+kubectl hns create payments-api-prod -n payments-tribe
+kubectl hns create payments-api-staging -n payments-tribe
+kubectl hns create payments-worker-prod -n payments-tribe
+
+# View the hierarchy
+kubectl hns tree payments-tribe
+# Output:
+# payments-tribe
+# ├── payments-api-prod
+# ├── payments-api-staging
+# └── payments-worker-prod</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Propagate RoleBindings via HierarchicalNamespace</h3>
+
+<pre><code class="language-yaml"># SubnamespaceAnchor (HNC's way of declaring child namespaces in YAML)
+apiVersion: hnc.x-k8s.io/v1alpha2
+kind: SubnamespaceAnchor
+metadata:
+  name: payments-api-prod
+  namespace: payments-tribe   # parent
+---
+# RoleBinding in parent automatically propagates to all children
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: payments-team-developer
+  namespace: payments-tribe       # set once here...
+  annotations:
+    propagate.hnc.x-k8s.io/select: "true"   # ...propagates to all children
+subjects:
+- kind: Group
+  name: "okta-group:payments-engineers"
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: tenant-developer
+  apiGroup: rbac.authorization.k8s.io</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>HNC Resource Propagation Configuration</h3>
+
+<pre><code class="language-yaml"># HNCConfiguration: control what resource types propagate
+apiVersion: hnc.x-k8s.io/v1alpha2
+kind: HNCConfiguration
+metadata:
+  name: config
+spec:
+  resources:
+  - resource: rolebindings
+    group: rbac.authorization.k8s.io
+    mode: Propagate     # Propagate | Ignore | Remove
+  - resource: networkpolicies
+    group: networking.k8s.io
+    mode: Propagate
+  - resource: limitranges
+    group: ""
+    mode: Propagate
+  - resource: resourcequotas
+    group: ""
+    mode: Ignore        # Quotas should be set per-namespace, not inherited</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="capsule">Capsule Operator</h2>
+
+<p>Capsule provides a higher-level <code>Tenant</code> CRD that aggregates multiple namespaces under a tenant owner with shared policies, quotas, and allowed resource classes. Tenant owners can self-service create namespaces within their Tenant, but the platform team retains control over what those namespaces can do.</p>
+
+<h3>Install Capsule</h3>
+
+<pre><code class="language-bash">helm repo add projectcapsule https://projectcapsule.github.io/charts
+helm repo update
+
+helm install capsule projectcapsule/capsule \
+  --namespace capsule-system \
+  --create-namespace \
+  --version 0.7.2 \
+  --set manager.options.forceTenantPrefix=true \
+  --set manager.options.capsuleUserGroups[0]="capsule.clastix.io"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Tenant CRD</h3>
+
+<pre><code class="language-yaml">apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: payments
+spec:
+  # Tenant owners can create/delete namespaces within this tenant
+  owners:
+  - name: alice@company.com
+    kind: User
+  - name: payments-team-leads
+    kind: Group
+
+  # Namespace quota
+  namespaceOptions:
+    quota: 10    # max namespaces this tenant can own
+    additionalMetadata:
+      labels:
+        tenant: payments
+        cost-center: CC-4892
+        pod-security.kubernetes.io/enforce: baseline
+
+  # Aggregate resource quota across ALL tenant namespaces
+  resourceQuotas:
+    scope: Tenant     # aggregated across namespaces
+    items:
+    - hard:
+        requests.cpu: "32"
+        requests.memory: 64Gi
+        limits.cpu: "64"
+        limits.memory: 128Gi
+        pods: "200"
+        requests.storage: 500Gi
+
+  # LimitRange applied to every tenant namespace
+  limitRanges:
+    items:
+    - limits:
+      - type: Container
+        default:
+          cpu: "500m"
+          memory: 512Mi
+        defaultRequest:
+          cpu: "100m"
+          memory: 128Mi
+
+  # Allowed StorageClasses
+  storageClasses:
+    allowed:
+    - gp3
+    - efs-sc
+
+  # Allowed IngressClasses
+  ingressOptions:
+    allowedClasses:
+      allowed:
+      - nginx
+    allowedHostnames:
+      allowed:
+      - "*.payments.company.com"
+
+  # Network policies added to every tenant namespace
+  networkPolicies:
+    items:
+    - spec:
+        podSelector: {}
+        policyTypes: ["Ingress","Egress"]
+        ingress: []   # deny all by default; tenant owners add their own
+
+  # Allowed node selectors (restrict to tenant node pool)
+  nodeSelector:
+    node.kubernetes.io/workload: general
+
+  # Prevent privilege escalation
+  podOptions:
+    additionalMetadata:
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
+
+  # Image pull policies enforced on this tenant
+  imagePullPolicies:
+  - Always</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Tenant Owner Creates Namespaces</h3>
+
+<pre><code class="language-bash"># Alice (tenant owner) can self-service create namespaces
+# Capsule intercepts and enforces forceTenantPrefix
+kubectl create ns payments-api-prod   # becomes "payments-api-prod"
+kubectl create ns payments-staging    # allowed; owns up to quota of 10
+
+# Alice cannot create namespaces for other tenants
+kubectl create ns analytics-dev       # DENIED — not in payments tenant</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="vcluster">Virtual Clusters (vcluster)</h2>
+
+<p>vcluster creates a fully functional virtual Kubernetes cluster running as pods inside a host namespace. Each vcluster has its own API server, controller manager, and etcd — but its workloads run as regular pods on the host cluster's nodes.</p>
+
+<div class="arch-diagram">
+Host Cluster (shared physical nodes)
+┌────────────────────────────────────────────────────────┐
+│  Namespace: vcluster-team-a                            │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │  vcluster Pod (StatefulSet)                     │  │
+│  │  ├── k3s API server  :443 (NodePort/LoadBalancer)│  │
+│  │  ├── k3s controller-manager                     │  │
+│  │  └── sqlite/etcd (embedded)                     │  │
+│  └─────────────────────────────────────────────────┘  │
+│                                                        │
+│  Team A creates → vcluster syncs to host namespace     │
+│  Pod (virtual) ──────────────────► Pod (host)          │
+│  Service (virtual) ──────────────► Service (host)      │
+│  ConfigMap (virtual) → stays in virtual only           │
+│  CRDs (virtual) → not visible to host                  │
+└────────────────────────────────────────────────────────┘
+</div>
+
+<h3>Install vcluster</h3>
+
+<pre><code class="language-bash">helm repo add loft-sh https://charts.loft.sh
+helm repo update
+
+# Create a vcluster for team-a
+helm install vcluster-team-a loft-sh/vcluster \
+  --namespace vcluster-team-a \
+  --create-namespace \
+  --version 0.20.0 \
+  --set controlPlane.distro.k3s.enabled=true \
+  --set controlPlane.statefulSet.resources.requests.cpu=200m \
+  --set controlPlane.statefulSet.resources.requests.memory=256Mi \
+  --set controlPlane.statefulSet.resources.limits.memory=1Gi \
+  --set sync.toHost.ingresses.enabled=true \
+  --set sync.toHost.persistentVolumes.enabled=true</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>vcluster Configuration (vcluster.yaml)</h3>
+
+<pre><code class="language-yaml">controlPlane:
+  distro:
+    k3s:
+      enabled: true
+      image:
+        tag: "v1.31.0-k3s1"
+  statefulSet:
+    highAvailability:
+      replicas: 1   # increase to 3 for production vclusters
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+
+sync:
+  toHost:
+    ingresses:
+      enabled: true
+    persistentVolumes:
+      enabled: false      # only if tenant needs dynamic PV provisioning
+    storageClasses:
+      enabled: false      # use host storage classes
+  fromHost:
+    nodes:
+      enabled: true
+      selector:
+        all: true
+
+# Restrict what the vcluster can do on the host
+isolation:
+  enabled: true
+  namespace:
+    isolate: true
+  networkPolicy:
+    enabled: true
+  resourceQuota:
+    enabled: true
+    quota:
+      requests.cpu: "10"
+      requests.memory: 20Gi
+      limits.cpu: "20"
+      limits.memory: 40Gi
+      pods: "100"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Access a vcluster</h3>
+
+<pre><code class="language-bash"># Install vcluster CLI
+curl -L -o vcluster "https://github.com/loft-sh/vcluster/releases/latest/download/vcluster-linux-amd64"
+chmod +x vcluster && mv vcluster /usr/local/bin/
+
+# Connect and switch kubeconfig to vcluster
+vcluster connect vcluster-team-a --namespace vcluster-team-a
+
+# Team-a now sees their own cluster
+kubectl get nodes     # shows virtual node
+kubectl get ns        # only default, kube-system (virtual)
+
+# Disconnect (returns to host cluster context)
+vcluster disconnect</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>vcluster vs Namespace Tenancy</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Dimension</th><th>Namespace Tenancy</th><th>vcluster</th></tr></thead>
+<tbody>
+<tr><td>API isolation</td><td>Shared API server — tenants see cluster-scoped resources</td><td>Dedicated virtual API server per tenant</td></tr>
+<tr><td>CRD isolation</td><td>CRDs are cluster-scoped — shared with all tenants</td><td>Virtual CRDs isolated per vcluster</td></tr>
+<tr><td>RBAC isolation</td><td>ClusterRole vs Role boundary</td><td>Full cluster-admin inside vcluster</td></tr>
+<tr><td>K8s version</td><td>All tenants on same version</td><td>Each vcluster can run different K8s version</td></tr>
+<tr><td>Operator deployment</td><td>Shared operators (Prometheus, cert-manager)</td><td>Tenant can install their own operators</td></tr>
+<tr><td>Resource overhead</td><td>~0 (namespaces are free)</td><td>~200m CPU + 256Mi RAM per vcluster control plane</td></tr>
+<tr><td>Node isolation</td><td>Pods share nodes unless tainted</td><td>Pods still share host nodes (soft isolation)</td></tr>
+<tr><td>Blast radius</td><td>Namespace escape possible with privileged containers</td><td>Same — still shares host kernel</td></tr>
+<tr><td>Best for</td><td>Internal teams, cost-sensitive</td><td>ISV customers, dev/CI environments, different K8s versions</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="namespace-provisioning">Self-Service Namespace Provisioning</h2>
+
+<p>Platform teams should not be the bottleneck for namespace creation. Automate it through the developer portal (see <a href="04-developer-portal.html">04-developer-portal.html</a>) or Crossplane/Kyverno generate.</p>
+
+<h3>Crossplane Namespace Composition</h3>
+
+<pre><code class="language-yaml"># Platform team defines: what a "team namespace" looks like
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: team-namespace.platform.io
+spec:
+  compositeTypeRef:
+    apiVersion: platform.io/v1alpha1
+    kind: XTeamNamespace
+  resources:
+  - name: namespace
+    base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: v1
+            kind: Namespace
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.teamName
+      toFieldPath: spec.forProvider.manifest.metadata.name
+      transforms:
+      - type: string
+        string:
+          fmt: "%s-production"
+
+  - name: resource-quota
+    base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: v1
+            kind: ResourceQuota
+            spec:
+              hard:
+                requests.cpu: "8"
+                requests.memory: 16Gi
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.teamName
+      toFieldPath: spec.forProvider.manifest.metadata.namespace
+      transforms:
+      - type: string
+        string:
+          fmt: "%s-production"
+---
+# Composite Resource Definition (the "API" teams use)
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xteamnamespaces.platform.io
+spec:
+  group: platform.io
+  names:
+    kind: XTeamNamespace
+    plural: xteamnamespaces
+  claimNames:
+    kind: TeamNamespace
+    plural: teamnamespaces
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              teamName:
+                type: string
+              quotaTier:
+                type: string
+                enum: ["small","medium","large"]
+            required: ["teamName","quotaTier"]</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Team Claims a Namespace</h3>
+
+<pre><code class="language-yaml"># Analytics team requests their namespace (in their own namespace claim)
+apiVersion: platform.io/v1alpha1
+kind: TeamNamespace
+metadata:
+  name: analytics-production
+  namespace: platform-claims   # claims namespace
+spec:
+  teamName: analytics
+  quotaTier: medium</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="monitoring">Per-Tenant Monitoring</h2>
+
+<p>Tenants need visibility into their own workloads without seeing other tenants' data. The standard pattern is multi-tenant Prometheus with label-based isolation, or separate Prometheus instances per tenant.</p>
+
+<h3>Prometheus RBAC: Namespace-Scoped Scraping</h3>
+
+<pre><code class="language-yaml"># ServiceAccount for per-namespace Prometheus or tenant scrape
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-tenant
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prometheus-tenant-view
+  namespace: payments-api-production   # only this tenant's namespace
+subjects:
+- kind: ServiceAccount
+  name: prometheus-tenant
+  namespace: monitoring
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Prometheus Operator: Namespace-Scoped ServiceMonitor Discovery</h3>
+
+<pre><code class="language-yaml"># prometheus-values.yaml (in monitoring namespace)
+prometheus:
+  prometheusSpec:
+    # Only discover ServiceMonitors in namespaces with this label
+    serviceMonitorNamespaceSelector:
+      matchLabels:
+        prometheus.io/scrape: "true"
+    serviceMonitorSelector: {}
+    # Inject namespace as external label so tenant data is distinguishable
+    externalLabels:
+      cluster: prod-us-east-1
+    # Enforce namespace label on all metrics from multi-tenant namespaces
+    ruleNamespaceSelector:
+      matchLabels:
+        prometheus.io/scrape: "true"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Grafana Tenant Isolation</h3>
+
+<pre><code class="language-yaml"># Grafana Organizations for hard tenant isolation
+# OR: Grafana Teams + folder-based RBAC for soft isolation
+
+# datasource per-tenant pointing to Thanos/Mimir with namespace filter
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus-Payments
+      type: prometheus
+      url: http://thanos-query:9090
+      jsonData:
+        httpMethod: POST
+        # Custom HTTP header to enforce namespace restriction in Mimir/Cortex
+        customQueryParameters: "namespace=payments-api-production"
+      access: proxy</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>PrometheusRule for Tenant Quota Alerts</h3>
+
+<pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tenant-quota-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: tenant.quota
+    rules:
+    # CPU request usage > 90% of quota
+    - alert: TenantCPUQuotaNearLimit
+      expr: |
+        (
+          kube_resourcequota{type="used", resource="requests.cpu"}
+          /
+          kube_resourcequota{type="hard", resource="requests.cpu"}
+        ) > 0.9
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Namespace {{ $labels.namespace }} CPU quota above 90%"
+        description: "{{ $value | humanizePercentage }} of CPU request quota used."
+
+    # Memory limit usage > 90% of quota
+    - alert: TenantMemoryQuotaNearLimit
+      expr: |
+        (
+          kube_resourcequota{type="used", resource="limits.memory"}
+          /
+          kube_resourcequota{type="hard", resource="limits.memory"}
+        ) > 0.9
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Namespace {{ $labels.namespace }} memory quota above 90%"
+
+    # Pod count > 80% of quota
+    - alert: TenantPodCountHigh
+      expr: |
+        (
+          kube_resourcequota{type="used", resource="pods"}
+          /
+          kube_resourcequota{type="hard", resource="pods"}
+        ) > 0.8
+      for: 15m
+      labels:
+        severity: info
+      annotations:
+        summary: "Namespace {{ $labels.namespace }} pod count above 80% of quota"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card green">
+    <h4>Match Isolation to Trust Level</h4>
+    <p>Internal teams on a shared cluster need namespace + RBAC + policy. External customers or regulated workloads need dedicated nodes or dedicated clusters. Namespace tenancy alone is not a security boundary.</p>
+  </div>
+  <div class="card green">
+    <h4>Automate Namespace Provisioning</h4>
+    <p>Never hand-provision namespaces. Use Crossplane compositions, Backstage templates, or Capsule self-service. Every namespace must come with ResourceQuota, LimitRange, default NetworkPolicies, and RBAC — not as optional afterthoughts.</p>
+  </div>
+  <div class="card blue">
+    <h4>Default-Deny NetworkPolicy</h4>
+    <p>Kyverno's generate rule (see <a href="05-policy-enforcement.html">05-policy-enforcement.html</a>) creates a deny-all NetworkPolicy in every new namespace automatically. Teams must explicitly declare what traffic they allow. Never start with allow-all.</p>
+  </div>
+  <div class="card blue">
+    <h4>Quota Before Workloads</h4>
+    <p>Use Argo CD sync waves to apply ResourceQuota (wave -1) before the Application that deploys workloads (wave 0). A namespace with no quota is a resource bomb waiting to go off.</p>
+  </div>
+  <div class="card yellow">
+    <h4>LimitRange as Safety Net</h4>
+    <p>LimitRange defaults catch workloads deployed without explicit resource specs. Set defaultRequest low and default limit moderate — this prevents unbounded containers while not blocking teams who haven't tuned their resources yet.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Tenant-Scoped RBAC, Not ClusterRoles</h4>
+    <p>Tenants get RoleBindings to ClusterRoles (for reuse), never ClusterRoleBindings unless the role is explicitly cluster-safe. Audit ClusterRoleBindings quarterly — any binding to a non-platform team is a red flag.</p>
+  </div>
+  <div class="card orange">
+    <h4>HNC or Capsule for Namespace Trees</h4>
+    <p>Managing 50+ namespaces manually leads to drift — some namespaces missing NetworkPolicies, others missing LimitRanges. HNC propagation or Capsule's Tenant CRD ensures uniform configuration without repeated YAML.</p>
+  </div>
+  <div class="card red">
+    <h4>Audit Cross-Namespace Access</h4>
+    <p>NetworkPolicies that allow broad <code>namespaceSelector: {}</code> (all namespaces) are lateral movement highways. Every cross-namespace allow rule must specify both a namespace label AND a pod label selector to limit scope to the minimum necessary.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage: 06 · Multi-Tenancy</summary>
+  <ul class="coverage-body">
+    <li>Tenancy models spectrum diagram (soft namespace → namespace+policy → Capsule → vcluster → dedicated cluster)</li>
+    <li>Tenancy models comparison table (isolation mechanism / trust level / best for / not for)</li>
+    <li>Security isolation callout (namespaces ≠ security boundary; kernel escape via privileged containers)</li>
+    <li>Namespace naming conventions (team-service-env pattern; system namespace list)</li>
+    <li>Required namespace labels (team/env/cost-center/PSA/prometheus/tenant/email/slack/oncall annotations)</li>
+    <li>Namespace topology patterns: one-per-service×env vs one-per-team×env comparison</li>
+    <li>Standard tenant role tiers table (tenant-admin / tenant-developer / tenant-viewer / tenant-ci)</li>
+    <li>ClusterRole: tenant-developer (full YAML covering apps/pods/configmaps/secrets-read/services/ingresses/PVCs/HPA/ServiceMonitors/events)</li>
+    <li>RoleBinding: payments-team-developer (Okta group + ServiceAccount binding)</li>
+    <li>ClusterRole: tenant-ci (Deployments patch/update, Jobs, Rollouts, AnalysisRuns)</li>
+    <li>Kyverno policy: restrict-rolebinding-clusterroles (block binding to cluster-admin/system:masters)</li>
+    <li>ResourceQuota tiers: small (4cpu/8Gi/40 pods) and large (32cpu/64Gi/200 pods) with object count limits and services.loadbalancers:0</li>
+    <li>LimitRange: Container defaults (cpu 100m→500m/memory 128Mi→512Mi), max bounds, maxLimitRequestRatio 4×, Pod-level max, PVC storage bounds</li>
+    <li>PriorityClass tiers: platform-critical/production-high/production-default/batch-low with preemptionPolicy:Never for batch</li>
+    <li>Kyverno policy: restrict-priority-classes (deny use of non-allowlisted PriorityClasses)</li>
+    <li>NetworkPolicy set: default-deny-all / allow-dns / allow-same-namespace / allow-ingress-controller / allow-prometheus-scrape</li>
+    <li>Cross-namespace NetworkPolicy (AND condition: namespaceSelector + podSelector)</li>
+    <li>Cilium NetworkPolicy CRD for L7 HTTP path/method rules</li>
+    <li>CNI requirement callout (Flannel does not enforce NetworkPolicy; use Calico/Cilium/Weave)</li>
+    <li>HNC install (kubectl apply + krew plugin)</li>
+    <li>kubectl hns commands: create child namespaces, tree view</li>
+    <li>SubnamespaceAnchor YAML; propagate.hnc.x-k8s.io/select annotation on RoleBinding</li>
+    <li>HNCConfiguration: Propagate rolebindings+networkpolicies+limitranges, Ignore resourcequotas</li>
+    <li>Capsule Helm install (forceTenantPrefix, capsuleUserGroups)</li>
+    <li>Capsule Tenant CRD: owners/namespaceOptions/resourceQuotas(scope:Tenant)/limitRanges/storageClasses/ingressOptions(allowedHostnames)/networkPolicies/nodeSelector/podOptions/imagePullPolicies</li>
+    <li>Tenant owner self-service namespace creation (forceTenantPrefix enforcement)</li>
+    <li>vcluster architecture diagram (virtual API server + sync to host namespace)</li>
+    <li>vcluster Helm install (k3s distro, resources, sync.toHost ingresses/PVs)</li>
+    <li>vcluster.yaml: controlPlane/sync/isolation (networkPolicy+resourceQuota)</li>
+    <li>vcluster CLI: connect, disconnect commands</li>
+    <li>vcluster vs namespace tenancy 9-dimension comparison table</li>
+    <li>Crossplane Composition for team namespace (Namespace + ResourceQuota + patches from spec.teamName)</li>
+    <li>CompositeResourceDefinition (XTeamNamespace/TeamNamespace with teamName+quotaTier schema)</li>
+    <li>TeamNamespace claim YAML example</li>
+    <li>Prometheus RBAC: ServiceAccount + RoleBinding for namespace-scoped scraping</li>
+    <li>Prometheus Operator values: serviceMonitorNamespaceSelector, externalLabels, ruleNamespaceSelector</li>
+    <li>Grafana datasource per-tenant with customQueryParameters namespace filter</li>
+    <li>PrometheusRule: TenantCPUQuotaNearLimit / TenantMemoryQuotaNearLimit / TenantPodCountHigh (kube_resourcequota ratio alerts)</li>
+    <li>8 best practices cards (trust level matching / automated provisioning / default-deny NetworkPolicy / quota before workloads / LimitRange safety net / namespace-scoped RBAC / HNC or Capsule for trees / audit cross-namespace access)</li>
+  </ul>
+</details>
+
+</main>
+
+<button class="back-top" id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none'
+  })
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>400)
+})
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button')
+  btn.className='copy-btn'
+  btn.textContent='Copy'
+  btn.onclick=function(){
+    navigator.clipboard.writeText(pre.innerText.replace('Copy\n','').replace('Copy',''))
+    btn.textContent='Copied!'
+    setTimeout(()=>btn.textContent='Copy',2000)
+  }
+  pre.appendChild(btn)
+})
+const headings=document.querySelectorAll('h2[id]')
+const tocLinks=document.querySelectorAll('.toc a')
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('toc-active'))
+      const l=document.querySelector(`.toc a[href="#${e.target.id}"]`)
+      if(l)l.classList.add('toc-active')
+    }
+  })
+},{root:document.getElementById('main'),threshold:0.3})
+headings.forEach(h=>obs.observe(h))
+</script>
+</body>
+</html>

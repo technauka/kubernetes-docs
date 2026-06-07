@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>IPv4/IPv6 Dual-Stack — Kubernetes Networking</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.sidebar-logo{font-size:15px;font-weight:700;color:var(--accent);text-decoration:none;display:block;margin-bottom:12px;}
+.sidebar-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;}
+.sidebar-filter:focus{border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding:6px 16px 4px;}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);text-decoration:none;border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:90;}
+.hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text2);cursor:pointer;font-size:12px;}
+.theme-btn:hover{color:var(--text);border-color:var(--accent);}
+.content-toc-wrap{display:flex;flex:1;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-panel{width:var(--toc-w);flex-shrink:0;padding:24px 16px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
+.toc-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text3);text-decoration:none;padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover{color:var(--text2);}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-panel a.toc-h3{padding-left:20px;font-size:11px;}
+h1{font-size:34px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+ul,ol{padding-left:24px;color:var(--text2);margin-bottom:14px;}
+li{margin-bottom:4px;font-size:14px;}
+.subtitle{font-size:16px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:12px 0 20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code,h3 code,h4 code{background:var(--bg3);padding:2px 5px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text3);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 12px;text-align:left;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);border-bottom:2px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:12px;}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:14px;}
+.callout-body p,.callout-body ul{font-size:13px;color:var(--text2);margin:0;}
+.callout-body ul{padding-left:18px;margin-top:4px;}
+.callout.info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.3);}
+.callout.warn{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);}
+.callout.danger{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);}
+.callout.success{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.3);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:16px 0 24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card h4{font-size:14px;font-weight:600;color:var(--text);margin:0 0 8px;}
+.card p,.card ul{font-size:13px;color:var(--text2);}
+.card ul{padding-left:16px;margin:0;}
+.card .tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;margin-bottom:6px;}
+.tag-ga{background:rgba(63,185,80,.15);color:var(--green);}
+.tag-beta{background:rgba(210,153,34,.15);color:var(--yellow);}
+.ipfamily-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0 24px;}
+.ipfamily-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.ipfamily-card.v4{border-top:3px solid var(--accent);}
+.ipfamily-card.v6{border-top:3px solid var(--purple);}
+.ipfamily-card h4{font-size:13px;font-weight:600;margin-bottom:8px;}
+.ipfamily-card ul{font-size:12px;color:var(--text2);padding-left:16px;margin:0;}
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:16px 0 24px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.6;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.back-top.visible{display:flex;}
+.nav-footer{display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;border-top:1px solid var(--border);}
+.nav-btn{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 20px;color:var(--text2);text-decoration:none;font-size:13px;transition:all .2s;}
+.nav-btn:hover{color:var(--accent);border-color:var(--accent);}
+.nav-btn small{display:block;font-size:11px;color:var(--text3);margin-bottom:2px;}
+@media(max-width:1200px){.toc-panel{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrap{margin-left:0;}
+  .hamburger{display:block;}
+  .main-content{padding:24px 20px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a class="sidebar-logo" href="../index.html">⎈ Kubernetes Docs</a>
+    <input class="sidebar-filter" id="nav-filter" placeholder="Filter..." type="text"/>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Foundations</div>
+    <a href="../00-foundations/00-introduction.html">Introduction</a>
+    <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../00-foundations/02-kubernetes-components.html">Components</a>
+    <a href="../00-foundations/03-control-loops.html">Control Loops</a>
+    <a href="../00-foundations/04-kubernetes-api-model.html">API Model</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">Overview</a>
+    <a href="../01-control-plane/01-api-server.html">API Server</a>
+    <a href="../01-control-plane/02-etcd.html">etcd</a>
+    <a href="../01-control-plane/03-scheduler.html">Scheduler</a>
+    <a href="../01-control-plane/04-controller-manager.html">Controller Manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">Cloud CCM</a>
+    <a href="../01-control-plane/06-ha-control-plane.html">HA Control Plane</a>
+    <a href="../01-control-plane/07-api-aggregation.html">API Aggregation</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">Overview</a>
+    <a href="../02-node-components/01-kubelet.html">kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime.html">Container Runtime</a>
+    <a href="../02-node-components/04-cri-interface.html">CRI Interface</a>
+    <a href="../02-node-components/05-node-lifecycle.html">Node Lifecycle</a>
+    <a href="../02-node-components/06-node-resource-management.html">Resource Management</a>
+    <a href="../02-node-components/07-windows-worker-nodes.html">Windows Nodes</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="00-networking-overview.html">Overview</a>
+    <a href="01-pod-networking.html">Pod Networking</a>
+    <a href="02-cni-plugins.html">CNI Plugins</a>
+    <a href="03-kube-proxy-internals.html">kube-proxy Internals</a>
+    <a href="04-dns.html">DNS &amp; Service Discovery</a>
+    <a href="05-ingress.html">Ingress</a>
+    <a href="06-gateway-api.html">Gateway API</a>
+    <a href="07-network-policies.html">Network Policies</a>
+    <a href="08-ipv4-ipv6-dual-stack.html" class="active">IPv4/IPv6 Dual-Stack</a>
+    <a href="09-load-balancing.html">Load Balancing</a>
+    <a href="10-service-mesh.html">Service Mesh</a>
+  </div>
+</nav>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger">☰</button>
+    <span class="topbar-title">03 — Networking / IPv4/IPv6 Dual-Stack</span>
+    <button class="theme-btn" id="theme-toggle">Light Mode</button>
+  </header>
+
+  <div class="content-toc-wrap">
+    <main class="main-content" id="main-content">
+
+      <h1>IPv4/IPv6 Dual-Stack</h1>
+      <p class="subtitle">Dual-stack allows pods and services to have both IPv4 and IPv6 addresses simultaneously. GA since Kubernetes 1.21, dual-stack is the foundation for IPv6-only clusters and for clusters that must serve both address families during a long migration.</p>
+
+      <details class="coverage">
+        <summary>What This Page Covers</summary>
+        <ul class="coverage-body">
+          <li>Dual-stack GA history and what changed from alpha/beta</li>
+          <li>IPv6 address types: link-local, ULA (fc00::/7), global unicast; why not use link-local for pods</li>
+          <li>CIDR planning: pod CIDRs, service CIDRs, node CIDRs for both families</li>
+          <li>API server flags: --service-cluster-ip-range, kube-controller-manager --cluster-cidr and --node-cidr-mask-size</li>
+          <li>kubeadm dual-stack ClusterConfiguration YAML</li>
+          <li>kubelet nodeIP dual-stack configuration</li>
+          <li>Pod dual-stack: status.podIPs (both IPs), status.podIP (primary)</li>
+          <li>Service ipFamilyPolicy: SingleStack, PreferDualStack, RequireDualStack</li>
+          <li>Service ipFamilies: [IPv4, IPv6] vs [IPv6, IPv4] — primary family ordering</li>
+          <li>Service ClusterIPs: two entries; headless services; ExternalName services</li>
+          <li>Service NodePort dual-stack: same port on both IPv4 and IPv6 node addresses</li>
+          <li>LoadBalancer dual-stack: cloud provider support; AWS NLB, GCE, Azure</li>
+          <li>DNS: A records (IPv4) and AAAA records (IPv6); CoreDNS dual-stack behavior</li>
+          <li>EndpointSlices: separate slices per address family (addressType: IPv4 vs IPv6)</li>
+          <li>kube-proxy dual-stack: iptables + ip6tables; IPVS mode</li>
+          <li>CNI dual-stack support: Calico, Cilium, Flannel, AWS VPC CNI limitations</li>
+          <li>NetworkPolicy with IPv6 ipBlock CIDRs</li>
+          <li>Node dual-stack addresses: status.addresses; primary IP selection</li>
+          <li>Migration path: single-stack IPv4 → dual-stack → single-stack IPv6</li>
+          <li>IPv6-only clusters: feature gate, CNI requirements</li>
+          <li>Troubleshooting: AAAA record missing, pod IPv6 unreachable, service CIDR overlap</li>
+          <li>6 metrics + 4 alerting rules + 5 troubleshooting runbooks</li>
+        </ul>
+      </details>
+
+      <!-- 1. WHY DUAL STACK -->
+      <h2 id="why">Why Dual-Stack</h2>
+      <p>IPv4 address exhaustion is real. Many organizations are under pressure to adopt IPv6, but cannot flip a switch and drop IPv4 overnight — applications, firewalls, monitoring systems, and load balancers all need time to migrate. Dual-stack gives each pod and service addresses in both families, allowing gradual migration without a hard cutover.</p>
+
+      <p>Key use cases:</p>
+      <ul>
+        <li><strong>Regulatory or network mandate</strong> — some government and carrier networks require IPv6 reachability for all workloads.</li>
+        <li><strong>IPv6-only node pools</strong> — new cloud instances get only IPv6; dual-stack gateway bridges to legacy IPv4 services.</li>
+        <li><strong>Migration staging</strong> — run both families, shift traffic to IPv6, then drop IPv4.</li>
+        <li><strong>Edge/IoT</strong> — IoT devices increasingly use IPv6-only networks.</li>
+      </ul>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Feature history</strong>
+          <p>Dual-stack was <strong>alpha in 1.16</strong> (opt-in feature gate, single-stack architecture), <strong>beta in 1.20</strong> (feature gate on by default, architecture rework), and <strong>GA in 1.21</strong> (feature gate removed, always available). Clusters created before 1.21 on alpha/beta dual-stack need verification — the beta implementation had breaking changes.</p>
+        </div>
+      </div>
+
+      <!-- 2. IPV6 PRIMER -->
+      <h2 id="ipv6-primer">IPv6 Address Types Primer</h2>
+      <p>Not all IPv6 addresses are suitable for pod or service CIDRs. Understanding the types prevents misconfiguration:</p>
+
+      <div class="ipfamily-grid">
+        <div class="ipfamily-card v4">
+          <h4>IPv4 ranges used in K8s</h4>
+          <ul>
+            <li><code>10.0.0.0/8</code> — pod CIDRs (common)</li>
+            <li><code>172.16.0.0/12</code> — pod or node CIDRs</li>
+            <li><code>192.168.0.0/16</code> — small clusters</li>
+            <li><code>10.96.0.0/12</code> — service CIDR (kubeadm default)</li>
+            <li><strong>Must not overlap</strong> with node network or each other</li>
+          </ul>
+        </div>
+        <div class="ipfamily-card v6">
+          <h4>IPv6 ranges for K8s</h4>
+          <ul>
+            <li><code>fc00::/7</code> — Unique Local Address (ULA); routable within org; <strong>recommended for pods/services</strong></li>
+            <li><code>fd00::/8</code> — ULA with L=1 bit; use <code>fd</code> prefix for pods (e.g., <code>fd00:10:244::/48</code>)</li>
+            <li><code>2000::/3</code> — Global Unicast (GUA); internet-routable; use for node addresses</li>
+            <li><code>fe80::/10</code> — Link-local; NOT routable across nodes; <strong>never use for pods</strong></li>
+            <li><code>::1/128</code> — loopback; equivalent of 127.0.0.1</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>Link-local addresses (fe80::/10) cannot be used for pod or service CIDRs</strong>
+          <p>Link-local addresses are scoped to a single network segment — they are not routable between nodes. If a CNI assigns link-local addresses to pods, cross-node pod communication will fail silently. Always use ULA (<code>fd</code> prefix) or GUA for pod and service CIDRs.</p>
+        </div>
+      </div>
+
+      <!-- 3. CIDR PLANNING -->
+      <h2 id="cidr-planning">CIDR Planning for Dual-Stack</h2>
+      <p>A dual-stack cluster requires four non-overlapping CIDR blocks — two per address family:</p>
+
+      <div class="arch-diagram">Address Family   Role              Example CIDR            Notes
+━━━━━━━━━━━━━━   ━━━━━━━━━━━━      ━━━━━━━━━━━━━━━━        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IPv4             Pod CIDR          10.244.0.0/16           /24 per node (256 IPs)
+IPv4             Service CIDR      10.96.0.0/16            ClusterIPs allocated from here
+IPv6             Pod CIDR          fd00:10:244::/48        /64 per node (2^64 IPs)
+IPv6             Service CIDR      fd00:10:96::/112        /128 per service = 65536 services
+
+Nodes: each node gets a /24 (IPv4) and /64 (IPv6) subnet from the pod CIDRs
+  e.g., node-1: 10.244.1.0/24  +  fd00:10:244:1::/64
+        node-2: 10.244.2.0/24  +  fd00:10:244:2::/64
+
+Critical: these four CIDRs must not overlap with each other or with node networking</div>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>IPv6 /112 for Services</strong>
+          <p>The service CIDR for IPv6 should be at most <code>/112</code> — this gives 65536 service IPs. Kubernetes allocates service IPs sequentially, so a very large IPv6 service CIDR doesn't help; the controller only allocates from the start of the range. A <code>/112</code> matches typical IPv4 service CIDR sizing.</p>
+        </div>
+      </div>
+
+      <!-- 4. CLUSTER CONFIGURATION -->
+      <h2 id="cluster-config">Cluster Configuration</h2>
+
+      <h3 id="api-server-flags">API Server &amp; Controller Manager Flags</h3>
+      <p>Both CIDRs are passed as comma-separated pairs (IPv4 first is conventional but not required):</p>
+
+      <pre><code># kube-apiserver
+--service-cluster-ip-range=10.96.0.0/16,fd00:10:96::/112
+
+# kube-controller-manager
+--cluster-cidr=10.244.0.0/16,fd00:10:244::/48
+--service-cluster-ip-range=10.96.0.0/16,fd00:10:96::/112
+--node-cidr-mask-size-ipv4=24     # each node gets a /24 from 10.244.0.0/16
+--node-cidr-mask-size-ipv6=64     # each node gets a /64 from fd00:10:244::/48
+
+# kube-proxy
+--cluster-cidr=10.244.0.0/16,fd00:10:244::/48
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="kubeadm">kubeadm Dual-Stack ClusterConfiguration</h3>
+      <pre><code>apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: "1.31.0"
+networking:
+  podSubnet: "10.244.0.0/16,fd00:10:244::/48"       # comma-separated dual-stack
+  serviceSubnet: "10.96.0.0/16,fd00:10:96::/112"
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "192.168.1.10"    # control plane node IPv4 address
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: "192.168.1.10,fd00::1"   # comma-separated: IPv4,IPv6 of this node
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="kubelet-nodeip">kubelet nodeIP — Dual-Stack Node Registration</h3>
+      <p>Each kubelet must be told which IPs to use for the node. Without this, it picks a single IP automatically (may miss the IPv6 address):</p>
+
+      <pre><code># /var/lib/kubelet/kubeadm-flags.env  (or KubeletConfiguration)
+KUBELET_KUBEADM_ARGS="--node-ip=192.168.1.11,fd00::2"
+
+# Or in KubeletConfiguration:
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+nodeIP: "192.168.1.11,fd00::2"    # IPv4,IPv6 comma-separated
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 5. POD DUAL STACK -->
+      <h2 id="pod-dual-stack">Pod Dual-Stack Addresses</h2>
+      <p>When a pod is scheduled on a dual-stack node, the CNI assigns two IPs — one per address family. Both appear in <code>status.podIPs</code>:</p>
+
+      <pre><code>kubectl get pod my-pod -o yaml
+# status:
+#   podIP: 10.244.1.5                   # primary IP (first family configured)
+#   podIPs:
+#     - ip: 10.244.1.5                  # IPv4
+#     - ip: fd00:10:244:1::5            # IPv6
+#   hostIP: 192.168.1.11
+#   hostIPs:
+#     - ip: 192.168.1.11
+#     - ip: fd00::2
+
+# Inside the pod — both interfaces visible:
+kubectl exec my-pod -- ip addr show eth0
+# inet  10.244.1.5/24 scope global eth0
+# inet6 fd00:10:244:1::5/64 scope global eth0
+# inet6 fe80::...  scope link eth0       ← link-local, always present, not routable
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Primary IP and address family ordering</strong>
+          <p><code>status.podIP</code> (singular) is the primary IP — it matches the first family in the cluster's <code>--cluster-cidr</code> ordering. If the cluster was configured IPv4-first (<code>10.244.0.0/16,fd00::/48</code>), <code>podIP</code> is always IPv4. Applications that read only <code>podIP</code> (e.g., via the Downward API) will see only the primary family IP.</p>
+        </div>
+      </div>
+
+      <h3>Using Pod IPs from Downward API</h3>
+      <pre><code>env:
+  - name: POD_IP
+    valueFrom:
+      fieldRef:
+        fieldPath: status.podIP        # primary IP only (IPv4 if IPv4-first cluster)
+  - name: POD_IPS
+    valueFrom:
+      fieldRef:
+        fieldPath: status.podIPs       # returns comma-separated: "10.244.1.5,fd00:10:244:1::5"
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 6. SERVICE DUAL STACK -->
+      <h2 id="service-dual-stack">Service Dual-Stack Configuration</h2>
+
+      <h3 id="ipfamilypolicy">ipFamilyPolicy</h3>
+      <p><code>spec.ipFamilyPolicy</code> controls how the Service allocates IPs across address families:</p>
+
+      <table>
+        <thead><tr><th>Policy</th><th>Behavior</th><th>ClusterIPs allocated</th></tr></thead>
+        <tbody>
+          <tr><td><code>SingleStack</code></td><td>Only one address family; default when cluster is single-stack</td><td>1 (from preferred family)</td></tr>
+          <tr><td><code>PreferDualStack</code></td><td>Dual-stack if cluster supports it, single-stack otherwise</td><td>2 on dual-stack cluster, 1 on single-stack</td></tr>
+          <tr><td><code>RequireDualStack</code></td><td>Must have both families; creation fails on single-stack cluster</td><td>2 (error if cluster is single-stack)</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="ipfamilies">ipFamilies — Address Family Ordering</h3>
+      <p><code>spec.ipFamilies</code> specifies which families to use and in which order. The first family is the primary (its IP goes into <code>spec.clusterIP</code>):</p>
+
+      <pre><code># Dual-stack service — IPv4 primary
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  namespace: production
+spec:
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+      targetPort: 8080
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4             # primary family → goes into spec.clusterIP
+    - IPv6             # secondary family
+
+# After creation:
+# spec.clusterIP:  10.96.100.5             (IPv4, primary)
+# spec.clusterIPs:
+#   - 10.96.100.5                          (IPv4)
+#   - fd00:10:96::100:5                    (IPv6)
+<button class="copy-btn">Copy</button></code></pre>
+
+      <pre><code># IPv6-primary dual-stack service
+spec:
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv6             # primary: spec.clusterIP will be IPv6
+    - IPv4
+
+# Single-stack IPv6 service on a dual-stack cluster
+spec:
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv6             # only allocate IPv6 ClusterIP
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Existing services on cluster upgrade to dual-stack</strong>
+          <p>When a single-stack cluster is upgraded to dual-stack, existing Services retain their <code>SingleStack</code> policy. They are NOT automatically upgraded to dual-stack. To enable dual-stack on existing services, patch <code>spec.ipFamilyPolicy: PreferDualStack</code> — this causes a new ClusterIP to be allocated for the second family.</p>
+        </div>
+      </div>
+
+      <h3 id="headless-dual-stack">Headless Services</h3>
+      <p>Headless services (clusterIP: None) with <code>RequireDualStack</code> return both A and AAAA records per pod:</p>
+
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: my-headless
+  namespace: production
+spec:
+  clusterIP: None
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: my-app
+
+# DNS result for my-headless.production.svc.cluster.local:
+# A    records: one per pod IPv4 address
+# AAAA records: one per pod IPv6 address
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="nodeport-dual-stack">NodePort Services</h3>
+      <p>A NodePort service on a dual-stack cluster listens on the same port on <em>both</em> the IPv4 and IPv6 node addresses:</p>
+
+      <pre><code># NodePort 30080 is reachable at:
+# http://192.168.1.11:30080   (node IPv4)
+# http://[fd00::2]:30080      (node IPv6)
+
+# kube-proxy programs both iptables and ip6tables rules for NodePort services
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="loadbalancer-dual-stack">LoadBalancer Services</h3>
+      <p>Cloud provider support for dual-stack LoadBalancer services is provider-specific:</p>
+
+      <table>
+        <thead><tr><th>Cloud Provider</th><th>Dual-Stack LB Support</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>AWS NLB</td><td>Yes (IP mode)</td><td>Requires <code>aws-load-balancer-ip-address-type: dualstack</code> annotation; NLB only (not ALB)</td></tr>
+          <tr><td>GCE/GKE</td><td>Yes</td><td>Set <code>ipFamilyPolicy: RequireDualStack</code>; GKE provisions dual-stack L4 LB automatically</td></tr>
+          <tr><td>Azure AKS</td><td>Yes (1.26+)</td><td>Cluster must be provisioned as dual-stack; both families on same LB frontend</td></tr>
+          <tr><td>MetalLB</td><td>Yes (v0.13+)</td><td>Configure separate IPv4 and IPv6 address pools; assign both to the service</td></tr>
+        </tbody>
+      </table>
+
+      <pre><code># AWS NLB dual-stack LoadBalancer service
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-nlb
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-ip-address-type: "dualstack"
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies: [IPv4, IPv6]
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    app: my-app
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 7. DNS -->
+      <h2 id="dns">DNS — A and AAAA Records</h2>
+      <p>CoreDNS automatically generates both A (IPv4) and AAAA (IPv6) records for dual-stack services. The kubernetes plugin watches the API server and populates both record types from <code>spec.clusterIPs</code>:</p>
+
+      <pre><code># Verify dual-stack DNS records for a service
+kubectl exec -n default deploy/debug -- nslookup my-service.production.svc.cluster.local
+# Server:    10.96.0.10
+# Address 1: 10.96.100.5 my-service.production.svc.cluster.local    ← A record (IPv4)
+# Address 2: fd00:10:96::100:5 my-service.production.svc.cluster.local ← AAAA record (IPv6)
+
+# Explicit A record lookup
+kubectl exec -n default deploy/debug -- dig A my-service.production.svc.cluster.local
+
+# Explicit AAAA record lookup
+kubectl exec -n default deploy/debug -- dig AAAA my-service.production.svc.cluster.local
+
+# PTR records work for both families:
+# IPv4: 5.100.96.10.in-addr.arpa → my-service.production.svc.cluster.local
+# IPv6: reverse of fd00:10:96::100:5 → my-service.production.svc.cluster.local
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Application address family selection</strong>
+          <p>When a dual-stack service has both A and AAAA records, the client application chooses which to connect to. Most modern applications use Happy Eyeballs (RFC 8305) — they try IPv6 first and fall back to IPv4 if IPv6 doesn't connect within 250ms. Applications that do not support Happy Eyeballs (or that use <code>AF_INET</code> explicitly) will always use IPv4 even if AAAA records exist.</p>
+        </div>
+      </div>
+
+      <!-- 8. ENDPOINTSLICES -->
+      <h2 id="endpointslices">EndpointSlices — Per Address Family</h2>
+      <p>kube-proxy and other consumers of endpoint data need to know which IP family each endpoint belongs to. Kubernetes creates <em>separate EndpointSlice objects</em> per address family for dual-stack services:</p>
+
+      <pre><code>kubectl get endpointslices -n production -l kubernetes.io/service-name=my-service
+# NAME                     ADDRESSTYPE   PORTS   ENDPOINTS          AGE
+# my-service-abc12         IPv4          8080    10.244.1.5,...     5m
+# my-service-def34         IPv6          8080    fd00:10:244:1::5,..  5m
+
+# Inspect the IPv6 slice:
+kubectl get endpointslice my-service-def34 -n production -o yaml
+# spec:
+#   addressType: IPv6
+#   endpoints:
+#     - addresses: ["fd00:10:244:1::5"]
+#       conditions:
+#         ready: true
+#         serving: true
+#         terminating: false
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 9. KUBE-PROXY -->
+      <h2 id="kube-proxy">kube-proxy Dual-Stack</h2>
+      <p>kube-proxy programs both <code>iptables</code> (IPv4) and <code>ip6tables</code> (IPv6) rule sets when running in dual-stack mode. The same Service gets two sets of rules — one per address family.</p>
+
+      <pre><code># Verify both rule sets are populated (iptables mode)
+sudo iptables  -t nat -L KUBE-SERVICES | grep 10.96.100.5    # IPv4 ClusterIP rules
+sudo ip6tables -t nat -L KUBE-SERVICES | grep "fd00:10:96"    # IPv6 ClusterIP rules
+
+# IPVS mode: virtual servers for both families
+sudo ipvsadm -Ln | grep -E "10\.96\.100\.5|fd00:10:96"
+
+# KubeProxyConfiguration for dual-stack (no special config needed — auto-detected):
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: "iptables"
+clusterCIDR: "10.244.0.0/16,fd00:10:244::/48"    # comma-separated dual-stack
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 10. CNI SUPPORT -->
+      <h2 id="cni-support">CNI Dual-Stack Support</h2>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>Calico</h4>
+          <ul>
+            <li>Full dual-stack support</li>
+            <li>Set <code>CALICO_IPV6POOL_CIDR</code> in calico-node DaemonSet</li>
+            <li>BGP advertises both IPv4 and IPv6 prefixes</li>
+            <li>IPIP/VXLAN encapsulation for both families</li>
+            <li>IPPool CRD: create one per family</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Cilium</h4>
+          <ul>
+            <li>Full dual-stack support</li>
+            <li>Helm: <code>--set ipv6.enabled=true</code></li>
+            <li>eBPF programs handle both IPv4 and IPv6 natively</li>
+            <li>Can replace kube-proxy for both families</li>
+            <li>Hubble shows both address families in flows</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Flannel</h4>
+          <ul>
+            <li>Limited dual-stack support (added 0.15+)</li>
+            <li>Requires <code>EnableIPv6: true</code> in net-conf.json</li>
+            <li>vxlan backend only for IPv6</li>
+            <li>No NetworkPolicy enforcement (requires Canal)</li>
+            <li>Not recommended for new dual-stack deployments</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>AWS VPC CNI</h4>
+          <ul>
+            <li>IPv6 mode is <strong>single-stack IPv6 only</strong> (not dual-stack)</li>
+            <li>Each pod gets a single IPv6 address from the VPC subnet</li>
+            <li>Requires instance types with IPv6 ENI support</li>
+            <li>IPv6 mode: <code>ENABLE_IPv6=true</code>, <code>ENABLE_PREFIX_DELEGATION=true</code></li>
+            <li>Cannot run both IPv4 and IPv6 per pod simultaneously</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 id="calico-dualstack">Calico Dual-Stack Configuration</h3>
+      <pre><code># In the calico-node DaemonSet environment:
+- name: CALICO_IPV4POOL_CIDR
+  value: "10.244.0.0/16"
+- name: CALICO_IPV6POOL_CIDR
+  value: "fd00:10:244::/48"
+- name: CALICO_IPV6POOL_IPIP
+  value: "CrossSubnet"
+- name: FELIX_IPV6SUPPORT
+  value: "true"
+- name: IP6
+  value: "autodetect"                   # auto-detect node IPv6 address
+- name: IP6_AUTODETECTION_METHOD
+  value: "first-found"
+
+# Create both IPPools (or let Calico create them automatically):
+apiVersion: projectcalico.org/v3
+kind: IPPool
+metadata:
+  name: default-ipv6-pool
+spec:
+  cidr: fd00:10:244::/48
+  ipipMode: Never
+  vxlanMode: CrossSubnet
+  natOutgoing: false                   # no MASQUERADE for IPv6 (routable ULA)
+  nodeSelector: all()
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="cilium-dualstack">Cilium Dual-Stack Configuration</h3>
+      <pre><code>helm upgrade cilium cilium/cilium \
+  --namespace kube-system \
+  --set ipv4.enabled=true \
+  --set ipv6.enabled=true \
+  --set ipam.mode=kubernetes \
+  --set k8s.requireIPv4PodCIDR=true \
+  --set k8s.requireIPv6PodCIDR=true
+
+# Verify:
+cilium status
+# IPv4: ✅
+# IPv6: ✅
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 11. NETWORKPOLICY IPV6 -->
+      <h2 id="networkpolicy-ipv6">NetworkPolicy with IPv6</h2>
+      <p>Standard NetworkPolicy <code>ipBlock</code> works with IPv6 CIDRs. The syntax is identical — just use IPv6 CIDR notation:</p>
+
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ipv6-external
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes:
+    - Egress
+  egress:
+    # Allow IPv4 external
+    - to:
+        - ipBlock:
+            cidr: 203.0.113.0/24
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow IPv6 external
+    - to:
+        - ipBlock:
+            cidr: 2001:db8::/32           # IPv6 CIDR
+            except:
+              - 2001:db8:bad::/48         # except known bad range
+      ports:
+        - protocol: TCP
+          port: 443
+    # DNS (both IPv4 and IPv6 paths to CoreDNS)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 12. NODE ADDRESSES -->
+      <h2 id="node-addresses">Node Dual-Stack Addresses</h2>
+      <pre><code>kubectl get node node-1 -o yaml
+# status:
+#   addresses:
+#     - type: InternalIP
+#       address: 192.168.1.11        # IPv4 InternalIP
+#     - type: InternalIP
+#       address: fd00::2             # IPv6 InternalIP
+#     - type: Hostname
+#       address: node-1
+
+# The primary InternalIP is used for:
+# - kubelet registration
+# - kube-proxy routing
+# - CNI overlay tunnel endpoints
+# The ordering follows --node-ip flag (first = primary)
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 13. IPV6-ONLY -->
+      <h2 id="ipv6-only">IPv6-Only Clusters</h2>
+      <p>An IPv6-only cluster uses a single address family — IPv6. This is distinct from dual-stack; pods and services have only IPv6 addresses. Requirements:</p>
+
+      <ul>
+        <li>All nodes must have IPv6 addresses (no IPv4 required)</li>
+        <li>CNI must support IPv6-only mode (Cilium, Calico, AWS VPC CNI IPv6 mode)</li>
+        <li><code>--service-cluster-ip-range</code> is IPv6 only: <code>fd00:10:96::/112</code></li>
+        <li><code>--cluster-cidr</code> is IPv6 only: <code>fd00:10:244::/48</code></li>
+        <li>CoreDNS generates only AAAA records for services</li>
+        <li>External connectivity for IPv4-only upstream services requires NAT64/DNS64</li>
+      </ul>
+
+      <pre><code># kubeadm for IPv6-only cluster
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+networking:
+  podSubnet: "fd00:10:244::/48"
+  serviceSubnet: "fd00:10:96::/112"
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "fd00::1"          # IPv6 control plane address
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: "fd00::1"                  # only IPv6 node IP
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 14. MIGRATION -->
+      <h2 id="migration">Migration Path</h2>
+      <p>There is no automatic migration from single-stack to dual-stack. The process requires planning because existing Services and pods keep their single-stack configuration until explicitly updated:</p>
+
+      <div class="arch-diagram">Phase 1: Prepare infrastructure
+  • Ensure all nodes have IPv6 addresses (configure OS/cloud networking)
+  • Upgrade CNI to dual-stack capable version with IPv6 config
+
+Phase 2: Reconfigure cluster components
+  • Update kube-apiserver: --service-cluster-ip-range=10.96.0.0/16,fd00:10:96::/112
+  • Update kube-controller-manager: --cluster-cidr + --node-cidr-mask-size-ipv6
+  • Update kube-proxy: --cluster-cidr (dual-stack)
+  • Update kubelet on each node: --node-ip=IPv4,IPv6
+
+Phase 3: Migrate existing resources
+  • New pods automatically get dual-stack IPs after CNI is updated
+  • Existing Services: patch spec.ipFamilyPolicy: PreferDualStack
+  • New Services: create with RequireDualStack if needed
+
+Phase 4: Verify and test
+  • Confirm pods have two IPs: kubectl get pod -o wide
+  • Confirm services have two ClusterIPs: kubectl get svc -o yaml
+  • Test IPv6 connectivity between pods
+  • Test DNS AAAA records: dig AAAA svc.namespace.svc.cluster.local
+
+Phase 5 (optional): IPv6-only
+  • Migrate all Services to SingleStack IPv6
+  • Disable IPv4 pod CIDR
+  • Migrate to IPv6-only CNI mode</div>
+
+      <div class="callout danger">
+        <span class="callout-icon">🚨</span>
+        <div class="callout-body">
+          <strong>Rolling back dual-stack is not supported</strong>
+          <p>Once a cluster is converted to dual-stack and services have been allocated IPv6 ClusterIPs, reverting to single-stack is not supported without cluster recreation. Services that received a second ClusterIP cannot have it removed while the service exists. Plan the migration carefully and test in a non-production cluster first.</p>
+        </div>
+      </div>
+
+      <!-- 15. METRICS & TROUBLESHOOTING -->
+      <h2 id="metrics">Metrics, Alerting &amp; Troubleshooting</h2>
+
+      <h3>Key Metrics</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>Source</th><th>What It Tells You</th></tr></thead>
+        <tbody>
+          <tr><td><code>kube_service_info{ip_family="IPv6"}</code></td><td>kube-state-metrics</td><td>Count of services with IPv6 ClusterIP allocated</td></tr>
+          <tr><td><code>kube_pod_info{pod_ip=~"fd.*"}</code></td><td>kube-state-metrics</td><td>Pods with IPv6 primary IP (prefix match on fd)</td></tr>
+          <tr><td><code>coredns_dns_response_rcode_total{rcode="NXDOMAIN",qtype="AAAA"}</code></td><td>CoreDNS</td><td>Failed AAAA lookups; high rate = missing IPv6 ClusterIP</td></tr>
+          <tr><td><code>cilium_forward_count_total{family="6"}</code></td><td>Cilium</td><td>IPv6 packets forwarded by Cilium</td></tr>
+          <tr><td><code>felix_ipv6_support</code></td><td>Calico Felix</td><td>Whether Felix has IPv6 support enabled; 0 = IPv6 will not work</td></tr>
+          <tr><td><code>kube_proxy_network_programming_duration_seconds</code></td><td>kube-proxy</td><td>Time to program ip6tables rules; high = ip6tables contention</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Alerting Rules</h3>
+      <pre><code># Alert: Pod missing IPv6 address in dual-stack cluster
+- alert: PodMissingIPv6Address
+  expr: |
+    count by (namespace, pod) (
+      kube_pod_info{pod_ip!~"fd.*|2[0-9a-f]{3}:.*"}
+    ) > 0
+  for: 10m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Pod {{ $labels.pod }} in {{ $labels.namespace }} has no IPv6 address"
+
+# Alert: Service missing IPv6 ClusterIP
+- alert: ServiceMissingIPv6ClusterIP
+  expr: |
+    kube_service_spec_type{type="ClusterIP"} unless
+    kube_service_info{ip_family="IPv6"}
+  for: 15m
+  labels:
+    severity: info
+
+# Alert: High AAAA NXDOMAIN rate
+- alert: HighAAAANXDOMAINRate
+  expr: |
+    rate(coredns_dns_response_rcode_total{rcode="NXDOMAIN",qtype="AAAA"}[5m]) > 10
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "High rate of AAAA NXDOMAIN responses — services may lack IPv6 ClusterIPs"
+
+# Alert: ip6tables rule programming failure
+- alert: Ip6tablesRuleProgrammingFailure
+  expr: rate(kube_proxy_sync_proxy_rules_errors_total[5m]) > 0
+  for: 5m
+  labels:
+    severity: critical
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Troubleshooting Runbooks</h3>
+
+      <div class="card-grid" style="grid-template-columns:1fr;">
+        <div class="card">
+          <h4>Runbook 1: Pod Has No IPv6 Address</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check if pod has two IPs
+kubectl get pod my-pod -o jsonpath='{.status.podIPs}'
+# Expected: [{"ip":"10.244.1.5"},{"ip":"fd00:10:244:1::5"}]
+# If only IPv4: CNI not configured for dual-stack
+
+# Check if node has dual-stack pod CIDR
+kubectl get node my-node -o jsonpath='{.spec.podCIDRs}'
+# Expected: ["10.244.1.0/24","fd00:10:244:1::/64"]
+# If only one: kube-controller-manager --cluster-cidr not set to dual-stack
+
+# Check CNI configuration on node
+cat /etc/cni/net.d/10-calico.conflist | grep -i ipv6
+# Or for Cilium:
+cilium status | grep IPv6</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 2: Service Has No IPv6 ClusterIP</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check service IP families
+kubectl get svc my-service -o jsonpath='{.spec.ipFamilies} {.spec.ipFamilyPolicy}'
+# If: [IPv4] SingleStack → not dual-stack configured
+
+# Patch existing service to dual-stack
+kubectl patch svc my-service -p '{"spec":{"ipFamilyPolicy":"PreferDualStack","ipFamilies":["IPv4","IPv6"]}}'
+
+# Verify after patch
+kubectl get svc my-service -o yaml | grep -A5 clusterIPs
+
+# Check API server service CIDR includes IPv6
+kubectl get cm -n kube-system kubeadm-config -o yaml | grep serviceSubnet</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 3: AAAA Record Not Resolving</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Test from inside a pod
+kubectl exec -n default deploy/debug -- dig AAAA my-service.production.svc.cluster.local
+
+# If NXDOMAIN: service has no IPv6 ClusterIP
+kubectl get svc my-service -n production -o jsonpath='{.spec.clusterIPs}'
+
+# If SERVFAIL: CoreDNS issue
+kubectl logs -n kube-system -l k8s-app=kube-dns --tail=50 | grep -i error
+
+# Check CoreDNS can reach API server for IPv6 endpoint data
+kubectl exec -n kube-system deploy/coredns -- wget -qO- http://localhost:8080/health</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 4: IPv6 Pod-to-Pod Communication Failing</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Verify IPv6 is reachable within node first
+kubectl exec pod-a -- ping6 fd00:10:244:1::6   # same-node pod
+
+# Cross-node IPv6 ping
+kubectl exec pod-a -- ping6 fd00:10:244:2::5   # different-node pod
+
+# If same-node works but cross-node fails: CNI overlay not configured for IPv6
+# Calico: check FELIX_IPV6SUPPORT=true in calico-node DaemonSet
+kubectl get ds calico-node -n kube-system -o jsonpath='{.spec.template.spec.containers[0].env}' | jq '.[] | select(.name=="FELIX_IPV6SUPPORT")'
+
+# Cilium: check IPv6 is enabled
+cilium config view | grep ipv6
+
+# Check node IPv6 routing table
+kubectl exec -n kube-system calico-node-xxxx -- ip -6 route show</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 5: CIDR Overlap Detected After Enabling Dual-Stack</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check for CIDR overlaps
+kubectl get cm -n kube-system kubeadm-config -o yaml
+
+# Overlapping CIDRs cause pod-to-service routing to break silently
+# Common mistake: node network uses fd00::/8 and pod CIDR also uses fd00::/48
+
+# Verify all four CIDRs are disjoint:
+# 1. Node IPv4 network (check cloud VPC / router)
+# 2. Pod IPv4 CIDR     (kubectl get cm kubeadm-config)
+# 3. Service IPv4 CIDR (kubectl get cm kubeadm-config)
+# 4. Pod IPv6 CIDR     (must not overlap node IPv6 range)
+# 5. Service IPv6 CIDR (must not overlap pod IPv6 range)
+
+# If overlap exists: requires cluster rebuild — no in-place fix for CIDR conflicts</code></pre>
+        </div>
+      </div>
+
+      <!-- 16. BEST PRACTICES -->
+      <h2 id="best-practices">Best Practices</h2>
+      <ol style="padding-left:24px;color:var(--text2);font-size:14px;line-height:2;">
+        <li><strong>Use ULA (<code>fd</code> prefix) for pod and service CIDRs</strong> — globally unique but not internet-routable; predictable; easy to distinguish from node addresses. Avoid <code>fc</code> (L=0) — use <code>fd</code> (L=1).</li>
+        <li><strong>Allocate /48 for pod IPv6 CIDR</strong> — this gives 65536 nodes each with a /64 (18 quintillion pod IPs per node). A /56 gives 256 nodes. Size based on your max node count.</li>
+        <li><strong>Use /112 for IPv6 service CIDR</strong> — 65536 services; matches typical IPv4 /16 service CIDR sizing. Larger ranges waste space without benefit.</li>
+        <li><strong>Enable dual-stack from day zero</strong> — retrofitting an existing single-stack cluster is painful and irreversible. If in doubt, enable it early even if you don't use IPv6 yet.</li>
+        <li><strong>Test IPv6 connectivity explicitly in CI</strong> — many integration tests only check IPv4. Add explicit IPv6 connectivity checks to your test suite.</li>
+        <li><strong>Configure <code>--node-ip</code> on all kubelets</strong> — without explicit node-ip, kubelet may pick the wrong IPv6 address (e.g., link-local) as the node's IPv6 address.</li>
+        <li><strong>Verify NetworkPolicy covers both address families</strong> — ipBlock rules must include both IPv4 and IPv6 CIDRs for complete coverage. A policy allowing only <code>10.0.0.0/8</code> does not block IPv6 connections.</li>
+        <li><strong>Set <code>ipFamilyPolicy: RequireDualStack</code> for services that must be reachable via IPv6</strong> — <code>PreferDualStack</code> silently degrades to single-stack on single-stack clusters; <code>RequireDualStack</code> fails fast.</li>
+      </ol>
+
+      <div class="nav-footer">
+        <a class="nav-btn" href="07-network-policies.html"><small>← Previous</small>Network Policies</a>
+        <a class="nav-btn" href="09-load-balancing.html"><small>Next →</small>Load Balancing</a>
+      </div>
+
+    </main>
+
+    <aside class="toc-panel">
+      <div class="toc-title">On This Page</div>
+      <a href="#why">Why Dual-Stack</a>
+      <a href="#ipv6-primer">IPv6 Address Types</a>
+      <a href="#cidr-planning">CIDR Planning</a>
+      <a href="#cluster-config">Cluster Configuration</a>
+      <a href="#api-server-flags" class="toc-h3">API Server Flags</a>
+      <a href="#kubeadm" class="toc-h3">kubeadm Config</a>
+      <a href="#kubelet-nodeip" class="toc-h3">kubelet nodeIP</a>
+      <a href="#pod-dual-stack">Pod Dual-Stack</a>
+      <a href="#service-dual-stack">Service Dual-Stack</a>
+      <a href="#ipfamilypolicy" class="toc-h3">ipFamilyPolicy</a>
+      <a href="#ipfamilies" class="toc-h3">ipFamilies Ordering</a>
+      <a href="#headless-dual-stack" class="toc-h3">Headless Services</a>
+      <a href="#nodeport-dual-stack" class="toc-h3">NodePort</a>
+      <a href="#loadbalancer-dual-stack" class="toc-h3">LoadBalancer</a>
+      <a href="#dns">DNS A &amp; AAAA Records</a>
+      <a href="#endpointslices">EndpointSlices</a>
+      <a href="#kube-proxy">kube-proxy Dual-Stack</a>
+      <a href="#cni-support">CNI Support</a>
+      <a href="#calico-dualstack" class="toc-h3">Calico</a>
+      <a href="#cilium-dualstack" class="toc-h3">Cilium</a>
+      <a href="#networkpolicy-ipv6">NetworkPolicy IPv6</a>
+      <a href="#node-addresses">Node Addresses</a>
+      <a href="#ipv6-only">IPv6-Only Clusters</a>
+      <a href="#migration">Migration Path</a>
+      <a href="#metrics">Metrics &amp; Troubleshooting</a>
+      <a href="#best-practices">Best Practices</a>
+    </aside>
+  </div>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+const themeBtn=document.getElementById('theme-toggle');
+themeBtn.textContent=saved==='dark'?'Light Mode':'Dark Mode';
+themeBtn.addEventListener('click',()=>{
+  const t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'Light Mode':'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>backTop.classList.toggle('visible',main.scrollTop>400));
+backTop.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    const code=pre.querySelector('code');
+    navigator.clipboard.writeText(code?code.innerText:pre.innerText).then(()=>{
+      btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+    });
+  });
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const a=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

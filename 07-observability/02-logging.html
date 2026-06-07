@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Logging — Kubernetes Observability</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#1f2328;--text2:#656d76;--text3:#9198a1;--code-bg:#f6f8fa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;font-size:14px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+/* sidebar */
+.sidebar{width:272px;min-width:272px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:transform .25s}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo{font-size:20px}
+.sidebar-title{font-size:14px;font-weight:600}
+.sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.sidebar-nav{overflow-y:auto;flex:1;padding:8px 0}
+.nav-section{margin-bottom:4px}
+.nav-section-header{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.nav-section a{display:block;padding:5px 16px 5px 28px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3)}
+/* main */
+.main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.hamburger{background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px;display:none}
+.topbar-title{font-size:14px;font-weight:600;flex:1}
+.topbar-actions{display:flex;gap:8px}
+.btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 12px;font-size:12px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--bg4)}
+main{flex:1;overflow-y:auto;padding:32px 40px;scroll-behavior:smooth}
+/* content */
+h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.subtitle{color:var(--text2);font-size:15px;margin-bottom:24px}
+h2{font-size:20px;font-weight:600;margin:40px 0 16px;padding-top:8px;border-top:1px solid var(--border)}
+h2:first-of-type{margin-top:24px;border-top:none}
+h3{font-size:16px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:18px 0 8px;color:var(--text2)}
+p{color:var(--text2);line-height:1.65;margin-bottom:12px}
+ul,ol{color:var(--text2);padding-left:20px;margin-bottom:12px}
+li{margin-bottom:4px;line-height:1.55}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'SF Mono',Consolas,monospace;font-size:12px;color:var(--text)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin-bottom:16px;position:relative}
+pre code{background:none;border:none;padding:0;font-size:12px;line-height:1.55}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);padding:3px 8px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg4)}
+/* tables */
+.table-wrap{overflow-x:auto;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text)}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg2)}
+/* callouts */
+.callout{border-left:3px solid;padding:12px 16px;margin-bottom:16px;border-radius:0 6px 6px 0}
+.callout-info{border-color:var(--accent);background:rgba(88,166,255,.08)}
+.callout-warn{border-color:var(--yellow);background:rgba(210,153,34,.08)}
+.callout-danger{border-color:var(--red);background:rgba(248,81,73,.08)}
+.callout-success{border-color:var(--green);background:rgba(63,185,80,.08)}
+.callout-title{font-weight:600;font-size:13px;margin-bottom:4px}
+.callout p{margin-bottom:0;font-size:13px}
+/* cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin-top:0;margin-bottom:8px;font-size:14px}
+.card p{font-size:13px;margin-bottom:0}
+/* diagram */
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;font-family:'SF Mono',Consolas,monospace;font-size:12px;line-height:1.7;overflow-x:auto;white-space:pre;color:var(--text2)}
+/* badges */
+.badge{display:inline-block;padding:1px 7px;border-radius:12px;font-size:11px;font-weight:500}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+/* toc */
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px}
+.toc-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.toc ol{margin-bottom:0;padding-left:16px}
+.toc li{font-size:12px;margin-bottom:3px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+/* two-col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+/* pattern grid */
+.pattern-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+.pattern-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.pattern-card h4{margin:0 0 6px;font-size:13px;color:var(--text)}
+.pattern-card p{font-size:12px;margin-bottom:0;color:var(--text2)}
+/* signal cards */
+.signal-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.signal-card h4{margin:0 0 6px;font-size:13px}
+/* back-to-top */
+#back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:100}
+/* coverage */
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:40px}
+details.coverage summary{padding:14px 16px;cursor:pointer;font-size:13px;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;color:var(--text3)}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2)}
+/* section nav */
+.section-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2)}
+.section-nav a:hover{color:var(--accent);text-decoration:none;border-color:var(--accent)}
+/* step */
+.step-list{counter-reset:step;list-style:none;padding:0;margin-bottom:16px}
+.step-list li{counter-increment:step;padding:10px 12px 10px 44px;position:relative;border-left:2px solid var(--border);margin-bottom:6px;color:var(--text2);font-size:13px}
+.step-list li::before{content:counter(step);position:absolute;left:-14px;top:8px;background:var(--accent2);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+@media(max-width:768px){.sidebar{position:fixed;left:0;top:0;height:100%;z-index:200;transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{padding:20px 16px}.two-col{grid-template-columns:1fr}.coverage-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-logo">☸</span>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="nav-filter" placeholder="Filter navigation…" aria-label="Filter navigation"/>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-header">Getting Started</div>
+      <a href="../00-introduction/00-overview.html">Overview</a>
+      <a href="../00-introduction/01-architecture.html">Architecture</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Workloads</div>
+      <a href="../01-workloads/00-pods.html">Pods</a>
+      <a href="../01-workloads/01-deployments.html">Deployments</a>
+      <a href="../01-workloads/02-statefulsets.html">StatefulSets</a>
+      <a href="../01-workloads/03-daemonsets.html">DaemonSets</a>
+      <a href="../01-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Networking</div>
+      <a href="../02-networking/00-services.html">Services</a>
+      <a href="../02-networking/01-ingress.html">Ingress</a>
+      <a href="../02-networking/02-network-policies.html">Network Policies</a>
+      <a href="../02-networking/03-dns.html">DNS</a>
+      <a href="../02-networking/04-cni.html">CNI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Storage</div>
+      <a href="../03-storage/00-volumes.html">Volumes</a>
+      <a href="../03-storage/01-persistent-volumes.html">Persistent Volumes</a>
+      <a href="../03-storage/02-storage-classes.html">Storage Classes</a>
+      <a href="../03-storage/03-csi.html">CSI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Configuration</div>
+      <a href="../04-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../04-configuration/01-secrets.html">Secrets</a>
+      <a href="../04-configuration/02-resource-management.html">Resource Management</a>
+      <a href="../04-configuration/03-hpa-vpa.html">HPA &amp; VPA</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Scheduling</div>
+      <a href="../05-scheduling/00-node-selection.html">Node Selection</a>
+      <a href="../05-scheduling/01-taints-tolerations.html">Taints &amp; Tolerations</a>
+      <a href="../05-scheduling/02-priority-preemption.html">Priority &amp; Preemption</a>
+      <a href="../05-scheduling/03-scheduler-internals.html">Scheduler Internals</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Security</div>
+      <a href="../06-security/00-rbac.html">RBAC</a>
+      <a href="../06-security/01-service-accounts.html">Service Accounts</a>
+      <a href="../06-security/02-pod-security.html">Pod Security</a>
+      <a href="../06-security/03-network-policies.html">Network Policies (Security)</a>
+      <a href="../06-security/04-secrets-management.html">Secrets Management</a>
+      <a href="../06-security/05-opa-gatekeeper.html">OPA Gatekeeper</a>
+      <a href="../06-security/06-admission-controllers.html">Admission Controllers</a>
+      <a href="../06-security/07-image-security.html">Image Security</a>
+      <a href="../06-security/08-audit-logging.html">Audit Logging</a>
+      <a href="../06-security/09-encryption-at-rest.html">Encryption at Rest</a>
+      <a href="../06-security/10-supply-chain-security.html">Supply Chain Security</a>
+      <a href="../06-security/11-compliance.html">Compliance</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Observability</div>
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics &amp; Prometheus</a>
+      <a href="02-logging.html" class="active">Logging</a>
+      <a href="03-tracing.html">Distributed Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-overview.html">Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Production Operations</div>
+      <a href="../09-production-operations/00-overview.html">Overview</a>
+    </div>
+  </nav>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+    <span class="topbar-title">Logging — Kubernetes Observability</span>
+    <div class="topbar-actions">
+      <button class="btn" id="theme-toggle">Light Mode</button>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <h1>Logging in Kubernetes</h1>
+    <p class="subtitle">Complete guide to log collection, structured logging, Fluent Bit, Loki/LogQL, Elasticsearch, OpenTelemetry logs, and production log management at scale.</p>
+
+    <nav class="section-nav" aria-label="Section navigation">
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html">Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </nav>
+
+    <nav class="toc" aria-label="Table of contents">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#architecture">Kubernetes Logging Architecture</a></li>
+        <li><a href="#patterns">Log Collection Patterns</a></li>
+        <li><a href="#structured">Structured Logging</a></li>
+        <li><a href="#fluentbit">Fluent Bit</a></li>
+        <li><a href="#loki">Loki &amp; LogQL</a></li>
+        <li><a href="#elasticsearch">Elasticsearch / OpenSearch</a></li>
+        <li><a href="#otel-logs">OpenTelemetry Logs</a></li>
+        <li><a href="#component-logs">Kubernetes Component Logs</a></li>
+        <li><a href="#kubectl-tools">kubectl logs &amp; Tooling</a></li>
+        <li><a href="#cost">Cardinality &amp; Cost Management</a></li>
+        <li><a href="#alerting">Alerting on Logs</a></li>
+        <li><a href="#operations">Metrics, Alerts &amp; Runbooks</a></li>
+      </ol>
+    </nav>
+
+    <!-- =================== ARCHITECTURE =================== -->
+    <h2 id="architecture">Kubernetes Logging Architecture</h2>
+
+    <p>Kubernetes does not provide a built-in log aggregation or persistence system. Containers write to <strong>stdout/stderr</strong>; the container runtime captures those streams and writes them to log files on the node. Kubernetes exposes these via <code>kubectl logs</code> but does not ship them anywhere. Cluster operators are responsible for collecting, forwarding, and storing logs.</p>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">Logs Are Ephemeral by Default</div>
+      <p>Pod logs exist only while the pod exists on the node, subject to log rotation. If a pod is evicted, rescheduled, or deleted, its logs disappear. A log collector DaemonSet must tail files in real-time to avoid data loss.</p>
+    </div>
+
+    <h3>Node-Level Log File Paths</h3>
+    <p>The container runtime writes logs at a location determined by its log driver. The kubelet creates stable symlinks:</p>
+
+    <div class="diagram">┌─ Container stdout/stderr
+│
+▼
+Container Runtime (containerd / CRI-O)
+│  writes to: /var/log/pods/&lt;ns&gt;_&lt;pod&gt;_&lt;uid&gt;/&lt;container&gt;/&lt;n&gt;.log
+│
+├── Kubelet creates symlinks:
+│   /var/log/containers/&lt;pod&gt;_&lt;ns&gt;_&lt;container&gt;-&lt;id&gt;.log
+│       → /var/log/pods/.../&lt;n&gt;.log
+│
+├── Log rotation managed by kubelet:
+│   --container-log-max-size=10Mi     (default 10Mi per file)
+│   --container-log-max-files=5       (default 5 rotated files)
+│
+└── kubectl logs reads from: /var/log/pods/... via kubelet API</div>
+
+    <h3>CRI Log Format</h3>
+    <p>Since Kubernetes 1.14, the CRI log format (used by containerd and CRI-O) prefixes each line with metadata:</p>
+    <pre><code class="language-text"><span class="comment"># Format: &lt;timestamp&gt; &lt;stream&gt; &lt;flags&gt; &lt;log message&gt;</span>
+2024-01-15T10:23:45.123456789Z stdout F {"level":"info","msg":"server started","port":8080}
+2024-01-15T10:23:45.124000000Z stderr F Error: connection refused to db:5432
+<span class="comment"># Flags: F = full line, P = partial line (multiline handling needed)</span></code><button class="copy-btn">Copy</button></pre>
+
+    <div class="callout callout-info">
+      <div class="callout-title">Docker vs containerd Log Formats</div>
+      <p>Docker's default json-file driver wraps each log line in JSON: <code>{"log":"...\n","stream":"stdout","time":"..."}</code>. containerd uses the CRI format above. Fluent Bit parsers must match the actual runtime in your cluster — check with <code>kubectl get nodes -o wide</code> for the container runtime version.</p>
+    </div>
+
+    <h3>Log Retention on Node</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>kubelet Flag</th><th>Default</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>--container-log-max-size</code></td><td>10Mi</td><td>Max size before rotation</td></tr>
+          <tr><td><code>--container-log-max-files</code></td><td>5</td><td>Number of rotated files to keep</td></tr>
+          <tr><td><code>--node-status-update-frequency</code></td><td>10s</td><td>Affects log availability window</td></tr>
+          <tr><td>Total per-container storage</td><td>~50Mi</td><td>max-size × max-files</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== PATTERNS =================== -->
+    <h2 id="patterns">Log Collection Patterns</h2>
+
+    <p>There are three fundamental architectures for log collection in Kubernetes. Most production clusters use a combination of patterns 1 and 2.</p>
+
+    <div class="pattern-grid">
+      <div class="pattern-card">
+        <h4>1. Node-Level Agent (DaemonSet)</h4>
+        <p>A log collector runs as a DaemonSet on every node, tailing <code>/var/log/containers/</code>. One collector per node — low overhead, zero application changes required. Works for any container writing to stdout/stderr.</p>
+        <p style="margin-top:8px"><span class="badge badge-green">Recommended</span> for most workloads</p>
+      </div>
+      <div class="pattern-card">
+        <h4>2. Sidecar Container</h4>
+        <p>A dedicated log-shipper container runs in the same pod as the application, reading logs from a shared volume. Required when the application writes to files rather than stdout, or when per-application routing logic is needed.</p>
+        <p style="margin-top:8px"><span class="badge badge-yellow">Use sparingly</span> — resource overhead per pod</p>
+      </div>
+      <div class="pattern-card">
+        <h4>3. Sidecar Streaming</h4>
+        <p>A sidecar reads from the application log file and re-emits to stdout. Useful for legacy applications that cannot be modified to write to stdout. The node-level agent then picks up the sidecar's stdout.</p>
+        <p style="margin-top:8px"><span class="badge badge-blue">Legacy apps</span> only</p>
+      </div>
+      <div class="pattern-card">
+        <h4>4. Direct-to-Backend</h4>
+        <p>The application SDK ships logs directly to the logging backend (e.g., Datadog Agent via UDP, Loki HTTP API). Bypasses the node filesystem entirely. Requires code changes; provides richest metadata but no fallback if backend unreachable.</p>
+        <p style="margin-top:8px"><span class="badge badge-purple">Cloud-native apps</span></p>
+      </div>
+    </div>
+
+    <h3>Pattern Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Pattern</th><th>Resource Overhead</th><th>App Changes</th><th>File Logging</th><th>Per-Pod Routing</th><th>Data Loss Risk</th></tr></thead>
+        <tbody>
+          <tr><td>Node-Level DaemonSet</td><td>Low (1 agent/node)</td><td>None</td><td>No (stdout only)</td><td>Limited</td><td>If pod deleted before tail</td></tr>
+          <tr><td>Sidecar Shipper</td><td>High (1 sidecar/pod)</td><td>Shared volume</td><td>Yes</td><td>Yes</td><td>Low (direct ship)</td></tr>
+          <tr><td>Sidecar Streaming</td><td>Medium</td><td>Shared volume</td><td>Yes</td><td>No</td><td>Same as DaemonSet</td></tr>
+          <tr><td>Direct SDK</td><td>None extra</td><td>Yes</td><td>Yes</td><td>Full</td><td>If backend unreachable</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== STRUCTURED LOGGING =================== -->
+    <h2 id="structured">Structured Logging</h2>
+
+    <p>Structured logs emit machine-parseable records (JSON) rather than free-text strings. This enables log backends to index fields, run aggregations, and support precise query predicates — critical for high-volume environments.</p>
+
+    <h3>Standard Log Fields</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Purpose</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><code>timestamp</code></td><td>RFC3339</td><td>Event time (UTC)</td><td><code>"2024-01-15T10:23:45.123Z"</code></td></tr>
+          <tr><td><code>level</code></td><td>string</td><td>Severity</td><td><code>"info"</code>, <code>"error"</code>, <code>"warn"</code></td></tr>
+          <tr><td><code>message</code></td><td>string</td><td>Human-readable summary</td><td><code>"request completed"</code></td></tr>
+          <tr><td><code>service</code></td><td>string</td><td>Application name</td><td><code>"order-service"</code></td></tr>
+          <tr><td><code>version</code></td><td>string</td><td>App version/build</td><td><code>"v2.4.1"</code></td></tr>
+          <tr><td><code>trace_id</code></td><td>string (hex)</td><td>W3C TraceContext — links to trace</td><td><code>"4bf92f3577b34da6..."</code></td></tr>
+          <tr><td><code>span_id</code></td><td>string (hex)</td><td>Span within trace</td><td><code>"00f067aa0ba902b7"</code></td></tr>
+          <tr><td><code>pod</code></td><td>string</td><td>Kubernetes pod name</td><td><code>"order-7d5f9-xk2pq"</code></td></tr>
+          <tr><td><code>namespace</code></td><td>string</td><td>Kubernetes namespace</td><td><code>"production"</code></td></tr>
+          <tr><td><code>node</code></td><td>string</td><td>Node hosting the pod</td><td><code>"ip-10-0-1-45"</code></td></tr>
+          <tr><td><code>error</code></td><td>string / object</td><td>Error details when level=error</td><td><code>"connection refused"</code></td></tr>
+          <tr><td><code>duration_ms</code></td><td>float</td><td>Request/operation duration</td><td><code>34.7</code></td></tr>
+          <tr><td><code>http.method</code></td><td>string</td><td>HTTP verb (OTel semantic conventions)</td><td><code>"POST"</code></td></tr>
+          <tr><td><code>http.status_code</code></td><td>int</td><td>HTTP response code</td><td><code>200</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Go: Zap Structured Logger</h3>
+    <pre><code class="language-go">package main
+
+import (
+    "go.uber.org/zap"
+    "go.opentelemetry.io/otel/trace"
+)
+
+func setupLogger() *zap.Logger {
+    cfg := zap.NewProductionConfig()
+    cfg.EncoderConfig.TimeKey = "timestamp"
+    cfg.EncoderConfig.MessageKey = "message"
+    logger, _ := cfg.Build()
+    return logger
+}
+
+// Inject trace context into every log record
+func loggerFromSpan(base *zap.Logger, span trace.Span) *zap.Logger {
+    sc := span.SpanContext()
+    return base.With(
+        zap.String("trace_id", sc.TraceID().String()),
+        zap.String("span_id", sc.SpanID().String()),
+        zap.Bool("trace_sampled", sc.IsSampled()),
+    )
+}
+
+func handleRequest(logger *zap.Logger, span trace.Span, method, path string) {
+    log := loggerFromSpan(logger, span)
+    log.Info("request received",
+        zap.String("http.method", method),
+        zap.String("http.path", path),
+    )
+}
+
+// Output:
+// {"timestamp":"2024-01-15T10:23:45.123Z","level":"info","message":"request received",
+//  "http.method":"POST","http.path":"/orders","trace_id":"4bf92f3577b34da6...","span_id":"00f067aa0ba902b7"}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Java: Logback JSON Encoder (Logstash)</h3>
+    <pre><code class="language-xml">&lt;!-- pom.xml dependency --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;net.logstash.logback&lt;/groupId&gt;
+  &lt;artifactId&gt;logstash-logback-encoder&lt;/artifactId&gt;
+  &lt;version&gt;7.4&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;!-- logback-spring.xml --&gt;
+&lt;configuration&gt;
+  &lt;appender name="JSON" class="ch.qos.logback.core.ConsoleAppender"&gt;
+    &lt;encoder class="net.logstash.logback.encoder.LogstashEncoder"&gt;
+      &lt;fieldNames&gt;
+        &lt;timestamp&gt;timestamp&lt;/timestamp&gt;
+        &lt;message&gt;message&lt;/message&gt;
+        &lt;logger&gt;logger&lt;/logger&gt;
+      &lt;/fieldNames&gt;
+      &lt;includeMdcKeyName&gt;trace_id&lt;/includeMdcKeyName&gt;
+      &lt;includeMdcKeyName&gt;span_id&lt;/includeMdcKeyName&gt;
+    &lt;/encoder&gt;
+  &lt;/appender&gt;
+  &lt;root level="INFO"&gt;
+    &lt;appender-ref ref="JSON"/&gt;
+  &lt;/root&gt;
+&lt;/configuration&gt;</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Python: structlog</h3>
+    <pre><code class="language-python">import structlog
+import logging
+
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,   # thread-local context (trace_id etc.)
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso", utc=True, key="timestamp"),
+        structlog.processors.dict_tracebacks,
+        structlog.processors.JSONRenderer(),
+    ],
+    logger_factory=structlog.PrintLoggerFactory(),
+)
+
+log = structlog.get_logger()
+
+# Bind request context once per request:
+structlog.contextvars.bind_contextvars(
+    trace_id="4bf92f3577b34da6a3ce929d0e0e4736",
+    span_id="00f067aa0ba902b7",
+    service="order-service",
+)
+
+log.info("order created", order_id=12345, amount=99.50)
+# {"timestamp":"2024-01-15T10:23:45.123Z","level":"info","event":"order created",
+#  "order_id":12345,"amount":99.5,"trace_id":"4bf92f3577b34da6...","service":"order-service"}</code><button class="copy-btn">Copy</button></pre>
+
+    <div class="callout callout-info">
+      <div class="callout-title">Node.js: pino</div>
+      <p><code>pino</code> is the standard for Node.js structured logging: <code>const log = pino({ level: 'info', timestamp: pino.stdTimeFunctions.isoTime })</code>. Use <code>pino-http</code> middleware to automatically log HTTP requests with duration and status code.</p>
+    </div>
+
+    <!-- =================== FLUENT BIT =================== -->
+    <h2 id="fluentbit">Fluent Bit</h2>
+
+    <p>Fluent Bit is the preferred lightweight log collector for Kubernetes (written in C, ~700KB binary, ~30MB RSS). It replaces Fluentd in most modern deployments due to its lower resource footprint. Fluent Bit reads CRI log files, enriches them with Kubernetes metadata via the API, and forwards to one or more backends.</p>
+
+    <h3>Fluent Bit vs Fluentd</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Aspect</th><th>Fluent Bit</th><th>Fluentd</th></tr></thead>
+        <tbody>
+          <tr><td>Language</td><td>C</td><td>Ruby</td></tr>
+          <tr><td>Memory footprint</td><td>~30–50MB</td><td>~200–600MB</td></tr>
+          <tr><td>Plugin ecosystem</td><td>~100 plugins</td><td>~1,000 plugins</td></tr>
+          <tr><td>Performance</td><td>Higher (native)</td><td>Lower (Ruby GIL)</td></tr>
+          <tr><td>Complex routing</td><td>Limited</td><td>Excellent</td></tr>
+          <tr><td>Use case</td><td>Edge/DaemonSet collector</td><td>Aggregator / heavy processing</td></tr>
+          <tr><td>CNCF status</td><td>Graduated</td><td>Graduated</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Fluent Bit Pipeline Model</h3>
+    <div class="diagram">INPUT (tail /var/log/containers/*.log)
+    │
+    ▼
+PARSER (containerd / docker / json / regex)
+    │
+    ▼
+FILTER: kubernetes   ← calls kubelet API for pod/namespace/labels/annotations
+    │
+    ▼
+FILTER: modify / nest / rewrite_tag / throttle / lua
+    │
+    ▼
+BUFFER (filesystem or memory)
+    │
+    ▼
+OUTPUT → Loki / Elasticsearch / S3 / Kafka / Splunk / CloudWatch / multiple</div>
+
+    <h3>Helm Install</h3>
+    <pre><code class="language-bash">helm repo add fluent https://fluent.github.io/helm-charts
+helm repo update
+
+helm upgrade --install fluent-bit fluent/fluent-bit \
+  --namespace logging \
+  --create-namespace \
+  --values fluentbit-values.yaml</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Production ConfigMap (Loki backend)</h3>
+    <pre><code class="language-yaml">apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         5
+        Daemon        Off
+        Log_Level     warn
+        Parsers_File  parsers.conf
+        HTTP_Server   On
+        HTTP_Listen   0.0.0.0
+        HTTP_Port     2020
+        storage.type  filesystem              # buffer to disk (survive node pressure)
+        storage.path  /var/log/flb-storage/
+        storage.sync  normal
+        storage.checksum Off
+        storage.max_chunks_up 128
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        # Exclude fluent-bit's own logs and kube-system noise
+        Exclude_Path      /var/log/containers/fluent-bit*,/var/log/containers/*_kube-system_*
+        multiline.parser  docker, cri          # handles both runtimes
+        Tag               kube.*
+        Refresh_Interval  5
+        Rotate_Wait       30
+        Mem_Buf_Limit     64MB
+        Skip_Long_Lines   On
+        DB                /var/log/flb-storage/tail.db  # position tracking
+        DB.sync           normal
+        Ignore_Older      24h
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix     kube.var.log.containers.
+        Merge_Log           On               # parse nested JSON from container log field
+        Keep_Log            Off              # drop original 'log' key after merge
+        Merge_Log_Key       app              # merged fields under 'app.' prefix
+        K8S-Logging.Parser  On              # respect pod annotation for custom parser
+        K8S-Logging.Exclude On              # respect annotation to exclude pod
+        Labels              On
+        Annotations         Off             # annotations add cardinality — disable unless needed
+
+    # Drop noisy health/readiness probe logs
+    [FILTER]
+        Name   grep
+        Match  kube.*
+        Exclude log /healthz|/readyz|/livez|/metrics
+
+    # Add cluster identifier
+    [FILTER]
+        Name   modify
+        Match  kube.*
+        Add    cluster prod-us-east-1
+
+    [OUTPUT]
+        Name            loki
+        Match           kube.*
+        Host            loki-gateway.monitoring.svc.cluster.local
+        Port            80
+        Labels          job=fluent-bit,cluster=$cluster,namespace=$kubernetes_namespace_name,pod=$kubernetes_pod_name,container=$kubernetes_container_name
+        Label_Keys      level,severity
+        Remove_Keys     kubernetes,stream
+        Retry_Limit     False             # retry indefinitely (disk-buffered)
+        Workers         4
+
+  parsers.conf: |
+    [PARSER]
+        Name        docker
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+
+    [PARSER]
+        Name        cri
+        Format      regex
+        Regex       ^(?&lt;time&gt;[^ ]+) (?&lt;stream&gt;stdout|stderr) (?&lt;flags&gt;[^ ]*) (?&lt;log&gt;.*)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+    [PARSER]
+        Name        json
+        Format      json
+        Time_Key    timestamp
+        Time_Format %Y-%m-%dT%H:%M:%S.%LZ</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Fluent Bit DaemonSet Resource Requirements</h3>
+    <pre><code class="language-yaml">apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: logging
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+      annotations:
+        fluentbit.io/exclude: "true"     # exclude own logs from collection
+    spec:
+      serviceAccountName: fluent-bit
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node.kubernetes.io/not-ready
+          effect: NoSchedule
+      containers:
+        - name: fluent-bit
+          image: cr.fluentbit.io/fluent/fluent-bit:3.2.0
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: varlog
+              mountPath: /var/log
+              readOnly: true
+            - name: config
+              mountPath: /fluent-bit/etc
+            - name: storage
+              mountPath: /var/log/flb-storage
+          ports:
+            - name: http
+              containerPort: 2020
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+      volumes:
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: config
+          configMap:
+            name: fluent-bit-config
+        - name: storage
+          hostPath:
+            path: /var/lib/fluent-bit
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluent-bit
+  namespace: logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluent-bit
+rules:
+  - apiGroups: [""]
+    resources: [pods, namespaces, nodes, nodes/proxy]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fluent-bit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fluent-bit
+subjects:
+  - kind: ServiceAccount
+    name: fluent-bit
+    namespace: logging</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Multiline Log Handling</h3>
+    <p>Stack traces (Java, Python) and structured exceptions span multiple lines. The CRI format uses the <code>P</code> (partial) flag for continuation lines, but applications may not use it. Fluent Bit supports multiline via the <code>multiline.parser</code> option or dedicated multiline filter:</p>
+    <pre><code class="language-ini">[FILTER]
+    Name            multiline
+    Match           kube.*
+    multiline.key_content  log
+    multiline.parser       java    # built-in: java, go, python, ruby, docker
+
+# Custom multiline rule (e.g., Python traceback)
+[MULTILINE_PARSER]
+    name          python_custom
+    type          regex
+    flush_timeout 2000         # flush after 2s of inactivity
+    rule "start_state" "/^[^\s]/" "cont"
+    rule "cont"        "/^\s/"   "cont"</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== LOKI =================== -->
+    <h2 id="loki">Loki &amp; LogQL</h2>
+
+    <p>Grafana Loki is a horizontally scalable, highly available log aggregation system. Unlike Elasticsearch, Loki does <strong>not</strong> index the contents of log lines — only the metadata labels. This makes it extremely cost-efficient. Log content is compressed and stored in object storage (S3, GCS, Azure Blob).</p>
+
+    <h3>Loki Architecture</h3>
+    <div class="diagram">Fluent Bit / Promtail / OTel Collector
+        │  HTTP POST /loki/api/v1/push
+        ▼
+┌─────────────────────────────────────────────────────┐
+│                    Loki Cluster                      │
+│                                                      │
+│  Distributor  →  Ingester  →  Compactor              │
+│  (hash ring,     (WAL,         (index/chunk          │
+│  validation)     chunks)        compaction)          │
+│                                                      │
+│  Querier  ←  Query Frontend  ←  Grafana              │
+│     │         (caching,                              │
+│     │          sharding)                             │
+│     ▼                                                │
+│  Store Gateway ← Object Store (S3/GCS/Azure Blob)   │
+│  (chunk index)   + Index Store (BoltDB / tsdb)       │
+└─────────────────────────────────────────────────────┘</div>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">Label Cardinality Warning</div>
+      <p>Loki indexes <strong>labels</strong>, not log content. High-cardinality labels (e.g., <code>pod_name</code> with thousands of values, <code>user_id</code>, <code>request_id</code>) cause index explosion, query performance degradation, and excessive memory use in ingesters. Keep label count &lt;10, cardinality per label &lt;1,000. Put high-cardinality values in the log <em>body</em> and use <code>|=</code> / <code>| json</code> filter expressions to query them.</p>
+    </div>
+
+    <h3>Recommended Label Set</h3>
+    <pre><code class="language-text">cluster="prod-us-east-1"    # static — low cardinality
+namespace="payments"         # ~10–100 values
+pod="payments-api-7d5f9-xk"  # AVOID: high cardinality — use for debugging only
+container="payments-api"     # ~1–5 per namespace
+app="payments-api"           # from Kubernetes labels
+level="error"                # from log body parsing</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Loki Helm Install</h3>
+    <pre><code class="language-bash">helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+# Single-binary mode (dev/small clusters)
+helm upgrade --install loki grafana/loki \
+  --namespace monitoring \
+  --set deploymentMode=SingleBinary \
+  --set loki.storage.type=s3 \
+  --set loki.storage.s3.region=us-east-1 \
+  --set loki.storage.s3.bucketnames=my-loki-chunks \
+  --set loki.auth_enabled=false \
+  --set singleBinary.replicas=3
+
+# Distributed mode (production)
+helm upgrade --install loki grafana/loki-distributed \
+  --namespace monitoring \
+  --values loki-distributed-values.yaml</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Loki Distributed Values (Production)</h3>
+    <pre><code class="language-yaml"># loki-distributed-values.yaml
+loki:
+  auth_enabled: true
+  commonConfig:
+    replication_factor: 3
+  storage:
+    type: s3
+    s3:
+      region: us-east-1
+      bucketnames: prod-loki-chunks
+      insecure: false
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb              # TSDB index (Loki 2.8+)
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  limits_config:
+    ingestion_rate_mb: 64
+    ingestion_burst_size_mb: 128
+    max_label_names_per_series: 15
+    max_label_value_length: 2048
+    max_streams_per_user: 50000
+    max_chunks_per_query: 2000000
+    retention_period: 744h       # 31 days
+    per_tenant_override_config: /etc/loki/overrides.yaml
+
+ingester:
+  replicas: 3
+  resources:
+    requests: {cpu: 500m, memory: 1Gi}
+    limits: {cpu: 2, memory: 4Gi}
+
+distributor:
+  replicas: 3
+  resources:
+    requests: {cpu: 200m, memory: 256Mi}
+
+querier:
+  replicas: 3
+  resources:
+    requests: {cpu: 500m, memory: 512Mi}
+    limits: {cpu: 2, memory: 2Gi}
+
+queryFrontend:
+  replicas: 2
+
+compactor:
+  enabled: true
+  resources:
+    requests: {cpu: 200m, memory: 256Mi}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>LogQL Reference</h3>
+    <p>LogQL is Loki's query language. It has two types: log queries (return log lines) and metric queries (return time series derived from log lines).</p>
+
+    <h4>Log Stream Selectors</h4>
+    <pre><code class="language-logql"># Select all logs from namespace=payments
+{namespace="payments"}
+
+# Multiple label matchers
+{cluster="prod", namespace="payments", container="api"}
+
+# Regex match on label value
+{namespace=~"payments|orders"}
+
+# Negative match
+{namespace!="kube-system"}</code><button class="copy-btn">Copy</button></pre>
+
+    <h4>Log Pipeline Expressions</h4>
+    <pre><code class="language-logql"># Line filter — substring match (fastest)
+{namespace="payments"} |= "error"
+{namespace="payments"} != "health"
+
+# Line filter — regex
+{namespace="payments"} |~ "ERROR|FATAL"
+{namespace="payments"} !~ "GET /health|GET /metrics"
+
+# JSON parser — extract fields from JSON log body
+{namespace="payments"} | json
+
+# JSON parser with field aliases
+{namespace="payments"} | json level="level", traceId="trace_id"
+
+# Logfmt parser (key=value format)
+{namespace="payments"} | logfmt
+
+# Pattern parser (positional)
+{namespace="payments"} | pattern `<_> <method> <path> <status> <duration>`
+
+# Label filter — after parsing
+{namespace="payments"} | json | level = "error"
+{namespace="payments"} | json | status_code >= 500
+{namespace="payments"} | json | duration_ms > 1000
+
+# Line format — reshape output
+{namespace="payments"} | json | line_format "{{.level}} {{.message}} traceId={{.trace_id}}"
+
+# Label format — rename/derive labels
+{namespace="payments"} | json | label_format service=app, lvl=level</code><button class="copy-btn">Copy</button></pre>
+
+    <h4>Metric Queries</h4>
+    <pre><code class="language-logql"># Count error log rate per service (last 5m window)
+sum by (app) (rate({namespace="production"} |= "error" [5m]))
+
+# P99 request duration from logs (requires duration_ms field)
+quantile_over_time(0.99,
+  {namespace="payments"} | json | unwrap duration_ms [5m]
+) by (app)
+
+# Error rate as percentage of all logs
+sum(rate({namespace="payments"} | json | level="error" [5m]))
+  /
+sum(rate({namespace="payments"} [5m]))
+
+# Bytes ingested per namespace
+sum by (namespace) (bytes_rate({cluster="prod"} [5m]))
+
+# Log volume (lines per second) per service
+sum by (app) (rate({namespace="production"} [1m]))
+
+# Count distinct values (approx cardinality)
+count_over_time({namespace="payments"} |= "user_id" | json | __error__="" [1h])</code><button class="copy-btn">Copy</button></pre>
+
+    <h4>Useful Operational Queries</h4>
+    <pre><code class="language-logql"># Find all errors in last 15 minutes
+{namespace="production"} | json | level="error" | line_format "{{.timestamp}} {{.service}} {{.message}}"
+
+# Trace a request by trace_id
+{cluster="prod"} | json | trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+
+# Find OOMKilled events across all namespaces
+{cluster="prod"} |= "OOMKilled"
+
+# Slow queries (> 5s)
+{namespace="payments"} | json | duration_ms > 5000 | line_format "{{.timestamp}} {{.message}} dur={{.duration_ms}}ms"
+
+# Count unique error messages (top 10)
+topk(10, sum by (message) (count_over_time({namespace="payments"} | json | level="error" [1h])))</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Loki Recording Rules</h3>
+    <pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1alpha1
+kind: PrometheusRule
+metadata:
+  name: loki-log-rates
+  namespace: monitoring
+spec:
+  groups:
+    - name: log-rates
+      interval: 1m
+      rules:
+        - record: namespace:log_lines:rate5m
+          expr: |
+            sum by (namespace) (
+              rate({cluster="prod"} [5m])
+            )
+        - record: namespace_app:log_errors:rate5m
+          expr: |
+            sum by (namespace, app) (
+              rate({cluster="prod"} | json | level="error" [5m])
+            )</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== ELASTICSEARCH =================== -->
+    <h2 id="elasticsearch">Elasticsearch / OpenSearch</h2>
+
+    <p>Elasticsearch (and its open-source fork OpenSearch) indexes every field in every log record, enabling full-text search and complex aggregations. This power comes at significantly higher resource cost (10–20× more storage and CPU than Loki for equivalent log volume).</p>
+
+    <h3>ECK (Elastic Cloud on Kubernetes)</h3>
+    <pre><code class="language-bash"># Install ECK Operator
+kubectl create -f https://download.elastic.co/downloads/eck/2.11.0/crds.yaml
+kubectl apply -f https://download.elastic.co/downloads/eck/2.11.0/operator.yaml</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml"># Production Elasticsearch cluster
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: prod-logs
+  namespace: logging
+spec:
+  version: 8.12.0
+  nodeSets:
+    - name: hot
+      count: 3
+      config:
+        node.roles: [master, data_hot, data_content, ingest]
+        xpack.security.enabled: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              resources:
+                requests: {cpu: 2, memory: 8Gi}
+                limits: {cpu: 4, memory: 8Gi}
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms4g -Xmx4g"
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            storageClassName: gp3
+            resources:
+              requests:
+                storage: 500Gi
+    - name: warm
+      count: 2
+      config:
+        node.roles: [data_warm]
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            storageClassName: gp2     # cheaper storage for warm tier
+            resources:
+              requests:
+                storage: 2Ti</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Index Lifecycle Management (ILM)</h3>
+    <pre><code class="language-json">{
+  "policy": {
+    "phases": {
+      "hot": {
+        "min_age": "0ms",
+        "actions": {
+          "rollover": {
+            "max_primary_shard_size": "50gb",
+            "max_age": "1d"
+          },
+          "set_priority": {"priority": 100}
+        }
+      },
+      "warm": {
+        "min_age": "3d",
+        "actions": {
+          "shrink": {"number_of_shards": 1},
+          "forcemerge": {"max_num_segments": 1},
+          "set_priority": {"priority": 50},
+          "allocate": {"require": {"data": "warm"}}
+        }
+      },
+      "cold": {
+        "min_age": "30d",
+        "actions": {
+          "allocate": {"require": {"data": "cold"}},
+          "set_priority": {"priority": 0},
+          "freeze": {}
+        }
+      },
+      "delete": {
+        "min_age": "90d",
+        "actions": {"delete": {}}
+      }
+    }
+  }
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Elasticsearch vs Loki Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Aspect</th><th>Elasticsearch / OpenSearch</th><th>Grafana Loki</th></tr></thead>
+        <tbody>
+          <tr><td>Indexing</td><td>Full inverted index of all fields</td><td>Labels only; log body compressed</td></tr>
+          <tr><td>Storage cost</td><td>High (10–20× raw log size)</td><td>Low (2–5× compressed)</td></tr>
+          <tr><td>Full-text search</td><td>Excellent (analyzed text fields)</td><td>Via line filter (regex scan)</td></tr>
+          <tr><td>Query language</td><td>Lucene / KQL / EQL</td><td>LogQL</td></tr>
+          <tr><td>Scalability</td><td>Complex (shard management)</td><td>Simpler (object store backed)</td></tr>
+          <tr><td>Operational complexity</td><td>High (JVM tuning, ILM, shards)</td><td>Medium</td></tr>
+          <tr><td>Grafana integration</td><td>Via data source</td><td>Native (first-class)</td></tr>
+          <tr><td>Best for</td><td>Security events, full-text search, compliance</td><td>Application logs, cost-sensitive, correlated observability</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== OTEL LOGS =================== -->
+    <h2 id="otel-logs">OpenTelemetry Logs</h2>
+
+    <p>The OpenTelemetry Collector can act as a log collection and forwarding pipeline, replacing Fluent Bit or running alongside it. It enables <strong>unified signal collection</strong> — the same collector handles metrics, traces, and logs.</p>
+
+    <h3>OTel Collector Log Pipeline</h3>
+    <pre><code class="language-yaml"># OTel Collector config for log collection
+receivers:
+  filelog:
+    include:
+      - /var/log/containers/*.log
+    exclude:
+      - /var/log/containers/otelcol*
+    start_at: beginning
+    include_file_path: true
+    include_file_name: false
+    operators:
+      # Parse CRI log format
+      - type: regex_parser
+        id: parse_cri
+        regex: '^(?P&lt;time&gt;\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{9}Z)\s(?P&lt;stream&gt;stdout|stderr)\s(?P&lt;logtag&gt;[^ ]*)\s(?P&lt;log&gt;.*)$'
+        timestamp:
+          parse_from: attributes.time
+          layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+      # Extract Kubernetes metadata from file path
+      - type: regex_parser
+        id: parse_k8s
+        regex: '\/(?P&lt;namespace&gt;[^_]+)_(?P&lt;pod_name&gt;[^_]+)_(?P&lt;uid&gt;[^\/]+)\/(?P&lt;container_name&gt;[^\/]+)\/'
+        parse_from: attributes["log.file.path"]
+      # Try to parse JSON log body
+      - type: json_parser
+        id: parse_json
+        parse_from: attributes.log
+        if: 'attributes.log matches "^\\{"'
+        on_error: send
+      # Move log to body
+      - type: move
+        from: attributes.log
+        to: body
+
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 8192
+  memory_limiter:
+    limit_mib: 512
+    spike_limit_mib: 128
+  k8sattributes:        # enrich with K8s metadata
+    extract:
+      metadata:
+        - k8s.namespace.name
+        - k8s.pod.name
+        - k8s.pod.uid
+        - k8s.deployment.name
+        - k8s.node.name
+    pod_association:
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+  resource:
+    attributes:
+      - key: cluster
+        value: "prod-us-east-1"
+        action: insert
+
+exporters:
+  loki:
+    endpoint: http://loki-gateway.monitoring.svc/loki/api/v1/push
+    default_labels_enabled:
+      exporter: false
+      job: true
+    labels:
+      resource:
+        cluster: ""
+        k8s.namespace.name: ""
+        k8s.pod.name: ""
+        k8s.container.name: ""
+  otlp/tempo:           # also forward to Tempo for log→trace correlation
+    endpoint: tempo.monitoring.svc:4317
+
+service:
+  pipelines:
+    logs:
+      receivers: [filelog, otlp]
+      processors: [memory_limiter, k8sattributes, resource, batch]
+      exporters: [loki, otlp/tempo]</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>OTel Log Data Model</h3>
+    <p>The OpenTelemetry log data model provides a standard schema that maps to existing formats:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>OTel Field</th><th>Description</th><th>Maps to (Loki)</th></tr></thead>
+        <tbody>
+          <tr><td><code>Timestamp</code></td><td>Event time (nanoseconds)</td><td>Log timestamp</td></tr>
+          <tr><td><code>SeverityNumber</code></td><td>1–24 (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)</td><td>Label <code>level</code></td></tr>
+          <tr><td><code>SeverityText</code></td><td>Original severity string</td><td>Label <code>severity</code></td></tr>
+          <tr><td><code>Body</code></td><td>Log message (any type)</td><td>Log line</td></tr>
+          <tr><td><code>TraceId</code></td><td>W3C trace ID (16 bytes)</td><td>Indexed attribute</td></tr>
+          <tr><td><code>SpanId</code></td><td>W3C span ID (8 bytes)</td><td>Indexed attribute</td></tr>
+          <tr><td><code>Attributes</code></td><td>Key-value pairs (structured fields)</td><td>Parsed fields</td></tr>
+          <tr><td><code>Resource</code></td><td>Origin resource (service, host, k8s)</td><td>Labels</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== COMPONENT LOGS =================== -->
+    <h2 id="component-logs">Kubernetes Component Logs</h2>
+
+    <p>Control-plane component logs are critical for diagnosing cluster-level issues. Their collection differs from application logs because they may run as static pods, system services, or managed cloud services.</p>
+
+    <h3>kube-apiserver</h3>
+    <pre><code class="language-bash"># Static pod — logs via kubectl
+kubectl -n kube-system logs kube-apiserver-&lt;node&gt; --tail=100 --since=1h
+
+# Increase verbosity temporarily (restart required for static pods)
+# Edit /etc/kubernetes/manifests/kube-apiserver.yaml and add --v=4
+
+# Key log patterns to watch:
+# "too many requests" — client throttling
+# "Timeout: request did not complete" — etcd latency
+# "DENY" — admission controller rejection
+grep -i "too many requests\|timeout\|DENY" /var/log/kubernetes/apiserver.log</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>kubelet</h3>
+    <pre><code class="language-bash"># kubelet runs as a systemd service (not a pod)
+journalctl -u kubelet -n 500 --since "1 hour ago"
+journalctl -u kubelet -f    # follow
+
+# Increase kubelet verbosity (reload required)
+# Edit /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+# Add --v=4 to KUBELET_EXTRA_ARGS
+
+# Key kubelet log patterns:
+# "orphaned pod" — stale pod directories
+# "failed to get container info" — runtime disconnected
+# "evicted" — resource pressure eviction
+journalctl -u kubelet | grep -i "evict\|oom\|failed to\|error"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>containerd</h3>
+    <pre><code class="language-bash">journalctl -u containerd -n 200
+
+# containerd log level (edit /etc/containerd/config.toml)
+[debug]
+  level = "warn"   # info = verbose, warn = quieter
+
+# Key patterns:
+# "failed to pull image" — registry auth or network
+# "failed to create shim" — runc error (OCI runtime issue)
+# "context deadline exceeded" — slow image pulls</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>etcd</h3>
+    <pre><code class="language-bash">kubectl -n kube-system logs etcd-&lt;node&gt; --tail=100
+
+# Key patterns:
+# "slow fdatasync" — disk I/O issue (use SSD with &lt;1ms fsync)
+# "leader changed" — leader election event (check disk/network)
+# "failed to send message" — inter-etcd network issue
+# "applying snapshot" — member catching up (acceptable on rejoin)
+
+# etcd verbosity (add to manifest):
+# --log-level=warn   (options: debug, info, warn, error, panic, fatal)</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Control-Plane Log Verbosity Levels</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>--v Level</th><th>Content</th><th>Use When</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>Always-visible messages (errors, panics)</td><td>Normal production</td></tr>
+          <tr><td>1</td><td>Basic high-level info</td><td>Normal production</td></tr>
+          <tr><td>2</td><td>Steady-state changes, reconciliation loops</td><td>Default for most components</td></tr>
+          <tr><td>3</td><td>Extended info, informational changes</td><td>Light debugging</td></tr>
+          <tr><td>4</td><td>Debug-level logging</td><td>Active debugging session</td></tr>
+          <tr><td>5–6</td><td>Verbose — each API call logged</td><td>Deep debugging (high volume)</td></tr>
+          <tr><td>7–10</td><td>Extremely verbose</td><td>Core development only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== KUBECTL =================== -->
+    <h2 id="kubectl-tools">kubectl logs &amp; Tooling</h2>
+
+    <h3>kubectl logs Reference</h3>
+    <pre><code class="language-bash"># Basic usage
+kubectl logs &lt;pod&gt;
+kubectl logs &lt;pod&gt; -c &lt;container&gt;          # specific container in multi-container pod
+kubectl logs &lt;pod&gt; --previous              # logs from the previous (crashed) container
+
+# Streaming
+kubectl logs -f &lt;pod&gt;                      # follow (like tail -f)
+kubectl logs -f deployment/&lt;name&gt;          # follow deployment (picks one pod)
+
+# Filtering by time
+kubectl logs &lt;pod&gt; --since=1h             # last 1 hour
+kubectl logs &lt;pod&gt; --since-time="2024-01-15T10:00:00Z"
+
+# Limit output
+kubectl logs &lt;pod&gt; --tail=100             # last 100 lines
+
+# All pods matching label selector
+kubectl logs -l app=payments --all-containers=true --prefix=true
+
+# All containers in all pods of a deployment
+kubectl logs -f deployment/payments-api --all-containers=true --max-log-requests=10</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Stern — Multi-Pod Log Streaming</h3>
+    <pre><code class="language-bash"># Install
+brew install stern     # macOS
+# or: https://github.com/stern/stern/releases
+
+# Follow all pods matching regex in any namespace
+stern "payments.*" --namespace production
+
+# Multiple namespaces
+stern "api" --namespace production --namespace staging
+
+# Filter by container name
+stern "." --container "main" --namespace production
+
+# Tail last N lines then follow
+stern "payments" --tail 50
+
+# Output as JSON with pod prefix
+stern "payments" --output json --namespace production
+
+# Filter with grep
+stern "payments" | grep "error"
+
+# Custom output template
+stern "payments" --template '{{.PodName}} {{.ContainerName}} {{.Message}}'</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>k9s Log Viewer</h3>
+    <p>k9s provides a TUI (terminal UI) for Kubernetes. Press <kbd>l</kbd> on a pod to view logs, <kbd>/</kbd> to filter, <kbd>s</kbd> to save to file.</p>
+
+    <h3>Log Correlation via Trace ID</h3>
+    <pre><code class="language-bash"># Find all logs for a specific trace (across all services)
+# In Grafana: Explore → Loki → LogQL:
+{cluster="prod"} | json | trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+
+# In CLI using kubelog or stern with grep:
+stern "." --namespace production --since 1h | grep "4bf92f3577b34da6"
+
+# In Loki with derived field (configured in Grafana data source):
+# "Derived fields" → regex "trace_id=(\w+)" → internal link to Tempo</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== COST =================== -->
+    <h2 id="cost">Cardinality &amp; Cost Management</h2>
+
+    <h3>Log Volume Estimation</h3>
+    <pre><code class="language-bash"># Estimate current log volume per namespace (in Loki)
+sum by (namespace) (bytes_rate({cluster="prod"} [1h]))
+
+# Estimate bytes via Fluent Bit metrics
+kubectl port-forward ds/fluent-bit 2020:2020 -n logging
+curl -s localhost:2020/api/v1/metrics | jq '.output[] | {name:.name, bytes:.bytes}'
+
+# Check Loki ingestion rate
+curl -s http://loki-gateway:80/metrics | grep loki_distributor_bytes_received_total</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Cost Reduction Strategies</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Drop Debug/Trace Logs in Production</h4>
+        <p>Add a Fluent Bit FILTER grep rule to drop <code>level=debug</code> or <code>level=trace</code> before forwarding. Can reduce volume by 60–80% for verbose services.</p>
+        <pre style="margin-top:8px;margin-bottom:0"><code>[FILTER]
+    Name  grep
+    Match kube.*
+    Exclude log "\"level\":\"debug\""</code></pre>
+      </div>
+      <div class="card">
+        <h4>Throttle Noisy Sources</h4>
+        <p>Fluent Bit's <code>throttle</code> filter caps logs per interval per tag. Use <code>rewrite_tag</code> to separate chatty pods and apply different rate limits to them.</p>
+      </div>
+      <div class="card">
+        <h4>Sampling</h4>
+        <p>For INFO logs from high-volume services, sample 10–20% using Fluent Bit's Lua filter or OTel Collector's <code>probabilistic_sampler</code> processor. Always forward 100% of WARN/ERROR.</p>
+      </div>
+      <div class="card">
+        <h4>Tiered Retention</h4>
+        <p>Keep last 7 days in hot storage (fast SSD), 30 days in warm (standard), 365 days in cold (S3 Glacier). Loki's compactor + ILM policy handles tier movement automatically.</p>
+      </div>
+      <div class="card">
+        <h4>Dedup Before Ship</h4>
+        <p>Avoid shipping the same log to both Loki and Elasticsearch. Use a single authoritative store; export compliance-required logs to S3 separately via a Fluent Bit S3 output with compression.</p>
+      </div>
+      <div class="card">
+        <h4>Compression</h4>
+        <p>Enable gzip/snappy compression in Fluent Bit output and Loki storage. JSON logs typically compress 10:1. Loki uses snappy by default for chunks.</p>
+      </div>
+    </div>
+
+    <h3>Fluent Bit Throttle Filter</h3>
+    <pre><code class="language-ini">[FILTER]
+    Name          throttle
+    Match         kube.*
+    Rate          5000          # max 5,000 log records per interval
+    Window        5             # 5-second window
+    Print_Status  On            # log when throttling occurs</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Sampling with OTel Collector</h3>
+    <pre><code class="language-yaml">processors:
+  filter/sample_info:
+    logs:
+      log_record:
+        # Only keep ERROR/WARN at 100% — sample INFO at ~10%
+        - 'severity_number < SEVERITY_NUMBER_WARN and (random() > 0.1)'
+
+  # probabilistic sampler for log records
+  probabilistic_sampler:
+    sampling_percentage: 10
+    attribute_source: record
+    from_attribute: sampling_priority</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== ALERTING ON LOGS =================== -->
+    <h2 id="alerting">Alerting on Logs</h2>
+
+    <p>Loki supports alerting rules using LogQL metric expressions. Alerts are evaluated by the Loki ruler and routed to Alertmanager — the same Alertmanager used for Prometheus alerts. See <a href="06-alerting.html">06-alerting.html</a> for Alertmanager routing configuration.</p>
+
+    <h3>Loki Alerting Rules</h3>
+    <pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1alpha1
+kind: PrometheusRule
+metadata:
+  name: loki-log-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: log-error-rates
+      interval: 1m
+      rules:
+        - alert: HighErrorLogRate
+          expr: |
+            sum by (namespace, app) (
+              rate({cluster="prod"} | json | level="error" [5m])
+            ) > 1
+          for: 2m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High error log rate in {{ $labels.namespace }}/{{ $labels.app }}"
+            description: "Error rate is {{ $value | humanize }} errors/sec"
+            runbook_url: "https://wiki/runbooks/high-error-log-rate"
+
+        - alert: OOMKilledContainer
+          expr: |
+            count_over_time({cluster="prod"} |= "OOMKilled" [5m]) > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Container OOMKilled detected"
+            description: "A container was OOMKilled in the last 5 minutes"
+
+        - alert: PanicInApplication
+          expr: |
+            sum by (namespace, app) (
+              rate({cluster="prod"} |~ "panic:|PANIC|runtime error:" [5m])
+            ) > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Application panic detected in {{ $labels.namespace }}/{{ $labels.app }}"
+
+        - alert: DatabaseConnectionErrors
+          expr: |
+            sum by (namespace, app) (
+              rate({cluster="prod"} |= "connection refused" |= "database" [5m])
+            ) > 0.5
+          for: 3m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Database connection errors in {{ $labels.namespace }}/{{ $labels.app }}"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Log-Based SLO Burn Rate Alerts</h3>
+    <pre><code class="language-yaml"># Error rate SLO: 99.5% of requests must succeed
+# Derived from HTTP status logs rather than metrics
+
+- alert: ErrorBudgetBurnRateFast
+  expr: |
+    (
+      sum(rate({namespace="payments"} | json | http_status >= 500 [1h]))
+      /
+      sum(rate({namespace="payments"} | json [1h]))
+    ) > (14.4 * 0.005)   # 14.4× budget burn rate for 1h window (page fast)
+  labels:
+    severity: critical
+  annotations:
+    summary: "Error budget burning fast for payments service"</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== OPERATIONS =================== -->
+    <h2 id="operations">Metrics, Alerts &amp; Runbooks</h2>
+
+    <h3>Key Logging Infrastructure Metrics</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Metric</th><th>Source</th><th>Alert Threshold</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>fluentbit_input_records_total</code></td><td>Fluent Bit</td><td>—</td><td>Records ingested from all sources</td></tr>
+          <tr><td><code>fluentbit_output_errors_total</code></td><td>Fluent Bit</td><td>&gt;10/min</td><td>Failed deliveries to backend</td></tr>
+          <tr><td><code>fluentbit_output_retried_records_total</code></td><td>Fluent Bit</td><td>&gt;100/min</td><td>Records being retried (backend pressure)</td></tr>
+          <tr><td><code>loki_distributor_ingester_append_failures_total</code></td><td>Loki</td><td>&gt;0</td><td>Ingestion failures in Loki</td></tr>
+          <tr><td><code>loki_ingester_wal_replay_active</code></td><td>Loki</td><td>&gt;0 for &gt;5m</td><td>Ingester replaying WAL — possible crash recovery</td></tr>
+          <tr><td><code>loki_query_frontend_retries</code></td><td>Loki</td><td>&gt;10/min</td><td>Query retries — querier under pressure</td></tr>
+          <tr><td><code>loki_compactor_runs_total</code></td><td>Loki</td><td>Not zero (should run regularly)</td><td>Compaction health</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Alert Rules</h3>
+    <pre><code class="language-yaml">groups:
+  - name: logging-infrastructure
+    rules:
+      - alert: FluentBitOutputErrors
+        expr: rate(fluentbit_output_errors_total[5m]) > 0.1
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Fluent Bit output errors — logs may be lost"
+          runbook: "Check output plugin config and backend connectivity"
+
+      - alert: LokiIngestionFailing
+        expr: rate(loki_distributor_ingester_append_failures_total[5m]) > 0
+        for: 3m
+        labels: {severity: critical}
+        annotations:
+          summary: "Loki ingestion failures — check ingester health"
+
+      - alert: LokiQueryLatencyHigh
+        expr: histogram_quantile(0.99, loki_request_duration_seconds_bucket{route="/loki/api/v1/query_range"}) > 30
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Loki query p99 latency > 30s — user queries degraded"
+
+      - alert: FluentBitBufferDiskFull
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/var/log/flb-storage"} / node_filesystem_size_bytes{mountpoint="/var/log/flb-storage"}) > 0.8
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "Fluent Bit disk buffer > 80% full on {{ $labels.node }}"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Runbooks</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Fluent Bit Not Collecting Logs</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Check DaemonSet pod status: <code>kubectl get ds fluent-bit -n logging</code></li>
+          <li>Check pod logs: <code>kubectl logs ds/fluent-bit -n logging --tail=50</code></li>
+          <li>Verify hostPath mount: <code>kubectl exec -n logging ds/fluent-bit -- ls /var/log/containers/</code></li>
+          <li>Check RBAC: <code>kubectl auth can-i list pods --as=system:serviceaccount:logging:fluent-bit</code></li>
+          <li>Check Fluent Bit metrics: <code>curl localhost:2020/api/v1/metrics/prometheus</code></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Logs Missing in Loki</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Verify Fluent Bit output has no errors: check <code>fluentbit_output_errors_total</code></li>
+          <li>Test Loki endpoint directly: <code>curl -v http://loki-gateway/loki/api/v1/labels</code></li>
+          <li>Check Loki distributor logs: <code>kubectl logs -l app=loki-distributed-distributor</code></li>
+          <li>Verify label set is valid (no special chars, no high-cardinality labels)</li>
+          <li>Check retention: query logs with a longer time range</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Loki Query Timeout</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Add stream selectors to narrow scan: avoid <code>{cluster="prod"}</code> alone</li>
+          <li>Reduce time range of query</li>
+          <li>Check querier CPU/memory: <code>kubectl top pod -n monitoring -l app=loki-distributed-querier</code></li>
+          <li>Increase <code>query_timeout</code> in Loki config</li>
+          <li>Add query sharding: enable <code>query_shards</code> in limits_config</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Log Volume Spike</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Find top namespaces: LogQL <code>topk(5, sum by(namespace)(bytes_rate({cluster="prod"}[5m])))</code></li>
+          <li>Find chatty pods: <code>topk(10, sum by(pod)(rate({cluster="prod"}[5m])))</code></li>
+          <li>Apply throttle filter for that pod label</li>
+          <li>Check for log loop (service logging its own log output)</li>
+          <li>Drop debug logs from offending service</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>OOMKilled Log Collector</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Check log volume: sudden spike may have exhausted input buffer</li>
+          <li>Reduce <code>Mem_Buf_Limit</code> to force disk spill earlier</li>
+          <li>Increase memory limits in DaemonSet</li>
+          <li>Add throttle filter before buffering</li>
+          <li>Switch <code>storage.type</code> to <code>filesystem</code> to reduce memory pressure</li>
+        </ol>
+      </div>
+    </div>
+
+    <h3>Best Practices</h3>
+    <ol class="step-list">
+      <li><strong>Always use structured JSON logging.</strong> Free-text logs require brittle regex parsers and cannot support field-level alerting, aggregation, or precise filtering at scale.</li>
+      <li><strong>Always inject trace_id and span_id into log records.</strong> This enables one-click navigation from a log line to the originating distributed trace in Grafana (Loki → Tempo derived fields).</li>
+      <li><strong>Keep Loki label cardinality low.</strong> Never use pod name, user ID, request ID, or any unbounded value as a Loki label. These belong in the log body, queryable via <code>| json</code> pipeline expressions.</li>
+      <li><strong>Buffer to disk in Fluent Bit.</strong> Set <code>storage.type filesystem</code> and configure a <code>hostPath</code> volume. In-memory buffering loses logs on node memory pressure or Fluent Bit OOMKill.</li>
+      <li><strong>Exclude health-check and metrics-scrape logs.</strong> kubectl liveness probes and Prometheus scrapes generate thousands of lines per hour with zero diagnostic value. Drop them in the Fluent Bit grep filter.</li>
+      <li><strong>Set per-namespace retention policies in Loki.</strong> Production namespaces may need 90-day retention for compliance; dev/staging namespaces can use 7-day retention. Use Loki's per-tenant override config.</li>
+      <li><strong>Separate log streams by severity in alerting.</strong> Always forward 100% of ERROR and WARN logs. Apply sampling (10–20%) only to INFO logs from high-volume services. Never sample FATAL or CRITICAL.</li>
+      <li><strong>Test log collection in your deployment pipeline.</strong> Run a canary pod that emits known log patterns and write a test asserting those patterns appear in the logging backend within 60 seconds of deployment.</li>
+    </ol>
+
+    <details class="coverage">
+      <summary>Coverage Details</summary>
+      <ul class="coverage-body">
+        <li>Kubernetes logging architecture: stdout/stderr → CRI → node files</li>
+        <li>CRI log format (/var/log/containers/, /var/log/pods/)</li>
+        <li>Docker vs containerd log format differences</li>
+        <li>kubelet log rotation flags (container-log-max-size, max-files)</li>
+        <li>Four log collection patterns: DaemonSet / sidecar / streaming sidecar / direct SDK</li>
+        <li>Pattern comparison table (overhead, app changes, file logging)</li>
+        <li>Structured logging: standard field schema (15 fields)</li>
+        <li>Go: Zap logger with trace context injection</li>
+        <li>Java: Logback + logstash-logback-encoder JSON config</li>
+        <li>Python: structlog with contextvars for trace injection</li>
+        <li>Node.js: pino reference</li>
+        <li>Fluent Bit vs Fluentd comparison table</li>
+        <li>Fluent Bit pipeline model: INPUT → PARSER → FILTER → BUFFER → OUTPUT</li>
+        <li>Fluent Bit Helm install command</li>
+        <li>Production Fluent Bit ConfigMap (filesystem storage, kubernetes filter, Loki output)</li>
+        <li>Fluent Bit parsers.conf (docker, CRI, JSON parsers)</li>
+        <li>Fluent Bit DaemonSet YAML (tolerations, hostPath volumes, RBAC)</li>
+        <li>Multiline log handling (built-in parsers + custom MULTILINE_PARSER)</li>
+        <li>Loki architecture: distributor/ingester/compactor/querier/store gateway</li>
+        <li>Label cardinality warning (anti-patterns: pod_name, user_id, request_id)</li>
+        <li>Recommended Loki label set</li>
+        <li>Loki Helm install (single-binary and distributed modes)</li>
+        <li>Loki distributed values YAML (TSDB schema v13, S3, retention, limits_config)</li>
+        <li>LogQL: log stream selectors, label matchers, regex match</li>
+        <li>LogQL pipeline: line filters, JSON/logfmt/pattern parsers, label filters, line_format, label_format</li>
+        <li>LogQL metric queries: rate, count_over_time, quantile_over_time, bytes_rate, unwrap</li>
+        <li>Useful operational LogQL queries (error trace, OOMKilled, slow queries, top errors)</li>
+        <li>Loki recording rules via PrometheusRule CRD</li>
+        <li>Elasticsearch/OpenSearch: ECK operator install and cluster YAML (hot/warm tiers)</li>
+        <li>Index Lifecycle Management (ILM) JSON: hot/warm/cold/delete phases</li>
+        <li>Elasticsearch vs Loki comparison table</li>
+        <li>OTel Collector filelog receiver config (CRI parser, K8s path regex, JSON merge)</li>
+        <li>OTel Collector k8sattributes processor for metadata enrichment</li>
+        <li>OTel Log data model fields (Timestamp, SeverityNumber, Body, TraceId, SpanId, Resource)</li>
+        <li>Kubernetes component logs: kube-apiserver, kubelet, containerd, etcd commands</li>
+        <li>klog verbosity levels (--v 0–10)</li>
+        <li>kubectl logs reference: --previous, --since, --tail, --follow, label selector, deployment</li>
+        <li>Stern multi-pod log streaming (install, usage patterns, output templates)</li>
+        <li>Log correlation via trace_id (Loki LogQL, Grafana derived fields)</li>
+        <li>Log volume estimation with LogQL bytes_rate and Fluent Bit metrics API</li>
+        <li>Cost reduction strategies: drop debug logs, throttle filter, sampling, tiered retention, dedup, compression</li>
+        <li>Fluent Bit throttle filter and OTel probabilistic_sampler</li>
+        <li>Loki alerting rules via PrometheusRule: HighErrorLogRate, OOMKilled, Panic, DB errors</li>
+        <li>Log-based SLO burn rate alert pattern</li>
+        <li>7 logging infrastructure metrics table with alert thresholds</li>
+        <li>4 PrometheusRule alert rules (FluentBitOutputErrors, LokiIngestionFailing, QueryLatencyHigh, BufferDiskFull)</li>
+        <li>5 runbooks (not collecting, missing in Loki, query timeout, volume spike, OOMKilled collector)</li>
+        <li>8 best practices (structured JSON, trace injection, label cardinality, disk buffer, health exclusion, retention, sampling policy, pipeline testing)</li>
+      </ul>
+    </details>
+
+  </main>
+</div>
+
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+<script>
+// Theme
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-toggle');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+
+// Hamburger
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// Back-to-top
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => {
+  btt.style.display = main.scrollTop > 400 ? 'flex' : 'none';
+});
+btt.addEventListener('click', () => main.scrollTo({ top: 0, behavior: 'smooth' }));
+
+// Copy buttons
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = pre.querySelector('.copy-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const code = pre.querySelector('code');
+    navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  });
+});
+
+// TOC active section via IntersectionObserver
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const tocLinks = document.querySelectorAll('.toc a');
+if (headings.length && tocLinks.length) {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove('toc-active'));
+        const active = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('toc-active');
+      }
+    });
+  }, { root: main, rootMargin: '0px 0px -70% 0px' });
+  headings.forEach(h => obs.observe(h));
+}
+
+// Sidebar nav filter
+document.getElementById('nav-filter').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

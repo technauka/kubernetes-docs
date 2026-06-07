@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vertical Pod Autoscaler | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.main-content{margin-left:var(--sidebar-w);flex:1;padding:0;overflow-y:auto;height:100vh;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);position:fixed;top:0;right:0;height:100vh;overflow-y:auto;padding:24px 16px;}
+.content-area{max-width:900px;margin:0 auto;padding:40px 48px 80px;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-weight:600;font-size:16px;flex:1;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);cursor:pointer;padding:6px 12px;border-radius:6px;font-size:13px;}
+.back-to-top{position:fixed;bottom:32px;right:calc(var(--toc-w) + 16px);background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50;}
+.back-to-top.visible{opacity:1;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;color:var(--text2);}
+.sidebar-search{margin:12px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:calc(100% - 24px);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:6px 16px 6px 24px;font-size:13px;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover,.nav-section a.active{background:var(--bg3);color:var(--accent);text-decoration:none;}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover,.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);text-decoration:none;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-top:8px;}
+h3{font-size:17px;font-weight:600;margin:32px 0 12px;}
+h4{font-size:15px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{padding-left:24px;margin-bottom:16px;color:var(--text2);}
+li{margin-bottom:4px;}
+.subtitle{font-size:18px;color:var(--text2);margin-bottom:32px;}
+.meta{display:flex;gap:16px;margin-bottom:40px;flex-wrap:wrap;}
+.meta-tag{background:var(--bg3);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--text2);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;margin-bottom:24px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;line-height:1.7;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--text);border:1px solid var(--border);}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:16px 20px;margin-bottom:24px;border-left:4px solid;}
+.callout-warn{background:#d2992218;border-color:var(--yellow);}
+.callout-warn strong{color:var(--yellow);}
+.callout-danger{background:#f8514918;border-color:var(--red);}
+.callout-danger strong{color:var(--red);}
+.callout-info{background:#58a6ff18;border-color:var(--accent);}
+.callout-info strong{color:var(--accent);}
+.callout-success{background:#3fb95018;border-color:var(--green);}
+.callout-success strong{color:var(--green);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:32px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 8px;color:var(--text);}
+.card p{font-size:13px;margin:0;color:var(--text2);}
+.card .card-tag{display:inline-block;background:var(--bg3);border-radius:12px;padding:2px 10px;font-size:11px;margin-bottom:10px;color:var(--accent);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.section-divider{border:none;border-top:1px solid var(--border);margin:48px 0;}
+.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;margin-bottom:24px;color:var(--text2);}
+@media(max-width:1200px){.toc-panel{display:none;}.main-content{margin-left:var(--sidebar-w);}.back-to-top{right:16px;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.content-area{padding:24px 20px 60px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">Kubernetes Docs</div>
+  <input class="sidebar-search" id="nav-search" placeholder="Filter navigation..." type="text">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Kubernetes Overview</a>
+    <a href="../01-getting-started/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/02-control-plane-components.html">Control Plane Components</a>
+    <a href="../01-getting-started/03-node-components.html">Node Components</a>
+    <a href="../01-getting-started/04-api-server-deep-dive.html">API Server Deep Dive</a>
+    <a href="../01-getting-started/05-etcd.html">etcd</a>
+    <a href="../01-getting-started/06-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../02-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../02-networking/01-services.html">Services</a>
+    <a href="../02-networking/02-ingress.html">Ingress</a>
+    <a href="../02-networking/03-network-policies.html">Network Policies</a>
+    <a href="../02-networking/04-dns.html">DNS</a>
+    <a href="../02-networking/05-cni-plugins.html">CNI Plugins</a>
+    <a href="../02-networking/06-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../03-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../03-configuration/01-secrets.html">Secrets</a>
+    <a href="../03-configuration/02-resource-quotas.html">Resource Quotas</a>
+    <a href="../03-configuration/03-limit-ranges.html">Limit Ranges</a>
+    <a href="../03-configuration/04-namespaces.html">Namespaces</a>
+    <a href="../03-configuration/05-labels-annotations.html">Labels &amp; Annotations</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">Persistent Volumes</a>
+    <a href="../04-storage/02-storage-classes.html">Storage Classes</a>
+    <a href="../04-storage/03-volume-types.html">Volume Types</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+    <a href="../04-storage/05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="../04-storage/06-stateful-sets-storage.html">StatefulSet Storage</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html" class="active">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="main-content" id="main-content">
+<div class="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span class="topbar-title">Vertical Pod Autoscaler</span>
+  <button class="theme-btn" id="theme-btn">Light Mode</button>
+</div>
+
+<div class="content-area">
+
+<details class="coverage">
+  <summary>📋 Page Coverage Checklist</summary>
+  <div class="coverage-body">
+    <li>VPA architecture: Recommender, Updater, Admission Controller components</li>
+    <li>VPA object spec: updateMode (Off/Initial/Recreate/Auto)</li>
+    <li>containerPolicies: minAllowed, maxAllowed, controlledResources, controlledValues</li>
+    <li>Recommender algorithm: OOM history, CPU p90, memory p95, safety margins</li>
+    <li>Updater eviction: PDB respect, evictionRequirements, minimum replicas</li>
+    <li>In-Place Pod Vertical Scaling (1.27 alpha → 1.33 beta): resize subresource, resizePolicy</li>
+    <li>Limit/request ratio preservation and controlledValues: RequestsOnly</li>
+    <li>VPA + HPA: conflict matrix and 3 safe combination patterns</li>
+    <li>Goldilocks: namespace-mode VPA advisor, dashboard, Helm install</li>
+    <li>VPA for JVM workloads: heap sizing interaction, -XX:MaxRAMPercentage</li>
+    <li>VPA for batch/Jobs: Initial mode use case</li>
+    <li>Resource recommendation reading: kubectl get vpa, status.recommendation</li>
+    <li>5 metrics + 4 alerting rules + 5 runbooks + 8 best practices</li>
+  </div>
+</details>
+
+<h1>Vertical Pod Autoscaler</h1>
+<p class="subtitle">Right-size container resource requests automatically using historical usage data</p>
+<div class="meta">
+  <span class="meta-tag">autoscaling.k8s.io/v1</span>
+  <span class="meta-tag">Add-on (not built-in)</span>
+  <span class="meta-tag">Platform Engineer</span>
+</div>
+
+<p>While HPA adds or removes pod replicas, the Vertical Pod Autoscaler (VPA) adjusts the <em>resource requests and limits</em> of existing containers. It observes actual resource usage over time, builds statistical recommendations, and optionally applies them — either at pod creation time or by evicting and replacing running pods with updated resource specs. VPA is an <strong>add-on</strong> installed separately from core Kubernetes; it is not part of the default control plane.</p>
+
+<div class="callout callout-info">
+  <strong>VPA is not built in</strong><br>
+  Install VPA from the <a href="https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler">kubernetes/autoscaler</a> repo. It deploys three components into the cluster. Managed Kubernetes offerings (GKE, EKS, AKS) offer VPA as a managed add-on.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="architecture">VPA Architecture</h2>
+
+<div class="diagram">
+VPA components and data flow:
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │                                                             │
+  │  [1] VPA Recommender                                        │
+  │      ├─ Watches all pods in cluster                        │
+  │      ├─ Reads metrics from metrics-server (CPU/mem usage)  │
+  │      ├─ Reads OOMKill events from pod events               │
+  │      ├─ Builds per-container histogram of CPU/mem usage    │
+  │      └─ Writes recommendations → VPA object .status        │
+  │                                                             │
+  │  [2] VPA Updater                                            │
+  │      ├─ Watches VPA objects with updateMode != Off          │
+  │      ├─ Compares current pod requests to recommendations   │
+  │      ├─ Evicts pods that are significantly out of range    │
+  │      └─ Respects PodDisruptionBudgets during eviction      │
+  │                                                             │
+  │  [3] VPA Admission Controller (webhook)                     │
+  │      ├─ Intercepts pod CREATE requests                     │
+  │      ├─ Looks up VPA recommendation for matching VPA obj   │
+  │      └─ Mutates resource requests/limits before pod lands  │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+
+  Data flow:
+  metrics-server ──► Recommender ──► VPA.status.recommendation
+                                            │
+                        ┌───────────────────┤
+                        ▼                   ▼
+                    Updater            Admission Controller
+                  (evict pods)       (mutate new pods)
+</div>
+
+<p>The three components are decoupled — you can run Recommender alone (for advisory-only mode) without Updater or Admission Controller.</p>
+
+<!-- ============================================================ -->
+<h2 id="vpa-spec">VPA Object Spec</h2>
+
+<pre><code class="language-yaml">apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: api-server-vpa
+  namespace: production
+spec:
+  # --- Target workload ---
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-server
+
+  # --- Update policy ---
+  updatePolicy:
+    updateMode: Auto          # Off | Initial | Recreate | Auto
+    minReplicas: 2            # Don't evict if fewer than 2 replicas running
+
+  # --- Container-level policies ---
+  resourcePolicy:
+    containerPolicies:
+      - containerName: app
+        # Recommendation boundaries
+        minAllowed:
+          cpu: 100m
+          memory: 128Mi
+        maxAllowed:
+          cpu: 4
+          memory: 8Gi
+        # Which resources to manage
+        controlledResources: ["cpu", "memory"]
+        # Whether to also set limits
+        controlledValues: RequestsAndLimits  # or RequestsOnly
+
+      - containerName: proxy-sidecar
+        # Exclude sidecar from VPA management entirely
+        mode: "Off"
+
+      - containerName: init-container
+        # Initial containers: only set requests (limits rarely matter)
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 50m
+          memory: 64Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 512Mi</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="update-modes">Update Modes</h2>
+
+<table>
+  <thead><tr><th>Mode</th><th>Behavior</th><th>Pod restart?</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>Off</code></td>
+      <td>Recommendations computed and stored in VPA status; nothing applied</td>
+      <td>Never</td>
+      <td>Advisory only; Goldilocks; manual right-sizing workflow</td>
+    </tr>
+    <tr>
+      <td><code>Initial</code></td>
+      <td>Recommendations applied only to <em>new</em> pods at creation time (via Admission Controller); running pods untouched</td>
+      <td>Only on natural restarts / rollouts</td>
+      <td>Jobs, batch workloads; any workload where live eviction is unacceptable</td>
+    </tr>
+    <tr>
+      <td><code>Recreate</code></td>
+      <td>Recommendations applied to new pods AND Updater evicts out-of-range running pods</td>
+      <td>Yes — pods are evicted and recreated</td>
+      <td>Workloads that can tolerate occasional restarts; non-production</td>
+    </tr>
+    <tr>
+      <td><code>Auto</code></td>
+      <td>Same as Recreate today; in future will use in-place updates when available and safe</td>
+      <td>Yes (currently same as Recreate)</td>
+      <td>Recommended default when in-place updates stabilize</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warn">
+  <strong>Auto mode evicts pods today</strong><br>
+  Despite the name, <code>Auto</code> mode currently behaves identically to <code>Recreate</code> — it evicts pods to apply new resource specs. In-place pod resize (1.33 beta) will eventually make <code>Auto</code> truly non-disruptive for CPU changes, but memory changes still require a restart. Always set <code>minReplicas</code> and respect PDBs to limit eviction blast radius.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="recommender">Recommender Algorithm</h2>
+
+<p>The Recommender builds a histogram of CPU and memory usage samples for each container, then derives a target value with safety margins applied.</p>
+
+<div class="diagram">
+Recommender histogram-based approach:
+
+  CPU recommendation:
+  ├─ Collects 1-minute CPU usage samples over lookback window (default: 8 days)
+  ├─ Builds weighted histogram (recent samples weighted higher)
+  ├─ Target = p90 of histogram × safety margin (default: 1.15 = 15% headroom)
+  └─ Lower bound = p50; Upper bound = p95 × safety margin
+
+  Memory recommendation:
+  ├─ Collects memory usage samples (RSS + page cache working set)
+  ├─ OOM events → spike to current usage × OOM bump factor
+  ├─ Target = p95 of histogram × safety margin (default: 1.15)
+  └─ Upper bound = p99 × safety margin × OOM bump
+
+  Safety margins (configurable via flags):
+  --recommendation-margin-fraction=0.15   (15% overhead)
+  --pod-recommendation-min-cpu-millicores=25
+  --pod-recommendation-min-memory-mb=250
+</div>
+
+<p>The Recommender requires <strong>at least a few hours of data</strong> before producing reliable recommendations. Fresh workloads or those with spiky/seasonal patterns may receive under-fitted recommendations. The default lookback is 8 days — adjust with <code>--history-length</code> flag.</p>
+
+<h3 id="oom-handling">OOM Kill Handling</h3>
+
+<p>When a container is OOM-killed, the Recommender registers this as a "spike event" in the memory histogram. The spike is set to the memory limit at time of OOM multiplied by an OOM bump factor (default: 1.2). This prevents the recommender from re-recommending a limit that already caused an OOM.</p>
+
+<pre><code class="language-bash"># Check if VPA has OOM events in its recommendation
+kubectl get vpa api-server-vpa -n production -o yaml | \
+  yq '.status.recommendation.containerRecommendations[] |
+      select(.containerName == "app") |
+      {"lowerBound": .lowerBound, "target": .target, "upperBound": .upperBound}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="reading-recommendations">Reading VPA Recommendations</h2>
+
+<pre><code class="language-bash"># Summary view
+kubectl get vpa -n production
+# NAME             MODE   CPU    MEM      PROVIDED   AGE
+# api-server-vpa   Auto   220m   512Mi    True       3d
+
+# Full recommendation details
+kubectl describe vpa api-server-vpa -n production</code></pre>
+
+<pre><code class="language-yaml"># VPA status.recommendation structure
+status:
+  recommendation:
+    containerRecommendations:
+      - containerName: app
+        lowerBound:              # Safe minimum (rarely go below this)
+          cpu: 100m
+          memory: 256Mi
+        target:                  # Recommended value — apply this
+          cpu: 220m
+          memory: 512Mi
+        uncappedTarget:          # What VPA would recommend without minAllowed/maxAllowed
+          cpu: 195m
+          memory: 480Mi
+        upperBound:              # Should not exceed this (headroom for spikes)
+          cpu: 1200m
+          memory: 2Gi
+  conditions:
+    - type: RecommendationProvided
+      status: "True"             # False if insufficient data
+    - type: LowConfidence
+      status: "False"            # True if < 1 hour of data</code></pre>
+
+<div class="callout callout-info">
+  <strong>lowerBound vs target vs upperBound</strong><br>
+  <strong>target</strong> is the primary recommendation — this is what gets applied. <strong>lowerBound</strong> is the safe minimum; running below it risks OOM or throttling. <strong>upperBound</strong> is the maximum the VPA considers safe; setting requests above it wastes capacity. The Updater only evicts if current requests are outside the <code>[lowerBound, upperBound]</code> range.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="updater-eviction">Updater Eviction Logic</h2>
+
+<p>The Updater runs periodically and checks whether running pods' resource requests fall within the <code>[lowerBound, upperBound]</code> window. Pods outside this range are candidates for eviction.</p>
+
+<div class="diagram">
+Updater eviction decision tree:
+
+  For each pod in target workload:
+  │
+  ├─ Is updateMode Off or Initial? → skip
+  ├─ Is pod in a VPA-excluded namespace? → skip
+  ├─ Is current request within [lowerBound, upperBound]? → skip
+  ├─ Would eviction violate PDB? → skip (try later)
+  ├─ Is replica count ≤ minReplicas? → skip
+  └─ Evict pod → Admission Controller applies recommendation on reschedule
+</code></pre>
+
+<div class="callout callout-danger">
+  <strong>Updater can evict all pods of a single-replica Deployment</strong><br>
+  Without <code>minReplicas: 2</code> in the VPA spec, the Updater will evict the sole pod of a single-replica Deployment to apply new resource specs — causing a complete outage until the replacement pod starts. Always set <code>spec.updatePolicy.minReplicas</code> to at least 2 for production workloads, and ensure a matching PDB exists.
+</div>
+
+<pre><code class="language-yaml"># PDB to protect against VPA evictions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-server-pdb
+  namespace: production
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: api-server
+---
+# VPA minReplicas guard
+spec:
+  updatePolicy:
+    updateMode: Auto
+    minReplicas: 2      # VPA will not evict if fewer than 2 replicas are running</code></pre>
+
+<h3 id="eviction-requirements">evictionRequirements (1.25+)</h3>
+
+<pre><code class="language-yaml">spec:
+  updatePolicy:
+    updateMode: Auto
+    evictionRequirements:
+      # Only evict pods during low-traffic hours
+      - resources: ["cpu", "memory"]
+        changeRequirement: TargetHigherThanRequests  # Only evict to increase resources
+      # Alternative: evict only when recommendation changes by > 20%
+      # (controlled via --eviction-tolerance flag on Updater, not per-VPA)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="controlled-values">controlledValues: RequestsOnly vs RequestsAndLimits</h2>
+
+<table>
+  <thead><tr><th>controlledValues</th><th>Effect on requests</th><th>Effect on limits</th><th>Use case</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>RequestsAndLimits</code> (default)</td>
+      <td>Set to recommendation target</td>
+      <td>Scaled proportionally: <code>limit = request × (original limit / original request)</code></td>
+      <td>Most workloads — preserves the original limit/request ratio</td>
+    </tr>
+    <tr>
+      <td><code>RequestsOnly</code></td>
+      <td>Set to recommendation target</td>
+      <td>Unchanged (kept at original value or removed if none)</td>
+      <td>When limits are intentionally higher (burst allowance); or no limits set</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warn">
+  <strong>Limit/request ratio drift with RequestsAndLimits</strong><br>
+  If a container originally had <code>requests.cpu: 100m, limits.cpu: 1000m</code> (10× ratio), VPA will maintain this ratio. If VPA recommends <code>500m</code>, it sets <code>limits.cpu: 5000m</code> — far more than needed. Consider <code>RequestsOnly</code> and manage limits separately via LimitRange defaults.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="inplace">In-Place Pod Vertical Scaling (1.33 Beta)</h2>
+
+<p>Traditionally, changing a pod's resource requests requires restarting the pod (evict + recreate). In-place pod resize, stabilized as beta in 1.33, allows CPU requests/limits to be adjusted without a pod restart for containers that support it.</p>
+
+<div class="diagram">
+In-place resize flow (CPU — no restart needed):
+
+  1. Update pod.spec.containers[i].resources.requests.cpu
+  2. kubelet receives the update via the resize subresource
+  3. kubelet adjusts the container's cgroup cpu.shares / cpu.quota
+  4. Pod continues running — no eviction, no downtime
+
+  Memory resize — restart required:
+  Reducing memory limit below current usage → OOM risk
+  Kernel cannot shrink RSS of a running process safely
+  → kubelet marks resize as "InProgress" then "Infeasible"
+  → VPA falls back to eviction for memory changes
+</div>
+
+<pre><code class="language-yaml"># resizePolicy on container spec (in-place resize control)
+spec:
+  containers:
+    - name: app
+      resources:
+        requests:
+          cpu: 500m
+          memory: 512Mi
+        limits:
+          cpu: 2
+          memory: 1Gi
+      resizePolicy:
+        - resourceName: cpu
+          restartPolicy: NotRequired    # CPU resize without restart
+        - resourceName: memory
+          restartPolicy: RestartContainer  # Memory resize requires restart</code></pre>
+
+<pre><code class="language-bash"># Trigger an in-place resize manually
+kubectl patch pod api-server-abc123 --subresource=resize \
+  --type=merge -p '{"spec":{"containers":[{"name":"app","resources":{"requests":{"cpu":"800m"}}}]}}'
+
+# Check resize status
+kubectl get pod api-server-abc123 -o jsonpath='{.status.resize}'
+# Possible values: Proposed | InProgress | Deferred | Infeasible</code></pre>
+
+<table>
+  <thead><tr><th>Resize status</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>Proposed</code></td><td>Resize requested, kubelet hasn't processed yet</td></tr>
+    <tr><td><code>InProgress</code></td><td>kubelet is applying the change</td></tr>
+    <tr><td><code>Deferred</code></td><td>Not enough node resources now; will retry when available</td></tr>
+    <tr><td><code>Infeasible</code></td><td>Cannot be applied (e.g., memory reduction below RSS); requires pod restart</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="hpa-vpa">VPA + HPA Interaction</h2>
+
+<p>See also: <a href="06-horizontal-pod-autoscaler.html#hpa-vpa">HPA page — VPA interaction section</a>. The key conflict: both HPA (on CPU utilization) and VPA change the effective CPU utilization ratio — VPA by changing requests, HPA by changing replicas. This creates oscillation.</p>
+
+<table>
+  <thead><tr><th>Configuration</th><th>Conflict?</th><th>Safe?</th></tr></thead>
+  <tbody>
+    <tr><td>HPA on CPU/memory + VPA Auto</td><td>Yes — feedback loop</td><td>No</td></tr>
+    <tr><td>HPA on CPU/memory + VPA Off (advisor only)</td><td>None</td><td>Yes — use VPA recommendations manually</td></tr>
+    <tr><td>HPA on custom/external metrics + VPA Auto on CPU/memory</td><td>None — different signals</td><td>Yes — recommended pattern</td></tr>
+    <tr><td>VPA only (no HPA) on CPU/memory</td><td>None</td><td>Yes — for workloads where replica count is fixed</td></tr>
+    <tr><td>HPA on CPU + VPA <code>RequestsOnly</code> on memory only</td><td>Marginal — VPA changes memory, HPA watches CPU</td><td>Usually safe with monitoring</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-yaml"># Safe pattern: HPA on RPS, VPA on CPU+memory
+# VPA (manages CPU and memory requests)
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: api-server-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-server
+  updatePolicy:
+    updateMode: Auto
+  resourcePolicy:
+    containerPolicies:
+      - containerName: app
+        controlledResources: ["cpu", "memory"]
+---
+# HPA (manages replicas based on RPS, not CPU)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-server-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-server
+  minReplicas: 3
+  maxReplicas: 50
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second   # Custom metric — no conflict with VPA
+        target:
+          type: AverageValue
+          averageValue: "500"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="goldilocks">Goldilocks — VPA Advisor Dashboard</h2>
+
+<p>Goldilocks (by Fairwinds) automates the <code>Off</code>-mode VPA workflow: it creates a VPA object in <code>Off</code> mode for every Deployment in labeled namespaces, then provides a dashboard showing current vs recommended resource requests and the estimated cost difference.</p>
+
+<div class="diagram">
+Goldilocks workflow:
+
+  1. Label namespace: kubectl label ns production goldilocks.fairwinds.com/enabled=true
+  2. Goldilocks controller creates VPA (mode: Off) for every Deployment in namespace
+  3. VPA Recommender populates recommendations in each VPA status
+  4. Goldilocks dashboard reads VPA statuses and renders:
+     ├─ Current requests vs recommendation
+     ├─ Estimated monthly cost at current vs recommended
+     └─ Copy-paste YAML snippet for the new resource block
+</div>
+
+<pre><code class="language-bash"># Install Goldilocks via Helm
+helm repo add fairwinds-stable https://charts.fairwinds.com/stable
+helm upgrade --install goldilocks fairwinds-stable/goldilocks \
+  --namespace goldilocks --create-namespace
+
+# Enable for a namespace
+kubectl label ns production goldilocks.fairwinds.com/enabled=true
+
+# Port-forward the dashboard
+kubectl port-forward -n goldilocks svc/goldilocks-dashboard 8080:80
+
+# List VPAs Goldilocks created
+kubectl get vpa -n production -l "app.kubernetes.io/managed-by=goldilocks"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="jvm">VPA for JVM Workloads</h2>
+
+<p>JVM applications manage their own heap independently of the container's memory limit. VPA observes the container's total RSS, not just heap — including metaspace, thread stacks, off-heap buffers (Netty, native libs). This can lead to confusing recommendations.</p>
+
+<div class="callout callout-warn">
+  <strong>JVM heap and VPA interaction</strong><br>
+  If the JVM is configured with a fixed heap (<code>-Xmx2g</code>) and the container limit is 3Gi, VPA observes ~2.5Gi RSS and may recommend lowering the limit below the current RSS — triggering an OOM kill. Use <code>-XX:MaxRAMPercentage=75</code> instead of <code>-Xmx</code> so the JVM heap automatically scales with the container limit VPA sets.
+</div>
+
+<pre><code class="language-yaml"># JVM container — use percentage-based heap, not fixed -Xmx
+containers:
+  - name: java-app
+    image: myapp:v2
+    env:
+      - name: JAVA_TOOL_OPTIONS
+        value: >-
+          -XX:MaxRAMPercentage=75
+          -XX:InitialRAMPercentage=50
+          -XX:+UseG1GC
+          -XX:MaxGCPauseMillis=200
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi   # VPA will adjust this; JVM heap = 75% of limit
+      limits:
+        cpu: 2
+        memory: 2Gi</code></pre>
+
+<pre><code class="language-yaml"># VPA for JVM: wider bounds to account for metaspace variability
+spec:
+  resourcePolicy:
+    containerPolicies:
+      - containerName: java-app
+        minAllowed:
+          cpu: 200m
+          memory: 512Mi     # Absolute floor — JVM won't start below ~256Mi
+        maxAllowed:
+          cpu: 8
+          memory: 16Gi
+        controlledValues: RequestsAndLimits  # Scale limit with request (preserves ratio)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="vpa-for-jobs">VPA for Batch Jobs (Initial Mode)</h2>
+
+<p>For batch Jobs where pods are short-lived, <code>updateMode: Initial</code> is ideal: VPA applies the recommendation when the pod is created (at the start of each job run) but never evicts running pods mid-job.</p>
+
+<pre><code class="language-yaml">apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: batch-etl-vpa
+  namespace: platform
+spec:
+  targetRef:
+    apiVersion: batch/v1
+    kind: CronJob
+    name: nightly-etl
+  updatePolicy:
+    updateMode: Initial   # Apply on pod start, never evict running pod
+  resourcePolicy:
+    containerPolicies:
+      - containerName: etl-worker
+        minAllowed:
+          cpu: 100m
+          memory: 256Mi
+        maxAllowed:
+          cpu: 16
+          memory: 32Gi    # Generous upper bound for large datasets
+        controlledResources: ["cpu", "memory"]</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="operational-commands">Operational Commands</h2>
+
+<pre><code class="language-bash"># List all VPAs and their modes
+kubectl get vpa -A -o custom-columns=\
+'NAMESPACE:.metadata.namespace,NAME:.metadata.name,MODE:.spec.updatePolicy.updateMode,READY:.status.conditions[0].status'
+
+# Get full recommendation for a VPA
+kubectl get vpa &lt;name&gt; -n &lt;namespace&gt; -o jsonpath=\
+'{range .status.recommendation.containerRecommendations[*]}{.containerName}{"\n"}\
+  target: {.target}{"\n"}\
+  lowerBound: {.lowerBound}{"\n"}\
+  upperBound: {.upperBound}{"\n\n"}{end}'
+
+# Watch VPA conditions
+kubectl get vpa &lt;name&gt; -n &lt;namespace&gt; -o jsonpath='{.status.conditions}' | jq .
+
+# Check VPA Recommender logs (useful for diagnosing no-recommendation)
+kubectl logs -n kube-system -l app=vpa-recommender --tail=100
+
+# Check VPA Updater logs (see which pods were evicted and why)
+kubectl logs -n kube-system -l app=vpa-updater --tail=100
+
+# Check VPA Admission Controller logs
+kubectl logs -n kube-system -l app=vpa-admission-controller --tail=100
+
+# Temporarily disable VPA updates (flip to Off without deleting)
+kubectl patch vpa &lt;name&gt; -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"updatePolicy":{"updateMode":"Off"}}}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Labels</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>vpa_recommender_recommendation_latency_seconds</code></td><td><code>namespace</code>, <code>vpa</code></td><td>Time to generate a recommendation</td></tr>
+    <tr><td><code>vpa_updater_evictions_total</code></td><td><code>namespace</code></td><td>Total evictions triggered by VPA Updater</td></tr>
+    <tr><td><code>vpa_admission_controller_admission_duration_seconds</code></td><td>—</td><td>Latency of VPA webhook on pod creation</td></tr>
+    <tr><td><code>vpa_recommender_memory_estimation_quality</code></td><td><code>namespace</code>, <code>vpa</code></td><td>Confidence score of memory recommendations</td></tr>
+    <tr><td><code>kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target</code></td><td><code>container</code>, <code>resource</code></td><td>Current target recommendation per container/resource</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Alerting Rules</h2>
+
+<pre><code class="language-yaml">groups:
+  - name: vpa
+    rules:
+      # VPA not providing recommendations (insufficient data)
+      - alert: VPANoRecommendation
+        expr: |
+          kube_verticalpodautoscaler_status_condition{
+            condition="RecommendationProvided",status="False"} == 1
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: "VPA {{ $labels.namespace }}/{{ $labels.vpa }} has no recommendation after 2h"
+          description: "Ensure metrics-server is running and the workload has been running for >30min"
+
+      # VPA Admission Controller webhook latency too high
+      - alert: VPAAdmissionHighLatency
+        expr: |
+          histogram_quantile(0.99,
+            rate(vpa_admission_controller_admission_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "VPA Admission Controller p99 latency > 1s — pod starts may be slow"
+
+      # VPA Updater evicting pods at high rate
+      - alert: VPAHighEvictionRate
+        expr: rate(vpa_updater_evictions_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "VPA Updater is evicting >6 pods/minute — check recommendation bounds"
+
+      # Pod OOM killed (feeds into VPA Recommender — also indicates under-sizing)
+      - alert: PodOOMKilled
+        expr: |
+          kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} was OOM killed"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="runbooks">Runbooks</h2>
+
+<h3>VPA Not Generating Recommendations</h3>
+<pre><code class="language-bash"># Check VPA conditions
+kubectl describe vpa &lt;name&gt; -n &lt;namespace&gt; | grep -A10 Conditions
+
+# Verify metrics-server is running
+kubectl get deployment metrics-server -n kube-system
+
+# Verify VPA can read metrics
+kubectl logs -n kube-system -l app=vpa-recommender | grep "Failed\|Error\|Warn"
+
+# Check if workload has been running long enough
+kubectl get pods -n &lt;namespace&gt; -l app=&lt;app&gt; \
+  -o jsonpath='{.items[*].status.startTime}'
+
+# VPA needs ~1 hour of metrics before producing recommendations</code></pre>
+
+<h3>VPA Evicting Too Aggressively</h3>
+<pre><code class="language-bash"># Switch to Off mode immediately to stop evictions
+kubectl patch vpa &lt;name&gt; -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"updatePolicy":{"updateMode":"Off"}}}'
+
+# Check Updater logs for eviction reasoning
+kubectl logs -n kube-system -l app=vpa-updater | grep &lt;namespace&gt;
+
+# Add/lower minReplicas to prevent single-pod evictions
+kubectl patch vpa &lt;name&gt; -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"updatePolicy":{"minReplicas":2}}}'
+
+# Widen maxAllowed to reduce recommendation oscillation
+kubectl patch vpa &lt;name&gt; -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"resourcePolicy":{"containerPolicies":[{"containerName":"app","maxAllowed":{"cpu":"8","memory":"16Gi"}}]}}}'</code></pre>
+
+<h3>VPA Recommendation Seems Wrong (Too High or Too Low)</h3>
+<pre><code class="language-bash"># Compare actual usage to recommendation
+kubectl top pods -n &lt;namespace&gt; -l app=&lt;app&gt; --containers
+
+# Get VPA targets
+kubectl get vpa &lt;name&gt; -n &lt;namespace&gt; -o yaml | grep -A20 containerRecommendations
+
+# Check if OOM events are inflating memory recommendation
+kubectl get events -n &lt;namespace&gt; --field-selector reason=OOMKilling
+
+# If recommendation is stale (workload changed), delete and recreate VPA
+# to reset the history window
+kubectl delete vpa &lt;name&gt; -n &lt;namespace&gt;
+kubectl apply -f vpa.yaml</code></pre>
+
+<h3>VPA Admission Controller Not Applying Recommendations</h3>
+<pre><code class="language-bash"># Check if webhook is registered
+kubectl get mutatingwebhookconfigurations | grep vpa
+
+# Verify Admission Controller is running
+kubectl get deployment vpa-admission-controller -n kube-system
+
+# Test webhook manually (create a test pod and inspect its resources)
+kubectl run vpa-test --image=nginx:alpine -n &lt;namespace&gt; --dry-run=server \
+  -o yaml | grep -A10 resources
+
+# Check logs
+kubectl logs -n kube-system -l app=vpa-admission-controller | tail -50</code></pre>
+
+<h3>In-Place Resize Stuck in Infeasible</h3>
+<pre><code class="language-bash"># Check resize status
+kubectl get pod &lt;pod-name&gt; -n &lt;namespace&gt; -o jsonpath='{.status.resize}'
+
+# Infeasible = requested change cannot be done in-place (e.g., memory reduction)
+# Solution: delete the pod and let controller recreate with new spec
+kubectl delete pod &lt;pod-name&gt; -n &lt;namespace&gt;
+
+# Deferred = node lacks capacity; reschedule pod to different node
+kubectl drain &lt;node&gt; --ignore-daemonsets --delete-emptydir-data</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Start with <code>updateMode: Off</code> (Goldilocks)</strong> — run VPA in advisory mode for 1–2 weeks before enabling updates. Validate that recommendations match intuition before allowing automatic evictions.</li>
+  <li><strong>Always set <code>minReplicas: 2</code> in VPA updatePolicy</strong> — prevents the Updater from evicting the only pod of a single-replica Deployment. For critical services, set 3 or higher.</li>
+  <li><strong>Pair VPA with PDBs</strong> — VPA Updater respects PodDisruptionBudgets. Define a PDB with <code>minAvailable: 2</code> alongside every VPA-managed Deployment to cap eviction impact.</li>
+  <li><strong>Use <code>RequestsOnly</code> for workloads with intentional burst limits</strong> — preserving the original limit/request ratio via <code>RequestsAndLimits</code> can produce unexpectedly large limits if the original ratio was wide.</li>
+  <li><strong>Set explicit <code>minAllowed</code> and <code>maxAllowed</code></strong> — unbounded VPA can set CPU to 50m (causing throttling) or memory to 64Gi (blocking scheduling). Always bound recommendations to the realistic operational range.</li>
+  <li><strong>Use <code>Initial</code> mode for batch/Job workloads</strong> — running pods should not be evicted mid-job. Initial mode applies recommendations only at pod creation, which happens naturally on each job run.</li>
+  <li><strong>For JVM workloads, use <code>-XX:MaxRAMPercentage</code> instead of <code>-Xmx</code></strong> — fixed heap sizes break VPA's ability to right-size memory without causing OOMs. Percentage-based heap automatically adjusts with the container limit.</li>
+  <li><strong>Don't use VPA Auto mode with HPA CPU/memory scaling</strong> — both controllers adjust the effective CPU utilization ratio through different levers, creating a feedback oscillation. Use HPA on custom/external metrics when VPA manages CPU/memory.</li>
+</ol>
+
+</div><!-- content-area -->
+<button class="back-to-top" id="back-to-top">↑ Top</button>
+</div><!-- main-content -->
+
+<nav class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#architecture">VPA Architecture</a>
+  <a href="#vpa-spec">VPA Spec</a>
+  <a href="#update-modes">Update Modes</a>
+  <a href="#recommender">Recommender Algorithm</a>
+  <a href="#oom-handling">OOM Handling</a>
+  <a href="#reading-recommendations">Reading Recommendations</a>
+  <a href="#updater-eviction">Updater Eviction</a>
+  <a href="#eviction-requirements">evictionRequirements</a>
+  <a href="#controlled-values">controlledValues</a>
+  <a href="#inplace">In-Place Resize (1.33β)</a>
+  <a href="#hpa-vpa">VPA + HPA</a>
+  <a href="#goldilocks">Goldilocks</a>
+  <a href="#jvm">JVM Workloads</a>
+  <a href="#vpa-for-jobs">Batch Jobs</a>
+  <a href="#operational-commands">Operational Commands</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#alerts">Alerting Rules</a>
+  <a href="#runbooks">Runbooks</a>
+  <a href="#best-practices">Best Practices</a>
+</nav>
+</div><!-- layout -->
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => btt.classList.toggle('visible', main.scrollTop > 400));
+btt.addEventListener('click', () => main.scrollTo({top: 0, behavior: 'smooth'}));
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText || pre.innerText);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+const tocLinks = document.querySelectorAll('.toc-panel a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, {root: main, threshold: 0.2});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+document.getElementById('nav-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

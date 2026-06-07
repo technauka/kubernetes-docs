@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CNI Plugins — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-logo{font-weight:700;font-size:15px;color:var(--text);}
+.sidebar-logo span{color:var(--accent);}
+.sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;}
+.sidebar-search input:focus{outline:none;border-color:var(--accent);}
+nav{padding:8px 0;flex:1;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+/* Top bar */
+.topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;z-index:90;gap:12px;}
+.hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:15px;font-weight:600;flex:1;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);cursor:pointer;font-size:13px;}
+.theme-btn:hover{border-color:var(--accent);}
+/* Layout */
+.main-wrapper{margin-left:var(--sidebar-w);flex:1;display:flex;padding-top:52px;}
+.main-content{flex:1;padding:40px 48px;max-width:960px;overflow-y:auto;height:calc(100vh - 52px);}
+.toc-panel{width:var(--toc-w);padding:24px 16px;position:sticky;top:0;height:calc(100vh - 52px);overflow-y:auto;border-left:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.toc-panel h4{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover{color:var(--text);text-decoration:none;}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-panel a.toc-h3{padding-left:18px;font-size:11px;}
+/* Content */
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:600;margin:48px 0 16px;padding-top:8px;border-top:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+.lead{font-size:16px;color:var(--text2);margin-bottom:32px;line-height:1.7;}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--text2);cursor:pointer;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;border-bottom:2px solid var(--border);color:var(--text);}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+.callout{border-left:4px solid;border-radius:0 8px 8px 0;padding:14px 18px;margin:20px 0;}
+.callout-info{border-color:var(--accent);background:rgba(88,166,255,.08);}
+.callout-warn{border-color:var(--yellow);background:rgba(210,153,34,.08);}
+.callout-danger{border-color:var(--red);background:rgba(248,81,73,.08);}
+.callout-success{border-color:var(--green);background:rgba(63,185,80,.08);}
+.callout strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout p{margin:0;font-size:13px;}
+.grid{display:grid;gap:16px;margin:20px 0;}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;}
+.card h4{margin-top:0;color:var(--text);}
+.card-accent{border-top:3px solid var(--accent);}
+.card-green{border-top:3px solid var(--green);}
+.card-yellow{border-top:3px solid var(--yellow);}
+.card-purple{border-top:3px solid var(--purple);}
+.card-red{border-top:3px solid var(--red);}
+.card-orange{border-top:3px solid var(--orange);}
+.tag{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:500;margin:2px;}
+.tag-green{background:rgba(63,185,80,.2);color:var(--green);}
+.tag-blue{background:rgba(88,166,255,.2);color:var(--accent);}
+.tag-yellow{background:rgba(210,153,34,.2);color:var(--yellow);}
+.tag-red{background:rgba(248,81,73,.2);color:var(--red);}
+.tag-purple{background:rgba(188,140,255,.2);color:var(--purple);}
+.tag-orange{background:rgba(209,134,22,.2);color:var(--orange);}
+svg text{fill:var(--text);}
+.page-nav{display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;align-items:center;gap:8px;padding:12px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:14px;transition:all .2s;}
+.page-nav a:hover{border-color:var(--accent);text-decoration:none;}
+.back-to-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+.back-to-top.show{display:flex;}
+.search-hl{background:rgba(210,153,34,.35);border-radius:2px;}
+@media(max-width:1200px){.toc-panel{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrapper{margin-left:0;}.topbar{left:0;}.hamburger{display:block;}.main-content{padding:24px 20px;}}
+</style>
+</head>
+<body>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  </div>
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Foundations</div>
+      <a href="../00-foundations/00-introduction.html">Introduction</a>
+      <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+      <a href="../00-foundations/02-kubernetes-components.html">Core Components</a>
+      <a href="../00-foundations/03-control-loops.html">Control Loops</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html">API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Control Plane</div>
+      <a href="../01-control-plane/00-control-plane-overview.html">Overview</a>
+      <a href="../01-control-plane/01-api-server.html">API Server</a>
+      <a href="../01-control-plane/02-etcd.html">etcd</a>
+      <a href="../01-control-plane/03-scheduler.html">Scheduler</a>
+      <a href="../01-control-plane/04-controller-manager.html">Controller Manager</a>
+      <a href="../01-control-plane/05-cloud-controller-manager.html">Cloud Controller Manager</a>
+      <a href="../01-control-plane/06-ha-control-plane.html">HA Control Plane</a>
+      <a href="../01-control-plane/07-api-aggregation.html">API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html">Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html">Kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html">Kube-Proxy</a>
+      <a href="../02-node-components/03-container-runtime.html">Container Runtime</a>
+      <a href="../02-node-components/04-cri-interface.html">CRI Interface</a>
+      <a href="../02-node-components/05-node-lifecycle.html">Node Lifecycle</a>
+      <a href="../02-node-components/06-node-resource-management.html">Node Resource Management</a>
+      <a href="../02-node-components/07-windows-worker-nodes.html">Windows Worker Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Networking</div>
+      <a href="00-networking-overview.html">Networking Overview</a>
+      <a href="01-pod-networking.html">Pod Networking</a>
+      <a href="02-cni-plugins.html" class="active">CNI Plugins</a>
+      <a href="03-kube-proxy-internals.html">Kube-Proxy Internals</a>
+      <a href="04-dns.html">DNS &amp; Service Discovery</a>
+      <a href="05-ingress.html">Ingress</a>
+      <a href="06-gateway-api.html">Gateway API</a>
+      <a href="07-network-policies.html">Network Policies</a>
+      <a href="08-ipv4-ipv6-dual-stack.html">IPv4/IPv6 Dual-Stack</a>
+      <a href="09-load-balancing.html">Load Balancing</a>
+      <a href="10-service-mesh.html">Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Storage</div>
+      <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+      <a href="../04-storage/01-volumes.html">Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html">Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html">Storage Classes</a>
+      <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+      <a href="../04-storage/05-stateful-sets-storage.html">StatefulSets &amp; Storage</a>
+      <a href="../04-storage/06-volume-snapshots.html">Volume Snapshots</a>
+      <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html">Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html">Pods</a>
+      <a href="../05-workloads/02-deployments.html">Deployments</a>
+      <a href="../05-workloads/03-statefulsets.html">StatefulSets</a>
+      <a href="../05-workloads/04-daemonsets.html">DaemonSets</a>
+      <a href="../05-workloads/05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/06-horizontal-pod-autoscaler.html">HPA</a>
+      <a href="../05-workloads/07-vertical-pod-autoscaler.html">VPA</a>
+      <a href="../05-workloads/08-pod-disruption-budgets.html">Pod Disruption Budgets</a>
+      <a href="../05-workloads/09-resource-management.html">Resource Management</a>
+      <a href="../05-workloads/10-scheduling.html">Scheduling</a>
+      <a href="../05-workloads/11-pod-lifecycle.html">Pod Lifecycle</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Security</div>
+      <a href="../06-security/00-security-overview.html">Security Overview</a>
+      <a href="../06-security/01-rbac.html">RBAC</a>
+      <a href="../06-security/02-pod-security.html">Pod Security</a>
+      <a href="../06-security/03-network-policies.html">Network Policies</a>
+      <a href="../06-security/04-secrets-management.html">Secrets Management</a>
+      <a href="../06-security/05-service-accounts.html">Service Accounts</a>
+      <a href="../06-security/06-admission-controllers.html">Admission Controllers</a>
+      <a href="../06-security/07-image-security.html">Image Security</a>
+      <a href="../06-security/08-audit-logging.html">Audit Logging</a>
+      <a href="../06-security/09-encryption-at-rest.html">Encryption at Rest</a>
+      <a href="../06-security/10-supply-chain-security.html">Supply Chain Security</a>
+      <a href="../06-security/11-compliance.html">Compliance</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Observability</div>
+      <a href="../07-observability/00-observability-overview.html">Observability Overview</a>
+      <a href="../07-observability/01-metrics.html">Metrics &amp; Prometheus</a>
+      <a href="../07-observability/02-logging.html">Logging</a>
+      <a href="../07-observability/03-tracing.html">Distributed Tracing</a>
+      <a href="../07-observability/04-events.html">Events</a>
+      <a href="../07-observability/05-dashboards.html">Dashboards</a>
+      <a href="../07-observability/06-alerting.html">Alerting</a>
+      <a href="../07-observability/07-profiling.html">Profiling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-overview.html">Platform Overview</a>
+      <a href="../08-platform-engineering/01-cluster-provisioning.html">Cluster Provisioning</a>
+      <a href="../08-platform-engineering/02-gitops.html">GitOps</a>
+      <a href="../08-platform-engineering/03-multi-tenancy.html">Multi-Tenancy</a>
+      <a href="../08-platform-engineering/04-policy-management.html">Policy Management</a>
+      <a href="../08-platform-engineering/05-service-catalog.html">Service Catalog</a>
+      <a href="../08-platform-engineering/06-developer-experience.html">Developer Experience</a>
+      <a href="../08-platform-engineering/07-cost-management.html">Cost Management</a>
+      <a href="../08-platform-engineering/08-cluster-upgrades.html">Cluster Upgrades</a>
+      <a href="../08-platform-engineering/09-multi-cluster.html">Multi-Cluster</a>
+      <a href="../08-platform-engineering/10-backup-restore.html">Backup &amp; Restore</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html">Production Overview</a>
+      <a href="../09-production-operations/01-capacity-planning.html">Capacity Planning</a>
+      <a href="../09-production-operations/02-performance-tuning.html">Performance Tuning</a>
+      <a href="../09-production-operations/03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="../09-production-operations/04-security-hardening.html">Security Hardening</a>
+      <a href="../09-production-operations/05-network-operations.html">Network Operations</a>
+      <a href="../09-production-operations/06-storage-operations.html">Storage Operations</a>
+      <a href="../09-production-operations/07-certificate-management.html">Certificate Management</a>
+      <a href="../09-production-operations/08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="../09-production-operations/09-incident-response.html">Incident Response</a>
+      <a href="../09-production-operations/10-sre-practices.html">SRE Practices</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Team Workflows</div>
+      <a href="../10-team-workflows/00-workflows-overview.html">Workflows Overview</a>
+      <a href="../10-team-workflows/01-local-development.html">Local Development</a>
+      <a href="../10-team-workflows/02-ci-cd-pipelines.html">CI/CD Pipelines</a>
+      <a href="../10-team-workflows/03-helm.html">Helm</a>
+      <a href="../10-team-workflows/04-kustomize.html">Kustomize</a>
+      <a href="../10-team-workflows/05-testing-strategies.html">Testing Strategies</a>
+      <a href="../10-team-workflows/06-progressive-delivery.html">Progressive Delivery</a>
+      <a href="../10-team-workflows/07-developer-self-service.html">Developer Self-Service</a>
+      <a href="../10-team-workflows/08-runbooks.html">Runbooks</a>
+      <a href="../10-team-workflows/09-on-call.html">On-Call</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">API Flows &amp; Diagrams</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-overview.html">Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html">Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-service-account-token.html">Service Account Token</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-admission-flow.html">Admission Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduler-flow.html">Scheduler Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-rolling-update-flow.html">Rolling Update Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-hpa-flow.html">HPA Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-csi-flow.html">CSI Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-network-policy-flow.html">Network Policy Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-rbac-flow.html">RBAC Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-garbage-collection.html">Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-leader-election.html">Leader Election</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-webhook-flow.html">Webhook Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-cni-setup-flow.html">CNI Setup Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-volume-attach-flow.html">Volume Attach Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html">Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html">Pod Failures</a>
+      <a href="../12-troubleshooting/02-network-issues.html">Network Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html">Storage Issues</a>
+      <a href="../12-troubleshooting/04-performance-issues.html">Performance Issues</a>
+      <a href="../12-troubleshooting/05-control-plane-issues.html">Control Plane Issues</a>
+      <a href="../12-troubleshooting/06-node-issues.html">Node Issues</a>
+      <a href="../12-troubleshooting/07-security-issues.html">Security Issues</a>
+      <a href="../12-troubleshooting/08-dns-issues.html">DNS Issues</a>
+      <a href="../12-troubleshooting/09-ingress-issues.html">Ingress Issues</a>
+      <a href="../12-troubleshooting/10-etcd-issues.html">etcd Issues</a>
+    </div>
+  </nav>
+</aside>
+
+<div class="main-wrapper">
+<header class="topbar">
+  <button class="hamburger" id="hamburger" aria-label="Toggle sidebar">&#9776;</button>
+  <span class="topbar-title">CNI Plugins — Deep Dive</span>
+  <input type="search" id="global-search" placeholder="Search docs…" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-size:13px;width:220px;"/>
+  <button class="theme-btn" id="theme-toggle">Light Mode</button>
+</header>
+
+<main class="main-content" id="main-content">
+<h1>CNI Plugins — Deep Dive</h1>
+<p class="lead">The Container Network Interface (CNI) is the pluggable layer that gives every Kubernetes pod a routable IP address. This page covers the CNI specification in full, chained plugin architecture, and detailed internals of Calico, Cilium, Flannel, AWS VPC CNI, Azure CNI, and Antrea — including eBPF dataplanes, BGP configuration, HubbleObservability, ENI management, and production CNI selection criteria.</p>
+
+<!-- CNI Spec -->
+<h2 id="cni-spec">CNI Specification</h2>
+<p>CNI is a <a href="https://github.com/containernetworking/cni" target="_blank">CNCF specification</a> (NOT Kubernetes-specific) that defines how container runtimes invoke network plugins. The spec version history: 0.1 → 0.2 → 0.3.0/0.3.1 → 0.4.0 → <strong>1.0.0</strong> (2021). Kubernetes 1.28+ drops support for spec versions older than 0.4.0.</p>
+
+<h3 id="cni-operations">Operations: ADD / DEL / CHECK / GC / VERSION</h3>
+<table>
+  <thead><tr><th>Operation</th><th>Trigger</th><th>Plugin Must Do</th><th>Return</th></tr></thead>
+  <tbody>
+    <tr><td><code>ADD</code></td><td>Container created; pod scheduled to node</td><td>Create veth, assign IP (IPAM), configure routes, setup iptables</td><td>CNI Result (interfaces[], ips[], routes[], dns{})</td></tr>
+    <tr><td><code>DEL</code></td><td>Container removed; pod deleted</td><td>Remove veth, release IP back to IPAM, tear down routes</td><td>Success (errors tolerated if container already gone)</td></tr>
+    <tr><td><code>CHECK</code></td><td>Runtime health verification</td><td>Verify container network matches last ADD result</td><td>Success or error with reason</td></tr>
+    <tr><td><code>GC</code></td><td>Spec 1.0 — periodic cleanup</td><td>Remove orphaned network state (IPs not in validAttachments)</td><td>Success</td></tr>
+    <tr><td><code>VERSION</code></td><td>Plugin discovery</td><td>Report supported CNI spec versions</td><td>{"cniVersion":"1.0.0","supportedVersions":[...]}</td></tr>
+  </tbody>
+</table>
+
+<h3 id="cni-env">Environment Variables</h3>
+<p>The container runtime passes configuration via environment variables before exec-ing the CNI binary:</p>
+<pre><code>CNI_COMMAND=ADD
+CNI_CONTAINERID=abc123def456...   # container ID (unique per sandbox)
+CNI_NETNS=/var/run/netns/abc123   # path to network namespace
+CNI_IFNAME=eth0                   # interface name inside container
+CNI_ARGS=K8S_POD_NAMESPACE=default;K8S_POD_NAME=nginx-abc;K8S_POD_INFRA_CONTAINER_ID=abc123
+CNI_PATH=/opt/cni/bin             # colon-separated dirs to search for plugins</code></pre>
+<div class="callout callout-info"><strong>stdin</strong><p>Network config JSON is passed on <code>stdin</code>, not as CLI args. The plugin reads the config from stdin and writes the CNI result to stdout. Errors go to stderr.</p></div>
+
+<h3 id="cni-add-request">Full ADD Request / Response</h3>
+<pre><code class="language-json">// stdin → plugin (network config)
+{
+  "cniVersion": "1.0.0",
+  "name": "k8s-pod-network",
+  "type": "calico",
+  "ipam": {
+    "type": "calico-ipam"
+  },
+  "kubernetes": {
+    "k8s_api_root": "https://10.96.0.1:443",
+    "kubeconfig": "/etc/cni/net.d/calico-kubeconfig"
+  },
+  "policy": {
+    "type": "k8s"
+  },
+  "nodename": "worker-1",
+  "datastore_type": "kubernetes",
+  "log_level": "info",
+  "prevResult": null   // null for first ADD; populated for chained plugins
+}
+
+// stdout ← plugin (CNI result v1.0.0)
+{
+  "cniVersion": "1.0.0",
+  "interfaces": [
+    {
+      "name": "veth8a3f12b",
+      "mac": "aa:bb:cc:dd:ee:ff",
+      "sandbox": ""           // host side: no sandbox path
+    },
+    {
+      "name": "eth0",
+      "mac": "aa:bb:cc:dd:ee:00",
+      "sandbox": "/var/run/netns/abc123"   // container side
+    }
+  ],
+  "ips": [
+    {
+      "interface": 1,          // index into interfaces[]
+      "address": "10.244.1.15/24",
+      "gateway": "10.244.1.1"
+    }
+  ],
+  "routes": [
+    { "dst": "0.0.0.0/0", "gw": "10.244.1.1" }
+  ],
+  "dns": {
+    "nameservers": ["10.96.0.10"],
+    "domain": "cluster.local",
+    "search": ["default.svc.cluster.local","svc.cluster.local","cluster.local"]
+  }
+}</code></pre>
+
+<h3 id="cni-conflist">Chained Plugins — conflist</h3>
+<p>A <code>.conflist</code> file defines an ordered list of plugins. The runtime calls them sequentially; each plugin receives the <code>prevResult</code> from the prior plugin in the chain. This is how bandwidth shaping, firewall, and IPAM are combined:</p>
+<pre><code class="language-json">{
+  "cniVersion": "1.0.0",
+  "name": "k8s-pod-network",
+  "plugins": [
+    {
+      "type": "calico",           // main plugin: sets up veth + routes
+      "ipam": { "type": "calico-ipam" },
+      "kubernetes": { "kubeconfig": "/etc/cni/net.d/calico-kubeconfig" }
+    },
+    {
+      "type": "bandwidth",        // meta plugin: shapes traffic
+      "ingressRate": 104857600,   // 100 Mbps in bps
+      "ingressBurst": 209715200,
+      "egressRate": 104857600,
+      "egressBurst": 209715200
+    },
+    {
+      "type": "portmap",          // meta plugin: iptables DNAT for hostPort
+      "capabilities": { "portMappings": true },
+      "snat": true
+    },
+    {
+      "type": "firewall"          // meta plugin: iptables allow/deny rules
+    }
+  ]
+}</code></pre>
+
+<div class="callout callout-warn"><strong>Plugin search order</strong><p>The runtime uses the first <code>.conf</code> or <code>.conflist</code> file found in <code>/etc/cni/net.d/</code> sorted lexicographically. Files beginning with <code>10-</code> load before <code>99-</code>. Stale configs left by old CNI installations can cause the wrong plugin to load.</p></div>
+
+<!-- CNI Architecture SVG -->
+<h2 id="cni-arch">CNI Invocation Flow</h2>
+<svg viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;background:var(--bg2);border-radius:10px;padding:10px;margin:16px 0;">
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker>
+  </defs>
+  <!-- Kubelet -->
+  <rect x="20" y="30" width="130" height="60" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="85" y="56" text-anchor="middle" font-size="13" font-weight="600" fill="#e6edf3">kubelet</text>
+  <text x="85" y="74" text-anchor="middle" font-size="11" fill="#8b949e">calls CRI</text>
+  <!-- containerd -->
+  <rect x="200" y="30" width="150" height="60" rx="8" fill="#21262d" stroke="#58a6ff" stroke-width="2"/>
+  <text x="275" y="56" text-anchor="middle" font-size="13" font-weight="600" fill="#e6edf3">containerd</text>
+  <text x="275" y="74" text-anchor="middle" font-size="11" fill="#8b949e">CNI invocation</text>
+  <!-- CNI bin -->
+  <rect x="410" y="30" width="160" height="60" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="2"/>
+  <text x="490" y="56" text-anchor="middle" font-size="13" font-weight="600" fill="#e6edf3">/opt/cni/bin/</text>
+  <text x="490" y="74" text-anchor="middle" font-size="11" fill="#8b949e">calico | flannel | cilium</text>
+  <!-- IPAM -->
+  <rect x="630" y="30" width="140" height="60" rx="8" fill="#21262d" stroke="#bc8cff" stroke-width="2"/>
+  <text x="700" y="56" text-anchor="middle" font-size="13" font-weight="600" fill="#e6edf3">IPAM plugin</text>
+  <text x="700" y="74" text-anchor="middle" font-size="11" fill="#8b949e">host-local / calico-ipam</text>
+  <!-- arrows top row -->
+  <line x1="150" y1="60" x2="198" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <text x="174" y="55" text-anchor="middle" font-size="10" fill="#8b949e">CRI</text>
+  <line x1="350" y1="60" x2="408" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <text x="379" y="55" text-anchor="middle" font-size="10" fill="#8b949e">exec()</text>
+  <line x1="570" y1="60" x2="628" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <text x="599" y="55" text-anchor="middle" font-size="10" fill="#8b949e">IPAM exec</text>
+  <!-- Netns / kernel row -->
+  <rect x="200" y="140" width="150" height="55" rx="8" fill="#21262d" stroke="#d29922"/>
+  <text x="275" y="162" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">pause container</text>
+  <text x="275" y="180" text-anchor="middle" font-size="11" fill="#8b949e">new netns created</text>
+  <rect x="410" y="140" width="160" height="55" rx="8" fill="#21262d" stroke="#d29922"/>
+  <text x="490" y="162" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">kernel netns</text>
+  <text x="490" y="180" text-anchor="middle" font-size="11" fill="#8b949e">veth pair + routes</text>
+  <rect x="630" y="140" width="140" height="55" rx="8" fill="#21262d" stroke="#d29922"/>
+  <text x="700" y="162" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">IPAM store</text>
+  <text x="700" y="180" text-anchor="middle" font-size="11" fill="#8b949e">allocate IP lease</text>
+  <!-- vertical arrows -->
+  <line x1="275" y1="92" x2="275" y2="138" stroke="#d29922" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+  <line x1="490" y1="92" x2="490" y2="138" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+  <line x1="700" y1="92" x2="700" y2="138" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+  <!-- config row -->
+  <rect x="200" y="230" width="570" height="50" rx="8" fill="#161b22" stroke="#30363d"/>
+  <text x="485" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">stdin: /etc/cni/net.d/10-calico.conflist → stdout: CNI Result JSON</text>
+  <text x="485" y="270" text-anchor="middle" font-size="11" fill="#8b949e">CNI_COMMAND=ADD  CNI_CONTAINERID=…  CNI_NETNS=…  CNI_IFNAME=eth0</text>
+</svg>
+
+<!-- Reference Plugins -->
+<h2 id="ref-plugins">CNI Reference Plugins</h2>
+<p>The <code>containernetworking/plugins</code> repo ships reference plugins that ship with most distributions:</p>
+<div class="grid grid-3">
+  <div class="card card-accent">
+    <h4>Main Plugins</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:2;">
+      <li><code>bridge</code> — Linux bridge</li>
+      <li><code>host-device</code> — SR-IOV VF</li>
+      <li><code>ipvlan</code> — ipvlan L2/L3</li>
+      <li><code>macvlan</code> — macvlan</li>
+      <li><code>ptp</code> — veth pair (no bridge)</li>
+      <li><code>vlan</code> — VLAN trunk</li>
+      <li><code>dummy</code> — loopback</li>
+    </ul>
+  </div>
+  <div class="card card-green">
+    <h4>IPAM Plugins</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:2;">
+      <li><code>host-local</code> — file-based</li>
+      <li><code>dhcp</code> — DHCP daemon</li>
+      <li><code>static</code> — hardcoded IPs</li>
+      <li><code>whereabouts</code> — cluster-wide</li>
+    </ul>
+  </div>
+  <div class="card card-purple">
+    <h4>Meta Plugins</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:2;">
+      <li><code>portmap</code> — hostPort DNAT</li>
+      <li><code>bandwidth</code> — tc tbf shaping</li>
+      <li><code>firewall</code> — iptables rules</li>
+      <li><code>sbr</code> — source-based routing</li>
+      <li><code>tuning</code> — sysctl / hwaddr</li>
+      <li><code>vrf</code> — VRF routing table</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Calico -->
+<h2 id="calico">Calico</h2>
+<p>Calico (Project Calico / Tigera) is the most widely deployed CNI in production. It supports three dataplanes: standard Linux (iptables), eBPF, and Windows HNS. Network policy is a first-class citizen implemented via Felix and iptables/eBPF rules, not through a separate plugin.</p>
+
+<h3 id="calico-arch">Architecture Components</h3>
+<div class="grid grid-2">
+  <div class="card card-accent">
+    <h4>Felix (DaemonSet)</h4>
+    <p style="font-size:13px;color:var(--text2);">The policy enforcement agent on every node. Felix programs iptables/eBPF rules, manages routing (kernel FIB or BGP), writes interface routes, enforces NetworkPolicy. Talks to the datastore (etcd or Kubernetes CRD API).</p>
+    <p style="font-size:12px;color:var(--text3);">Pod: <code>calico-node</code> in <code>kube-system</code></p>
+  </div>
+  <div class="card card-green">
+    <h4>BIRD (BGP Daemon)</h4>
+    <p style="font-size:13px;color:var(--text2);">Runs inside <code>calico-node</code> pod. Advertises pod CIDRs via BGP to upstream routers and to peer nodes. In full-mesh mode each node peers with every other node (n² connections); in Route Reflector mode designated RR nodes relay routes.</p>
+    <p style="font-size:12px;color:var(--text3);">Port 179 TCP (BGP)</p>
+  </div>
+  <div class="card card-purple">
+    <h4>confd (template engine)</h4>
+    <p style="font-size:13px;color:var(--text2);">Watches the datastore for BGP configuration changes and renders BIRD config files dynamically. Eliminates the need to restart BIRD on config changes — confd triggers a graceful reload.</p>
+  </div>
+  <div class="card card-yellow">
+    <h4>Typha (optional)</h4>
+    <p style="font-size:13px;color:var(--text2);">Fan-out cache between the datastore and Felix daemons. In large clusters (&gt;100 nodes), Typha absorbs the watch fan-out: 1,000 Felix instances watch Typha instead of the API server directly. Reduces API server load dramatically.</p>
+    <p style="font-size:12px;color:var(--text3);">Deploy 1 Typha replica per 100-200 nodes</p>
+  </div>
+  <div class="card card-orange">
+    <h4>calico-kube-controllers</h4>
+    <p style="font-size:13px;color:var(--text2);">Deployment (not DaemonSet). Reconciles Kubernetes objects (Namespaces, Pods, NetworkPolicies, ServiceAccounts) into Calico CRDs. Also runs node cleanup when nodes are deleted.</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--red);">
+    <h4>calico-apiserver (optional)</h4>
+    <p style="font-size:13px;color:var(--text2);">Aggregated API extension exposing Calico CRDs through the Kubernetes API server. Required for Tigera Enterprise features and for applying Calico resources with <code>kubectl</code> via API aggregation.</p>
+  </div>
+</div>
+
+<h3 id="calico-modes">Routing Modes</h3>
+<table>
+  <thead><tr><th>Mode</th><th>Encapsulation</th><th>Requires</th><th>Overhead</th><th>Use When</th></tr></thead>
+  <tbody>
+    <tr><td><strong>BGP (native)</strong></td><td>None</td><td>Routable pod CIDRs; BGP-capable fabric</td><td>~0</td><td>On-prem with BGP ToR switches; maximum performance</td></tr>
+    <tr><td><strong>VXLAN</strong></td><td>VXLAN (UDP 4789)</td><td>UDP connectivity between nodes</td><td>~50 bytes/pkt</td><td>Cloud VPCs that block BGP; most common in EKS/AKS self-managed</td></tr>
+    <tr><td><strong>IP-in-IP (IPIP)</strong></td><td>IP-in-IP (proto 4)</td><td>IP connectivity between nodes</td><td>~20 bytes/pkt</td><td>Legacy; lighter than VXLAN but less universally supported</td></tr>
+    <tr><td><strong>WireGuard</strong></td><td>WireGuard (UDP 51820)</td><td>WireGuard kernel module</td><td>~60 bytes/pkt</td><td>Encrypted pod-to-pod traffic without service mesh</td></tr>
+    <tr><td><strong>None (CrossSubnet)</strong></td><td>None within subnet, VXLAN/IPIP across</td><td>BGP for intra-subnet, overlay for cross-subnet</td><td>Mixed</td><td>AWS multi-AZ or hybrid setups</td></tr>
+  </tbody>
+</table>
+
+<h3 id="calico-crds">Key Calico CRDs</h3>
+<pre><code class="language-yaml"># IPPool — defines allocatable pod CIDR range
+apiVersion: crd.projectcalico.org/v1
+kind: IPPool
+metadata:
+  name: default-ipv4-ippool
+spec:
+  cidr: 192.168.0.0/16
+  ipipMode: Never           # Never | Always | CrossSubnet
+  vxlanMode: Always         # Never | Always | CrossSubnet
+  natOutgoing: true         # SNAT pods accessing non-cluster IPs
+  nodeSelector: all()       # which nodes can use this pool
+  blockSize: 26             # /26 = 64 IPs per node block (default /26 for IPv4)
+  disabled: false
+
+---
+# IPAMBlock — auto-created per node; not edited manually
+# kubectl get ipamblocks -o yaml
+# Each block is a /26 subnet allocated from an IPPool
+
+---
+# BGPConfiguration — global BGP settings
+apiVersion: crd.projectcalico.org/v1
+kind: BGPConfiguration
+metadata:
+  name: default
+spec:
+  logSeverityScreen: Info
+  nodeToNodeMeshEnabled: true    # full-mesh BGP (disable for RR topology)
+  asNumber: 64512                # AS number for all nodes
+  serviceClusterIPs:
+  - cidr: 10.96.0.0/12           # advertise service CIDRs to BGP peers
+  serviceExternalIPs:
+  - cidr: 203.0.113.0/24
+
+---
+# BGPPeer — configure external BGP peer (Route Reflector or ToR)
+apiVersion: crd.projectcalico.org/v1
+kind: BGPPeer
+metadata:
+  name: tor-switch-1
+spec:
+  peerIP: 192.168.1.1
+  asNumber: 65000
+  nodeSelector: rack == "rack-1"</code></pre>
+
+<h3 id="calico-ebpf">Calico eBPF Dataplane</h3>
+<p>Enable with <code>calicoNetwork.linuxDataplane: BPF</code> (Operator) or <code>FELIX_BPFENABLED=true</code>. Requirements: Linux 5.3+ (5.8+ recommended), kube-proxy disabled (<code>--skip-phases=addon/kube-proxy</code>).</p>
+<div class="grid grid-2">
+  <div class="card card-green">
+    <h4>eBPF advantages vs iptables</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>O(1) service lookup via BPF maps vs O(n) iptables chains</li>
+      <li>Direct server return (DSR): response packets bypass kube-proxy SNAT</li>
+      <li>Preserved source IP for NodePort (no SNAT)</li>
+      <li>Lower latency at scale (10k+ services)</li>
+      <li>TC hook (traffic control) replaces netfilter in the fast path</li>
+    </ul>
+  </div>
+  <div class="card card-yellow">
+    <h4>eBPF limitations</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Requires kube-proxy to be disabled (full replacement)</li>
+      <li>Kernel &lt; 5.3 not supported</li>
+      <li>No support for some exotic iptables rules</li>
+      <li>More complex troubleshooting (bpftool required)</li>
+    </ul>
+  </div>
+</div>
+<pre><code class="language-bash"># Inspect Calico eBPF maps
+calicoctrl felix-diag-dump
+bpftool map list | grep calico
+bpftool prog show | grep calico
+
+# Check eBPF conntrack
+calicoctrl bpf conntrack dump
+calicoctrl bpf nat dump frontend
+calicoctrl bpf nat dump backend</code></pre>
+
+<!-- Cilium -->
+<h2 id="cilium">Cilium</h2>
+<p>Cilium is an eBPF-native CNI that replaces both the network dataplane AND kube-proxy entirely with eBPF programs loaded into the Linux kernel. It requires kernel 4.9.17+ (5.10+ recommended) and provides deep observability via Hubble.</p>
+
+<h3 id="cilium-arch">Architecture</h3>
+<div class="grid grid-2">
+  <div class="card card-accent">
+    <h4>cilium-agent (DaemonSet)</h4>
+    <p style="font-size:13px;color:var(--text2);">Core daemon on every node. Loads eBPF programs, manages BPF maps, handles IPAM (CiliumNode CRD), enforces network policies. Communicates with the Kubernetes API server and (optionally) Cilium KVStore (etcd).</p>
+  </div>
+  <div class="card card-green">
+    <h4>cilium-operator (Deployment)</h4>
+    <p style="font-size:13px;color:var(--text2);">Cluster-scoped operations: IPAM allocation for large clusters, garbage collection of terminated pods, CiliumNetworkPolicy sync, garbage collection of CiliumEndpoints.</p>
+  </div>
+  <div class="card card-purple">
+    <h4>Hubble (observability)</h4>
+    <p style="font-size:13px;color:var(--text2);">Ring buffer-based eBPF observability layer. <code>hubble-relay</code> aggregates per-node Hubble servers into a cluster-wide gRPC API. <code>hubble-ui</code> provides a real-time network flow visualization graph. Zero overhead when no observer is connected.</p>
+  </div>
+  <div class="card card-yellow">
+    <h4>cilium-envoy (optional)</h4>
+    <p style="font-size:13px;color:var(--text2);">Embedded Envoy proxy for L7 policy enforcement (HTTP, gRPC, Kafka). Runs as a sub-process of cilium-agent. L7 policies use CiliumNetworkPolicy <code>rules[].ingress[].toPorts[].rules</code> with HTTP match expressions.</p>
+  </div>
+</div>
+
+<h3 id="cilium-ebpf-dataplane">eBPF Dataplane Internals</h3>
+<p>Cilium loads eBPF programs at multiple kernel hooks:</p>
+<table>
+  <thead><tr><th>Hook Point</th><th>Direction</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>tc ingress</code> on veth host side</td><td>Pod → host</td><td>Enforce egress NetworkPolicy from pod's perspective; SNAT for masquerade</td></tr>
+    <tr><td><code>tc egress</code> on veth host side</td><td>Host → pod</td><td>Enforce ingress NetworkPolicy from pod's perspective; DNAT for service</td></tr>
+    <tr><td><code>tc ingress</code> on physical NIC (XDP)</td><td>External → node</td><td>NodePort load balancing; early drop for DDoS; DSR redirect</td></tr>
+    <tr><td><code>cgroup/connect4</code> (sock_ops)</td><td>Socket level</td><td>Transparent socket-level load balancing (bypasses kernel netfilter entirely)</td></tr>
+    <tr><td><code>kprobe</code> (optional)</td><td>Kernel events</td><td>Process-level visibility for Hubble</td></tr>
+  </tbody>
+</table>
+
+<h3 id="cilium-ipam">IPAM Modes</h3>
+<table>
+  <thead><tr><th>Mode</th><th>Config</th><th>Where IPs Come From</th><th>Use Case</th></tr></thead>
+  <tbody>
+    <tr><td><strong>cluster-pool</strong> (default)</td><td><code>ipam: cluster-pool</code></td><td>Operator assigns per-node PodCIDR from <code>clusterPoolIPv4PodCIDR</code></td><td>Generic on-prem / self-managed</td></tr>
+    <tr><td><strong>kubernetes</strong></td><td><code>ipam: kubernetes</code></td><td>Uses <code>node.spec.podCIDR</code> set by kube-controller-manager</td><td>kubeadm clusters</td></tr>
+    <tr><td><strong>aws-eni</strong></td><td><code>ipam: eni</code></td><td>Cilium operator attaches ENIs and assigns secondary IPs via EC2 API</td><td>EKS with native VPC routing</td></tr>
+    <tr><td><strong>azure</strong></td><td><code>ipam: azure</code></td><td>Cilium operator assigns IPs from Azure VNET subnet</td><td>AKS with native Azure networking</td></tr>
+    <tr><td><strong>crd</strong></td><td><code>ipam: crd</code></td><td>CiliumNode CRD <code>spec.ipam.pools</code></td><td>Multi-homing, custom IPAM</td></tr>
+  </tbody>
+</table>
+
+<h3 id="cilium-network-policy">CiliumNetworkPolicy</h3>
+<pre><code class="language-yaml">apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-frontend-to-api
+  namespace: production
+spec:
+  endpointSelector:
+    matchLabels:
+      app: api-server        # applies to pods with this label
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: frontend        # allow from frontend pods
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:                # L7 HTTP rules
+        - method: "GET"
+          path: "/api/v1/.*"
+        - method: "POST"
+          path: "/api/v1/items"
+  - fromEntities:
+    - cluster               # allow all intra-cluster traffic
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:app: kube-dns    # allow DNS
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      rules:
+        dns:
+        - matchPattern: "*.cluster.local"   # L7 DNS filtering
+  - toFQDNs:                               # FQDN-based policy
+    - matchName: "api.stripe.com"</code></pre>
+
+<h3 id="cilium-hubble">Hubble Observability</h3>
+<pre><code class="language-bash"># Install Hubble CLI
+export HUBBLE_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/hubble/master/stable.txt)
+curl -L --remote-name-all https://github.com/cilium/hubble/releases/download/$HUBBLE_VERSION/hubble-linux-amd64.tar.gz
+
+# Enable Hubble in Cilium
+helm upgrade cilium cilium/cilium \
+  --namespace kube-system \
+  --set hubble.enabled=true \
+  --set hubble.relay.enabled=true \
+  --set hubble.ui.enabled=true
+
+# Port-forward Hubble relay
+cilium hubble port-forward &
+
+# Real-time flow inspection
+hubble observe --namespace production --follow
+hubble observe --pod frontend/frontend-abc --verdict DROPPED
+hubble observe --protocol TCP --port 8080 --output json
+
+# Policy troubleshooting
+hubble observe --namespace production --verdict DROPPED --last 100 | \
+  jq '.flow | select(.destination.port == 5432)'
+
+# Network flow statistics
+hubble observe --namespace production --type trace --last 1000 | \
+  jq -r '.flow | [.source.pod_name, .destination.pod_name, .verdict] | @tsv' | \
+  sort | uniq -c | sort -rn | head -20</code></pre>
+
+<h3 id="cilium-cluster-mesh">Cluster Mesh</h3>
+<p>Cilium Cluster Mesh connects up to 255 clusters with a shared service discovery and network policy model. Each cluster runs a <code>clustermesh-apiserver</code> that exposes its Cilium KVStore over TLS. Remote clusters are registered as Kubernetes Secrets:</p>
+<pre><code class="language-bash"># Enable cluster mesh on cluster-1
+cilium clustermesh enable --context cluster-1
+
+# Connect cluster-2 to cluster-1
+cilium clustermesh connect \
+  --context cluster-1 \
+  --destination-context cluster-2
+
+# Global service — load balance across clusters
+kubectl annotate service my-svc \
+  service.cilium.io/global=true \
+  service.cilium.io/shared=true</code></pre>
+
+<!-- Flannel -->
+<h2 id="flannel">Flannel</h2>
+<p>Flannel (CoreOS → flannel-io) is the simplest CNI plugin: a single binary that assigns a subnet to each node and wraps packets in a configurable backend. It has NO network policy support — Calico is often chained with Flannel (Canal) for policy enforcement.</p>
+
+<h3 id="flannel-backends">Backend Types</h3>
+<table>
+  <thead><tr><th>Backend</th><th>Mechanism</th><th>Overhead</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>vxlan</strong> (default)</td><td>VXLAN over UDP 8472</td><td>~50 bytes</td><td>Works in most cloud environments; DirectRouting bypasses VXLAN within same subnet</td></tr>
+    <tr><td><strong>host-gw</strong></td><td>Static kernel routes (no encapsulation)</td><td>~0</td><td>Requires all nodes in same L2 domain; no cloud NAT support</td></tr>
+    <tr><td><strong>wireguard</strong></td><td>WireGuard UDP 51820</td><td>~60 bytes</td><td>Encrypted; kernel 5.6+ or wireguard-go</td></tr>
+    <tr><td><strong>udp</strong> (deprecated)</td><td>Userspace TUN + UDP</td><td>High</td><td>Legacy; extremely slow; only use for debugging</td></tr>
+    <tr><td><strong>ipip</strong></td><td>IP-in-IP</td><td>~20 bytes</td><td>Some cloud providers block protocol 4</td></tr>
+    <tr><td><strong>alloc</strong></td><td>IPAM only (no dataplane)</td><td>N/A</td><td>When another component handles the dataplane</td></tr>
+  </tbody>
+</table>
+
+<h3 id="flannel-config">Flannel Configuration</h3>
+<pre><code class="language-json">// /etc/kube-flannel/net-conf.json (ConfigMap kube-flannel-cfg)
+{
+  "Network": "10.244.0.0/16",
+  "Backend": {
+    "Type": "vxlan",
+    "VNI": 1,
+    "Port": 8472,
+    "DirectRouting": true    // use host-gw within same subnet, VXLAN across
+  }
+}</code></pre>
+
+<div class="callout callout-warn"><strong>No Network Policy</strong><p>Flannel does not implement Kubernetes NetworkPolicy. Use <strong>Canal</strong> (Flannel + Calico policy engine) for NetworkPolicy support with Flannel-style routing, or migrate to Calico/Cilium entirely.</p></div>
+
+<!-- AWS VPC CNI -->
+<h2 id="aws-vpc-cni">AWS VPC CNI</h2>
+<p>The AWS VPC CNI (amazon-vpc-cni-k8s) places pod IPs directly in the VPC subnet — pods get real VPC IP addresses, not overlay addresses. This enables native VPC routing, security groups per pod, and direct connectivity to AWS services without NAT.</p>
+
+<h3 id="eni-model">ENI Secondary IP Model</h3>
+<svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;background:var(--bg2);border-radius:10px;padding:10px;margin:16px 0;">
+  <defs>
+    <marker id="arr3" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker>
+  </defs>
+  <!-- EC2 node -->
+  <rect x="20" y="20" width="720" height="240" rx="12" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <text x="380" y="44" text-anchor="middle" font-size="13" font-weight="700" fill="#e6edf3">EC2 Node (e.g. m5.xlarge: 3 ENIs × 15 IPs = 45 pods max)</text>
+  <!-- ENI 1 -->
+  <rect x="40" y="60" width="200" height="175" rx="8" fill="#21262d" stroke="#58a6ff"/>
+  <text x="140" y="82" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">Primary ENI</text>
+  <text x="140" y="100" text-anchor="middle" font-size="11" fill="#8b949e">Primary IP: 10.0.1.5</text>
+  <rect x="55" y="110" width="170" height="24" rx="4" fill="#0d1117"/>
+  <text x="140" y="127" text-anchor="middle" font-size="11" fill="#3fb950">Secondary IP: 10.0.1.6 → pod-a</text>
+  <rect x="55" y="138" width="170" height="24" rx="4" fill="#0d1117"/>
+  <text x="140" y="155" text-anchor="middle" font-size="11" fill="#3fb950">Secondary IP: 10.0.1.7 → pod-b</text>
+  <rect x="55" y="166" width="170" height="24" rx="4" fill="#0d1117"/>
+  <text x="140" y="183" text-anchor="middle" font-size="11" fill="#3fb950">Secondary IP: 10.0.1.8 → pod-c</text>
+  <text x="140" y="218" text-anchor="middle" font-size="11" fill="#8b949e">… up to 15 secondary IPs</text>
+  <!-- ENI 2 -->
+  <rect x="280" y="60" width="200" height="175" rx="8" fill="#21262d" stroke="#d29922"/>
+  <text x="380" y="82" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">Secondary ENI-1</text>
+  <text x="380" y="100" text-anchor="middle" font-size="11" fill="#8b949e">Primary IP: 10.0.1.20</text>
+  <rect x="295" y="110" width="170" height="24" rx="4" fill="#0d1117"/>
+  <text x="380" y="127" text-anchor="middle" font-size="11" fill="#3fb950">Secondary IP: 10.0.1.21 → pod-d</text>
+  <rect x="295" y="138" width="170" height="24" rx="4" fill="#0d1117"/>
+  <text x="380" y="155" text-anchor="middle" font-size="11" fill="#3fb950">Secondary IP: 10.0.1.22 → pod-e</text>
+  <text x="380" y="200" text-anchor="middle" font-size="11" fill="#6e7681">…</text>
+  <!-- ENI 3 (prefix delegation) -->
+  <rect x="520" y="60" width="200" height="175" rx="8" fill="#21262d" stroke="#bc8cff"/>
+  <text x="620" y="82" text-anchor="middle" font-size="12" font-weight="600" fill="#e6edf3">Secondary ENI-2</text>
+  <text x="620" y="100" text-anchor="middle" font-size="11" fill="#8b949e">(Prefix Delegation Mode)</text>
+  <rect x="535" y="110" width="170" height="24" rx="4" fill="#0d1117"/>
+  <text x="620" y="127" text-anchor="middle" font-size="11" fill="#bc8cff">/28 prefix: 10.0.1.32/28</text>
+  <text x="620" y="160" text-anchor="middle" font-size="11" fill="#8b949e">16 IPs per /28 prefix</text>
+  <text x="620" y="178" text-anchor="middle" font-size="11" fill="#8b949e">vs 1 IP per secondary IP</text>
+  <text x="620" y="200" text-anchor="middle" font-size="11" fill="#3fb950">10× more pods per ENI</text>
+</svg>
+
+<h3 id="eni-limits">Max Pods Calculation</h3>
+<pre><code class="language-bash"># Formula: (ENIs × (IPs_per_ENI - 1)) + 2
+# -1 for primary IP, +2 for kube-system pods
+
+# m5.xlarge: 3 ENIs × 15 IPs/ENI
+# Max pods = (3 × (15-1)) + 2 = 44
+
+# With prefix delegation (/28): (3 × (15-1) × 16) + 2 = 674
+
+# View instance type limits
+aws ec2 describe-instance-types \
+  --instance-types m5.xlarge \
+  --query 'InstanceTypes[].NetworkInfo.[MaximumNetworkInterfaces,Ipv4AddressesPerInterface]'
+
+# Check current pod count vs limit on node
+kubectl describe node ip-10-0-1-5.ec2.internal | grep "Allocated resources" -A 5
+kubectl get node ip-10-0-1-5.ec2.internal -o jsonpath='{.status.allocatable.pods}'</code></pre>
+
+<h3 id="aws-cni-config">AWS VPC CNI Configuration</h3>
+<pre><code class="language-bash"># Enable prefix delegation (dramatically increases pod density)
+kubectl set env daemonset aws-node -n kube-system \
+  ENABLE_PREFIX_DELEGATION=true \
+  WARM_PREFIX_TARGET=1
+
+# Security Groups for Pods
+kubectl set env daemonset aws-node -n kube-system \
+  ENABLE_POD_ENI=true
+
+# Pod-level security group (per-pod ENI trunking)
+# Uses ENI trunking — requires Nitro-based instances
+# SecurityGroupPolicy CRD
+cat <<EOF | kubectl apply -f -
+apiVersion: vpcresources.k8s.aws/v1beta1
+kind: SecurityGroupPolicy
+metadata:
+  name: api-server-sg
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: api-server
+  securityGroups:
+    groupIds:
+    - sg-0abc1234def56789a    # VPC security group ID
+EOF
+
+# IPAMD tuning (warm IP pool)
+kubectl set env daemonset aws-node -n kube-system \
+  WARM_ENI_TARGET=1 \          # keep 1 extra ENI warm
+  WARM_IP_TARGET=10 \          # keep 10 IPs warm per node
+  MINIMUM_IP_TARGET=5</code></pre>
+
+<div class="callout callout-info"><strong>IP Exhaustion</strong><p>AWS VPC CNI consumes real VPC subnet IPs. A /24 subnet (254 IPs) shared across 10 nodes with 15 IPs/ENI can exhaust quickly. Plan separate subnets for worker nodes and use prefix delegation or RFC 1918 large private CIDRs. Consider <code>ENABLE_SUBNET_DISCOVERY=true</code> for multi-subnet IPAM.</p></div>
+
+<!-- Azure CNI -->
+<h2 id="azure-cni">Azure CNI</h2>
+<p>Azure CNI has two modes: <strong>flat/overlay-free</strong> (pods get VNET IPs directly) and <strong>overlay</strong> (pods get private IPs from an overlay space, nodes NAT to VNET). The traditional flat mode has the same IP exhaustion concern as AWS VPC CNI.</p>
+
+<table>
+  <thead><tr><th>Mode</th><th>Pod IPs</th><th>Pros</th><th>Cons</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Azure CNI (flat)</strong></td><td>Real VNET IPs from subnet</td><td>Direct VNET routing; no NAT; Azure NSG enforcement</td><td>Requires large subnets; 250 pods = 250 IPs consumed</td></tr>
+    <tr><td><strong>Azure CNI Overlay</strong></td><td>Private overlay CIDRs (e.g. 10.244.0.0/16)</td><td>No subnet IP exhaustion; scale to 50,000 pods</td><td>NAT to VNET; latency overhead; less direct NSG</td></tr>
+    <tr><td><strong>kubenet</strong></td><td>Private CIDRs + host NAT</td><td>Simple; no VNET IP consumption</td><td>No network policy; UDR required for cross-node; deprecated in AKS</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># AKS with Azure CNI Overlay
+az aks create \
+  --network-plugin azure \
+  --network-plugin-mode overlay \
+  --pod-cidr 192.168.0.0/16 \
+  --service-cidr 10.96.0.0/12 \
+  --dns-service-ip 10.96.0.10
+
+# AKS with Azure CNI + Cilium dataplane
+az aks create \
+  --network-plugin azure \
+  --network-dataplane cilium \
+  --network-policy cilium</code></pre>
+
+<!-- Antrea -->
+<h2 id="antrea">Antrea</h2>
+<p>Antrea (VMware) uses Open vSwitch (OVS) as its dataplane. It supports Geneve encapsulation, eBPF (experimental), and integrates with NSX-T for enterprise policy management. Traceflow is Antrea's killer feature: trace a packet through the entire network pipeline.</p>
+
+<h3 id="antrea-arch">Architecture</h3>
+<div class="grid grid-2">
+  <div class="card card-accent">
+    <h4>antrea-agent (DaemonSet)</h4>
+    <p style="font-size:13px;color:var(--text2);">Runs OVS daemon + agent per node. Manages OVS flows, IPAM, NetworkPolicy enforcement. Communicates with antrea-controller via gRPC over the Antrea network.</p>
+  </div>
+  <div class="card card-green">
+    <h4>antrea-controller (Deployment)</h4>
+    <p style="font-size:13px;color:var(--text2);">Computes and distributes NetworkPolicy rules. Watches Kubernetes API server; distributes computed policies to agents. Single instance with leader election.</p>
+  </div>
+</div>
+
+<h3 id="antrea-traceflow">Traceflow</h3>
+<pre><code class="language-yaml"># Inject a synthetic probe packet and trace its path
+apiVersion: ops.antrea.io/v1alpha1
+kind: Traceflow
+metadata:
+  name: frontend-to-api
+spec:
+  source:
+    namespace: production
+    pod: frontend-abc-123
+  destination:
+    namespace: production
+    pod: api-server-def-456
+    port: 8080
+  packet:
+    ipHeader:
+      protocol: 6    # TCP
+    transportHeader:
+      tcp:
+        srcPort: 12345
+        dstPort: 8080
+        flags: 2     # SYN</code></pre>
+<pre><code class="language-bash"># kubectl get traceflow frontend-to-api -o yaml
+# Results show each hop: ingress/egress NetworkPolicy matches, OVS flow actions</code></pre>
+
+<!-- CNI Selection -->
+<h2 id="cni-selection">CNI Selection Guide</h2>
+<table>
+  <thead><tr><th>Requirement</th><th>Recommendation</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Max performance, eBPF, no kube-proxy</td><td><span class="badge badge-green">Cilium</span></td><td>eBPF native; socket-level LB; O(1) service lookup; Hubble observability</td></tr>
+    <tr><td>NetworkPolicy + BGP on-prem</td><td><span class="badge badge-blue">Calico</span></td><td>Native BGP; Felix policy engine; WireGuard encryption; battle-tested at scale</td></tr>
+    <tr><td>AWS EKS native VPC routing</td><td><span class="badge badge-blue">AWS VPC CNI</span></td><td>ENI-native IPs; SG per pod; no overlay needed in AWS VPC</td></tr>
+    <tr><td>AKS with Azure VNET integration</td><td><span class="badge badge-blue">Azure CNI</span></td><td>Native VNET routing; NSG per pod; AKS managed</td></tr>
+    <tr><td>Simple cluster, no policy needed</td><td><span class="badge badge-yellow">Flannel</span></td><td>Simple, low overhead, easy to debug; pair with Calico policy (Canal) if needed</td></tr>
+    <tr><td>VMware / NSX-T integration</td><td><span class="badge badge-purple">Antrea</span></td><td>OVS dataplane; NSX-T integration; Traceflow; enterprise support</td></tr>
+    <tr><td>Multi-network (multiple interfaces)</td><td><span class="badge badge-purple">Multus</span></td><td>Meta-CNI; chains multiple CNIs per pod; SR-IOV for NFV/telco</td></tr>
+    <tr><td>Very large clusters (&gt;5k nodes)</td><td><span class="badge badge-green">Cilium</span></td><td>eBPF maps O(1) scaling; Typha-like fan-out; Cluster Mesh for multi-cluster</td></tr>
+    <tr><td>GKE Autopilot</td><td>GKE Dataplane V2 (Cilium)</td><td>Managed; deeply integrated; no user choice needed</td></tr>
+  </tbody>
+</table>
+
+<h3 id="cni-feature-matrix">Feature Matrix</h3>
+<table>
+  <thead><tr><th>Feature</th><th>Calico</th><th>Cilium</th><th>Flannel</th><th>AWS VPC CNI</th><th>Antrea</th></tr></thead>
+  <tbody>
+    <tr><td>NetworkPolicy (K8s)</td><td class="badge-green">✓</td><td class="badge-green">✓</td><td class="badge-red">✗</td><td class="badge-red">✗*</td><td class="badge-green">✓</td></tr>
+    <tr><td>Extended NetworkPolicy (L7)</td><td>Limited</td><td class="badge-green">✓ (HTTP/DNS/Kafka)</td><td class="badge-red">✗</td><td class="badge-red">✗</td><td>Limited</td></tr>
+    <tr><td>eBPF dataplane</td><td><span class="badge badge-green">✓ opt-in</span></td><td><span class="badge badge-green">✓ default</span></td><td class="badge-red">✗</td><td class="badge-red">✗</td><td>Experimental</td></tr>
+    <tr><td>kube-proxy replacement</td><td><span class="badge badge-green">✓ eBPF mode</span></td><td><span class="badge badge-green">✓ default</span></td><td class="badge-red">✗</td><td class="badge-red">✗</td><td class="badge-red">✗</td></tr>
+    <tr><td>Encryption</td><td>WireGuard/IPSec</td><td>WireGuard/IPSec</td><td>WireGuard</td><td>TLS app layer</td><td>IPSec</td></tr>
+    <tr><td>Observability</td><td>Metrics</td><td>Hubble (flows)</td><td>Minimal</td><td>VPC Flow Logs</td><td>Traceflow</td></tr>
+    <tr><td>BGP support</td><td class="badge-green">✓ native</td><td><span class="badge badge-green">✓ BGP Control Plane</span></td><td class="badge-red">✗</td><td class="badge-red">✗</td><td class="badge-red">✗</td></tr>
+    <tr><td>IPv6 / dual-stack</td><td class="badge-green">✓</td><td class="badge-green">✓</td><td>Limited</td><td class="badge-green">✓</td><td class="badge-green">✓</td></tr>
+    <tr><td>Windows nodes</td><td class="badge-green">✓</td><td class="badge-red">✗</td><td class="badge-green">✓</td><td class="badge-green">✓</td><td class="badge-green">✓</td></tr>
+    <tr><td>Multi-cluster</td><td>Federation</td><td>Cluster Mesh</td><td class="badge-red">✗</td><td class="badge-red">✗</td><td>Multi-cluster GW</td></tr>
+  </tbody>
+</table>
+<p style="font-size:12px;color:var(--text3);">* AWS VPC CNI has no native policy; use Calico for NetworkPolicy on EKS.</p>
+
+<!-- CNI Debugging -->
+<h2 id="cni-debugging">CNI Debugging</h2>
+<h3 id="crictl-net">crictl — CRI-Level CNI Inspection</h3>
+<pre><code class="language-bash"># List pod sandboxes and their network namespace status
+crictl pods
+
+# Inspect a specific pod sandbox
+SANDBOX_ID=$(crictl pods --name nginx-abc --quiet)
+crictl inspectp $SANDBOX_ID | jq '.status.network'
+
+# Check CNI logs (containerd)
+journalctl -u containerd --since "10 minutes ago" | grep -i cni
+
+# Enable CNI debug logging
+export CNI_DEBUG=1   # set in containerd config or systemd environment</code></pre>
+
+<h3 id="cni-manual-invoke">Manual CNI Plugin Invocation</h3>
+<pre><code class="language-bash"># Create a test network namespace
+ip netns add test-ns
+
+# Manually invoke CNI ADD (for debugging)
+cat &lt;&lt;EOF | CNI_COMMAND=ADD CNI_CONTAINERID=test123 \
+  CNI_NETNS=/var/run/netns/test-ns \
+  CNI_IFNAME=eth0 \
+  CNI_PATH=/opt/cni/bin \
+  /opt/cni/bin/bridge
+{
+  "cniVersion": "1.0.0",
+  "name": "test",
+  "type": "bridge",
+  "bridge": "cni-test0",
+  "ipam": {
+    "type": "host-local",
+    "subnet": "172.19.0.0/24",
+    "gateway": "172.19.0.1"
+  }
+}
+EOF
+
+# Verify result
+ip netns exec test-ns ip addr show eth0
+ip netns exec test-ns ip route
+
+# Clean up
+cat &lt;&lt;EOF | CNI_COMMAND=DEL CNI_CONTAINERID=test123 \
+  CNI_NETNS=/var/run/netns/test-ns \
+  CNI_IFNAME=eth0 \
+  CNI_PATH=/opt/cni/bin \
+  /opt/cni/bin/bridge
+{ "cniVersion": "1.0.0", "name": "test", "type": "bridge" }
+EOF
+ip netns del test-ns</code></pre>
+
+<h3 id="calico-debug">Calico-Specific Debugging</h3>
+<pre><code class="language-bash"># Check Felix status
+kubectl exec -n kube-system -it $(kubectl get pod -n kube-system -l k8s-app=calico-node -o jsonpath='{.items[0].metadata.name}') -c calico-node -- calico-node -felix-live
+kubectl exec -n kube-system calico-node-xyz -c calico-node -- calico-node -bird-live
+
+# calicoctl commands (install separately)
+calicoctl node status        # Felix + BIRD status
+calicoctl get ippool -o wide
+calicoctl get ipamblock      # per-node blocks
+calicoctl ipam show --show-blocks
+calicoctl ipam check         # detect IPAM inconsistencies
+
+# Felix logs (verbose)
+kubectl logs -n kube-system calico-node-xyz -c calico-node --since=5m | grep -E "ERROR|WARN|policy"
+
+# Datastore connectivity
+DATASTORE_TYPE=kubernetes KUBECONFIG=/etc/cni/net.d/calico-kubeconfig calicoctl get nodes</code></pre>
+
+<h3 id="cilium-debug">Cilium-Specific Debugging</h3>
+<pre><code class="language-bash"># Cilium status
+cilium status --verbose
+
+# Endpoint (pod) status
+cilium endpoint list
+cilium endpoint get $(cilium endpoint list | grep 10.244.1.15 | awk '{print $1}')
+
+# Policy verdict for a specific connection
+cilium policy trace --src-k8s-pod default/frontend-abc --dst-k8s-pod default/api-server-def --dport 8080 --protocol tcp
+
+# BPF map inspection
+cilium bpf lb list           # service load balancer map
+cilium bpf ct list global    # conntrack entries
+cilium bpf tunnel list       # VXLAN tunnel endpoints
+cilium bpf nat list          # NAT map
+
+# Connectivity test
+cilium connectivity test --test pod-to-pod,pod-to-service
+
+# Hubble (if enabled)
+cilium hubble port-forward &
+hubble observe --namespace default --verdict DROPPED --last 50</code></pre>
+
+<!-- Troubleshooting -->
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<div class="card" style="margin-bottom:16px;border-left:3px solid var(--red);">
+<h4>Runbook 1: Pod stuck in ContainerCreating — CNI failure</h4>
+<pre style="margin:8px 0;"><code class="language-bash"># 1. Get pod events
+kubectl describe pod &lt;name&gt; -n &lt;ns&gt;
+# Look for: "Failed to create pod sandbox" or "network plugin is not ready"
+
+# 2. Check kubelet logs on the node
+journalctl -u kubelet --since "5 minutes ago" | grep -E "cni|network|sandbox"
+
+# 3. Verify CNI binary exists and is executable
+ls -la /opt/cni/bin/
+ls -la /etc/cni/net.d/
+
+# 4. Check containerd CNI config
+cat /etc/containerd/config.toml | grep -A5 cni
+systemctl status containerd
+
+# 5. If Calico: check calico-node pod on that node
+NODE=$(kubectl get pod &lt;name&gt; -n &lt;ns&gt; -o jsonpath='{.spec.nodeName}')
+kubectl get pod -n kube-system -l k8s-app=calico-node --field-selector spec.nodeName=$NODE
+kubectl logs -n kube-system &lt;calico-node-pod&gt; -c calico-node --tail=50
+
+# 6. If Cilium: check cilium agent on that node
+kubectl exec -n kube-system cilium-xyz -- cilium status</code></pre>
+</div>
+
+<div class="card" style="margin-bottom:16px;border-left:3px solid var(--yellow);">
+<h4>Runbook 2: IP address exhaustion (IPAM out of IPs)</h4>
+<pre style="margin:8px 0;"><code class="language-bash"># Calico: check IPAM utilization
+calicoctl ipam show --show-blocks
+calicoctl ipam check
+# Look for "blocks with no matching node" — orphaned blocks
+
+# Release leaked IPs
+calicoctl ipam release --ip=192.168.5.20   # release specific IP
+
+# Calico: increase block size (destructive — restart required)
+# Edit IPPool blockSize from /26 (64 IPs) to /24 (256 IPs)
+# Warning: requires full cluster restart to take effect
+
+# AWS VPC CNI: check ENI limits
+kubectl describe node &lt;node&gt; | grep "vpc.amazonaws.com"
+kubectl get node &lt;node&gt; -o jsonpath='{.metadata.annotations}' | jq
+
+# Enable prefix delegation on AWS
+kubectl set env ds aws-node -n kube-system ENABLE_PREFIX_DELEGATION=true
+
+# Cilium: check pool utilization
+kubectl get ciliumnodes.cilium.io -o json | jq '.items[] | {name:.metadata.name, used:.status.ipam.used|length, available:.status.ipam.available|length}'</code></pre>
+</div>
+
+<div class="card" style="margin-bottom:16px;border-left:3px solid var(--purple);">
+<h4>Runbook 3: Cross-node pod connectivity failure</h4>
+<pre style="margin:8px 0;"><code class="language-bash"># 1. Confirm pod IPs and node assignment
+kubectl get pods -o wide -n default
+
+# 2. Test from netshoot debug pod on each node
+kubectl debug node/worker-1 -it --image=nicolaka/netshoot -- bash
+# Inside: ping &lt;pod-ip-on-worker-2&gt;
+# Inside: traceroute &lt;pod-ip-on-worker-2&gt;
+
+# 3. Check VXLAN tunnel (Flannel/Calico VXLAN mode)
+ip link show flannel.1    # or vxlan.calico
+bridge fdb show dev flannel.1 | grep &lt;destination-node-mac&gt;
+ip route | grep &lt;pod-cidr-of-remote-node&gt;
+
+# 4. Check BGP routes (Calico BGP mode)
+calicoctl node status
+# Should show "Established" for all peer connections
+ip route | grep blackhole   # blackhole routes = IPAM reserved
+
+# 5. Check Cilium tunnel endpoints
+cilium bpf tunnel list
+# Verify destination node IP is present
+
+# 6. Check MTU mismatch (common overlay issue)
+kubectl exec -it netshoot -- ping -M do -s 8951 &lt;remote-pod-ip&gt;
+# If this fails but small pings work → MTU problem
+# Calico: set MTU in CNI config / Felix MTUIfacePattern
+# Flannel: set backend.MTU in net-conf.json</code></pre>
+</div>
+
+<div class="card" style="margin-bottom:16px;border-left:3px solid var(--accent);">
+<h4>Runbook 4: CNI plugin upgrade procedure</h4>
+<pre style="margin:8px 0;"><code class="language-bash"># Calico upgrade (Operator-managed)
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/operator.crds.yaml
+kubectl patch installation default --type=merge -p '{"spec":{"calicoNetwork":{"linuxDataplane":"Iptables"},"registry":"docker.io/calico","version":"v3.27.0"}}'
+# Watch rollout
+kubectl rollout status ds/calico-node -n kube-system
+
+# Cilium upgrade (Helm)
+helm upgrade cilium cilium/cilium \
+  --namespace kube-system \
+  --version 1.15.0 \
+  --reuse-values \
+  --set upgradeCompatibility=1.14
+# Monitor
+cilium status --wait
+
+# Critical: never skip major versions
+# Check upgrade notes: https://docs.cilium.io/en/stable/operations/upgrade/</code></pre>
+</div>
+
+<!-- Metrics -->
+<h2 id="metrics">Key CNI Metrics</h2>
+<table>
+  <thead><tr><th>Metric</th><th>Source</th><th>Alert Threshold</th></tr></thead>
+  <tbody>
+    <tr><td><code>felix_ipset_errors_total</code></td><td>Calico Felix</td><td>&gt;0 sustained</td></tr>
+    <tr><td><code>felix_route_table_list_seconds_count</code></td><td>Calico Felix</td><td>p99 &gt; 1s</td></tr>
+    <tr><td><code>ipam_ips_in_use</code> / <code>ipam_ips_total</code></td><td>Calico</td><td>ratio &gt; 0.85 (85% exhaustion)</td></tr>
+    <tr><td><code>cilium_endpoint_state{state="not-ready"}</code></td><td>Cilium</td><td>&gt;0</td></tr>
+    <tr><td><code>cilium_drop_count_total</code></td><td>Cilium</td><td>spike &gt; baseline × 3</td></tr>
+    <tr><td><code>cilium_bpf_map_ops_total{outcome="fail"}</code></td><td>Cilium</td><td>&gt;0</td></tr>
+    <tr><td><code>awscni_assigned_ip_addresses</code> / <code>awscni_total_ip_addresses</code></td><td>AWS VPC CNI</td><td>ratio &gt; 0.90</td></tr>
+    <tr><td><code>network_plugin_operations_latency_microseconds</code></td><td>kubelet</td><td>p99 &gt; 5s</td></tr>
+  </tbody>
+</table>
+
+<!-- Best Practices -->
+<h2 id="best-practices">Production Best Practices</h2>
+<div class="grid grid-2">
+  <div class="card card-green">
+    <h4>IPAM Planning</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Size pod CIDR for 2× peak capacity</li>
+      <li>For Calico: /26 blocks (default) → 64 IPs/node; use /24 for dense nodes</li>
+      <li>Monitor IPAM utilization at 70% → start planning expansion</li>
+      <li>Never overlap pod CIDR with service CIDR or node CIDR</li>
+      <li>Reserve separate subnets in cloud VPCs for nodes</li>
+    </ul>
+  </div>
+  <div class="card card-accent">
+    <h4>MTU Configuration</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Overlay (VXLAN): set pod MTU = NIC MTU − 50 (typically 1450)</li>
+      <li>IPIP: pod MTU = NIC MTU − 20 (typically 1460)</li>
+      <li>No overlay: pod MTU = NIC MTU (1500 or 9000 with jumbo frames)</li>
+      <li>Test with: <code>ping -M do -s 1472</code> (1472 + 28 IP/ICMP = 1500)</li>
+      <li>Jumbo frames: set NIC MTU 9000 + Calico <code>mtu: 8950</code></li>
+    </ul>
+  </div>
+  <div class="card card-yellow">
+    <h4>Upgrade Safety</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Test CNI upgrades in staging first</li>
+      <li>Use PodDisruptionBudgets on critical workloads</li>
+      <li>Calico: rolling upgrade via DaemonSet maxUnavailable=1</li>
+      <li>Cilium: use <code>--set upgradeCompatibility</code> flag</li>
+      <li>Never upgrade CNI and Kubernetes simultaneously</li>
+    </ul>
+  </div>
+  <div class="card card-purple">
+    <h4>Security</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Enable NetworkPolicy deny-by-default in all namespaces</li>
+      <li>Use Calico GlobalNetworkPolicy for cluster-wide baseline rules</li>
+      <li>Enable WireGuard encryption for inter-node pod traffic</li>
+      <li>Restrict CNI DaemonSet to only needed host mounts</li>
+      <li>Enable Hubble/Traceflow for anomaly detection</li>
+    </ul>
+  </div>
+  <div class="card card-orange">
+    <h4>Observability</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Scrape Felix / cilium-agent metrics in Prometheus</li>
+      <li>Alert on IPAM exhaustion at 80% threshold</li>
+      <li>Use Hubble UI to visualize network flows in staging</li>
+      <li>Enable Cilium drop metrics to catch NetworkPolicy rejections</li>
+      <li>Monitor <code>network_plugin_operations_latency_microseconds</code></li>
+    </ul>
+  </div>
+  <div class="card" style="border-top:3px solid var(--red);">
+    <h4>Performance</h4>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.9;">
+      <li>Prefer eBPF (Cilium or Calico eBPF) for &gt;1k services or &gt;500 nodes</li>
+      <li>Enable Typha for Calico at &gt;100 nodes</li>
+      <li>Use BGP underlay when possible (zero encapsulation overhead)</li>
+      <li>Jumbo frames (9000 MTU) for storage-intensive pods</li>
+      <li>Pin NUMA-sensitive workloads; check CNI NUMA awareness</li>
+    </ul>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="01-pod-networking.html">&#8592; Pod Networking</a>
+  <a href="03-kube-proxy-internals.html">Kube-Proxy Internals &#8594;</a>
+</div>
+</main>
+
+<aside class="toc-panel">
+  <h4>On This Page</h4>
+  <a href="#cni-spec">CNI Specification</a>
+  <a href="#cni-operations" class="toc-h3">Operations</a>
+  <a href="#cni-env" class="toc-h3">Environment Variables</a>
+  <a href="#cni-add-request" class="toc-h3">ADD Request/Response</a>
+  <a href="#cni-conflist" class="toc-h3">Chained Plugins</a>
+  <a href="#cni-arch">CNI Invocation Flow</a>
+  <a href="#ref-plugins">Reference Plugins</a>
+  <a href="#calico">Calico</a>
+  <a href="#calico-arch" class="toc-h3">Architecture</a>
+  <a href="#calico-modes" class="toc-h3">Routing Modes</a>
+  <a href="#calico-crds" class="toc-h3">Key CRDs</a>
+  <a href="#calico-ebpf" class="toc-h3">eBPF Dataplane</a>
+  <a href="#cilium">Cilium</a>
+  <a href="#cilium-arch" class="toc-h3">Architecture</a>
+  <a href="#cilium-ebpf-dataplane" class="toc-h3">eBPF Internals</a>
+  <a href="#cilium-ipam" class="toc-h3">IPAM Modes</a>
+  <a href="#cilium-network-policy" class="toc-h3">CiliumNetworkPolicy</a>
+  <a href="#cilium-hubble" class="toc-h3">Hubble</a>
+  <a href="#cilium-cluster-mesh" class="toc-h3">Cluster Mesh</a>
+  <a href="#flannel">Flannel</a>
+  <a href="#aws-vpc-cni">AWS VPC CNI</a>
+  <a href="#eni-model" class="toc-h3">ENI Model</a>
+  <a href="#eni-limits" class="toc-h3">Max Pods</a>
+  <a href="#azure-cni">Azure CNI</a>
+  <a href="#antrea">Antrea</a>
+  <a href="#cni-selection">CNI Selection Guide</a>
+  <a href="#cni-feature-matrix" class="toc-h3">Feature Matrix</a>
+  <a href="#cni-debugging">CNI Debugging</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<button class="back-to-top" id="back-to-top" title="Back to top">&#8679;</button>
+
+<script>
+// Theme
+const root=document.documentElement;
+const themeBtn=document.getElementById('theme-toggle');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'Light Mode':'Dark Mode';
+themeBtn.addEventListener('click',()=>{
+  const t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'Light Mode':'Dark Mode';
+});
+// Hamburger
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+// Back to top
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{btt.classList.toggle('show',main.scrollTop>400);});
+btt.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+// Copy buttons
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';
+  btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+// TOC highlight
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h=>observer.observe(h));
+// Sidebar filter
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+// Global search highlight
+document.getElementById('global-search').addEventListener('input',function(){
+  document.querySelectorAll('.search-hl').forEach(m=>{
+    const p=m.parentNode;p.replaceChild(document.createTextNode(m.textContent),m);p.normalize();
+  });
+  const q=this.value.trim();
+  if(!q)return;
+  const walk=document.createTreeWalker(document.getElementById('main-content'),NodeFilter.SHOW_TEXT);
+  const nodes=[];let n;
+  while((n=walk.nextNode()))nodes.push(n);
+  nodes.forEach(node=>{
+    const idx=node.textContent.toLowerCase().indexOf(q.toLowerCase());
+    if(idx===-1||node.parentElement.classList.contains('copy-btn'))return;
+    const range=document.createRange();
+    range.setStart(node,idx);range.setEnd(node,idx+q.length);
+    const mark=document.createElement('mark');
+    mark.className='search-hl';
+    range.surroundContents(mark);
+  });
+});
+</script>
+</body>
+</html>

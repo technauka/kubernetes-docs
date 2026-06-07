@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Catalog | Kubernetes Platform Engineering</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px}
+.sidebar-subtitle{font-size:11px;color:var(--text3);margin-top:2px}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:6px 16px 4px}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover,.nav-section a.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent);text-decoration:none}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+main{margin-left:280px;flex:1;padding:40px 48px;max-width:1100px}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px}
+.hero{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:12px;padding:36px 40px;margin-bottom:40px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.3);color:var(--purple);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:14px}
+.hero h1{font-size:32px;font-weight:800;line-height:1.2;margin-bottom:12px;background:linear-gradient(90deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text2);font-size:16px;max-width:700px;margin-bottom:16px}
+.hero-meta{display:flex;gap:24px;flex-wrap:wrap}
+.hero-meta span{font-size:12px;color:var(--text3)}
+h2{font-size:22px;font-weight:700;color:var(--text);margin:44px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h2:first-of-type{margin-top:0}
+h3{font-size:17px;font-weight:600;color:var(--text);margin:28px 0 12px}
+h4{font-size:15px;font-weight:600;color:var(--accent);margin:20px 0 8px}
+p{color:var(--text2);margin-bottom:14px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg3);color:var(--text)}
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;display:flex;gap:12px;align-items:flex-start}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3)}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3)}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3)}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:14px;color:var(--text2)}
+.callout-body strong{color:var(--text)}
+.table-wrap{overflow-x:auto;margin:20px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card h4{margin:0 0 8px;font-size:14px;color:var(--text)}
+.card p{font-size:13px;color:var(--text2);margin:0}
+.card.green{border-top:3px solid var(--green)}
+.card.yellow{border-top:3px solid var(--yellow)}
+.card.purple{border-top:3px solid var(--purple)}
+.card.blue{border-top:3px solid var(--accent)}
+.card.orange{border-top:3px solid var(--orange)}
+.card.red{border-top:3px solid var(--red)}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:40px}
+.toc h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin:0 0 12px}
+.toc ol{padding-left:20px}
+.toc li{margin:5px 0}
+.toc a{font-size:13px;color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.8}
+.back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50}
+.back-top.visible{opacity:1}
+.back-top:hover{color:var(--accent)}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:48px}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;display:inline-block}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border)}
+@media(max-width:700px){.coverage-body{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{margin-left:0;padding:24px 16px}}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">⎈ Kubernetes Docs</div>
+    <div class="sidebar-subtitle">Production-Grade Reference</div>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="00-platform-overview.html">00 · Overview</a>
+      <a href="01-cluster-provisioning.html">01 · Cluster Provisioning</a>
+      <a href="02-gitops.html">02 · GitOps</a>
+      <a href="03-ci-cd-pipelines.html">03 · CI/CD Pipelines</a>
+      <a href="04-developer-portal.html">04 · Developer Portal</a>
+      <a href="05-policy-enforcement.html">05 · Policy Enforcement</a>
+      <a href="06-multi-tenancy.html">06 · Multi-Tenancy</a>
+      <a href="07-cost-management.html">07 · Cost Management</a>
+      <a href="08-service-catalog.html" class="active">08 · Service Catalog</a>
+      <a href="09-secrets-automation.html">09 · Secrets Automation</a>
+      <a href="10-platform-apis.html">10 · Platform APIs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Quick Links</div>
+      <a href="../index.html">← Home</a>
+      <a href="../COVERAGE.html">Coverage Dashboard</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">80 of 91 files generated · 88%</div>
+</aside>
+
+<main id="main">
+
+<div class="hero">
+  <div class="hero-badge">🗂️ Service Catalog</div>
+  <h1>Service Catalog &amp; Infrastructure as Code</h1>
+  <p>Complete guide to Crossplane for cloud infrastructure provisioning, self-service claims, database-as-a-service, composition patterns, the Terraform provider, and Backstage integration — turning the platform into a product teams can consume via Kubernetes APIs.</p>
+  <div class="hero-meta">
+    <span>🏗️ Crossplane</span>
+    <span>☁️ Cloud Providers</span>
+    <span>🗃️ Database-as-a-Service</span>
+    <span>📋 Compositions</span>
+    <span>🔧 Terraform Bridge</span>
+  </div>
+</div>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#what-is-catalog">What Is a Service Catalog?</a></li>
+    <li><a href="#crossplane">Crossplane Architecture</a></li>
+    <li><a href="#providers">Crossplane Providers</a></li>
+    <li><a href="#managed-resources">Managed Resources</a></li>
+    <li><a href="#compositions">Compositions &amp; XRDs</a></li>
+    <li><a href="#claims">Self-Service Claims</a></li>
+    <li><a href="#database-as-service">Database-as-a-Service Pattern</a></li>
+    <li><a href="#networking-infra">Networking Infrastructure</a></li>
+    <li><a href="#terraform-provider">Terraform Provider for Crossplane</a></li>
+    <li><a href="#backstage-integration">Backstage Integration</a></li>
+    <li><a href="#observability">Observability &amp; Health</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="what-is-catalog">What Is a Service Catalog?</h2>
+
+<p>A service catalog is the platform's menu of pre-approved, pre-configured infrastructure and services that development teams can consume via self-service. Instead of filing tickets for a database or S3 bucket, developers submit a Kubernetes manifest (a <em>claim</em>) and the platform provisions the resource automatically — correctly configured, secured, and tagged.</p>
+
+<div class="arch-diagram">
+WITHOUT SERVICE CATALOG          WITH SERVICE CATALOG
+
+Developer → ticket → DBA         Developer → TeamDatabase claim
+DBA → manual RDS config                   ↓
+DBA → security review             Crossplane Composition
+DBA → terraform apply               ├── RDS instance (encrypted, multi-AZ)
+DBA → secrets manual rotation       ├── SecurityGroup (least privilege)
+Wait: days–weeks                    ├── Secret in Vault (rotated auto)
+                                    └── DNS entry in Route53
+                                  Wait: minutes
+
+Platform team defines once:        Developer gets:
+  secure defaults                  - Connection string in Secret
+  encryption at rest               - Automatic backups
+  multi-AZ HA                      - Cost tagged to their team
+  backup policy                    - Monitoring dashboards
+  tagging/cost attribution         - Lifecycle managed
+</div>
+
+<h3>Service Catalog Layers</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Layer</th><th>Who Owns</th><th>Examples</th><th>Interface</th></tr></thead>
+<tbody>
+<tr><td>Infrastructure primitives</td><td>Cloud provider</td><td>EC2, RDS, S3, VPC</td><td>Cloud APIs</td></tr>
+<tr><td>Managed resources</td><td>Platform team via Crossplane providers</td><td>RDSInstance, S3Bucket, VPC CRDs</td><td>kubectl (raw)</td></tr>
+<tr><td>Compositions</td><td>Platform team</td><td>PostgreSQLDatabase (RDS+SG+Secret+DNS)</td><td>XRD / Composite Resource</td></tr>
+<tr><td>Claims</td><td>Application teams</td><td>TeamDatabase, TeamCache, TeamBucket</td><td>kubectl (simple API)</td></tr>
+<tr><td>Portal templates</td><td>Platform team</td><td>Backstage Software Templates</td><td>Backstage UI form</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="crossplane">Crossplane Architecture</h2>
+
+<p>Crossplane is a CNCF graduated project that extends Kubernetes with the ability to manage cloud infrastructure using the K8s control loop. Provider plugins add CRDs for each cloud resource type; the composition engine builds higher-level APIs from those primitives.</p>
+
+<div class="arch-diagram">
+Crossplane Architecture
+
+  Application Teams
+  └─ TeamDatabase claim (namespace-scoped)
+            │
+            ▼ triggers
+  XTeamDatabase (Composite Resource, cluster-scoped)
+            │
+            ▼ Composition maps to
+  ┌─────────────────────────────────────────────┐
+  │  Managed Resources (provider-created CRDs)  │
+  │  ├── RDSInstance.rds.aws.upbound.io         │
+  │  ├── SecurityGroup.ec2.aws.upbound.io       │
+  │  ├── SubnetGroup.rds.aws.upbound.io         │
+  │  └── ProviderConfig → IRSA ServiceAccount   │
+  └─────────────────────────────────────────────┘
+            │ AWS SDK calls (via IRSA)
+            ▼
+       AWS APIs (RDS, EC2, S3, IAM, Route53...)
+</div>
+
+<h3>Install Crossplane</h3>
+
+<pre><code class="language-bash">helm repo add crossplane-stable https://charts.crossplane.io/stable
+helm repo update
+
+helm install crossplane crossplane-stable/crossplane \
+  --namespace crossplane-system \
+  --create-namespace \
+  --version 1.17.1 \
+  --set args='{--enable-composition-functions,--enable-composition-revisions}' \
+  --set resourcesCrossplane.limits.cpu=500m \
+  --set resourcesCrossplane.limits.memory=1Gi \
+  --set resourcesRBACManager.limits.cpu=100m \
+  --set resourcesRBACManager.limits.memory=512Mi</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="providers">Crossplane Providers</h2>
+
+<p>Providers are Crossplane plugins that add CRDs for specific cloud or infrastructure targets. Each provider runs as a pod in the cluster and reconciles managed resource objects against the real infrastructure.</p>
+
+<h3>Installing AWS Providers (Family Pattern)</h3>
+
+<pre><code class="language-yaml"># provider-family-aws installs sub-providers on demand
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: upbound-provider-family-aws
+spec:
+  package: xpkg.upbound.io/upbound/provider-family-aws:v1.14.0
+  runtimeConfigRef:
+    name: provider-aws-runtime
+---
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-aws-runtime
+spec:
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          serviceAccountName: provider-aws
+          containers:
+          - name: package-runtime
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+---
+# Sub-providers: install only what you need
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: upbound-provider-aws-rds
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-rds:v1.14.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: upbound-provider-aws-s3
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-s3:v1.14.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: upbound-provider-aws-ec2
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-ec2:v1.14.0</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>ProviderConfig with IRSA</h3>
+
+<pre><code class="language-yaml"># ProviderConfig tells the AWS provider which credentials to use
+apiVersion: aws.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: IRSA   # uses the provider pod's ServiceAccount token via IRSA
+---
+# IRSA: annotate the provider's ServiceAccount with the IAM role ARN
+# Done during provider installation via DeploymentRuntimeConfig or post-install:
+kubectl annotate serviceaccount provider-aws \
+  -n crossplane-system \
+  eks.amazonaws.com/role-arn=arn:aws:iam::123456789012:role/crossplane-provider-aws</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Provider Health Check</h3>
+
+<pre><code class="language-bash"># Check provider status
+kubectl get providers
+# NAME                              INSTALLED   HEALTHY   PACKAGE                                    AGE
+# upbound-provider-aws-rds          True        True      xpkg.upbound.io/upbound/provider-aws-rds   2d
+
+# Check provider revision
+kubectl get providerrevisions -o wide
+
+# Inspect provider CRDs
+kubectl get crds | grep rds.aws</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Provider Ecosystem</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Provider</th><th>Package</th><th>Key Resources</th></tr></thead>
+<tbody>
+<tr><td>AWS (family)</td><td><code>upbound/provider-family-aws</code></td><td>RDS, S3, EC2, IAM, Route53, SQS, DynamoDB, EKS...</td></tr>
+<tr><td>GCP</td><td><code>upbound/provider-gcp</code></td><td>CloudSQL, GCS, GKE, Pub/Sub, IAM, Spanner...</td></tr>
+<tr><td>Azure</td><td><code>upbound/provider-azure</code></td><td>CosmosDB, AKS, Blob Storage, Key Vault...</td></tr>
+<tr><td>Kubernetes</td><td><code>crossplane-contrib/provider-kubernetes</code></td><td>Namespace, ConfigMap, ServiceAccount, Deployment...</td></tr>
+<tr><td>Helm</td><td><code>crossplane-contrib/provider-helm</code></td><td>Helm Release (install/upgrade charts via XR)</td></tr>
+<tr><td>Terraform</td><td><code>upbound/provider-terraform</code></td><td>Any Terraform module (bridge pattern)</td></tr>
+<tr><td>Vault</td><td><code>upbound/provider-vault</code></td><td>VaultPolicy, VaultAuthBackend, VaultMount</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="managed-resources">Managed Resources</h2>
+
+<p>Managed resources (MRs) are the lowest-level Crossplane objects — each one maps to exactly one cloud resource. They are rarely used directly by application teams; they are the building blocks that Compositions assemble.</p>
+
+<h3>RDS Instance Managed Resource</h3>
+
+<pre><code class="language-yaml">apiVersion: rds.aws.upbound.io/v1beta1
+kind: Instance
+metadata:
+  name: payments-db
+  annotations:
+    crossplane.io/external-name: payments-db-prod   # actual RDS identifier
+spec:
+  forProvider:
+    region: us-east-1
+    dbInstanceClass: db.t3.medium
+    engine: postgres
+    engineVersion: "16.2"
+    dbName: payments
+    username: dbadmin
+    manageMasterUserPassword: true   # use RDS-managed secret rotation
+    allocatedStorage: 100
+    storageType: gp3
+    storageEncrypted: true
+    multiAz: true
+    backupRetentionPeriod: 7
+    deletionProtection: true
+    autoMinorVersionUpgrade: true
+    enabledCloudwatchLogsExports:
+    - postgresql
+    - upgrade
+    tags:
+      team: payments
+      env: production
+      cost-center: CC-4892
+  writeConnectionSecretToRef:
+    namespace: payments-api-production
+    name: payments-db-conn   # Crossplane writes connection details here
+  providerConfigRef:
+    name: default</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>S3 Bucket Managed Resource</h3>
+
+<pre><code class="language-yaml">apiVersion: s3.aws.upbound.io/v1beta1
+kind: Bucket
+metadata:
+  name: payments-artifacts
+spec:
+  forProvider:
+    region: us-east-1
+    tags:
+      team: payments
+      env: production
+  providerConfigRef:
+    name: default
+---
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketVersioning
+metadata:
+  name: payments-artifacts-versioning
+spec:
+  forProvider:
+    region: us-east-1
+    bucketRef:
+      name: payments-artifacts
+    versioningConfiguration:
+    - status: Enabled
+---
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketServerSideEncryptionConfiguration
+metadata:
+  name: payments-artifacts-sse
+spec:
+  forProvider:
+    region: us-east-1
+    bucketRef:
+      name: payments-artifacts
+    rule:
+    - applyServerSideEncryptionByDefault:
+      - sseAlgorithm: aws:kms</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Managed Resource Lifecycle</h3>
+
+<pre><code class="language-bash"># Check managed resource status
+kubectl get instances.rds.aws.upbound.io
+# NAME          READY   SYNCED   EXTERNAL-NAME        AGE
+# payments-db   True    True     payments-db-prod      1h
+
+# Inspect conditions
+kubectl describe instance payments-db | grep -A 20 "Conditions:"
+
+# Deletion protection: by default Crossplane deletes the cloud resource
+# when the K8s object is deleted. Add this annotation to keep it:
+kubectl annotate instance payments-db \
+  crossplane.io/paused=true   # pause reconciliation temporarily
+
+# Or set deletionPolicy: Orphan to detach without deleting cloud resource
+spec:
+  deletionPolicy: Orphan   # Delete | Orphan (default: Delete)</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="compositions">Compositions &amp; XRDs</h2>
+
+<p>The composition layer is where the platform team's engineering effort lives. A <strong>CompositeResourceDefinition (XRD)</strong> defines the API schema teams interact with. A <strong>Composition</strong> maps that schema to one or more managed resources, applying platform-standard defaults.</p>
+
+<h3>CompositeResourceDefinition: TeamDatabase</h3>
+
+<pre><code class="language-yaml">apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xteamdatabases.platform.example.com
+spec:
+  group: platform.example.com
+  names:
+    kind: XTeamDatabase
+    plural: xteamdatabases
+  # Claim names (namespace-scoped version)
+  claimNames:
+    kind: TeamDatabase
+    plural: teamdatabases
+  connectionSecretKeys:
+  - username
+  - password
+  - endpoint
+  - port
+  - dbname
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required: ["parameters"]
+            properties:
+              parameters:
+                type: object
+                required: ["engine","size","name"]
+                properties:
+                  engine:
+                    type: string
+                    enum: ["postgres","mysql"]
+                    default: postgres
+                  engineVersion:
+                    type: string
+                    default: "16"
+                  size:
+                    type: string
+                    enum: ["small","medium","large"]
+                    description: "small=t3.micro, medium=t3.medium, large=r6g.large"
+                  name:
+                    type: string
+                    description: "Database name (alphanumeric, max 63 chars)"
+                  multiAz:
+                    type: boolean
+                    default: false
+                  backupRetentionDays:
+                    type: integer
+                    minimum: 1
+                    maximum: 35
+                    default: 7
+          status:
+            type: object
+            properties:
+              endpoint:
+                type: string
+              phase:
+                type: string</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Composition: TeamDatabase → RDS</h3>
+
+<pre><code class="language-yaml">apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: teamdatabase-aws-postgres
+  labels:
+    provider: aws
+    engine: postgres
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.com/v1alpha1
+    kind: XTeamDatabase
+  writeConnectionSecretsToNamespace: crossplane-system
+  # Composition Functions pipeline (preferred over patches for complex logic)
+  mode: Pipeline
+  pipeline:
+  - step: patch-and-transform
+    functionRef:
+      name: function-patch-and-transform
+    input:
+      apiVersion: pt.fn.crossplane.io/v1beta1
+      kind: Resources
+      resources:
+
+      # ── RDS Instance ──────────────────────────────────────────
+      - name: rds-instance
+        base:
+          apiVersion: rds.aws.upbound.io/v1beta1
+          kind: Instance
+          spec:
+            forProvider:
+              region: us-east-1
+              storageEncrypted: true
+              backupRetentionPeriod: 7
+              deletionProtection: true
+              autoMinorVersionUpgrade: true
+              enabledCloudwatchLogsExports: ["postgresql"]
+            writeConnectionSecretToRef:
+              namespace: crossplane-system
+            providerConfigRef:
+              name: default
+        patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.name
+          toFieldPath: spec.forProvider.dbName
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.engine
+          toFieldPath: spec.forProvider.engine
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.engineVersion
+          toFieldPath: spec.forProvider.engineVersion
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.multiAz
+          toFieldPath: spec.forProvider.multiAz
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.backupRetentionDays
+          toFieldPath: spec.forProvider.backupRetentionPeriod
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.size
+          toFieldPath: spec.forProvider.dbInstanceClass
+          transforms:
+          - type: map
+            map:
+              small: db.t3.micro
+              medium: db.t3.medium
+              large: db.r6g.large
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+          toFieldPath: spec.forProvider.tags[team]
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.writeConnectionSecretToRef.name
+          transforms:
+          - type: string
+            string:
+              fmt: "%s-conn"
+        connectionDetails:
+        - type: FromConnectionSecretKey
+          name: username
+          fromConnectionSecretKey: username
+        - type: FromConnectionSecretKey
+          name: password
+          fromConnectionSecretKey: password
+        - type: FromConnectionSecretKey
+          name: endpoint
+          fromConnectionSecretKey: endpoint
+        - type: FromConnectionSecretKey
+          name: port
+          fromConnectionSecretKey: port
+
+      # ── Security Group ────────────────────────────────────────
+      - name: security-group
+        base:
+          apiVersion: ec2.aws.upbound.io/v1beta1
+          kind: SecurityGroup
+          spec:
+            forProvider:
+              region: us-east-1
+              description: "Crossplane-managed RDS security group"
+              vpcId: "vpc-0abcdef1234567890"   # platform default VPC
+            providerConfigRef:
+              name: default
+        patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.forProvider.name
+          transforms:
+          - type: string
+            string:
+              fmt: "crossplane-%s-sg"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>Composition Functions</strong> (the <code>mode: Pipeline</code> approach) are the modern preferred method over the legacy <code>mode: Resources</code> patch-based model. Functions are Go or Python programs that implement arbitrary composition logic — useful for conditional resources, loops, and complex string transforms beyond what static patches support.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="claims">Self-Service Claims</h2>
+
+<p>Claims are the namespace-scoped API that application teams actually use. They expose only the parameters the platform team wants teams to control — the complexity of RDS security groups, subnet groups, and parameter groups is entirely hidden.</p>
+
+<h3>TeamDatabase Claim</h3>
+
+<pre><code class="language-yaml"># Submitted by the payments team — lives in their GitOps repo
+apiVersion: platform.example.com/v1alpha1
+kind: TeamDatabase
+metadata:
+  name: payments-db
+  namespace: payments-api-production
+spec:
+  parameters:
+    engine: postgres
+    engineVersion: "16"
+    size: medium
+    name: payments
+    multiAz: true
+    backupRetentionDays: 14
+  # Connection secret written to this namespace
+  writeConnectionSecretToRef:
+    name: payments-db-conn</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Consuming the Connection Secret</h3>
+
+<pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: payments-api-production
+spec:
+  template:
+    spec:
+      containers:
+      - name: payments-api
+        envFrom:
+        - secretRef:
+            name: payments-db-conn   # written by Crossplane
+        # Secret contains: endpoint, port, username, password, dbname</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Claim Status Tracking</h3>
+
+<pre><code class="language-bash"># Watch claim provisioning
+kubectl get teamdatabase -n payments-api-production -w
+# NAME          READY   CONNECTION-SECRET   AGE
+# payments-db   False                       30s
+# payments-db   True    payments-db-conn    8m   ← RDS created
+
+# Get composite resource details
+kubectl get xteamdatabase -o wide
+
+# Describe claim to see conditions and resource refs
+kubectl describe teamdatabase payments-db -n payments-api-production</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="database-as-service">Database-as-a-Service Pattern</h2>
+
+<p>The full production database-as-a-service pattern includes not just RDS creation but automatic secret rotation via Vault, monitoring dashboards, and backup validation.</p>
+
+<h3>Full DBaaS Composition Resources</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Resource</th><th>Crossplane Provider</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>RDS Instance</td><td>provider-aws-rds</td><td>Primary database with encryption + multi-AZ</td></tr>
+<tr><td>DB SecurityGroup</td><td>provider-aws-ec2</td><td>Ingress from app namespace pods only</td></tr>
+<tr><td>DB SubnetGroup</td><td>provider-aws-rds</td><td>Place DB in private subnets</td></tr>
+<tr><td>DB ParameterGroup</td><td>provider-aws-rds</td><td>Tune log_min_duration, ssl=1, etc.</td></tr>
+<tr><td>IAM Role</td><td>provider-aws-iam</td><td>Enhanced monitoring, S3 export for backups</td></tr>
+<tr><td>Route53 Record</td><td>provider-aws-route53</td><td>Stable DNS name (<code>payments-db.internal.company.com</code>)</td></tr>
+<tr><td>K8s Secret</td><td>provider-kubernetes</td><td>Connection details in team's namespace</td></tr>
+<tr><td>VaultDatabaseSecretBackend</td><td>provider-vault</td><td>Dynamic credentials rotation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>ElastiCache (Redis) Claim Pattern</h3>
+
+<pre><code class="language-yaml"># XRD for TeamCache
+---
+apiVersion: platform.example.com/v1alpha1
+kind: TeamCache
+metadata:
+  name: payments-session-cache
+  namespace: payments-api-production
+spec:
+  parameters:
+    engine: redis
+    engineVersion: "7.2"
+    size: small       # small=cache.t3.micro, medium=cache.r6g.large
+    replicas: 1
+    transitEncryption: true
+    atRestEncryption: true
+  writeConnectionSecretToRef:
+    name: payments-cache-conn</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>S3 Bucket Claim Pattern</h3>
+
+<pre><code class="language-yaml">apiVersion: platform.example.com/v1alpha1
+kind: TeamBucket
+metadata:
+  name: payments-documents
+  namespace: payments-api-production
+spec:
+  parameters:
+    versioning: true
+    lifecycleDays: 90          # transition to Glacier after 90 days
+    corsEnabled: false
+    publicAccessBlock: true    # platform enforces; teams cannot override
+  writeConnectionSecretToRef:
+    name: payments-bucket-conn  # contains: bucket-name, region, iam-role-arn</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="networking-infra">Networking Infrastructure</h2>
+
+<p>Platform teams manage shared VPC infrastructure; composition patterns allow teams to request network resources (security group rules, Route53 records, ACM certificates) without direct cloud console access.</p>
+
+<h3>ACM Certificate Claim</h3>
+
+<pre><code class="language-yaml">apiVersion: platform.example.com/v1alpha1
+kind: TeamCertificate
+metadata:
+  name: payments-tls
+  namespace: payments-api-production
+spec:
+  parameters:
+    domain: "payments-api.company.com"
+    alternativeDomains:
+    - "payments.company.com"
+    validationMethod: DNS    # platform creates Route53 validation records
+  writeConnectionSecretToRef:
+    name: payments-tls-cert   # contains: certificate-arn</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Composition: VPC Peering Request</h3>
+
+<pre><code class="language-yaml">apiVersion: platform.example.com/v1alpha1
+kind: VpcPeeringRequest
+metadata:
+  name: payments-to-data-warehouse
+  namespace: payments-api-production
+spec:
+  parameters:
+    peerAccountId: "987654321098"
+    peerVpcId: "vpc-0xyz9876"
+    peerRegion: us-east-1
+    # Platform team approves requests; composition creates peer connection
+    # and adds routes after approval annotation is set</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="terraform-provider">Terraform Provider for Crossplane</h2>
+
+<p>The <code>provider-terraform</code> (Upbound) allows wrapping existing Terraform modules as Crossplane managed resources. This is the migration bridge — teams can continue using proven Terraform modules while the platform team incrementally rewrites them as native Crossplane compositions.</p>
+
+<h3>Install provider-terraform</h3>
+
+<pre><code class="language-yaml">apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: upbound-provider-terraform
+spec:
+  package: xpkg.upbound.io/upbound/provider-terraform:v0.18.0
+---
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+  - filename: aws_credentials
+    source: InjectedIdentity   # use pod IRSA
+  configuration: |
+    terraform {
+      required_providers {
+        aws = {
+          source  = "hashicorp/aws"
+          version = "~> 5.0"
+        }
+      }
+      backend "kubernetes" {
+        secret_suffix = "state"
+        namespace     = "crossplane-system"
+        in_cluster_config = true
+      }
+    }
+    provider "aws" {
+      region = "us-east-1"
+    }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Workspace: Wrap a Terraform Module</h3>
+
+<pre><code class="language-yaml">apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: payments-sns-topic
+spec:
+  forProvider:
+    source: Remote
+    module: git::https://github.com/myorg/terraform-modules.git//sns-topic?ref=v1.2.0
+    varFiles:
+    - source: SecretKey
+      secretKeyRef:
+        namespace: crossplane-system
+        name: terraform-vars
+        key: sns-vars.tfvars
+    vars:
+    - key: topic_name
+      value: payments-events
+    - key: environment
+      value: production
+    - key: kms_key_id
+      value: arn:aws:kms:us-east-1:123456789012:key/mrk-abc123
+  writeConnectionSecretToRef:
+    namespace: payments-api-production
+    name: payments-sns-conn
+  providerConfigRef:
+    name: default</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>provider-terraform stores Terraform state in Kubernetes Secrets</strong> by default. For production use, configure a remote backend (S3 + DynamoDB lock) in the ProviderConfig. State stored in K8s Secrets is not shared across clusters and has size limits (~1MB).</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="backstage-integration">Backstage Integration</h2>
+
+<p>The service catalog gains maximum value when exposed through Backstage — teams browse available services, provision via templates, and track infrastructure in the software catalog. See <a href="04-developer-portal.html">04-developer-portal.html</a> for the Backstage setup foundation.</p>
+
+<h3>Crossplane Resource in Backstage Catalog</h3>
+
+<pre><code class="language-yaml"># catalog-info.yaml — added when TeamDatabase is provisioned
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: payments-postgres-db
+  namespace: default
+  annotations:
+    backstage.io/managed-by-location: url:https://github.com/myorg/infra/blob/main/payments/database/catalog-info.yaml
+    crossplane.io/claim-name: payments-db
+    crossplane.io/claim-namespace: payments-api-production
+    grafana/dashboard-selector: "{ \"type\": \"tag\", \"value\": \"rds\" }"
+    pagerduty.com/integration-key: "abc123"
+  tags:
+  - postgres
+  - rds
+  - production
+spec:
+  type: database
+  lifecycle: production
+  owner: group:payments-team
+  system: payments-platform
+  dependencyOf:
+  - component:payments-api
+  - component:payments-worker</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Backstage Software Template for Database Provisioning</h3>
+
+<pre><code class="language-yaml">apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: provision-database
+  title: Provision Team Database
+  description: Self-service PostgreSQL or MySQL on RDS via Crossplane
+spec:
+  owner: platform-team
+  type: infrastructure
+  parameters:
+  - title: Database Configuration
+    required: ["name","owner","namespace","engine","size"]
+    properties:
+      name:
+        title: Database name
+        type: string
+        pattern: "^[a-z][a-z0-9-]{1,30}$"
+      owner:
+        title: Owner
+        type: string
+        ui:field: OwnerPicker
+        ui:options:
+          catalogFilter:
+          - kind: Group
+      namespace:
+        title: Target namespace
+        type: string
+        ui:field: EntityPicker
+        ui:options:
+          catalogFilter:
+          - kind: Resource
+            spec.type: namespace
+      engine:
+        title: Engine
+        type: string
+        enum: ["postgres","mysql"]
+        default: postgres
+      size:
+        title: Instance Size
+        type: string
+        enum: ["small","medium","large"]
+        enumNames: ["Small (dev/staging)","Medium (production)","Large (high-traffic)"]
+      multiAz:
+        title: Multi-AZ (production recommended)
+        type: boolean
+        default: false
+  steps:
+  - id: fetch
+    name: Fetch Skeleton
+    action: fetch:template
+    input:
+      url: ./skeleton
+      values:
+        name: ${{ parameters.name }}
+        namespace: ${{ parameters.namespace }}
+        engine: ${{ parameters.engine }}
+        size: ${{ parameters.size }}
+        multiAz: ${{ parameters.multiAz }}
+        owner: ${{ parameters.owner }}
+  - id: pr
+    name: Create PR with TeamDatabase claim
+    action: publish:github:pull-request
+    input:
+      repoUrl: github.com?repo=platform-gitops&owner=myorg
+      branchName: "db/${{ parameters.name }}"
+      title: "feat: provision database ${{ parameters.name }}"
+      description: "Auto-generated TeamDatabase claim by ${{ user.entity.metadata.name }}"
+  - id: catalog-register
+    name: Register in Catalog
+    action: catalog:register
+    input:
+      repoContentsUrl: ${{ steps.pr.output.remoteUrl }}
+      catalogInfoPath: catalog-info.yaml
+  output:
+    links:
+    - title: Pull Request
+      url: ${{ steps['pr'].output.remoteUrl }}
+    - title: Track in Catalog
+      entityRef: ${{ steps['catalog-register'].output.entityRef }}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="observability">Observability &amp; Health</h2>
+
+<h3>Crossplane Prometheus Metrics</h3>
+
+<pre><code class="language-bash"># Key Crossplane metrics
+crossplane_managed_resource_ready_total      # count of ready MRs by provider
+crossplane_managed_resource_synced_total     # count of synced MRs
+crossplane_managed_resource_deletion_total   # deletions by provider
+crossplane_composition_count                 # active compositions
+provider_reconcile_errors_total              # reconciliation errors per provider
+provider_sync_duration_seconds               # time to reconcile a MR</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>PrometheusRule: Crossplane Health Alerts</h3>
+
+<pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crossplane-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: crossplane.health
+    rules:
+    # Managed resource stuck NotReady for > 15 minutes
+    - alert: CrossplaneManagedResourceNotReady
+      expr: |
+        crossplane_managed_resource_ready_total{ready="False"} > 0
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Crossplane managed resource not ready: {{ $labels.name }}"
+        description: "Check: kubectl describe {{ $labels.kind }} {{ $labels.name }}"
+
+    # Provider reconciliation errors spiking
+    - alert: CrossplaneProviderHighErrorRate
+      expr: |
+        rate(provider_reconcile_errors_total[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High reconciliation error rate for provider {{ $labels.controller }}"
+
+    # Claim stuck pending (RDS not provisioning)
+    - alert: CrossplaneClaimNotReady
+      expr: |
+        kube_customresource_status_condition{
+          condition="Ready",
+          status="False",
+          customresource_group="platform.example.com"
+        } > 0
+      for: 20m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Platform claim not ready after 20 minutes"
+        description: "Namespace: {{ $labels.namespace }}, Claim: {{ $labels.customresource_name }}"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Claim Health Summary Query</h3>
+
+<pre><code class="language-bash"># All claims across platform — ready/not-ready
+kubectl get teamdatabases,teamcaches,teambuckets -A \
+  -o custom-columns='NS:.metadata.namespace,NAME:.metadata.name,READY:.status.conditions[?(@.type=="Ready")].status,AGE:.metadata.creationTimestamp'
+
+# Claims not ready for > 10 minutes (potential provision failure)
+kubectl get teamdatabases -A -o json | jq '
+  .items[] | select(
+    (.status.conditions[]? | select(.type=="Ready") | .status) == "False"
+  ) | {
+    namespace: .metadata.namespace,
+    name: .metadata.name,
+    message: (.status.conditions[]? | select(.type=="Ready") | .message)
+  }'</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card green">
+    <h4>Hide Complexity Behind XRDs</h4>
+    <p>A TeamDatabase claim should have 5–8 parameters. If teams need to configure security group IDs, subnet group names, or parameter groups, your abstraction is leaking. Platform engineers own those decisions; teams own: engine, size, name, multi-AZ yes/no.</p>
+  </div>
+  <div class="card green">
+    <h4>Composition Revisions for Safe Updates</h4>
+    <p>Enable <code>--enable-composition-revisions</code> so updating a Composition doesn't immediately roll out to all existing claims. Pin claims to a compositionRevisionRef and graduate updates through dev → staging → production systematically.</p>
+  </div>
+  <div class="card blue">
+    <h4>Connection Secrets via ESO</h4>
+    <p>Write Crossplane connection secrets to Vault first (via provider-vault), then let External Secrets Operator sync to team namespaces. This avoids Crossplane writing plaintext credentials into etcd and enables automatic secret rotation. See <a href="09-secrets-automation.html">09-secrets-automation.html</a>.</p>
+  </div>
+  <div class="card blue">
+    <h4>Deletion Protection by Default</h4>
+    <p>Always set <code>deletionProtection: true</code> on RDS and <code>spec.deletionPolicy: Orphan</code> on stateful managed resources in production compositions. A <code>kubectl delete teamdatabase</code> should NOT drop the production database. Require manual override annotation to permit.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Composition Functions for Logic</h4>
+    <p>Static patches break down with conditional resources (e.g., "only create read replica if size=large"). Use Composition Functions (Go or Python) for conditional logic, loops, and transforms that the patch engine cannot express cleanly.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Test Compositions with Uptest</h4>
+    <p>Use <code>uptest</code> (Upbound's testing framework for Crossplane) to run end-to-end composition tests in CI. Create a claim, wait for Ready, verify connection secret, then clean up. This catches XRD schema errors and provider compatibility breaks before shipping.</p>
+  </div>
+  <div class="card orange">
+    <h4>Tag Everything via Composition</h4>
+    <p>Inject <code>team</code>, <code>env</code>, <code>cost-center</code> tags into every managed resource via composition patches from the claim's namespace labels. Teams cannot omit these — cost attribution and compliance depend on consistent tagging. Never trust teams to self-tag.</p>
+  </div>
+  <div class="card red">
+    <h4>Audit Provider IAM Roles</h4>
+    <p>Provider IAM roles are cluster-wide — a Crossplane provider with <code>AdministratorAccess</code> can create any AWS resource in any account. Scope IAM policies to exactly the resource types each provider manages (e.g., provider-aws-rds only needs <code>rds:*</code>). Use separate roles per provider.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage: 08 · Service Catalog</summary>
+  <ul class="coverage-body">
+    <li>Service catalog concept: before/after comparison diagram (ticket-based vs claim-based provisioning)</li>
+    <li>Service catalog layers table (primitives/managed resources/compositions/claims/portal templates with owner and interface)</li>
+    <li>Crossplane architecture diagram (claim → XR → Composition → managed resources → cloud APIs)</li>
+    <li>Crossplane Helm install (composition functions + revisions flags, resource limits)</li>
+    <li>Provider family pattern: upbound-provider-family-aws + sub-providers (rds/s3/ec2) installed separately</li>
+    <li>DeploymentRuntimeConfig for provider resource limits</li>
+    <li>ProviderConfig with IRSA (source: IRSA + ServiceAccount annotation)</li>
+    <li>Provider health check commands (kubectl get providers, describe, get CRDs)</li>
+    <li>Provider ecosystem table (AWS family/GCP/Azure/Kubernetes/Helm/Terraform/Vault)</li>
+    <li>RDS Instance managed resource (encryption/multiAz/backupRetention/deletionProtection/cloudwatch logs/manageMasterUserPassword/writeConnectionSecretToRef)</li>
+    <li>S3 Bucket managed resource + BucketVersioning + BucketServerSideEncryptionConfiguration</li>
+    <li>Managed resource lifecycle (status check/conditions/pause annotation/deletionPolicy:Orphan)</li>
+    <li>CompositeResourceDefinition (XTeamDatabase): group/names/claimNames/connectionSecretKeys/schema with engine/size enum/name/multiAz/backupRetentionDays</li>
+    <li>Composition (mode:Pipeline): patch-and-transform function, RDS instance resource with size→instanceClass transform map, tag injection from claim namespace, connection details</li>
+    <li>Security Group resource in Composition with name transform</li>
+    <li>Composition Functions callout (Pipeline mode vs legacy Resources mode)</li>
+    <li>TeamDatabase claim YAML (parameters: engine/engineVersion/size/name/multiAz/backupRetentionDays + writeConnectionSecretToRef)</li>
+    <li>Deployment consuming connection secret via envFrom secretRef</li>
+    <li>Claim status tracking commands (kubectl get -w, xteamdatabase, describe)</li>
+    <li>Full DBaaS composition resources table (RDS/SecurityGroup/SubnetGroup/ParameterGroup/IAM Role/Route53/K8s Secret/VaultDatabaseSecretBackend)</li>
+    <li>TeamCache claim (Redis on ElastiCache: engine/engineVersion/size/replicas/transitEncryption/atRestEncryption)</li>
+    <li>TeamBucket claim (versioning/lifecycleDays/corsEnabled/publicAccessBlock:true enforced)</li>
+    <li>TeamCertificate claim (ACM: domain/alternativeDomains/DNS validation with platform Route53)</li>
+    <li>VpcPeeringRequest claim pattern</li>
+    <li>provider-terraform install + ProviderConfig (IRSA + Kubernetes backend for state)</li>
+    <li>Workspace MR: wrap Terraform module from git, varFiles from Secret, vars, writeConnectionSecretToRef</li>
+    <li>Terraform state warning (Kubernetes Secret backend limits; use S3+DynamoDB for production)</li>
+    <li>Backstage Resource catalog-info.yaml for Crossplane-provisioned DB (crossplane annotations, grafana/pagerduty, dependencyOf)</li>
+    <li>Backstage Software Template for database provisioning (parameters: name/owner/namespace/engine/size/multiAz; steps: fetch template → GitHub PR → catalog:register)</li>
+    <li>Crossplane Prometheus metrics reference (managed_resource_ready/synced/deletion/composition_count/reconcile_errors/sync_duration)</li>
+    <li>PrometheusRule: CrossplaneManagedResourceNotReady / CrossplaneProviderHighErrorRate / CrossplaneClaimNotReady</li>
+    <li>Claim health summary kubectl commands (custom-columns / jq filter on NotReady claims)</li>
+    <li>8 best practices cards (hide complexity/composition revisions/connection secrets via ESO/deletion protection/composition functions/uptest/tag via composition/audit provider IAM)</li>
+  </ul>
+</details>
+
+</main>
+
+<button class="back-top" id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none'
+  })
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>400)
+})
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button')
+  btn.className='copy-btn'
+  btn.textContent='Copy'
+  btn.onclick=function(){
+    navigator.clipboard.writeText(pre.innerText.replace('Copy\n','').replace('Copy',''))
+    btn.textContent='Copied!'
+    setTimeout(()=>btn.textContent='Copy',2000)
+  }
+  pre.appendChild(btn)
+})
+const headings=document.querySelectorAll('h2[id]')
+const tocLinks=document.querySelectorAll('.toc a')
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('toc-active'))
+      const l=document.querySelector(`.toc a[href="#${e.target.id}"]`)
+      if(l)l.classList.add('toc-active')
+    }
+  })
+},{root:document.getElementById('main'),threshold:0.3})
+headings.forEach(h=>obs.observe(h))
+</script>
+</body>
+</html>

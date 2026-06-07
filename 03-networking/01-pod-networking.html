@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pod Networking — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:0.85em;background:var(--code-bg);padding:0.15em 0.4em;border-radius:4px;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;line-height:1.6;position:relative;}
+pre code{background:none;padding:0;color:var(--text);font-size:0.83em;}
+h1{font-size:2rem;font-weight:700;margin-bottom:0.4rem;}
+h2{font-size:1.35rem;font-weight:700;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);}
+h3{font-size:1.1rem;font-weight:600;margin:1.8rem 0 0.7rem;}
+h4{font-size:0.95rem;font-weight:600;margin:1.4rem 0 0.5rem;color:var(--text2);}
+p{margin-bottom:1rem;color:var(--text2);}
+ul,ol{padding-left:1.5rem;margin-bottom:1rem;color:var(--text2);}
+li{margin-bottom:0.3rem;}
+table{width:100%;border-collapse:collapse;margin-bottom:1.5rem;font-size:0.88rem;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:0.65rem 1rem;text-align:left;border:1px solid var(--border);}
+td{padding:0.6rem 1rem;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:nth-child(even) td{background:var(--bg2);}
+
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1rem;gap:1rem;position:sticky;top:0;z-index:100;}
+.topbar-brand{font-weight:700;font-size:1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;}
+.topbar-brand .k8s-logo{width:28px;height:28px;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:0.75rem;}
+#search-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.75rem;color:var(--text);font-size:0.85rem;width:200px;}
+#search-input:focus{outline:none;border-color:var(--accent);}
+#theme-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.75rem;color:var(--text);cursor:pointer;font-size:0.82rem;}
+#hamburger{display:none;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;}
+
+.layout{display:flex;height:calc(100vh - 52px);}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;position:sticky;top:52px;height:calc(100vh - 52px);}
+.sidebar-search{padding:0.75rem;}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.7rem;color:var(--text);font-size:0.83rem;}
+.sidebar-search input:focus{outline:none;border-color:var(--accent);}
+nav{padding:0.5rem 0 2rem;}
+.nav-section{margin-bottom:0.25rem;}
+.nav-section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:0.6rem 1rem 0.3rem;}
+.nav-section a{display:flex;align-items:center;gap:0.5rem;padding:0.32rem 1rem;font-size:0.83rem;color:var(--text2);transition:background 0.15s,color 0.15s;border-left:2px solid transparent;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);text-decoration:none;}
+.nav-section a.active{background:var(--bg3);color:var(--accent);border-left-color:var(--accent);font-weight:600;}
+.nav-section a .num{font-size:0.72rem;color:var(--text3);min-width:1.4rem;}
+
+.main-content{flex:1;overflow-y:auto;padding:2rem 2.5rem;max-width:960px;}
+.toc-panel{width:var(--toc-w);flex-shrink:0;padding:1.5rem 1rem;overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);}
+.toc-panel .toc-title{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:0.75rem;}
+.toc-panel a{display:block;font-size:0.8rem;color:var(--text2);padding:0.22rem 0;border-left:2px solid transparent;padding-left:0.6rem;transition:color 0.15s,border-color 0.15s;}
+.toc-panel a:hover{color:var(--accent);text-decoration:none;}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-panel a.toc-h3{padding-left:1.4rem;font-size:0.76rem;}
+
+.breadcrumb{font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;}
+.breadcrumb a{color:var(--text3);}
+.breadcrumb a:hover{color:var(--accent);}
+.breadcrumb .sep{color:var(--text3);}
+.breadcrumb .cur{color:var(--text2);}
+
+.file-meta{display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.tag{display:inline-block;font-size:0.72rem;font-weight:600;padding:0.2rem 0.55rem;border-radius:12px;text-transform:uppercase;letter-spacing:0.05em;}
+.tag.net{background:rgba(63,185,80,0.15);color:var(--green);}
+.tag.intermediate{background:rgba(88,166,255,0.15);color:var(--accent);}
+.tag.advanced{background:rgba(188,140,255,0.15);color:var(--purple);}
+.tag.core{background:rgba(210,153,34,0.15);color:var(--yellow);}
+
+.flow-row{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin:1rem 0;}
+.flow-box{padding:0.5rem 1rem;border-radius:6px;font-size:0.83rem;font-weight:600;border:1px solid var(--border);text-align:center;min-width:80px;}
+.flow-box.cp{background:rgba(88,166,255,0.15);border-color:var(--accent);color:var(--accent);}
+.flow-box.node{background:rgba(63,185,80,0.15);border-color:var(--green);color:var(--green);}
+.flow-box.net{background:rgba(210,153,34,0.15);border-color:var(--yellow);color:var(--yellow);}
+.flow-box.ok{background:rgba(63,185,80,0.15);border-color:var(--green);color:var(--green);}
+.flow-box.neutral{background:var(--bg3);border-color:var(--border);color:var(--text2);}
+.flow-box.warn{background:rgba(248,81,73,0.15);border-color:var(--red);color:var(--red);}
+.flow-arrow{color:var(--text3);font-size:1.1rem;font-weight:700;}
+
+.callout{border-radius:8px;padding:1rem 1.2rem;margin:1.2rem 0;border-left:4px solid;}
+.callout.note{background:rgba(88,166,255,0.08);border-color:var(--accent);}
+.callout.warn{background:rgba(210,153,34,0.08);border-color:var(--yellow);}
+.callout.danger{background:rgba(248,81,73,0.08);border-color:var(--red);}
+.callout.success{background:rgba(63,185,80,0.08);border-color:var(--green);}
+.callout-title{font-weight:700;font-size:0.85rem;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em;}
+.callout.note .callout-title{color:var(--accent);}
+.callout.warn .callout-title{color:var(--yellow);}
+.callout.danger .callout-title{color:var(--red);}
+.callout.success .callout-title{color:var(--green);}
+.callout p{margin-bottom:0;font-size:0.88rem;}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;}
+.card h4{margin-top:0;font-size:0.9rem;color:var(--text);}
+.card p,.card ul{font-size:0.85rem;margin-bottom:0;}
+
+details{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:0.75rem 0;}
+details summary{padding:0.85rem 1rem;cursor:pointer;font-weight:600;font-size:0.9rem;list-style:none;display:flex;align-items:center;gap:0.5rem;}
+details summary::before{content:'▶';font-size:0.7rem;color:var(--text3);transition:transform 0.2s;}
+details[open] summary::before{transform:rotate(90deg);}
+details summary::-webkit-details-marker{display:none;}
+.details-body{padding:0 1rem 1rem;}
+
+.nav-footer{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.2rem;border:1px solid var(--border);border-radius:8px;font-size:0.88rem;color:var(--text2);background:var(--bg2);transition:border-color 0.15s,color 0.15s;}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
+.nav-btn.next{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+.nav-btn.next:hover{background:var(--accent2);border-color:var(--accent2);color:#fff;}
+
+.copy-btn{position:absolute;top:0.5rem;right:0.5rem;background:var(--bg4);border:1px solid var(--border);border-radius:5px;color:var(--text2);font-size:0.75rem;padding:0.25rem 0.6rem;cursor:pointer;opacity:0;transition:opacity 0.2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+.back-to-top{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:200;}
+.back-to-top.visible{opacity:1;pointer-events:all;}
+
+mark.search-hl{background:rgba(210,153,34,0.4);color:var(--text);border-radius:2px;}
+
+.svg-container{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1rem 0;overflow-x:auto;}
+.svg-container svg{display:block;margin:0 auto;}
+
+@media(max-width:1100px){.toc-panel{display:none;}}
+@media(max-width:768px){
+  #hamburger{display:block;}
+  .sidebar{position:fixed;top:52px;left:-100%;z-index:99;height:calc(100vh - 52px);transition:left 0.25s;}
+  .sidebar.open{left:0;}
+  .main-content{padding:1.5rem 1rem;}
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  h1{font-size:1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button id="hamburger" aria-label="Menu">☰</button>
+  <div class="topbar-brand">
+    <svg class="k8s-logo" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="15" fill="#326CE5"/>
+      <path d="M16 6l8.5 4.9v9.8L16 26l-8.5-5.3V10.9L16 6z" fill="none" stroke="white" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" fill="white"/>
+      <line x1="16" y1="6" x2="16" y2="13" stroke="white" stroke-width="1.2"/>
+      <line x1="24.5" y1="10.9" x2="18.6" y2="14.5" stroke="white" stroke-width="1.2"/>
+      <line x1="24.5" y1="21.1" x2="18.6" y2="17.5" stroke="white" stroke-width="1.2"/>
+      <line x1="16" y1="26" x2="16" y2="19" stroke="white" stroke-width="1.2"/>
+      <line x1="7.5" y1="21.1" x2="13.4" y2="17.5" stroke="white" stroke-width="1.2"/>
+      <line x1="7.5" y1="10.9" x2="13.4" y2="14.5" stroke="white" stroke-width="1.2"/>
+    </svg>
+    Kubernetes Docs
+  </div>
+  <input id="search-input" type="search" placeholder="Search docs…" aria-label="Search"/>
+  <div class="topbar-right"><button id="theme-btn">☀ Light</button></div>
+</header>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture Overview</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="../01-control-plane/00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="../01-control-plane/01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="../01-control-plane/02-etcd.html"><span class="num">02</span>etcd</a>
+      <a href="../01-control-plane/03-kube-scheduler.html"><span class="num">03</span>kube-scheduler</a>
+      <a href="../01-control-plane/04-kube-controller-manager.html"><span class="num">04</span>kube-controller-manager</a>
+      <a href="../01-control-plane/05-cloud-controller-manager.html"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="../01-control-plane/06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="../01-control-plane/07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html"><span class="num">02</span>kube-proxy</a>
+      <a href="../02-node-components/03-container-runtime.html"><span class="num">03</span>Container Runtime</a>
+      <a href="../02-node-components/04-cri-interface.html"><span class="num">04</span>CRI Interface</a>
+      <a href="../02-node-components/05-node-lifecycle.html"><span class="num">05</span>Node Lifecycle</a>
+      <a href="../02-node-components/06-node-resource-management.html"><span class="num">06</span>Node Resource Management</a>
+      <a href="../02-node-components/07-windows-worker-nodes.html"><span class="num">07</span>Windows Worker Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="01-pod-networking.html" class="active"><span class="num">01</span>Pod Networking</a>
+      <a href="02-cni-plugins.html"><span class="num">02</span>CNI Plugins</a>
+      <a href="03-services.html"><span class="num">03</span>Services</a>
+      <a href="04-kube-proxy-internals.html"><span class="num">04</span>kube-proxy Internals</a>
+      <a href="05-dns.html"><span class="num">05</span>DNS</a>
+      <a href="06-ingress.html"><span class="num">06</span>Ingress</a>
+      <a href="07-gateway-api.html"><span class="num">07</span>Gateway API</a>
+      <a href="08-network-policies.html"><span class="num">08</span>Network Policies</a>
+      <a href="09-ipv4-ipv6-dual-stack.html"><span class="num">09</span>IPv4/IPv6 Dual Stack</a>
+      <a href="10-load-balancing.html"><span class="num">10</span>Load Balancing</a>
+      <a href="11-service-mesh.html"><span class="num">11</span>Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-csi-drivers.html"><span class="num">04</span>CSI Drivers</a>
+      <a href="../04-storage/05-statefulsets-storage.html"><span class="num">05</span>StatefulSets &amp; Storage</a>
+      <a href="../04-storage/06-volume-snapshots.html"><span class="num">06</span>Volume Snapshots</a>
+      <a href="../04-storage/07-backup-disaster-recovery.html"><span class="num">07</span>Backup &amp; Disaster Recovery</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html"><span class="num">01</span>Pods</a>
+      <a href="../05-workloads/02-deployments.html"><span class="num">02</span>Deployments</a>
+      <a href="../05-workloads/03-statefulsets.html"><span class="num">03</span>StatefulSets</a>
+      <a href="../05-workloads/04-daemonsets.html"><span class="num">04</span>DaemonSets</a>
+      <a href="../05-workloads/05-jobs-cronjobs.html"><span class="num">05</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/06-replicasets.html"><span class="num">06</span>ReplicaSets</a>
+      <a href="../05-workloads/07-init-containers.html"><span class="num">07</span>Init Containers</a>
+      <a href="../05-workloads/08-sidecar-containers.html"><span class="num">08</span>Sidecar Containers</a>
+      <a href="../05-workloads/09-ephemeral-containers.html"><span class="num">09</span>Ephemeral Containers</a>
+      <a href="../05-workloads/10-pod-disruption-budgets.html"><span class="num">10</span>Pod Disruption Budgets</a>
+      <a href="../05-workloads/11-autoscaling.html"><span class="num">11</span>Autoscaling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-rbac.html"><span class="num">01</span>RBAC</a>
+      <a href="../06-security/02-service-accounts.html"><span class="num">02</span>Service Accounts</a>
+      <a href="../06-security/03-pod-security.html"><span class="num">03</span>Pod Security</a>
+      <a href="../06-security/04-network-policies-security.html"><span class="num">04</span>Network Policies</a>
+      <a href="../06-security/05-secrets-management.html"><span class="num">05</span>Secrets Management</a>
+      <a href="../06-security/06-image-security.html"><span class="num">06</span>Image Security</a>
+      <a href="../06-security/07-etcd-encryption.html"><span class="num">07</span>etcd Encryption</a>
+      <a href="../06-security/08-audit-logging.html"><span class="num">08</span>Audit Logging</a>
+      <a href="../06-security/09-certificate-management.html"><span class="num">09</span>Certificate Management</a>
+      <a href="../06-security/10-zero-trust.html"><span class="num">10</span>Zero Trust</a>
+      <a href="../06-security/11-supply-chain-security.html"><span class="num">11</span>Supply Chain Security</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics.html"><span class="num">01</span>Metrics</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Tracing</a>
+      <a href="../07-observability/04-events.html"><span class="num">04</span>Events</a>
+      <a href="../07-observability/05-prometheus-stack.html"><span class="num">05</span>Prometheus Stack</a>
+      <a href="../07-observability/06-grafana-dashboards.html"><span class="num">06</span>Grafana Dashboards</a>
+      <a href="../07-observability/07-debugging-production.html"><span class="num">07</span>Debugging Production</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/01-helm.html"><span class="num">01</span>Helm</a>
+      <a href="../08-platform-engineering/02-kustomize.html"><span class="num">02</span>Kustomize</a>
+      <a href="../08-platform-engineering/03-gitops.html"><span class="num">03</span>GitOps</a>
+      <a href="../08-platform-engineering/04-argo-cd.html"><span class="num">04</span>Argo CD</a>
+      <a href="../08-platform-engineering/05-flux.html"><span class="num">05</span>Flux</a>
+      <a href="../08-platform-engineering/06-operators.html"><span class="num">06</span>Operators</a>
+      <a href="../08-platform-engineering/07-crd-and-custom-resources.html"><span class="num">07</span>CRDs &amp; Custom Resources</a>
+      <a href="../08-platform-engineering/08-multi-tenancy.html"><span class="num">08</span>Multi-Tenancy</a>
+      <a href="../08-platform-engineering/09-multi-cluster.html"><span class="num">09</span>Multi-Cluster</a>
+      <a href="../08-platform-engineering/10-cluster-api.html"><span class="num">10</span>Cluster API</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/01-cluster-setup.html"><span class="num">01</span>Cluster Setup</a>
+      <a href="../09-production-operations/02-upgrades.html"><span class="num">02</span>Upgrades</a>
+      <a href="../09-production-operations/03-backup-restore.html"><span class="num">03</span>Backup &amp; Restore</a>
+      <a href="../09-production-operations/04-disaster-recovery.html"><span class="num">04</span>Disaster Recovery</a>
+      <a href="../09-production-operations/05-capacity-planning.html"><span class="num">05</span>Capacity Planning</a>
+      <a href="../09-production-operations/06-cost-optimization.html"><span class="num">06</span>Cost Optimization</a>
+      <a href="../09-production-operations/07-performance-tuning.html"><span class="num">07</span>Performance Tuning</a>
+      <a href="../09-production-operations/08-ha-configuration.html"><span class="num">08</span>HA Configuration</a>
+      <a href="../09-production-operations/09-etcd-operations.html"><span class="num">09</span>etcd Operations</a>
+      <a href="../09-production-operations/10-incident-analysis.html"><span class="num">10</span>Incident Analysis</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-team-overview.html"><span class="num">00</span>Team Overview</a>
+      <a href="../10-team-workflows/01-kubectl-mastery.html"><span class="num">01</span>kubectl Mastery</a>
+      <a href="../10-team-workflows/02-local-development.html"><span class="num">02</span>Local Development</a>
+      <a href="../10-team-workflows/03-ci-cd-pipelines.html"><span class="num">03</span>CI/CD Pipelines</a>
+      <a href="../10-team-workflows/04-developer-experience.html"><span class="num">04</span>Developer Experience</a>
+      <a href="../10-team-workflows/05-policy-as-code.html"><span class="num">05</span>Policy as Code</a>
+      <a href="../10-team-workflows/06-cost-showback.html"><span class="num">06</span>Cost Showback</a>
+      <a href="../10-team-workflows/07-platform-apis.html"><span class="num">07</span>Platform APIs</a>
+      <a href="../10-team-workflows/08-on-call.html"><span class="num">08</span>On-Call Practices</a>
+      <a href="../10-team-workflows/09-infra-operations.html"><span class="num">09</span>Infra Operations</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html"><span class="num">00</span>API Flow Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-service-endpoint-flow.html"><span class="num">02</span>Service Endpoint Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-scheduling-flow.html"><span class="num">03</span>Scheduling Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-rolling-update-flow.html"><span class="num">04</span>Rolling Update Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-autoscaling-flow.html"><span class="num">05</span>Autoscaling Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-volume-attach-flow.html"><span class="num">06</span>Volume Attach Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-tls-bootstrap-flow.html"><span class="num">07</span>TLS Bootstrap Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-admission-webhook-flow.html"><span class="num">08</span>Admission Webhook Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-operator-reconcile-flow.html"><span class="num">09</span>Operator Reconcile Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-garbage-collection-flow.html"><span class="num">10</span>Garbage Collection Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-eviction-flow.html"><span class="num">11</span>Eviction Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-cni-setup-flow.html"><span class="num">12</span>CNI Setup Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-csi-provision-flow.html"><span class="num">13</span>CSI Provision Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-flow.html"><span class="num">14</span>Cross-Node Network Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Troubleshooting Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-node-failures.html"><span class="num">02</span>Node Failures</a>
+      <a href="../12-troubleshooting/03-network-failures.html"><span class="num">03</span>Network Failures</a>
+      <a href="../12-troubleshooting/04-storage-failures.html"><span class="num">04</span>Storage Failures</a>
+      <a href="../12-troubleshooting/05-control-plane-failures.html"><span class="num">05</span>Control Plane Failures</a>
+      <a href="../12-troubleshooting/06-performance-issues.html"><span class="num">06</span>Performance Issues</a>
+      <a href="../12-troubleshooting/07-security-incidents.html"><span class="num">07</span>Security Incidents</a>
+      <a href="../12-troubleshooting/08-upgrade-failures.html"><span class="num">08</span>Upgrade Failures</a>
+      <a href="../12-troubleshooting/09-etcd-recovery.html"><span class="num">09</span>etcd Recovery</a>
+      <a href="../12-troubleshooting/10-crashloopbackoff.html"><span class="num">10</span>CrashLoopBackOff</a>
+    </div>
+  </nav>
+</aside>
+
+<main class="main-content" id="main-content">
+  <div class="breadcrumb">
+    <a href="../00-foundations/00-introduction.html">Home</a>
+    <span class="sep">›</span>
+    <a href="00-networking-overview.html">Networking</a>
+    <span class="sep">›</span>
+    <span class="cur">Pod Networking</span>
+  </div>
+
+  <div class="file-meta">
+    <span class="tag net">Networking</span>
+    <span class="tag intermediate">Intermediate</span>
+    <span class="tag core">Core</span>
+    <span style="font-size:0.8rem;color:var(--text3);">File: 03-networking/01-pod-networking.html</span>
+  </div>
+
+  <h1 id="pod-networking">Pod Networking</h1>
+  <p>Pod networking is the foundation of all Kubernetes communication. It is the layer that makes every pod a first-class network citizen with its own IP address, reachable from any other pod in the cluster without NAT. This page covers the kernel mechanisms that make this possible: Linux network namespaces, veth pairs, the pause container, bridges, routes, and the two major cross-node routing strategies (overlay and underlay). It ends with a full packet trace, CNI invocation details, and diagnostic commands.</p>
+
+  <!-- ============================================================ -->
+  <h2 id="network-namespace">Linux Network Namespaces</h2>
+
+  <p>Every pod lives in its own <strong>Linux network namespace</strong> — a complete, isolated instance of the kernel network stack including its own interfaces, routing table, iptables rules, and port number space. Namespaces are the kernel primitive that makes "one IP per pod" possible.</p>
+
+<pre><code># Create a network namespace manually (what the container runtime does for pods)
+ip netns add pod-demo
+
+# Show interfaces inside the namespace
+ip netns exec pod-demo ip link show
+# Output: only loopback (lo) until a veth pair is added
+
+# Verify isolation: routes inside the namespace are independent
+ip netns exec pod-demo ip route show
+
+# List all network namespaces on a node
+ls -la /var/run/netns/
+# Kubernetes pod netns are under /proc/<pid>/ns/net  (not /var/run/netns)
+# Access via: ip netns exec $(ip netns identify <pid>) ip addr show
+</code></pre>
+
+  <div class="callout note">
+    <div class="callout-title">Network Namespace vs Other Namespaces</div>
+    <p>A pod's network namespace is shared by all containers in the pod — they all have the same IP and see the same network interfaces. Other namespaces (mount, PID, UTS) are per-container by default unless <code>shareProcessNamespace: true</code> is set. This is why two containers in the same pod cannot both listen on port 8080.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="pause-container">The Pause Container</h2>
+
+  <p>The pause container (infra container) is a minimal process whose sole job is to <strong>hold the network namespace open</strong>. It is started first by the kubelet (via CRI <code>RunPodSandbox</code>) before any application containers. Application containers then join its network namespace.</p>
+
+  <div class="svg-container">
+    <svg width="680" height="200" viewBox="0 0 680 200" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12">
+      <!-- Pod netns boundary -->
+      <rect x="10" y="10" width="660" height="170" rx="8" fill="rgba(88,166,255,0.05)" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="340" y="28" text-anchor="middle" fill="#58a6ff" font-size="11">Pod Network Namespace (shared by all containers)</text>
+
+      <!-- pause container -->
+      <rect x="25" y="38" width="155" height="110" rx="6" fill="rgba(210,153,34,0.12)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="102" y="58" text-anchor="middle" fill="#d29922" font-weight="700" font-size="11">pause container</text>
+      <text x="102" y="75" text-anchor="middle" fill="#8b949e" font-size="10">PID 1: pause()</text>
+      <text x="102" y="90" text-anchor="middle" fill="#8b949e" font-size="10">holds netns alive</text>
+      <text x="102" y="108" text-anchor="middle" fill="#6e7681" font-size="10">eth0: 10.244.1.5/24</text>
+      <text x="102" y="122" text-anchor="middle" fill="#6e7681" font-size="10">lo: 127.0.0.1/8</text>
+      <text x="102" y="137" text-anchor="middle" fill="#d29922" font-size="9">never exits</text>
+
+      <!-- app container A -->
+      <rect x="200" y="38" width="145" height="110" rx="6" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+      <text x="272" y="58" text-anchor="middle" fill="#58a6ff" font-weight="700" font-size="11">app container A</text>
+      <text x="272" y="75" text-anchor="middle" fill="#8b949e" font-size="10">joins pause netns</text>
+      <text x="272" y="92" text-anchor="middle" fill="#8b949e" font-size="10">sees eth0 (10.244.1.5)</text>
+      <text x="272" y="110" text-anchor="middle" fill="#8b949e" font-size="10">own: mnt, pid ns</text>
+      <text x="272" y="130" text-anchor="middle" fill="#6e7681" font-size="10">listen on :8080</text>
+
+      <!-- app container B -->
+      <rect x="360" y="38" width="145" height="110" rx="6" fill="rgba(88,166,255,0.08)" stroke="#58a6ff" stroke-width="1"/>
+      <text x="432" y="58" text-anchor="middle" fill="#58a6ff" font-weight="700" font-size="11">app container B</text>
+      <text x="432" y="75" text-anchor="middle" fill="#8b949e" font-size="10">joins pause netns</text>
+      <text x="432" y="92" text-anchor="middle" fill="#8b949e" font-size="10">sees eth0 (10.244.1.5)</text>
+      <text x="432" y="110" text-anchor="middle" fill="#8b949e" font-size="10">own: mnt, pid ns</text>
+      <text x="432" y="130" text-anchor="middle" fill="#6e7681" font-size="10">listen on :9090</text>
+
+      <!-- sidecar -->
+      <rect x="520" y="38" width="135" height="110" rx="6" fill="rgba(188,140,255,0.1)" stroke="#bc8cff" stroke-width="1"/>
+      <text x="587" y="58" text-anchor="middle" fill="#bc8cff" font-weight="700" font-size="11">sidecar</text>
+      <text x="587" y="75" text-anchor="middle" fill="#8b949e" font-size="10">joins pause netns</text>
+      <text x="587" y="92" text-anchor="middle" fill="#8b949e" font-size="10">localhost:8080 → A</text>
+      <text x="587" y="110" text-anchor="middle" fill="#8b949e" font-size="10">localhost:9090 → B</text>
+      <text x="587" y="130" text-anchor="middle" fill="#6e7681" font-size="10">(envoy/istio proxy)</text>
+
+      <!-- bottom label -->
+      <text x="340" y="188" text-anchor="middle" fill="#6e7681" font-size="10">All containers share: eth0, lo, routing table, iptables, port space — via joining pause's netns</text>
+    </svg>
+  </div>
+
+  <p>The pause container image (<code>registry.k8s.io/pause:3.9</code>) is a ~700 KB binary that calls <code>pause()</code> and acts as PID 1 to reap zombie child processes. If the pause container exits, the entire pod network namespace is destroyed — all containers in the pod lose network connectivity immediately.</p>
+
+  <!-- ============================================================ -->
+  <h2 id="veth-pairs">veth Pairs</h2>
+
+  <p>A <strong>veth pair</strong> is a connected pair of virtual Ethernet interfaces. Traffic sent into one end emerges from the other. One end lives inside the pod's network namespace (<code>eth0</code>); the other lives in the host network namespace (named <code>vethXXXXXX</code> or <code>cali...</code> depending on CNI).</p>
+
+<pre><code># View veth pairs on a node
+ip link show | grep veth
+
+# Find which veth belongs to a pod (by pod IP or container PID)
+# Method 1: via container PID
+CONTAINER_PID=$(crictl inspect &lt;container-id&gt; | jq .info.pid)
+nsenter --target $CONTAINER_PID --net ip addr show eth0
+# shows: eth0: &lt;ip&gt; — check ifindex
+
+# Method 2: match ifindex
+# Inside pod netns:
+ip link show eth0   # e.g., 23: eth0@if24
+# On host:
+ip link show | grep "^24:"   # finds veth peer at index 24
+
+# Trace veth to bridge:
+bridge link show    # shows which veth interfaces are attached to cni0
+</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="within-node">Within-Node Pod Networking</h2>
+
+  <div class="svg-container">
+    <svg width="680" height="320" viewBox="0 0 680 320" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12">
+      <!-- Node boundary -->
+      <rect x="5" y="5" width="670" height="310" rx="8" fill="rgba(63,185,80,0.04)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="340" y="22" text-anchor="middle" fill="#3fb950" font-weight="700" font-size="12">Node (10.0.1.10) — podCIDR: 10.244.1.0/24</text>
+
+      <!-- Pod A namespace -->
+      <rect x="20" y="32" width="175" height="90" rx="6" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+      <text x="107" y="50" text-anchor="middle" fill="#58a6ff" font-weight="700" font-size="11">Pod A namespace</text>
+      <text x="107" y="67" text-anchor="middle" fill="#8b949e" font-size="10">eth0: 10.244.1.5/32</text>
+      <text x="107" y="83" text-anchor="middle" fill="#6e7681" font-size="10">gw: 169.254.1.1 (Calico)</text>
+      <text x="107" y="99" text-anchor="middle" fill="#6e7681" font-size="10">or gw: 10.244.1.1 (Flannel)</text>
+
+      <!-- Pod B namespace -->
+      <rect x="215" y="32" width="175" height="90" rx="6" fill="rgba(88,166,255,0.08)" stroke="#58a6ff" stroke-width="1"/>
+      <text x="302" y="50" text-anchor="middle" fill="#58a6ff" font-weight="700" font-size="11">Pod B namespace</text>
+      <text x="302" y="67" text-anchor="middle" fill="#8b949e" font-size="10">eth0: 10.244.1.8/32</text>
+      <text x="302" y="83" text-anchor="middle" fill="#6e7681" font-size="10">gw: 169.254.1.1</text>
+
+      <!-- Pod C namespace -->
+      <rect x="410" y="32" width="175" height="90" rx="6" fill="rgba(188,140,255,0.08)" stroke="#bc8cff" stroke-width="1"/>
+      <text x="497" y="50" text-anchor="middle" fill="#bc8cff" font-weight="700" font-size="11">Pod C namespace</text>
+      <text x="497" y="67" text-anchor="middle" fill="#8b949e" font-size="10">eth0: 10.244.1.12/32</text>
+      <text x="497" y="83" text-anchor="middle" fill="#6e7681" font-size="10">gw: 169.254.1.1</text>
+
+      <!-- veth lines -->
+      <line x1="107" y1="122" x2="107" y2="168" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="115" y="148" fill="#6e7681" font-size="9">veth pair</text>
+      <line x1="302" y1="122" x2="302" y2="168" stroke="#3fb950" stroke-width="1.5"/>
+      <line x1="497" y1="122" x2="497" y2="168" stroke="#bc8cff" stroke-width="1.5"/>
+
+      <!-- Bridge / host netns -->
+      <rect x="20" y="168" width="640" height="38" rx="5" fill="rgba(63,185,80,0.12)" stroke="#3fb950" stroke-width="1"/>
+      <text x="340" y="185" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">Host Network Namespace</text>
+      <text x="340" y="198" text-anchor="middle" fill="#8b949e" font-size="10">cni0/cbr0 bridge (10.244.1.1/24) — veth0, veth1, veth2 attached — OR: Calico host routes (no bridge)</text>
+
+      <!-- iptables/IPVS -->
+      <rect x="20" y="218" width="200" height="32" rx="5" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+      <text x="120" y="237" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">iptables / IPVS (kube-proxy)</text>
+
+      <!-- Route table -->
+      <rect x="240" y="218" width="200" height="32" rx="5" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+      <text x="340" y="237" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="600">Node Route Table</text>
+
+      <!-- Overlay/BGP module -->
+      <rect x="460" y="218" width="200" height="32" rx="5" fill="rgba(188,140,255,0.1)" stroke="#bc8cff" stroke-width="1"/>
+      <text x="560" y="237" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="600">Overlay/BGP (VXLAN/IPIP/BGP)</text>
+
+      <!-- eth0 -->
+      <rect x="20" y="262" width="640" height="32" rx="5" fill="rgba(63,185,80,0.08)" stroke="#3fb950" stroke-width="1"/>
+      <text x="340" y="282" text-anchor="middle" fill="#3fb950" font-size="11">eth0 — Node IP: 10.0.1.10 (to physical/cloud network)</text>
+    </svg>
+  </div>
+
+  <p>When Pod A (10.244.1.5) sends to Pod B (10.244.1.8) on the same node:</p>
+  <ol>
+    <li>Packet leaves Pod A's <code>eth0</code> → crosses veth pair into host netns</li>
+    <li>Kernel looks up route: 10.244.1.0/24 is local → routes to the bridge (<code>cni0</code>) or directly to Pod B's veth (Calico host-route mode)</li>
+    <li>Bridge (or host route) delivers packet to Pod B's veth peer → enters Pod B's netns as <code>eth0</code></li>
+    <li>No encapsulation, no NAT — L3 routing entirely within the host</li>
+  </ol>
+
+  <!-- ============================================================ -->
+  <h2 id="cross-node">Cross-Node Pod Networking</h2>
+
+  <p>Cross-node pod routing is where CNI plugins differ fundamentally. There are two strategies:</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Overlay (encapsulation)</h4>
+      <ul>
+        <li>Pod packets wrapped in an outer IP/UDP or IP/IP header</li>
+        <li>Outer packet routed normally by the physical network</li>
+        <li>Outer src/dst = node IPs (always routable)</li>
+        <li>Inner src/dst = pod IPs (not known to physical network)</li>
+        <li><strong>VXLAN</strong>: UDP port 8472, up to 16M virtual networks</li>
+        <li><strong>GENEVE</strong>: UDP port 6081 (used by OVN/Antrea)</li>
+        <li><strong>IPIP</strong>: IP-in-IP, lower overhead than VXLAN</li>
+        <li>Works on any network with node-to-node IP connectivity</li>
+        <li>~5–10% overhead for encap/decap (negligible on modern hardware)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Underlay (BGP/native routing)</h4>
+      <ul>
+        <li>No encapsulation — pod IPs are natively routed</li>
+        <li>Node advertises its podCIDR to BGP peers (router or peers)</li>
+        <li>Physical network learns pod routes and forwards directly</li>
+        <li><strong>Calico BGP</strong>: each node is a BGP speaker; route reflectors for scale</li>
+        <li><strong>AWS VPC CNI</strong>: pod IPs are real ENI secondary IPs; VPC routing table knows them</li>
+        <li><strong>Azure CNI</strong>: pod IPs are real VNET IPs via IPAM</li>
+        <li>Zero overhead — packets are native L3</li>
+        <li>Requires network infrastructure support (BGP capability or cloud native routing)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 id="vxlan-walkthrough">VXLAN Packet Walkthrough</h3>
+
+<pre><code># Pod A (10.244.1.5 on node1) → Pod C (10.244.2.3 on node2)
+
+# Inner packet (original):
+# src: 10.244.1.5   dst: 10.244.2.3  proto: TCP  dport: 8080
+
+# VXLAN encapsulation added by CNI dataplane (flannel/calico/cilium):
+# Outer IP header:  src: 10.0.1.10 (node1)   dst: 10.0.1.11 (node2)
+# UDP header:       sport: random              dport: 8472
+# VXLAN header:     VNI (virtual network ID)
+# Inner IP header:  src: 10.244.1.5            dst: 10.244.2.3
+
+# Physical network sees: node1 → node2 UDP/8472
+# Node2 VTEP (Virtual Tunnel EndPoint) decapsulates → inner packet routed to Pod C veth
+
+# Verify VXLAN tunnels on a node:
+ip -d link show flannel.1   # Flannel VXLAN interface
+bridge fdb show dev flannel.1  # VTEP → node IP mappings
+</code></pre>
+
+  <h3 id="bgp-walkthrough">BGP Underlay Walkthrough</h3>
+
+<pre><code># Calico BGP mode: each node announces its podCIDR
+# node1 announces: 10.244.1.0/24 via 10.0.1.10
+# node2 announces: 10.244.2.0/24 via 10.0.1.11
+
+# Route table on node1 (Calico BGP):
+ip route show
+# 10.244.1.0/24 dev cali-br0 proto kernel    # local pods via bridge
+# 10.244.2.0/24 via 10.0.1.11 dev eth0       # learned via BGP: next-hop = node2
+
+# Packet from Pod A → Pod C:
+# src: 10.244.1.5  dst: 10.244.2.3
+# Routed to 10.0.1.11 via eth0 — NO encapsulation
+# Node2 receives, routes to Pod C via veth — standard L3
+
+# Calico BGP peering status:
+calicoctl node status
+# Shows peer IPs and BGP session state (Established)
+</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="cni-invocation">CNI Plugin Invocation</h2>
+
+  <p>The CNI is not a daemon — it is a set of binaries called by the container runtime at specific lifecycle events. The kubelet instructs containerd (via CRI) to set up networking, and containerd calls the CNI binary:</p>
+
+  <div class="flow-row">
+    <div class="flow-box cp">kubelet RunPodSandbox</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box neutral">containerd CRI plugin</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box net">exec /opt/cni/bin/&lt;plugin&gt; ADD</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box ok">pod gets IP</div>
+  </div>
+
+<pre><code># CNI binary locations
+ls /opt/cni/bin/
+# bandwidth  bridge  dhcp  firewall  flannel  host-device  host-local
+# ipvlan  loopback  macvlan  portmap  ptp  sbr  static  tuning  vlan  vrf
+
+# CNI configuration
+ls /etc/cni/net.d/
+# 10-calico.conflist   (Calico)
+# 10-flannel.conflist  (Flannel)
+
+# Example Flannel CNI config:
+cat /etc/cni/net.d/10-flannel.conflist
+# {
+#   "cniVersion": "0.3.1",
+#   "name": "cbr0",
+#   "plugins": [
+#     { "type": "flannel", "delegate": { "isDefaultGateway": true } },
+#     { "type": "portmap", "capabilities": {"portMappings": true} }
+#   ]
+# }
+
+# CNI ADD called with environment variables:
+# CNI_COMMAND=ADD
+# CNI_CONTAINERID=&lt;sandbox container ID&gt;
+# CNI_NETNS=/proc/&lt;pid&gt;/ns/net   (the pause container's netns)
+# CNI_IFNAME=eth0                  (interface to create inside the netns)
+# CNI_PATH=/opt/cni/bin
+# stdin: JSON config from /etc/cni/net.d/
+
+# CNI ADD returns JSON with allocated IP:
+# {
+#   "ips": [{"address": "10.244.1.5/24", "gateway": "10.244.1.1"}],
+#   "routes": [{"dst": "0.0.0.0/0"}]
+# }
+</code></pre>
+
+  <h3 id="cni-operations">CNI Operations</h3>
+
+  <table>
+    <thead><tr><th>CNI Command</th><th>Trigger</th><th>What the plugin does</th></tr></thead>
+    <tbody>
+      <tr><td><code>ADD</code></td><td>Pod sandbox created (RunPodSandbox)</td><td>Create veth pair; assign IP from IPAM; set up routes; add to bridge/VXLAN; return allocated IP</td></tr>
+      <tr><td><code>DEL</code></td><td>Pod sandbox deleted (RemovePodSandbox)</td><td>Remove veth pair; release IP back to IPAM; remove routes; clean up bridge/VXLAN entries</td></tr>
+      <tr><td><code>CHECK</code></td><td>Periodic health check (kubelet)</td><td>Verify the network is correctly configured for the pod; return error if not</td></tr>
+      <tr><td><code>VERSION</code></td><td>At startup</td><td>Return supported CNI spec versions</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2 id="ip-assignment">IP Assignment (IPAM)</h2>
+
+  <p>The IP Address Management (IPAM) component of the CNI plugin handles IP allocation. Common IPAM plugins:</p>
+
+  <table>
+    <thead><tr><th>IPAM Plugin</th><th>Storage</th><th>Scope</th><th>Used by</th></tr></thead>
+    <tbody>
+      <tr><td><code>host-local</code></td><td>Files in <code>/var/lib/cni/networks/</code></td><td>Per-node (from node's podCIDR)</td><td>Flannel, simple setups</td></tr>
+      <tr><td><code>calico-ipam</code></td><td>etcd / Kubernetes CRDs</td><td>Cluster-wide pools; cross-node IP blocks</td><td>Calico</td></tr>
+      <tr><td><code>cilium-ipam</code></td><td>Kubernetes CiliumNode CRD</td><td>Per-node blocks from global pool</td><td>Cilium</td></tr>
+      <tr><td><code>aws-cni</code></td><td>EC2 ENI secondary IPs</td><td>Per-ENI (tied to instance type)</td><td>AWS VPC CNI (EKS)</td></tr>
+      <tr><td><code>azure-vnet-ipam</code></td><td>Azure IPAM API</td><td>Per-subnet (VNET)</td><td>Azure CNI (AKS)</td></tr>
+      <tr><td><code>dhcp</code></td><td>External DHCP server</td><td>Whatever DHCP assigns</td><td>Bare metal, legacy</td></tr>
+    </tbody>
+  </table>
+
+<pre><code># host-local IPAM: check allocated IPs
+ls /var/lib/cni/networks/cbr0/
+# Files named by IP: 10.244.1.5, 10.244.1.8, etc.
+cat /var/lib/cni/networks/cbr0/10.244.1.5
+# Contains: container ID that holds the IP
+
+# Calico IPAM: check IP pools and blocks
+calicoctl get ippool -o wide
+calicoctl get ipamblock -o wide   # per-node blocks
+
+# Find IP allocations
+calicoctl ipam show --show-blocks
+</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="pod-dns-files">Pod Network Configuration Files</h2>
+
+  <p>The CNI plugin populates several files in the pod's network namespace that configure how the pod communicates:</p>
+
+<pre><code># /etc/resolv.conf (injected by kubelet, based on cluster DNS config):
+nameserver 10.96.0.10       # CoreDNS ClusterIP
+search default.svc.cluster.local svc.cluster.local cluster.local
+options ndots:5
+
+# /etc/hosts (managed by kubelet):
+127.0.0.1   localhost
+::1         localhost ip6-localhost ip6-loopback
+10.244.1.5  my-pod-name.my-namespace.pod.cluster.local
+
+# Inspect from inside a running pod:
+kubectl exec my-pod -- cat /etc/resolv.conf
+kubectl exec my-pod -- cat /etc/hosts
+kubectl exec my-pod -- ip addr show
+kubectl exec my-pod -- ip route show
+</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="hostnetwork">hostNetwork Pods</h2>
+
+  <p>Pods with <code>spec.hostNetwork: true</code> skip the pod network namespace entirely and run in the host's network namespace. They see all host interfaces, use the node IP, and share port space with the host.</p>
+
+<pre><code># Pod using host network (e.g., kube-proxy, node exporters, CNI DaemonSets)
+spec:
+  hostNetwork: true
+  containers:
+  - name: node-exporter
+    image: prom/node-exporter
+    ports:
+    - containerPort: 9100
+      hostPort: 9100   # binds directly on the node's port 9100
+
+# Implications:
+# - Pod IP == Node IP (no isolation)
+# - Port conflicts with other host processes
+# - Required for: CNI plugins, kube-proxy, node monitoring agents
+# - Security risk: full access to host network interfaces
+
+# Check which pods use hostNetwork:
+kubectl get pods -A -o jsonpath='{range .items[?(@.spec.hostNetwork==true)]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}'
+</code></pre>
+
+  <div class="callout warn">
+    <div class="callout-title">hostNetwork Security Boundary</div>
+    <p><code>hostNetwork: true</code> is a significant security escalation. The pod can sniff all traffic on the node's interfaces, bind to privileged ports, and interact with any service listening on localhost of the node. Restrict it to trusted system DaemonSets (CNI, kube-proxy, monitoring agents). Never allow it for user workloads — enforce with PodSecurity admission or OPA Gatekeeper.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="pod-to-pod-trace">Full Packet Trace: Pod A → Pod C (Cross-Node)</h2>
+
+<pre><code># Setup:
+# Pod A: 10.244.1.5 on node1 (10.0.1.10) — CNI: Flannel VXLAN
+# Pod C: 10.244.2.3 on node2 (10.0.1.11)
+
+# Step 1: Pod A kernel routing
+# ip route inside pod A:
+# default via 10.244.1.1 dev eth0   (or 169.254.1.1 for Calico)
+# → packet exits eth0 of pod A
+
+# Step 2: veth pair — packet enters host netns
+# on node1: ip route:
+# 10.244.2.0/24 via 10.0.1.11 dev flannel.1 onlink
+# → packet handed to flannel.1 VTEP
+
+# Step 3: VXLAN encapsulation
+# flannel.1 looks up: which VTEP holds 10.244.2.x?
+# bridge fdb: 10.244.2.x → 10.0.1.11 (learned via flannel etcd/k8s watch)
+# Outer header: src=10.0.1.10 dst=10.0.1.11 UDP/8472
+# Inner: src=10.244.1.5 dst=10.244.2.3
+
+# Step 4: physical network delivers to node2 eth0
+
+# Step 5: node2 kernel receives UDP/8472
+# flannel.1 VTEP decapsulates
+# inner packet: dst=10.244.2.3
+
+# Step 6: node2 routing
+# 10.244.2.3 dev vethXXX   (route installed by CNI when pod C was created)
+# → packet delivered to Pod C's veth
+
+# Step 7: Pod C receives
+# src=10.244.1.5 (original pod A IP — no NAT anywhere in the path)
+
+# Verify at each step:
+# node1: tcpdump -i flannel.1 "host 10.244.2.3"
+# node2: tcpdump -i flannel.1 "host 10.244.1.5"
+# pod: kubectl exec pod-c -- tcpdump -i eth0
+</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="diagnostics">Diagnostics and Debugging</h2>
+
+<pre><code># Get pod IP and node
+kubectl get pod my-pod -o wide
+
+# Verify pod network from inside the pod
+kubectl exec -it my-pod -- ip addr show
+kubectl exec -it my-pod -- ip route show
+kubectl exec -it my-pod -- cat /etc/resolv.conf
+
+# Test pod-to-pod connectivity
+kubectl exec pod-a -- ping -c3 10.244.2.3
+kubectl exec pod-a -- curl -v http://10.244.2.3:8080
+
+# Test from a debug pod with network tools
+kubectl run netshoot --image=nicolaka/netshoot --rm -it -- bash
+# Inside: ping, traceroute, tcpdump, nmap, ss, ip, dig all available
+
+# Inspect veth pairs on the node
+ssh node1 "ip link show type veth"
+ssh node1 "bridge link show"   # bridge-attached veth interfaces
+
+# Find the host veth for a specific pod IP
+ssh node1 "ip route get 10.244.1.5"
+# Output: 10.244.1.5 dev vethABCDEF src 10.244.1.1
+
+# Check CNI configuration
+ssh node1 "cat /etc/cni/net.d/*.conflist"
+ssh node1 "ls /opt/cni/bin/"
+
+# Check IP allocations (host-local IPAM)
+ssh node1 "ls /var/lib/cni/networks/"
+
+# Calico: check node routes and IPAM
+calicoctl node status
+calicoctl get workloadendpoint -A
+
+# Cilium: endpoint and connectivity status
+cilium status
+cilium endpoint list
+cilium connectivity test   # runs full connectivity test suite
+</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+  <details>
+    <summary>Pod has no IP address — stuck in ContainerCreating</summary>
+    <div class="details-body">
+<pre><code># Symptom: kubectl get pod shows no IP; describe shows CNI error
+
+# 1. Check kubelet for CNI errors
+journalctl -u kubelet | grep -i "cni\|network\|failed" | tail -30
+
+# 2. Check if CNI binaries exist
+ls /opt/cni/bin/
+ls /etc/cni/net.d/
+
+# 3. Check if CNI DaemonSet pod is running on this node
+kubectl get pods -n kube-system -o wide | grep -E "calico|flannel|cilium"
+
+# 4. Try CNI ADD manually to see exact error (advanced)
+CNI_COMMAND=ADD CNI_CONTAINERID=test CNI_NETNS=/proc/$$/ns/net \
+  CNI_IFNAME=eth0 CNI_PATH=/opt/cni/bin \
+  /opt/cni/bin/flannel &lt; /etc/cni/net.d/10-flannel.conflist
+
+# 5. Check IPAM pool exhaustion
+# host-local: count files in /var/lib/cni/networks/cbr0/
+ls /var/lib/cni/networks/cbr0/ | wc -l
+# Compare to node's podCIDR size
+
+# 6. Check NetworkReady condition
+crictl info | grep networkReady
+</code></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Pod can ping same-node pods but not cross-node pods</summary>
+    <div class="details-body">
+<pre><code># Symptom: intra-node works, cross-node fails
+
+# 1. Check VXLAN interface
+ip -d link show flannel.1    # or cilium_vxlan, calico_vxlan
+# If missing: CNI agent not running
+
+# 2. Check VXLAN FDB (forwarding database)
+bridge fdb show dev flannel.1
+# Each remote node should have an entry mapping its podCIDR gateway to node IP
+# Missing entries: flannel/calico can't reach apiserver to learn remote nodes
+
+# 3. Check firewall rules
+iptables -L FORWARD -n | grep ACCEPT
+# Must have ACCEPT rules for pod CIDRs in FORWARD chain
+# Some cloud environments have restrictive firewall policies
+
+# 4. Check UDP/8472 is not blocked
+nc -u -l 8472 &   # on node2
+nc -u node2 8472  # from node1 — send a char
+
+# 5. MTU mismatch (common cause)
+ip link show flannel.1 | grep mtu
+# VXLAN MTU should be node MTU - 50 bytes (VXLAN overhead)
+# If too high: packets silently dropped; traceroute shows timeouts
+# Fix: set flannel MTU in ConfigMap and restart flannel pods
+</code></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Pod IP conflicts — two pods with the same IP</summary>
+    <div class="details-body">
+<pre><code># Symptom: traffic routes to wrong pod; connections fail intermittently
+
+# 1. Check for duplicate IPs
+kubectl get pods -A -o wide | awk '{print $7}' | sort | uniq -d
+
+# 2. Check IPAM state
+# host-local: stale lock files if pod was force-deleted
+ls /var/lib/cni/networks/cbr0/
+# Remove stale file for the IP if the container no longer exists:
+cat /var/lib/cni/networks/cbr0/10.244.1.5  # check container ID
+crictl ps | grep &lt;container-id&gt;            # if not found, IP is orphaned
+rm /var/lib/cni/networks/cbr0/10.244.1.5   # release the IP
+
+# 3. Calico: check workload endpoints
+calicoctl get workloadendpoint -A | grep 10.244.1.5
+# Multiple entries = conflict; delete the stale one
+
+# 4. Force pod recreation on affected node
+kubectl drain node1 --ignore-daemonsets --force
+# Pods will reschedule with fresh IP assignments
+</code></pre>
+    </div>
+  </details>
+
+  <!-- ============================================================ -->
+  <h2 id="production-best-practices">Production Best Practices</h2>
+
+  <ol>
+    <li><strong>Size the pod CIDR for growth</strong> — a /16 gives 65K pod IPs across the cluster, but each node only gets a /24 (254 IPs). If you need more than 254 pods per node, set <code>--node-cidr-mask-size=23</code> before cluster creation.</li>
+    <li><strong>Never overlap CIDRs</strong> — confirm pod CIDR, service CIDR, and VPC/physical CIDR don't intersect before provisioning. This cannot be fixed post-creation without rebuilding.</li>
+    <li><strong>Choose the right encapsulation for your environment</strong> — overlay (VXLAN/IPIP) works anywhere but adds overhead; BGP underlay is zero-overhead but requires network infrastructure cooperation. Cloud CNIs (AWS VPC CNI, Azure CNI) are best for cloud-native; Calico BGP for bare metal.</li>
+    <li><strong>Watch MTU carefully with VXLAN</strong> — VXLAN adds 50 bytes of overhead. If node MTU is 1500, VXLAN interface MTU should be 1450. Mismatched MTU causes silent packet drops (ICMP fragmentation needed, but many clouds block ICMP). Set explicitly in CNI config.</li>
+    <li><strong>Enable IP masquerade only at the node boundary</strong> — masquerading pod traffic when leaving the node (for egress to external IPs) is correct. Masquerading pod-to-pod traffic is wrong — it hides source IPs and breaks NetworkPolicy and observability.</li>
+    <li><strong>Monitor IPAM pool exhaustion</strong> — alert when a node's IPAM block is >80% full. Full IPAM → new pods fail to get IPs → ContainerCreating → application outage.</li>
+    <li><strong>Use netshoot for debugging</strong> — keep <code>nicolaka/netshoot</code> available as a debug pod image; it contains every network diagnostic tool you need (tcpdump, dig, curl, nmap, traceroute, iperf3).</li>
+    <li><strong>Avoid hostNetwork unless essential</strong> — use it only for system components that explicitly need it (CNI, kube-proxy, node exporters). Enforce this with PodSecurity <code>restricted</code> profile or a Gatekeeper/Kyverno policy.</li>
+  </ol>
+
+  <div class="nav-footer">
+    <a href="00-networking-overview.html" class="nav-btn">← Networking Overview</a>
+    <a href="02-cni-plugins.html" class="nav-btn next">CNI Plugins →</a>
+  </div>
+</main>
+
+<aside class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#pod-networking">Pod Networking</a>
+  <a href="#network-namespace">Linux Network Namespaces</a>
+  <a href="#pause-container">The Pause Container</a>
+  <a href="#veth-pairs">veth Pairs</a>
+  <a href="#within-node">Within-Node Networking</a>
+  <a href="#cross-node">Cross-Node Networking</a>
+  <a href="#vxlan-walkthrough" class="toc-h3">VXLAN Walkthrough</a>
+  <a href="#bgp-walkthrough" class="toc-h3">BGP Walkthrough</a>
+  <a href="#cni-invocation">CNI Invocation</a>
+  <a href="#cni-operations" class="toc-h3">CNI Operations</a>
+  <a href="#ip-assignment">IP Assignment (IPAM)</a>
+  <a href="#pod-dns-files">Pod Network Files</a>
+  <a href="#hostnetwork">hostNetwork Pods</a>
+  <a href="#pod-to-pod-trace">Full Packet Trace</a>
+  <a href="#diagnostics">Diagnostics</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#production-best-practices">Best Practices</a>
+</aside>
+</div>
+
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">↑</button>
+
+<script>
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  pre.style.position='relative';pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h1[id],h2[id],h3[id],h4[id]');
+if(headings.length&&tocLinks.length){
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        tocLinks.forEach(l=>l.classList.remove('active'));
+        const active=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+        if(active)active.classList.add('active');
+      }
+    });
+  },{root:main,rootMargin:'-10% 0px -80% 0px'});
+  headings.forEach(h=>obs.observe(h));
+}
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=(!q||a.textContent.toLowerCase().includes(q))?'':'none';
+  });
+});
+document.getElementById('search-input').addEventListener('input',function(){
+  const q=this.value.trim();
+  document.querySelectorAll('mark.search-hl').forEach(m=>{m.replaceWith(m.textContent);});
+  if(!q)return;
+  const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  const walker=document.createTreeWalker(
+    document.getElementById('main-content'),NodeFilter.SHOW_TEXT,
+    {acceptNode:n=>n.parentElement.closest('script,style,input')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT}
+  );
+  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  nodes.forEach(node=>{
+    if(!re.test(node.textContent))return;re.lastIndex=0;
+    const frag=document.createDocumentFragment();let last=0,m;
+    while((m=re.exec(node.textContent))!==null){
+      frag.appendChild(document.createTextNode(node.textContent.slice(last,m.index)));
+      const mark=document.createElement('mark');mark.className='search-hl';mark.textContent=m[0];
+      frag.appendChild(mark);last=m.index+m[0].length;
+    }
+    frag.appendChild(document.createTextNode(node.textContent.slice(last)));
+    node.parentNode.replaceChild(frag,node);
+  });
+});
+</script>
+</body>
+</html>

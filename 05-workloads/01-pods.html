@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pods — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sidebar-logo{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;}
+.sidebar-search{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;margin-top:10px;}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);text-decoration:none;transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);}
+.nav-section a.active{color:var(--accent);background:var(--bg3);border-left:2px solid var(--accent);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-wrap{width:var(--toc-w);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);}
+.page-header{margin-bottom:32px;}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.breadcrumb a{color:var(--text3);text-decoration:none;}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:12px;}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;font-family:'SFMono-Regular',Consolas,monospace;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;padding:3px 8px;cursor:pointer;}
+.copy-btn:hover{background:var(--bg4);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-weight:700;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.callout-info .callout-title{color:var(--accent);}
+.callout-warn .callout-title{color:var(--yellow);}
+.callout-danger .callout-title{color:var(--red);}
+.callout-success .callout-title{color:var(--green);}
+.callout p{margin:0;font-size:14px;}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin:16px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card-title{font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;}
+.card p{font-size:13px;margin:0;color:var(--text2);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--text2);overflow-x:auto;white-space:pre;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px;}
+.toc-list{list-style:none;margin:0;padding:0;}
+.toc-list li{margin-bottom:2px;}
+.toc-list a{font-size:12px;color:var(--text2);text-decoration:none;display:block;padding:3px 0;border-left:2px solid transparent;padding-left:8px;}
+.toc-list a:hover{color:var(--text);}
+.toc-list a.active{color:var(--accent);border-left-color:var(--accent);}
+.page-nav{display:flex;justify-content:space-between;margin-top:56px;padding-top:20px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;flex-direction:column;gap:4px;color:var(--text2);text-decoration:none;max-width:45%;}
+.page-nav a:hover{color:var(--accent);}
+.page-nav .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.page-nav .nav-title{font-size:14px;font-weight:600;}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;position:sticky;top:0;z-index:99;align-items:center;justify-content:space-between;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:14px;font-weight:600;}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:12px;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.back-top.visible{opacity:1;}
+@media(max-width:1200px){.toc-wrap{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrap{margin-left:0;}.topbar{display:flex;}.main-content{padding:20px 16px;}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="../index.html" class="sidebar-logo">⎈ Kubernetes Docs</a>
+  </div>
+  <input type="text" class="sidebar-search" placeholder="Filter navigation…" id="nav-search">
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html" class="active">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">☰</button>
+  <span class="topbar-title">Pods</span>
+  <button class="theme-btn" id="theme-btn-top">☀</button>
+</div>
+
+<div class="main-wrap">
+<main class="main-content" id="main-content">
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="../index.html">Home</a> › <a href="00-workloads-overview.html">Workloads</a> › Pods
+    </div>
+    <h1>Pods</h1>
+    <div class="page-meta">
+      <span>Section 5.1</span>
+      <span>PodSpec · Probes · Security Context · Multi-Container Patterns</span>
+      <span>All levels</span>
+    </div>
+  </div>
+
+  <details class="coverage">
+    <summary>▶ What This Page Covers</summary>
+    <div class="coverage-body">
+      <li>Pod network model: shared netns, localhost communication, port conflicts</li>
+      <li>Full annotated PodSpec — every significant field with defaults</li>
+      <li>Container spec fields: image pull policy, command vs args, env, envFrom</li>
+      <li>All three probe types: startup, liveness, readiness — when each fires</li>
+      <li>All four probe mechanisms: exec, httpGet, tcpSocket, grpc</li>
+      <li>Probe tuning fields: initialDelaySeconds, periodSeconds, failureThreshold, successThreshold, timeoutSeconds, terminationGracePeriodSeconds override</li>
+      <li>Pod-level security context: runAsUser/Group, fsGroup, fsGroupChangePolicy, supplementalGroups, sysctls</li>
+      <li>Container-level security context: allowPrivilegeEscalation, readOnlyRootFilesystem, capabilities add/drop, seccompProfile, privileged</li>
+      <li>PodSecurity admission: Restricted, Baseline, Privileged profiles and what each blocks</li>
+      <li>Multi-container patterns: sidecar, ambassador, adapter with concrete examples</li>
+      <li>Init containers: sequential ordering, failure handling, shared volumes</li>
+      <li>Native sidecar containers (1.29+ stable 1.33): restartPolicy:Always, startup ordering, proper shutdown</li>
+      <li>Ephemeral containers: kubectl debug, shareProcessNamespace, use cases</li>
+      <li>Container lifecycle hooks: postStart, preStop — exec vs httpGet</li>
+      <li>DNS policy: ClusterFirst, ClusterFirstWithHostNet, Default, None + dnsConfig</li>
+      <li>Host namespaces: hostNetwork, hostPID, hostIPC — security implications</li>
+      <li>RuntimeClass: gVisor, Kata Containers, selection per-pod</li>
+      <li>Pod overhead: RuntimeClass overhead added to resource accounting</li>
+      <li>Topology and scheduling fields: nodeSelector, nodeName, tolerations summary</li>
+      <li>imagePullSecrets and image pull policy details</li>
+      <li>5 metrics + 4 alerts + 5 runbooks + 8 best practices</li>
+    </div>
+  </details>
+
+  <!-- ============================================================ -->
+  <h2 id="network-model">Pod Network Model</h2>
+
+  <p>Every pod receives a single IP address shared by all its containers. Containers within a pod communicate over <code>localhost</code> — they share the same network namespace (same interfaces, same routing table, same port space). Two containers in the same pod cannot both listen on port 8080.</p>
+
+  <div class="diagram">Pod network model:
+
+  ┌─────────────────────────────────────────────────────────┐
+  │  Pod IP: 10.0.1.42                                       │
+  │                                                          │
+  │  ┌────────────────┐    ┌────────────────┐               │
+  │  │  app container │    │ sidecar (envoy)│               │
+  │  │  :8080 (HTTP)  │◄──►│  :15001 (proxy)│               │
+  │  │                │    │                │               │
+  │  │ localhost:15001 │    │ localhost:8080 │               │
+  │  └────────────────┘    └────────────────┘               │
+  │           │                     │                       │
+  │           └────────┬────────────┘                       │
+  │                    │ shared eth0                        │
+  │               10.0.1.42:8080  ← reachable from cluster  │
+  │               10.0.1.42:15001 ← reachable from cluster  │
+  └─────────────────────────────────────────────────────────┘
+
+  Pause container (infra):
+  → Created first, holds the netns open
+  → All other containers join this netns via clone(CLONE_NEWNET)
+  → Lives for the entire pod lifetime</div>
+
+  <!-- ============================================================ -->
+  <h2 id="podspec">Full PodSpec Anatomy</h2>
+
+  <pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: web-app
+  namespace: production
+  labels:
+    app: web-app
+    version: v2.1.0
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+spec:
+  # ── Scheduling ─────────────────────────────────────────────────
+  nodeSelector:
+    kubernetes.io/os: linux
+    node.kubernetes.io/instance-type: m5.xlarge   # optional instance type pin
+
+  nodeName: ""              # direct assignment (bypasses scheduler — avoid in production)
+
+  tolerations:
+  - key: dedicated
+    operator: Equal
+    value: gpu
+    effect: NoSchedule
+
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app: web-app
+
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app: web-app
+        topologyKey: kubernetes.io/hostname
+
+  priorityClassName: high-priority   # references PriorityClass object
+
+  # ── Runtime ────────────────────────────────────────────────────
+  runtimeClassName: gvisor           # sandbox runtime (optional)
+
+  # ── Identity ────────────────────────────────────────────────────
+  serviceAccountName: web-app-sa
+  automountServiceAccountToken: true  # default true; set false if no API access needed
+
+  # ── Image pull ─────────────────────────────────────────────────
+  imagePullSecrets:
+  - name: registry-credentials
+
+  # ── Networking ──────────────────────────────────────────────────
+  hostname: web-0                    # overrides pod name in hostname
+  subdomain: web-headless            # enables DNS: web-0.web-headless.ns.svc.cluster.local
+  hostNetwork: false                 # default; true = use node's network namespace
+  hostPID: false
+  hostIPC: false
+  dnsPolicy: ClusterFirst            # default; see DNS section
+  dnsConfig:
+    searches:
+    - internal.corp.com
+    options:
+    - name: ndots
+      value: "2"
+
+  # ── Termination ─────────────────────────────────────────────────
+  terminationGracePeriodSeconds: 60  # default 30
+
+  # ── Pod-level security ─────────────────────────────────────────
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    runAsNonRoot: true
+    fsGroup: 2000
+    fsGroupChangePolicy: OnRootMismatch   # Always or OnRootMismatch
+    supplementalGroups: [4000]
+    seccompProfile:
+      type: RuntimeDefault              # RuntimeDefault | Localhost | Unconfined
+    sysctls:
+    - name: net.core.somaxconn
+      value: "1024"
+
+  # ── Init containers ─────────────────────────────────────────────
+  initContainers:
+  - name: wait-for-db
+    image: busybox:1.36
+    command: ["sh", "-c", "until nc -z postgres 5432; do sleep 2; done"]
+
+  # Native sidecar (1.29+): restartPolicy: Always in initContainers
+  - name: log-shipper
+    image: fluent/fluent-bit:3.0
+    restartPolicy: Always              # makes this a sidecar, not a blocking init
+    volumeMounts:
+    - name: logs
+      mountPath: /logs
+
+  # ── Main containers ─────────────────────────────────────────────
+  containers:
+  - name: app
+    image: myapp:v2.1.0
+    imagePullPolicy: IfNotPresent      # Always | Never | IfNotPresent (default for tagged)
+
+    command: ["/app/server"]           # overrides ENTRYPOINT
+    args: ["--port=8080", "--log-level=info"]  # overrides CMD
+
+    ports:
+    - name: http
+      containerPort: 8080
+      protocol: TCP
+    - name: metrics
+      containerPort: 9090
+
+    env:
+    - name: DB_HOST
+      value: postgres.data.svc.cluster.local
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: db-secret
+          key: password
+          optional: false             # fail pod if secret missing (default false)
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP     # Downward API
+    - name: MY_CPU_REQUEST
+      valueFrom:
+        resourceFieldRef:
+          containerName: app
+          resource: requests.cpu
+
+    envFrom:
+    - configMapRef:
+        name: app-config
+        optional: false
+    - secretRef:
+        name: app-secrets
+        optional: true               # pod starts even if secret absent
+
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+      limits:
+        memory: "512Mi"              # no CPU limit — avoid throttling
+
+    volumeMounts:
+    - name: config
+      mountPath: /etc/app
+      readOnly: true
+    - name: tmp
+      mountPath: /tmp
+    - name: logs
+      mountPath: /var/log/app
+
+    # Container-level security
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop: ["ALL"]
+        add: ["NET_BIND_SERVICE"]   # only if binding port <1024
+      seccompProfile:
+        type: RuntimeDefault
+
+    lifecycle:
+      postStart:
+        exec:
+          command: ["/bin/sh", "-c", "echo started > /tmp/started"]
+      preStop:
+        exec:
+          command: ["/bin/sh", "-c", "sleep 5 && /app/graceful-stop.sh"]
+
+    # Probes — see detailed section below
+    startupProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      failureThreshold: 30
+      periodSeconds: 10
+
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 0        # after startupProbe passes, no additional delay needed
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 5
+
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 8080
+      periodSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+      timeoutSeconds: 3
+
+  # ── Volumes ─────────────────────────────────────────────────────
+  volumes:
+  - name: config
+    configMap:
+      name: app-config
+      defaultMode: 0644
+  - name: tmp
+    emptyDir: {}
+  - name: logs
+    emptyDir: {}
+
+  # ── Restart policy ──────────────────────────────────────────────
+  restartPolicy: Always    # Always (default) | OnFailure | Never</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="image-pull">Image Pull Policy</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>imagePullPolicy</th><th>When Applied Automatically</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr><td><code>Always</code></td><td>Image tag is <code>:latest</code></td><td>Kubelet always contacts registry to check digest; pulls if digest differs. Guarantees freshness; requires registry availability at pod start.</td></tr>
+        <tr><td><code>IfNotPresent</code></td><td>Any tag except <code>:latest</code></td><td>Uses cached image if present; pulls only if image not on node. Default for version-tagged images. Faster startup on cached nodes.</td></tr>
+        <tr><td><code>Never</code></td><td>Never automatically set</td><td>Never pulls from registry. Pod fails if image not cached on node. Use for air-gapped environments with pre-pulled images.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">Never Use :latest in Production</div>
+    <p>The <code>:latest</code> tag forces <code>Always</code> pull policy and makes deployments non-reproducible — the same tag may refer to different image digests on different nodes. Use immutable digests (<code>image@sha256:abc123...</code>) or version tags (<code>v1.2.3</code>) for production workloads. Reference digests in manifests for supply-chain security.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="probes">Probes</h2>
+
+  <p>Kubernetes has three probe types, each serving a distinct purpose. They are independent — a pod can have all three, any combination, or none.</p>
+
+  <div class="diagram">Probe execution timeline:
+
+  Pod starts
+      │
+      ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  startupProbe (if defined)                                        │
+  │  Fires every periodSeconds until success or failureThreshold hit  │
+  │  Max wait = failureThreshold × periodSeconds (e.g. 30×10 = 5min) │
+  │  → Failure before threshold: container restarted                  │
+  │  → Success: startup probe disabled permanently for this container │
+  └────────────────────────────┬─────────────────────────────────────┘
+                               │ startup succeeded
+                               ▼
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  livenessProbe (continuous, every periodSeconds)                 │
+  │  Fires from pod start (after startup passes)                     │
+  │  failureThreshold consecutive failures → container restarted     │
+  │  Does NOT remove pod from Service Endpoints                      │
+  └────────────────────────────┬────────────────────────────────────┘
+                               │
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  readinessProbe (continuous, every periodSeconds)                │
+  │  failureThreshold failures → pod removed from Endpoints          │
+  │  successThreshold successes → pod re-added to Endpoints          │
+  │  Does NOT restart container                                      │
+  └─────────────────────────────────────────────────────────────────┘</div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Probe</th><th>On Failure</th><th>On Success</th><th>When to Use</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>startupProbe</strong></td>
+          <td>Container restarted (after failureThreshold)</td>
+          <td>Disables itself; liveness takes over</td>
+          <td>Slow-starting containers (JVM warmup, large model loading). Prevents liveness from killing container during boot.</td>
+        </tr>
+        <tr>
+          <td><strong>livenessProbe</strong></td>
+          <td>Container restarted</td>
+          <td>Nothing (pass is expected)</td>
+          <td>Detect deadlocks, infinite loops, hung processes that can't self-recover. Should check minimally — not dependent on external services.</td>
+        </tr>
+        <tr>
+          <td><strong>readinessProbe</strong></td>
+          <td>Pod removed from Service Endpoints (no restart)</td>
+          <td>Pod re-added to Endpoints</td>
+          <td>Temporary unavailability: cache warming, circuit breaker open, dependency down. Drives traffic routing, not container health.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>All Four Probe Mechanisms</h3>
+
+  <pre><code># 1. httpGet — HTTP GET request; success = 2xx or 3xx status code
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080            # port name or number
+    scheme: HTTP          # HTTP (default) or HTTPS
+    httpHeaders:
+    - name: X-Health-Check
+      value: "true"
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1     # must be 1 for liveness (only readiness allows >1)
+
+# 2. exec — runs command in container; success = exit code 0
+livenessProbe:
+  exec:
+    command:
+    - /bin/sh
+    - -c
+    - redis-cli ping | grep -q PONG
+
+# 3. tcpSocket — TCP connection attempt; success = connection accepted
+livenessProbe:
+  tcpSocket:
+    port: 5432            # useful for databases with no HTTP endpoint
+    host: ""              # defaults to pod IP
+
+# 4. grpc — gRPC health protocol (grpc.health.v1.Health/Check); 1.24+ stable
+livenessProbe:
+  grpc:
+    port: 50051
+    service: ""           # empty string = check overall server health</code></pre>
+
+  <h3>Probe Tuning Reference</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Field</th><th>Default</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>initialDelaySeconds</code></td><td>0</td><td>Seconds after container starts before first probe fires. Deprecated in favor of startupProbe — use startupProbe instead.</td></tr>
+        <tr><td><code>periodSeconds</code></td><td>10</td><td>How often to probe. Minimum 1s.</td></tr>
+        <tr><td><code>timeoutSeconds</code></td><td>1</td><td>Probe must complete within this window or it counts as failure. Set ≥ p99 response time.</td></tr>
+        <tr><td><code>failureThreshold</code></td><td>3</td><td>Consecutive failures before action (restart or remove from Endpoints).</td></tr>
+        <tr><td><code>successThreshold</code></td><td>1</td><td>Consecutive successes to re-add to Endpoints (readiness only; liveness/startup must be 1).</td></tr>
+        <tr><td><code>terminationGracePeriodSeconds</code></td><td>Pod's value</td><td>Per-probe override (1.25+). Set this longer than the pod's grace period if the probe needs more time during shutdown.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Liveness Probe Anti-Patterns</div>
+    <p>A liveness probe that checks external dependencies (database connectivity, downstream API) causes cascading restarts: if the database goes down, all pods restart simultaneously — making recovery harder. Liveness probes should only detect states the process itself cannot recover from (deadlock, memory corruption). Use readiness probes for dependency health.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="security-context">Security Context</h2>
+
+  <p>Security context fields exist at two levels: <strong>pod-level</strong> (<code>spec.securityContext</code>) applies to all containers and volumes; <strong>container-level</strong> (<code>spec.containers[*].securityContext</code>) applies to a specific container and overrides pod-level where both exist.</p>
+
+  <h3>Pod-Level Security Context</h3>
+
+  <pre><code>spec:
+  securityContext:
+    runAsUser: 1000            # UID for all containers (overridden by container-level)
+    runAsGroup: 3000           # primary GID for all containers
+    runAsNonRoot: true         # refuse to start if image runs as UID 0
+    fsGroup: 2000              # GID applied to all volumes; files created in volumes get this GID
+    fsGroupChangePolicy: OnRootMismatch  # Only chown/chmod if ownership wrong (faster for large volumes)
+                                         # Always: always chown (safe but slow for large volumes)
+    supplementalGroups: [4000] # additional GIDs for the process (e.g., for shared file access)
+    seccompProfile:
+      type: RuntimeDefault     # use container runtime's default seccomp profile
+      # type: Localhost
+      # localhostProfile: profiles/myprofile.json
+      # type: Unconfined       # disable seccomp (not recommended)
+    sysctls:                   # kernel parameters; only safe (namespaced) sysctls allowed by default
+    - name: net.core.somaxconn
+      value: "1024"
+    - name: kernel.shm_rmid_forced  # unsafe; requires AllowedUnsafeSysctls feature gate
+      value: "0"</code></pre>
+
+  <h3>Container-Level Security Context</h3>
+
+  <pre><code>containers:
+- name: app
+  securityContext:
+    runAsUser: 1000            # overrides pod-level runAsUser for this container
+    runAsGroup: 3000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false   # prevents setuid binaries; CRITICAL: always set false
+    readOnlyRootFilesystem: true      # immutable container filesystem; forces explicit writable mounts
+    privileged: false                 # default; true = full host kernel access (avoid)
+
+    capabilities:
+      drop: ["ALL"]            # drop all capabilities first (start from minimal)
+      add:
+      - NET_BIND_SERVICE       # bind ports < 1024 (only if needed)
+      - SYS_PTRACE             # for debugging tools; remove in production
+
+    seccompProfile:
+      type: RuntimeDefault
+
+    procMount: Default         # Default | Unmasked (unmasked exposes /proc — avoid)</code></pre>
+
+  <h3>PodSecurity Admission Profiles</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Policy</th><th>What It Allows</th><th>What It Blocks</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Privileged</strong></td>
+          <td>Everything</td>
+          <td>Nothing</td>
+          <td>System namespaces (kube-system), CNI, CSI node plugins</td>
+        </tr>
+        <tr>
+          <td><strong>Baseline</strong></td>
+          <td>Most workloads; some host access</td>
+          <td>hostPID, hostIPC, hostNetwork, privileged, hostPort, allowPrivilegeEscalation (via securityContext.allowPrivilegeEscalation:true), non-default capabilities beyond baseline set</td>
+          <td>General workloads not requiring host access</td>
+        </tr>
+        <tr>
+          <td><strong>Restricted</strong></td>
+          <td>Strictly hardened pods only</td>
+          <td>All of Baseline PLUS: must set allowPrivilegeEscalation:false, must drop ALL capabilities, must set runAsNonRoot:true, must use RuntimeDefault or Localhost seccomp, volumes limited to approved types</td>
+          <td>Security-sensitive namespaces; PCI/SOC2 compliance</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <pre><code># Apply PodSecurity to a namespace via labels:
+kubectl label namespace production \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/enforce-version=latest \
+  pod-security.kubernetes.io/warn=restricted \
+  pod-security.kubernetes.io/audit=restricted</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="multi-container">Multi-Container Patterns</h2>
+
+  <h3>Sidecar Pattern</h3>
+  <p>A helper container that augments the main container's functionality without modifying it. They share a volume for communication.</p>
+
+  <pre><code>containers:
+- name: app
+  image: myapp:v1
+  volumeMounts:
+  - name: logs
+    mountPath: /var/log/app
+
+- name: log-shipper          # sidecar: ships logs to Loki/Elasticsearch
+  image: fluent/fluent-bit:3.0
+  volumeMounts:
+  - name: logs
+    mountPath: /logs
+    readOnly: true
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      memory: "128Mi"
+
+volumes:
+- name: logs
+  emptyDir: {}              # shared between app and log-shipper</code></pre>
+
+  <h3>Ambassador Pattern</h3>
+  <p>A proxy sidecar that handles outbound communication on behalf of the main container — connection pooling, retries, circuit breaking, or protocol translation.</p>
+
+  <pre><code>containers:
+- name: app
+  image: myapp:v1
+  env:
+  - name: DATABASE_URL
+    value: "localhost:5432"    # connects to ambassador on localhost, not directly to DB
+
+- name: db-ambassador          # ambassador: manages connection pool to PostgreSQL
+  image: pgbouncer:1.22
+  env:
+  - name: DATABASES_HOST
+    value: postgres.data.svc.cluster.local
+  - name: POOL_MODE
+    value: transaction
+  ports:
+  - containerPort: 5432        # app connects here; ambassador connects to real DB</code></pre>
+
+  <h3>Adapter Pattern</h3>
+  <p>Transforms the main container's output into a standardized format — typically for metrics or log normalization.</p>
+
+  <pre><code>containers:
+- name: legacy-app
+  image: legacy-metrics-app:v1
+  # exposes metrics in proprietary format on :8888
+
+- name: metrics-adapter        # converts legacy format to Prometheus exposition format
+  image: prom/statsd-exporter:latest
+  ports:
+  - containerPort: 9102         # Prometheus scrapes this port
+  args:
+  - --statsd.listen-udp=:8125
+  - --statsd.mapping-config=/etc/mapping.yml</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="init-containers">Init Containers</h2>
+
+  <p>Init containers run <strong>sequentially</strong> before any main container starts. Each must exit with code 0 for the next to begin. If an init container fails, the pod is restarted according to <code>restartPolicy</code> (unless <code>Never</code>). Init containers share the same volumes as main containers but run with their own image and security context.</p>
+
+  <pre><code>initContainers:
+# Step 1: wait for dependency
+- name: wait-for-postgres
+  image: busybox:1.36
+  command:
+  - sh
+  - -c
+  - |
+    until nc -z -w 3 postgres.data.svc.cluster.local 5432; do
+      echo "Waiting for PostgreSQL..."; sleep 5
+    done
+    echo "PostgreSQL is ready"
+
+# Step 2: run database migrations (after DB is ready)
+- name: db-migrate
+  image: myapp:v2.1.0          # same image as main app
+  command: ["/app/migrate", "--direction=up"]
+  env:
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: db-secret
+        key: url
+  # Shares the same env/secrets as the main app
+
+# Step 3: seed config files into a shared volume
+- name: config-init
+  image: alpine:3.19
+  command:
+  - sh
+  - -c
+  - |
+    cp /etc/base-config/* /shared-config/
+    sed -i "s/{{ENV}}/production/g" /shared-config/app.conf
+  volumeMounts:
+  - name: shared-config
+    mountPath: /shared-config
+
+containers:
+- name: app
+  image: myapp:v2.1.0
+  volumeMounts:
+  - name: shared-config
+    mountPath: /etc/app
+    readOnly: true
+
+volumes:
+- name: shared-config
+  emptyDir: {}</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="native-sidecars">Native Sidecar Containers (1.29+ / Stable 1.33)</h2>
+
+  <p>Classic sidecars defined in <code>spec.containers</code> have no ordering guarantee relative to each other. A log-shipper sidecar might miss early log output if it starts after the main app. Native sidecars fix this: defined in <code>spec.initContainers</code> with <code>restartPolicy: Always</code>, they start during the init phase (before main containers) and run for the pod's lifetime.</p>
+
+  <pre><code>initContainers:
+# Classic init: runs to completion, blocks next step
+- name: wait-for-db
+  image: busybox:1.36
+  command: ["sh", "-c", "until nc -z postgres 5432; do sleep 2; done"]
+  # No restartPolicy → classic init behavior
+
+# Native sidecar: starts here (in init phase order), runs forever
+- name: log-shipper
+  image: fluent/fluent-bit:3.0
+  restartPolicy: Always          # ← this is what makes it a native sidecar
+  volumeMounts:
+  - name: logs
+    mountPath: /logs
+  readinessProbe:                # startup waits until this passes before next init
+    exec:
+      command: ["test", "-f", "/tmp/fluent-bit.pid"]
+    initialDelaySeconds: 2
+
+# Another native sidecar
+- name: envoy-proxy
+  image: envoyproxy/envoy:v1.29
+  restartPolicy: Always
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 9901
+
+containers:
+- name: app                      # starts AFTER both native sidecars are Ready
+  image: myapp:v1</code></pre>
+
+  <div class="callout callout-success">
+    <div class="callout-title">Native Sidecar Shutdown Ordering</div>
+    <p>When the pod terminates, native sidecars receive SIGTERM <em>after</em> all main containers have exited. This ensures a log-shipper flushes buffered logs before shutting down — fixing the classic problem where the log sidecar died before the app finished writing. The shutdown order is: main containers exit → native sidecars receive SIGTERM.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="ephemeral-containers">Ephemeral Containers</h2>
+
+  <p>Ephemeral containers are temporary containers injected into a running pod for debugging. They cannot define ports, probes, or resources and are never restarted. They are useful when a minimal production image lacks debugging tools.</p>
+
+  <pre><code># Inject a debug container into a running pod
+kubectl debug -it pod/web-app-7d9b8f \
+  --image=busybox:1.36 \
+  --target=app \            # attach to the app container's process namespace
+  -- sh
+
+# Using a distroless image — the app has no shell, so we bring one
+kubectl debug -it pod/web-app-7d9b8f \
+  --image=gcr.io/distroless/base:debug \
+  --copy-to=web-app-debug \ # create a copy of the pod with the debug container
+  -- bash
+
+# Share process namespace to see all processes in the pod
+# Requires spec.shareProcessNamespace: true (set in pod spec) or --copy-to with it</code></pre>
+
+  <pre><code># Enable process namespace sharing in pod spec (for ephemeral container process access):
+spec:
+  shareProcessNamespace: true   # containers can see each other's processes via /proc
+  containers:
+  - name: app
+    image: myapp:v1</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="lifecycle-hooks">Container Lifecycle Hooks</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Hook</th><th>When It Fires</th><th>Blocking?</th><th>Failure Behavior</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>postStart</code></td>
+          <td>Immediately after container is created (async with ENTRYPOINT — may run before or after)</td>
+          <td>Yes — container stays in <code>ContainerCreating</code> until hook completes</td>
+          <td>Container killed and restarted</td>
+        </tr>
+        <tr>
+          <td><code>preStop</code></td>
+          <td>Immediately before container is terminated (before SIGTERM)</td>
+          <td>Yes — SIGTERM delayed until hook completes or grace period expires</td>
+          <td>Container still terminated</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <pre><code>lifecycle:
+  postStart:
+    exec:
+      command: ["/bin/sh", "-c", "/app/register-service.sh"]
+    # OR httpGet:
+    #   path: /post-start
+    #   port: 8080
+
+  preStop:
+    exec:
+      command:
+      - /bin/sh
+      - -c
+      - |
+        # Drain connections gracefully before SIGTERM
+        sleep 5
+        /app/deregister-service.sh
+        # SIGTERM sent after this exits (or grace period expires)</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">postStart vs readinessProbe</div>
+    <p><code>postStart</code> runs once at startup; it is not a health check. Use it for one-time initialization tasks (registering with a service registry, seeding a cache). Use <code>readinessProbe</code> to gate traffic until the application is actually ready to serve. The two are independent — the pod enters Ready state based on the readiness probe, not the postStart hook.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="dns">DNS Policy</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>dnsPolicy</th><th>Behavior</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><code>ClusterFirst</code></td><td>Default. Queries go to CoreDNS; cluster.local names resolved internally; fallback to upstream DNS.</td><td>All normal pods</td></tr>
+        <tr><td><code>ClusterFirstWithHostNet</code></td><td>Same as ClusterFirst but required when <code>hostNetwork: true</code> (otherwise hostNetwork pods use node DNS).</td><td>DaemonSets and infrastructure pods using hostNetwork that still need in-cluster DNS</td></tr>
+        <tr><td><code>Default</code></td><td>Pod inherits the node's <code>/etc/resolv.conf</code> — does NOT resolve cluster services.</td><td>Pods that only need external DNS and never access services by cluster DNS name</td></tr>
+        <tr><td><code>None</code></td><td>Ignores Kubernetes DNS; <code>spec.dnsConfig</code> must be provided.</td><td>Custom DNS configurations; pods with special resolver requirements</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <pre><code># dnsConfig for custom search domains and options
+spec:
+  dnsPolicy: ClusterFirst
+  dnsConfig:
+    nameservers:
+    - 10.96.0.10          # CoreDNS IP (only used when dnsPolicy: None)
+    searches:
+    - production.svc.cluster.local
+    - svc.cluster.local
+    - cluster.local
+    - internal.corp.com   # additional search domain
+    options:
+    - name: ndots
+      value: "2"           # lower from default 5 reduces DNS lookup overhead
+    - name: attempts
+      value: "3"</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="host-namespaces">Host Namespaces</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Field</th><th>Default</th><th>Effect</th><th>Security Risk</th></tr></thead>
+      <tbody>
+        <tr><td><code>hostNetwork: true</code></td><td>false</td><td>Pod uses node's network namespace — sees all host interfaces, binds to host ports directly</td><td>High — can eavesdrop on node traffic, bind privileged ports</td></tr>
+        <tr><td><code>hostPID: true</code></td><td>false</td><td>Pod shares node's PID namespace — can see and signal all processes on the node</td><td>Critical — can kill or inspect any node process</td></tr>
+        <tr><td><code>hostIPC: true</code></td><td>false</td><td>Pod shares node's IPC namespace — can access shared memory and semaphores of other processes</td><td>High — can read/write shared memory of host processes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">Host Namespaces Require Explicit Justification</div>
+    <p><code>hostNetwork</code> and <code>hostPID</code> are blocked by the PodSecurity Baseline and Restricted profiles. They are legitimate only for infrastructure components (CNI plugins, node monitoring agents, kubelet itself). Application workloads should never use host namespaces. Audit with: <code>kubectl get pods -A -o json | jq '.items[] | select(.spec.hostNetwork==true) | .metadata.namespace + "/" + .metadata.name'</code></p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="runtimeclass">RuntimeClass</h2>
+
+  <p>RuntimeClass selects the container runtime for a pod. Different runtimes provide different security isolation models — from the default runc (process isolation) to hardware-virtualized sandboxes.</p>
+
+  <pre><code># RuntimeClass object (created by cluster admin)
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: gvisor
+handler: runsc            # maps to containerd runtime handler name
+overhead:
+  podFixed:
+    cpu: "250m"
+    memory: "256Mi"        # gVisor sentry process overhead added to resource accounting
+scheduling:
+  nodeSelector:
+    sandboxed: "true"      # RuntimeClass can constrain which nodes are used
+  tolerations:
+  - key: sandboxed
+    operator: Exists
+---
+# In pod spec:
+spec:
+  runtimeClassName: gvisor     # use the gVisor sandbox</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Runtime</th><th>Isolation</th><th>Overhead</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><code>runc</code> (default)</td><td>Linux namespaces + cgroups</td><td>Minimal</td><td>All standard workloads</td></tr>
+        <tr><td><code>gVisor</code> (runsc)</td><td>Userspace kernel intercept (ptrace/KVM)</td><td>Medium (250m CPU, 256Mi memory)</td><td>Multi-tenant, untrusted code, CI runners</td></tr>
+        <tr><td><code>Kata Containers</code></td><td>Hardware virtualization (KVM VM per pod)</td><td>High (~500m CPU, 512Mi memory)</td><td>Strict isolation, regulated workloads, FaaS</td></tr>
+        <tr><td><code>Firecracker</code></td><td>MicroVM per pod</td><td>Low-medium (~125ms boot)</td><td>AWS Lambda-style serverless, fast VM boot</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="metrics">Metrics, Alerts, and Runbooks</h2>
+
+  <h3>Key Pod Metrics</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Source</th><th>Alert Condition</th></tr></thead>
+      <tbody>
+        <tr><td><code>kube_pod_container_status_restarts_total</code></td><td>kube-state-metrics</td><td>increase &gt; 5 in 1h → CrashLoopBackOff risk</td></tr>
+        <tr><td><code>kube_pod_status_phase{phase="Failed"}</code></td><td>kube-state-metrics</td><td>Any Failed pod older than 5m in production namespace</td></tr>
+        <tr><td><code>kube_pod_status_ready{condition="false"}</code></td><td>kube-state-metrics</td><td>Pod not ready &gt; 10m (readiness probe continuously failing)</td></tr>
+        <tr><td><code>container_oom_events_total</code></td><td>cadvisor</td><td>Any OOM kill in production</td></tr>
+        <tr><td><code>container_cpu_cfs_throttled_seconds_total</code></td><td>cadvisor</td><td>throttle ratio &gt; 25% → consider raising or removing CPU limits</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Alerting Rules</h3>
+  <pre><code>groups:
+- name: pod-health
+  rules:
+  - alert: PodCrashLooping
+    expr: |
+      increase(kube_pod_container_status_restarts_total[1h]) > 5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash-looping"
+
+  - alert: PodOOMKilled
+    expr: |
+      increase(container_oom_events_total[5m]) > 0
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Container OOM killed: {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}"
+
+  - alert: PodNotReady
+    expr: |
+      kube_pod_status_ready{condition="false"} == 1
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} not ready for 10 minutes"
+
+  - alert: ContainerCPUThrottling
+    expr: |
+      rate(container_cpu_cfs_throttled_seconds_total[5m])
+      / rate(container_cpu_cfs_periods_total[5m]) > 0.25
+    for: 15m
+    annotations:
+      summary: "Container {{ $labels.container }} CPU throttled >25%"</code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">CrashLoopBackOff</div>
+      <p>Check last exit code: <code>kubectl describe pod POD</code> → "Last State: Terminated reason: Error exitCode: N". Check logs: <code>kubectl logs POD --previous</code>. Common causes: missing env/secret, wrong command, OOM (exitCode 137), permission denied on read-only rootfs.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">OOMKilled (exitCode 137)</div>
+      <p>Container exceeded memory limit. Check actual usage: <code>kubectl top pod POD --containers</code>. Increase memory limit or request. Check for memory leaks with heap profiling. If limit was appropriate, investigate memory leak or request growth — VPA can recommend right-sized requests.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Pod Stuck Pending</div>
+      <p>Run <code>kubectl describe pod POD</code> → Events section. Causes: (1) insufficient resources — check <code>kubectl describe nodes</code> for Allocated resources; (2) no matching nodes — check nodeSelector/affinity; (3) taint mismatch — check tolerations; (4) PVC not bound — check PVC status.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Readiness Probe Failing</div>
+      <p>Check probe events: <code>kubectl describe pod POD</code> → "Readiness probe failed". For httpGet: exec into pod and run <code>curl localhost:PORT/PATH</code>. Check if app has started, dependency health, and timeout vs actual response time. Increase timeoutSeconds if p99 latency exceeds probe timeout.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Image Pull Error (ErrImagePull)</div>
+      <p>Events show "Failed to pull image". Causes: (1) image tag doesn't exist; (2) registry credentials missing/expired — check imagePullSecrets and secret validity; (3) registry unreachable — network policy or node DNS issue; (4) rate limiting (Docker Hub). For private registries: <code>kubectl create secret docker-registry</code>.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <ol>
+    <li><strong>Always define a startupProbe for slow-starting containers</strong> — JVM apps, ML model servers, and apps with database migrations can take 30–120 seconds to start. A startupProbe with <code>failureThreshold: 30, periodSeconds: 10</code> gives up to 5 minutes before liveness takes over, preventing premature container kills.</li>
+    <li><strong>Set <code>readOnlyRootFilesystem: true</code> and provide explicit <code>emptyDir</code> mounts for writable paths</strong> — forces you to enumerate where the app writes (tmp, logs, cache). Limits blast radius if the container is compromised — attackers cannot modify binaries or write scripts to <code>/usr/local/bin</code>.</li>
+    <li><strong>Drop all capabilities and add back only what is needed</strong> — <code>capabilities.drop: [ALL]</code> removes all Linux capabilities. Most apps need none. Only add <code>NET_BIND_SERVICE</code> if binding ports &lt; 1024 (most Kubernetes apps run on high ports and don't need this).</li>
+    <li><strong>Set <code>allowPrivilegeEscalation: false</code> on every container</strong> — prevents setuid/setgid binaries from escalating to root. This is a one-line fix that stops a whole class of container escape techniques. Pair with <code>runAsNonRoot: true</code>.</li>
+    <li><strong>Use separate liveness and readiness probes with different endpoints</strong> — liveness checks minimal viability (<code>/healthz</code>: can the process respond?); readiness checks full operational status (<code>/ready</code>: are all dependencies healthy?). Using the same endpoint for both causes cascading restarts when a dependency is down.</li>
+    <li><strong>Never set CPU limits without measuring throttling first</strong> — add <code>container_cpu_cfs_throttled_seconds_total</code> monitoring before adding CPU limits. If throttling exceeds 25%, the limit is too low for the workload's actual burst behavior. Many teams set requests only for CPU and rely on node-level fair-scheduling.</li>
+    <li><strong>Use <code>preStop: sleep 5</code> for zero-downtime deployments</strong> — the kube-proxy/Endpoints propagation race means a pod can receive traffic 1–5 seconds after deletion begins. A preStop sleep delays SIGTERM, giving load balancers time to drain. Set <code>terminationGracePeriodSeconds</code> to at least <code>preStop duration + application shutdown time + 10s</code>.</li>
+    <li><strong>Create a dedicated ServiceAccount per workload and disable automounting on the default SA</strong> — the default ServiceAccount in each namespace automounts a token giving API read access. Even if not used, it's an attack vector. Create <code>automountServiceAccountToken: false</code> on the default SA, and create explicit SAs with minimal RBAC for workloads that need API access.</li>
+  </ol>
+
+  <div class="page-nav">
+    <a href="00-workloads-overview.html">
+      <span class="nav-label">← Previous</span>
+      <span class="nav-title">Workloads Overview</span>
+    </a>
+    <a href="02-deployments.html" style="text-align:right">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">Deployments</span>
+    </a>
+  </div>
+
+</main>
+
+<aside class="toc-wrap">
+  <div class="toc-title">On This Page</div>
+  <ul class="toc-list" id="toc-list">
+    <li><a href="#network-model">Pod Network Model</a></li>
+    <li><a href="#podspec">Full PodSpec Anatomy</a></li>
+    <li><a href="#image-pull">Image Pull Policy</a></li>
+    <li><a href="#probes">Probes</a></li>
+    <li><a href="#security-context">Security Context</a></li>
+    <li><a href="#multi-container">Multi-Container Patterns</a></li>
+    <li><a href="#init-containers">Init Containers</a></li>
+    <li><a href="#native-sidecars">Native Sidecar Containers</a></li>
+    <li><a href="#ephemeral-containers">Ephemeral Containers</a></li>
+    <li><a href="#lifecycle-hooks">Lifecycle Hooks</a></li>
+    <li><a href="#dns">DNS Policy</a></li>
+    <li><a href="#host-namespaces">Host Namespaces</a></li>
+    <li><a href="#runtimeclass">RuntimeClass</a></li>
+    <li><a href="#metrics">Metrics &amp; Alerts</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ul>
+</aside>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+function toggleTheme(){const t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);localStorage.setItem('k8s-theme',t);}
+document.getElementById('theme-btn-top').addEventListener('click',toggleTheme);
+document.getElementById('hamburger').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{backTop.classList.toggle('visible',main.scrollTop>400);});
+backTop.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code').innerText);
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc-list a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-search').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

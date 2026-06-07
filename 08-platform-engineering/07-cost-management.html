@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cost Management | Kubernetes Platform Engineering</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px}
+.sidebar-subtitle{font-size:11px;color:var(--text3);margin-top:2px}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:6px 16px 4px}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover,.nav-section a.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent);text-decoration:none}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+main{margin-left:280px;flex:1;padding:40px 48px;max-width:1100px}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px}
+.hero{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:12px;padding:36px 40px;margin-bottom:40px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.3);color:var(--green);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:14px}
+.hero h1{font-size:32px;font-weight:800;line-height:1.2;margin-bottom:12px;background:linear-gradient(90deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text2);font-size:16px;max-width:700px;margin-bottom:16px}
+.hero-meta{display:flex;gap:24px;flex-wrap:wrap}
+.hero-meta span{font-size:12px;color:var(--text3)}
+h2{font-size:22px;font-weight:700;color:var(--text);margin:44px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h2:first-of-type{margin-top:0}
+h3{font-size:17px;font-weight:600;color:var(--text);margin:28px 0 12px}
+h4{font-size:15px;font-weight:600;color:var(--accent);margin:20px 0 8px}
+p{color:var(--text2);margin-bottom:14px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg3);color:var(--text)}
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;display:flex;gap:12px;align-items:flex-start}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3)}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3)}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3)}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3)}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:14px;color:var(--text2)}
+.callout-body strong{color:var(--text)}
+.table-wrap{overflow-x:auto;margin:20px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card h4{margin:0 0 8px;font-size:14px;color:var(--text)}
+.card p{font-size:13px;color:var(--text2);margin:0}
+.card.green{border-top:3px solid var(--green)}
+.card.yellow{border-top:3px solid var(--yellow)}
+.card.red{border-top:3px solid var(--red)}
+.card.purple{border-top:3px solid var(--purple)}
+.card.blue{border-top:3px solid var(--accent)}
+.card.orange{border-top:3px solid var(--orange)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:20px 0}
+@media(max-width:800px){.two-col{grid-template-columns:1fr}}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:40px}
+.toc h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin:0 0 12px}
+.toc ol{padding-left:20px}
+.toc li{margin:5px 0}
+.toc a{font-size:13px;color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.8}
+.back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50}
+.back-top.visible{opacity:1}
+.back-top:hover{color:var(--accent)}
+.metric-row{display:flex;gap:16px;flex-wrap:wrap;margin:20px 0}
+.metric-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;flex:1;min-width:140px;text-align:center}
+.metric-num{font-size:28px;font-weight:800;color:var(--green)}
+.metric-label{font-size:12px;color:var(--text3);margin-top:4px}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:48px}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;display:inline-block}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border)}
+@media(max-width:700px){.coverage-body{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{margin-left:0;padding:24px 16px}}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">⎈ Kubernetes Docs</div>
+    <div class="sidebar-subtitle">Production-Grade Reference</div>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="00-platform-overview.html">00 · Overview</a>
+      <a href="01-cluster-provisioning.html">01 · Cluster Provisioning</a>
+      <a href="02-gitops.html">02 · GitOps</a>
+      <a href="03-ci-cd-pipelines.html">03 · CI/CD Pipelines</a>
+      <a href="04-developer-portal.html">04 · Developer Portal</a>
+      <a href="05-policy-enforcement.html">05 · Policy Enforcement</a>
+      <a href="06-multi-tenancy.html">06 · Multi-Tenancy</a>
+      <a href="07-cost-management.html" class="active">07 · Cost Management</a>
+      <a href="08-service-catalog.html">08 · Service Catalog</a>
+      <a href="09-secrets-automation.html">09 · Secrets Automation</a>
+      <a href="10-platform-apis.html">10 · Platform APIs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Quick Links</div>
+      <a href="../index.html">← Home</a>
+      <a href="../COVERAGE.html">Coverage Dashboard</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">79 of 91 files generated · 87%</div>
+</aside>
+
+<main id="main">
+
+<div class="hero">
+  <div class="hero-badge">💰 Cost Management</div>
+  <h1>Kubernetes Cost Management</h1>
+  <p>Complete guide to understanding, attributing, and optimizing cloud-native infrastructure spend — from resource right-sizing and spot instances to chargeback models, OpenCost, Kubecost, and FinOps practices for Kubernetes platforms.</p>
+  <div class="hero-meta">
+    <span>📊 OpenCost / Kubecost</span>
+    <span>⚡ VPA / Right-sizing</span>
+    <span>🎯 Spot Instances</span>
+    <span>🏷️ Cost Allocation</span>
+    <span>📉 Savings Plans</span>
+  </div>
+</div>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#cost-model">Kubernetes Cost Model</a></li>
+    <li><a href="#opencost">OpenCost &amp; Kubecost</a></li>
+    <li><a href="#attribution">Cost Attribution &amp; Chargeback</a></li>
+    <li><a href="#rightsizing">Resource Right-Sizing</a></li>
+    <li><a href="#vpa">Vertical Pod Autoscaler</a></li>
+    <li><a href="#spot">Spot / Preemptible Instances</a></li>
+    <li><a href="#scheduling">Cost-Aware Scheduling</a></li>
+    <li><a href="#savings">Reserved Instances &amp; Savings Plans</a></li>
+    <li><a href="#efficiency">Cluster Efficiency Metrics</a></li>
+    <li><a href="#finops">FinOps Practices</a></li>
+    <li><a href="#alerts">Cost Alerts &amp; Budgets</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="cost-model">Kubernetes Cost Model</h2>
+
+<p>Cloud infrastructure costs in Kubernetes come from multiple sources that need to be decomposed and allocated to tenants. Understanding the model is prerequisite to optimization.</p>
+
+<div class="arch-diagram">
+KUBERNETES CLUSTER COST COMPONENTS
+
+Cloud Provider Bill
+┌────────────────────────────────────────────────────────────┐
+│  Compute (60-80% of bill)                                  │
+│  ├── Node EC2/GCE/AKS instance hours                       │
+│  │   ├── On-demand                                         │
+│  │   ├── Spot/Preemptible (60-90% cheaper)                 │
+│  │   └── Reserved/Savings Plans (30-60% cheaper)           │
+│  └── Fargate/Autopilot pod-hours (serverless nodes)        │
+│                                                            │
+│  Storage (5-15%)                                           │
+│  ├── EBS/PD/managed disk (PersistentVolumes)               │
+│  ├── S3/GCS object storage (logs, backups, TechDocs)       │
+│  └── EFS/Filestore (shared ReadWriteMany PVCs)             │
+│                                                            │
+│  Network (5-20% — often invisible until it's huge)         │
+│  ├── Data transfer out to internet                         │
+│  ├── Cross-AZ traffic (same region, different AZ)          │
+│  ├── Cross-region replication                              │
+│  └── NAT Gateway (pods → internet)                         │
+│                                                            │
+│  Managed Services (variable)                               │
+│  ├── RDS / Cloud SQL (per-service databases)               │
+│  ├── ElastiCache / Memorystore                             │
+│  └── Load Balancers (one per Service type=LoadBalancer)    │
+└────────────────────────────────────────────────────────────┘
+         │
+         ▼ Allocated to:
+  Namespace → Team → Service → Feature → Environment
+</div>
+
+<h3>Cost vs Efficiency vs Waste</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Term</th><th>Definition</th><th>Measured By</th></tr></thead>
+<tbody>
+<tr><td><strong>Cost</strong></td><td>Dollars spent on infrastructure</td><td>Cloud bill + cost allocation tools</td></tr>
+<tr><td><strong>Efficiency</strong></td><td>Workload output per dollar (requests/s per $, SLO met per $)</td><td>Business metrics / cost per request</td></tr>
+<tr><td><strong>Waste</strong></td><td>Resources paid for but not used (idle CPU/RAM, orphaned PVs, zombie load balancers)</td><td>requests.cpu vs actual usage; PV Bound but no pods</td></tr>
+<tr><td><strong>Right-sizing gap</strong></td><td>Difference between resource requests and actual usage</td><td>VPA recommendations, Goldilocks</td></tr>
+<tr><td><strong>Utilization</strong></td><td>Actual usage / requested resources</td><td>node_cpu_utilization, container_memory_working_set</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Kubernetes bills by node, not by pod.</strong> If your nodes are at 15% CPU utilization, you're paying for 85% waste even if every pod has resource requests set. The lever is bin-packing (Karpenter consolidation) and right-sizing resource requests, not adding more nodes.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="opencost">OpenCost &amp; Kubecost</h2>
+
+<p>OpenCost is the CNCF-incubating open standard and open-source implementation for Kubernetes cost monitoring. Kubecost builds a commercial layer on top with additional features like savings recommendations, cluster right-sizing, and multi-cloud support.</p>
+
+<div class="arch-diagram">
+OpenCost Architecture
+
+  Cloud Provider APIs         Kubernetes API
+  (billing/pricing data)      (pod/node/PV metrics)
+         │                           │
+         └──────────────┬────────────┘
+                        ▼
+               OpenCost Server
+               ├── Cost model (CPU/RAM/GPU/PV/network)
+               ├── Allocation engine (namespace/label/pod)
+               └── /allocation, /assets REST API
+                        │
+              ┌─────────┼──────────┐
+              ▼         ▼          ▼
+          Prometheus  Grafana   Kubecost UI
+          (metrics    (dashboards (recommendations
+           storage)    /alerts)    /savings/budgets)
+</div>
+
+<h3>Install OpenCost</h3>
+
+<pre><code class="language-bash">helm repo add opencost https://opencost.github.io/opencost-helm-chart
+helm repo update
+
+helm install opencost opencost/opencost \
+  --namespace opencost \
+  --create-namespace \
+  --version 1.42.0 \
+  --set opencost.exporter.defaultClusterId=prod-us-east-1 \
+  --set opencost.prometheus.internal.enabled=true \
+  --set opencost.ui.enabled=true \
+  --set opencost.cloudCost.enabled=true
+
+# For AWS: provide cloud integration credentials
+kubectl create secret generic cloud-integration \
+  --namespace opencost \
+  --from-literal=cloud-integration.json='{
+    "aws": [{
+      "athenaBucketName": "s3://my-cur-bucket",
+      "athenaRegion": "us-east-1",
+      "athenaDatabase": "athenacurcfn_my_database",
+      "athenaTable": "my_cur_table",
+      "projectID": "123456789012",
+      "serviceKeyName": "opencost-aws-access"
+    }]
+  }'</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>OpenCost API Queries</h3>
+
+<pre><code class="language-bash"># Cost by namespace for last 7 days
+curl "http://opencost.opencost.svc:9003/allocation/compute?window=7d&aggregate=namespace&accumulate=true" | jq .
+
+# Cost by label (e.g., by team)
+curl "http://opencost.opencost.svc:9003/allocation/compute?window=30d&aggregate=label:team&accumulate=true" | jq .
+
+# Cost breakdown for a specific namespace
+curl "http://opencost.opencost.svc:9003/allocation/compute?window=1d&aggregate=pod&namespace=payments-api-production" | jq .
+
+# Asset costs (nodes, PVs, load balancers)
+curl "http://opencost.opencost.svc:9003/assets?window=7d&aggregate=type" | jq .
+
+# Efficiency: CPU/RAM request utilization
+curl "http://opencost.opencost.svc:9003/allocation/compute?window=1d&aggregate=namespace" | \
+  jq '.data[0] | to_entries[] | {
+    namespace: .key,
+    cpuEfficiency: .value.cpuEfficiency,
+    ramEfficiency: .value.ramEfficiency,
+    totalCost: .value.totalCost
+  }'</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Kubecost Install (with savings features)</h3>
+
+<pre><code class="language-bash">helm repo add kubecost https://kubecost.github.io/cost-analyzer/
+helm repo update
+
+helm install kubecost kubecost/cost-analyzer \
+  --namespace kubecost \
+  --create-namespace \
+  --version 2.3.4 \
+  --set kubecostToken="your-token" \
+  --set global.prometheus.enabled=false \
+  --set global.prometheus.fqdn=http://kube-prometheus-stack-prometheus.monitoring:9090 \
+  --set kubecostProductConfigs.clusterName=prod-us-east-1 \
+  --set kubecostProductConfigs.currencyCode=USD \
+  --set savings.enabled=true \
+  --set networkCosts.enabled=true</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>OpenCost Prometheus Metrics</h3>
+
+<pre><code class="language-bash"># Key OpenCost metrics pushed to Prometheus
+opencost_load_balancer_cost          # per LB hourly cost
+opencost_node_total_hourly_cost      # per node
+opencost_pod_seconds_total           # pod lifecycle seconds
+node_total_hourly_cost               # node cost (from cloud pricing)
+container_cpu_allocation             # CPU core-hours allocated
+container_memory_allocation_bytes    # RAM byte-hours allocated
+
+# Efficiency metrics (also via kube-state-metrics + cAdvisor)
+container_cpu_usage_seconds_total    # actual CPU use
+container_memory_working_set_bytes   # actual memory use
+kube_pod_container_resource_requests # requested resources</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="attribution">Cost Attribution &amp; Chargeback</h2>
+
+<p>Cost attribution maps cloud spend back to business units, teams, services, or features. This is the foundation of FinOps — you cannot optimize what you cannot measure and attribute.</p>
+
+<h3>Tagging Strategy</h3>
+
+<pre><code class="language-yaml"># Required labels on all K8s workloads (enforced by Kyverno — see 05-policy-enforcement.html)
+# These labels flow into cost allocation tools
+metadata:
+  labels:
+    team: payments
+    env: production
+    cost-center: CC-4892
+    service: payments-api
+    product: checkout-flow    # maps to P&amp;L line
+    component: backend        # frontend | backend | worker | batch</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>AWS Resource Tagging (Karpenter nodes inherit pod labels)</h3>
+
+<pre><code class="language-yaml"># EC2NodeClass: propagate K8s labels to EC2 instance tags
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: general
+spec:
+  amiFamily: AL2
+  role: karpenter-node-role
+  subnetSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: prod-us-east-1
+  securityGroupSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: prod-us-east-1
+  tags:
+    # Static tags on every node
+    Cluster: prod-us-east-1
+    ManagedBy: karpenter
+    Environment: production
+  # Propagate workload labels to node tags via spec.kubelet.clusterDNS
+  # Note: Karpenter 0.33+ supports kubelet.nodeLabels propagation</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>OpenCost Allocation by Label</h3>
+
+<pre><code class="language-bash"># Monthly cost per team
+curl "http://opencost.opencost.svc:9003/allocation/compute?window=month&aggregate=label:team&accumulate=true" | \
+  jq '.data[0] | to_entries | sort_by(-.value.totalCost) |
+  .[] | "\(.key): $\(.value.totalCost | . * 100 | round / 100)"'
+
+# Cost split by environment
+curl "http://opencost.opencost.svc:9003/allocation/compute?window=30d&aggregate=label:env&accumulate=true" | jq .
+
+# Multi-level: team + service (groupBy in Kubecost UI)
+curl "http://opencost.opencost.svc:9003/allocation/compute?window=7d&aggregate=label:team,label:service" | jq .</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Chargeback vs Showback</h3>
+
+<div class="two-col">
+  <div class="card yellow">
+    <h4>Showback</h4>
+    <p>Teams see their costs but are not financially charged. Builds awareness and accountability without creating accounting complexity. Good starting point. Teams respond to social pressure but have no financial incentive to optimize.</p>
+  </div>
+  <div class="card green">
+    <h4>Chargeback</h4>
+    <p>Teams are actually billed — deducted from their budget. Strongest incentive to right-size and eliminate waste. Requires accurate allocation data and agreed-upon shared cost methodology (how do you split shared infra like monitoring?).</p>
+  </div>
+</div>
+
+<h3>Shared Cost Allocation Strategies</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Strategy</th><th>How It Works</th><th>Fair For</th><th>Avoid When</th></tr></thead>
+<tbody>
+<tr><td><strong>Even split</strong></td><td>Divide shared infra cost equally among all tenants</td><td>Small teams, similar sizes</td><td>One large + many small tenants</td></tr>
+<tr><td><strong>Proportional</strong></td><td>Each tenant pays share proportional to their workload spend</td><td>Most platforms (default in Kubecost)</td><td>Teams have very different usage patterns</td></tr>
+<tr><td><strong>Weighted by usage</strong></td><td>Share monitoring/logging costs by metric cardinality or log volume emitted</td><td>Observability cost attribution</td><td>Hard to instrument accurately</td></tr>
+<tr><td><strong>Fixed overhead rate</strong></td><td>Flat per-namespace fee covers shared platform costs</td><td>Simplicity, SaaS model</td><td>Large size variance across tenants</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="rightsizing">Resource Right-Sizing</h2>
+
+<p>Over-provisioned resource requests are the most common source of Kubernetes cost waste. Teams set requests high "to be safe" and never revisit them. Right-sizing closes the gap between requested and actual resources.</p>
+
+<h3>Identifying Over-Provisioned Workloads</h3>
+
+<pre><code class="language-bash"># Find pods using < 20% of their CPU request
+kubectl top pods -A --sort-by=cpu | awk 'NR>1 {print $1, $2, $3}'
+
+# PromQL: CPU efficiency per deployment (lower = more waste)
+# Ratio < 0.3 means using less than 30% of requested CPU
+sum by (namespace, pod) (
+  rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m])
+)
+/
+sum by (namespace, pod) (
+  kube_pod_container_resource_requests{resource="cpu",container!=""}
+)
+
+# Memory efficiency (working set vs request)
+sum by (namespace, pod) (
+  container_memory_working_set_bytes{container!="",container!="POD"}
+)
+/
+sum by (namespace, pod) (
+  kube_pod_container_resource_requests{resource="memory",container!=""}
+)</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Goldilocks — VPA Recommendation UI</h3>
+
+<pre><code class="language-bash"># Goldilocks runs VPA in recommendation-only mode and surfaces results in a UI
+helm repo add fairwinds-stable https://charts.fairwinds.com/stable
+helm repo update
+
+helm install goldilocks fairwinds-stable/goldilocks \
+  --namespace goldilocks \
+  --create-namespace \
+  --set vpa.enabled=true \
+  --set dashboard.enabled=true
+
+# Label namespaces to enable Goldilocks analysis
+kubectl label ns payments-api-production goldilocks.fairwinds.com/enabled=true
+
+# Goldilocks dashboard shows VPA recommendations per container
+# with QoS class (Guaranteed/Burstable) and cost impact estimates</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Typical Right-Sizing Findings</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pattern</th><th>Example</th><th>Correction</th><th>Typical Savings</th></tr></thead>
+<tbody>
+<tr><td>CPU request >> actual usage</td><td>requests.cpu: 1000m, actual: 80m</td><td>Set requests.cpu: 200m (add 20% buffer)</td><td>5× reduction in CPU allocation cost</td></tr>
+<tr><td>Memory request >> working set</td><td>requests.memory: 2Gi, actual: 200Mi</td><td>Set requests.memory: 300Mi</td><td>~85% memory cost reduction</td></tr>
+<tr><td>Limits >> requests (burstable)</td><td>limit: 4Gi, request: 128Mi</td><td>Tighten limit to 2×–4× request</td><td>Prevents memory bombs, better bin-packing</td></tr>
+<tr><td>No limits set</td><td>Pod can use unlimited CPU/RAM</td><td>Set limits via LimitRange defaults or explicit spec</td><td>Node stability; predictable cost</td></tr>
+<tr><td>Batch jobs with prod-class requests</td><td>CronJob with requests.cpu: 500m</td><td>Use batch-low PriorityClass, reduce requests</td><td>10–30% on batch-heavy workloads</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="vpa">Vertical Pod Autoscaler (VPA)</h2>
+
+<p>VPA automatically adjusts CPU and memory requests based on observed usage history. It has three update modes — choose carefully, as Recreate mode restarts pods, which has availability implications.</p>
+
+<h3>Install VPA</h3>
+
+<pre><code class="language-bash">git clone https://github.com/kubernetes/autoscaler.git
+cd autoscaler/vertical-pod-autoscaler
+./hack/vpa-up.sh
+
+# Or via Helm
+helm repo add cowboysysop https://cowboysysop.github.io/charts/
+helm install vpa cowboysysop/vertical-pod-autoscaler \
+  --namespace kube-system</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>VPA Modes</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Mode</th><th>Behavior</th><th>Use When</th><th>Risk</th></tr></thead>
+<tbody>
+<tr><td><code>Off</code></td><td>Only compute recommendations; no changes</td><td>Audit &amp; right-sizing review with Goldilocks</td><td>None — read-only</td></tr>
+<tr><td><code>Initial</code></td><td>Set requests on new pods only (at creation)</td><td>Gradual adoption; existing pods unchanged</td><td>Low — no evictions</td></tr>
+<tr><td><code>Recreate</code></td><td>Evict &amp; recreate pods to apply updated requests</td><td>Stateless pods, non-critical workloads</td><td>Pod restarts; availability impact</td></tr>
+<tr><td><code>Auto</code></td><td>Recreate now; in-place update when K8s supports it (alpha)</td><td>Future default when in-place resize is GA</td><td>Pod restarts currently</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code class="language-yaml">apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: payments-api-vpa
+  namespace: payments-api-production
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payments-api
+  updatePolicy:
+    updateMode: "Off"    # Start with Off; observe recommendations first
+  resourcePolicy:
+    containerPolicies:
+    - containerName: payments-api
+      minAllowed:
+        cpu: "50m"
+        memory: 64Mi
+      maxAllowed:
+        cpu: "2"          # cap to prevent runaway recommendations
+        memory: 2Gi
+      controlledResources: ["cpu","memory"]
+      controlledValues: RequestsAndLimits</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Reading VPA Recommendations</h3>
+
+<pre><code class="language-bash"># View recommendations
+kubectl describe vpa payments-api-vpa -n payments-api-production
+
+# Output section:
+#   Recommendation:
+#     Container Recommendations:
+#       Container Name: payments-api
+#       Lower Bound:
+#         Cpu:    50m
+#         Memory: 123Mi
+#       Target:             ← use this for your resource requests
+#         Cpu:    210m
+#         Memory: 340Mi
+#       Uncapped Target:    ← without min/maxAllowed constraints
+#         Cpu:    170m
+#         Memory: 280Mi
+#       Upper Bound:        ← maximum VPA would auto-set in Recreate mode
+#         Cpu:    1200m
+#         Memory: 2Gi
+
+# Bulk export recommendations for all VPAs
+kubectl get vpa -A -o json | jq '
+  .items[] | {
+    namespace: .metadata.namespace,
+    name: .metadata.name,
+    containers: [.status.recommendation.containerRecommendations[] | {
+      name: .containerName,
+      targetCpu: .target.cpu,
+      targetMemory: .target.memory
+    }]
+  }'</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>VPA and HPA conflict on CPU.</strong> Do not use both VPA (controlling CPU requests) and HPA (scaling on CPU utilization) on the same Deployment simultaneously — VPA changing requests resets the utilization baseline, causing HPA oscillation. Use VPA for memory only, or HPA on custom metrics (queue depth, RPS) instead of CPU.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="spot">Spot / Preemptible Instances</h2>
+
+<p>Spot instances (AWS) / Preemptible VMs (GCP) / Spot VMs (Azure) offer 60–90% discount over on-demand pricing in exchange for 2-minute eviction notice. With proper workload design, most stateless workloads can run on spot.</p>
+
+<h3>Workload Suitability for Spot</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Workload Type</th><th>Spot Suitability</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Stateless web/API servers (≥2 replicas)</td><td>✅ Excellent</td><td>Rolling restart handles eviction; keep 1 on-demand replica</td></tr>
+<tr><td>Batch/ML training jobs</td><td>✅ Excellent</td><td>Checkpoint frequently; retryable; batch-low priority</td></tr>
+<tr><td>CI/CD runners (Tekton, GitHub Actions)</td><td>✅ Excellent</td><td>Jobs are ephemeral by nature</td></tr>
+<tr><td>Dev/staging environments</td><td>✅ Excellent</td><td>Brief disruptions acceptable</td></tr>
+<tr><td>Stateful services (databases)</td><td>⚠️ Risky</td><td>Need at least 1 on-demand replica; external managed DB preferred</td></tr>
+<tr><td>Prometheus / Grafana</td><td>⚠️ Caution</td><td>Scrape gaps during eviction; use remote_write to Thanos/Mimir</td></tr>
+<tr><td>System components (CoreDNS, Kyverno)</td><td>❌ Avoid</td><td>Must stay on on-demand/system node pool</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Karpenter Spot Configuration</h3>
+
+<pre><code class="language-yaml"># NodePool with spot preference and on-demand fallback
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: spot-general
+spec:
+  template:
+    metadata:
+      labels:
+        node.kubernetes.io/workload: spot
+    spec:
+      requirements:
+      - key: karpenter.sh/capacity-type
+        operator: In
+        values: ["spot", "on-demand"]   # spot preferred; on-demand fallback
+      - key: kubernetes.io/arch
+        operator: In
+        values: ["amd64","arm64"]
+      - key: karpenter.k8s.aws/instance-category
+        operator: In
+        values: ["m","c","r"]
+      - key: karpenter.k8s.aws/instance-generation
+        operator: Gt
+        values: ["4"]
+      - key: karpenter.k8s.aws/instance-size
+        operator: NotIn
+        values: ["nano","micro","small"]   # too small for bin-packing
+      nodeClassRef:
+        apiVersion: karpenter.k8s.aws/v1beta1
+        kind: EC2NodeClass
+        name: general
+      expireAfter: 336h   # rotate nodes every 2 weeks (AMI patching)
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+    consolidateAfter: 30s
+    budgets:
+    - nodes: "20%"   # max 20% of nodes replaced at once
+  limits:
+    cpu: "100"
+    memory: 400Gi</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Spot Instance Interruption Handling</h3>
+
+<pre><code class="language-yaml"># AWS Node Termination Handler — gracefully drain spot nodes
+# Karpenter handles this natively via SQS interruption queue
+# For managed node groups without Karpenter:
+helm repo add eks https://aws.github.io/eks-charts
+helm install aws-node-termination-handler eks/aws-node-termination-handler \
+  --namespace kube-system \
+  --set enableSpotInterruptionDraining=true \
+  --set enableRebalanceMonitoring=true \
+  --set enableScheduledEventDraining=true \
+  --set queueURL=https://sqs.us-east-1.amazonaws.com/123456789012/spot-interruption</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Designing Workloads for Spot Resilience</h3>
+
+<pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: payments-api-production
+spec:
+  replicas: 4
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1       # tolerate 1 pod down during eviction
+      maxSurge: 1
+  template:
+    spec:
+      # Prefer spot, tolerate on-demand fallback
+      nodeSelector:
+        node.kubernetes.io/workload: general
+      tolerations:
+      - key: "karpenter.sh/capacity-type"
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
+      # Spread across AZs AND capacity types to reduce correlated eviction
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: payments-api
+      - maxSkew: 2
+        topologyKey: karpenter.sh/capacity-type
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: payments-api
+      # Graceful shutdown — handle SIGTERM before pod is killed
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: payments-api
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh","-c","sleep 5"]  # let LB drain connections</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="scheduling">Cost-Aware Scheduling</h2>
+
+<p>Kubernetes scheduler places pods based on resource fit. These patterns steer workloads toward cheaper infrastructure without manual intervention.</p>
+
+<h3>Node Consolidation with Karpenter</h3>
+
+<pre><code class="language-bash"># Karpenter consolidation: pack pods onto fewer nodes, terminate underutilized ones
+# Controlled by NodePool disruption.consolidationPolicy: WhenUnderutilized
+
+# Monitor consolidation events
+kubectl get events -n karpenter --field-selector reason=Unconsolidatable
+kubectl logs -n karpenter -l app.kubernetes.io/name=karpenter -c controller | grep "consolidat"
+
+# Manual consolidation: simulate what Karpenter would do
+kubectl get nodeclaims -o wide  # shows which nodes Karpenter manages</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Descheduler — Rebalance After Spot Evictions</h3>
+
+<pre><code class="language-bash">helm repo add descheduler https://kubernetes-sigs.github.io/descheduler/
+helm install descheduler descheduler/descheduler \
+  --namespace kube-system \
+  --set schedule="0 */6 * * *"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<pre><code class="language-yaml"># Descheduler policy (ConfigMap)
+apiVersion: "descheduler/v1alpha2"
+kind: "DeschedulerPolicy"
+profiles:
+- name: default
+  pluginConfig:
+  - name: DefaultEvictor
+    args:
+      ignorePvcPods: true
+      evictLocalStoragePods: false
+  - name: RemoveDuplicates        # remove duplicate pods on same node
+    args: {}
+  - name: LowNodeUtilization      # move pods from underutilized nodes
+    args:
+      thresholds:
+        cpu: 20
+        memory: 20
+        pods: 20
+      targetThresholds:
+        cpu: 50
+        memory: 50
+        pods: 50
+  - name: RemovePodsViolatingTopologySpreadConstraint  # rebalance after spot loss
+    args:
+      constraints: ["DoNotSchedule","ScheduleAnyway"]
+  plugins:
+    balance:
+      enabled:
+      - RemoveDuplicates
+      - LowNodeUtilization
+      - RemovePodsViolatingTopologySpreadConstraint</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>KEDA for Event-Driven Cost Savings</h3>
+
+<pre><code class="language-yaml"># KEDA ScaledObject: scale to zero when queue is empty
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: payments-worker-scaler
+  namespace: payments-api-production
+spec:
+  scaleTargetRef:
+    name: payments-worker
+  minReplicaCount: 0    # scale to zero — no cost when idle
+  maxReplicaCount: 20
+  cooldownPeriod: 300   # seconds before scaling to zero
+  pollingInterval: 15
+  triggers:
+  - type: aws-sqs-queue
+    metadata:
+      queueURL: https://sqs.us-east-1.amazonaws.com/123456789/payments-queue
+      queueLength: "5"   # target messages per pod
+      awsRegion: us-east-1
+      identityOwner: operator  # use IRSA</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="savings">Reserved Instances &amp; Savings Plans</h2>
+
+<p>Committed-use discounts give 30–60% off in exchange for 1- or 3-year commitments. The right mix of reservations + spot + on-demand minimizes cost while maintaining reliability.</p>
+
+<h3>Coverage Strategy</h3>
+
+<div class="arch-diagram">
+OPTIMAL COVERAGE MIX (example)
+
+  100% of baseline (always-on) workload capacity
+  ├── 70% Savings Plans / Reserved Instances  ← commit to baseline
+  │   (predictable, 1yr no-upfront or 3yr)
+  ├── 20% Spot instances                       ← stateless burst
+  └── 10% On-demand                            ← system components + overflow
+
+  Result: ~45% blended discount vs all on-demand
+</div>
+
+<h3>Identifying Commitment Opportunities</h3>
+
+<pre><code class="language-bash"># AWS CLI: see current On-Demand usage vs Savings Plan coverage
+aws ce get-savings-plans-coverage \
+  --time-period Start=2025-01-01,End=2025-02-01 \
+  --granularity MONTHLY \
+  --filter '{"Dimensions":{"Key":"REGION","Values":["us-east-1"]}}' \
+  --output json
+
+# Get EC2 usage for commitment analysis
+aws ce get-reservation-purchase-recommendation \
+  --service "Amazon EC2" \
+  --lookback-period-in-days SIXTY_DAYS \
+  --payment-option NO_UPFRONT \
+  --term-in-years ONE_YEAR
+
+# Kubecost Savings Plans recommendation (if using Kubecost Enterprise)
+curl http://kubecost.kubecost.svc:9090/savings/requestSizing | jq .</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Compute Savings Plans vs EC2 Instance Savings Plans</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Applies To</th><th>Flexibility</th><th>Discount</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Compute Savings Plans</td><td>EC2, Fargate, Lambda</td><td>Any instance family, size, region, OS</td><td>Up to 66%</td><td>Kubernetes workloads (Karpenter changes instance types)</td></tr>
+<tr><td>EC2 Instance Savings Plans</td><td>EC2 only</td><td>Any size within committed family+region</td><td>Up to 72%</td><td>Fixed instance families (e.g., always m5)</td></tr>
+<tr><td>Reserved Instances (Standard)</td><td>EC2 only</td><td>Exact instance type+AZ or region</td><td>Up to 75%</td><td>Stable, predictable fixed workloads</td></tr>
+<tr><td>GCP Committed Use Discounts</td><td>vCPU + RAM commitments</td><td>Any machine type within commitment</td><td>Up to 57%</td><td>GKE workloads</td></tr>
+<tr><td>Azure Reserved VM Instances</td><td>Specific VM family</td><td>Size flexibility within family</td><td>Up to 72%</td><td>AKS fixed node pools</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>Compute Savings Plans are ideal for Karpenter clusters</strong> because Karpenter selects instance types dynamically. Committing to a dollar-per-hour amount of compute (not a specific instance type) means your reservation applies regardless of which instance Karpenter provisions. Commit to ~70% of your average hourly spend.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="efficiency">Cluster Efficiency Metrics</h2>
+
+<p>Track these KPIs on a weekly cadence. Healthy clusters sit above 60% CPU utilization and 70% memory utilization against allocated resources.</p>
+
+<div class="metric-row">
+  <div class="metric-box"><div class="metric-num">&gt;60%</div><div class="metric-label">Target CPU Utilization</div></div>
+  <div class="metric-box"><div class="metric-num">&gt;70%</div><div class="metric-label">Target RAM Utilization</div></div>
+  <div class="metric-box"><div class="metric-num">&lt;30%</div><div class="metric-label">Max Idle Node %</div></div>
+  <div class="metric-box"><div class="metric-num">70%+</div><div class="metric-label">Spot Coverage Target</div></div>
+</div>
+
+<h3>Key Efficiency PromQL Queries</h3>
+
+<pre><code class="language-promql">-- Cluster-wide CPU utilization (actual / requested)
+sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))
+/
+sum(kube_pod_container_resource_requests{resource="cpu",container!=""})
+
+-- Cluster-wide memory efficiency
+sum(container_memory_working_set_bytes{container!="",container!="POD"})
+/
+sum(kube_pod_container_resource_requests{resource="memory",container!=""})
+
+-- Node allocatable utilization (requested / allocatable)
+sum(kube_pod_container_resource_requests{resource="cpu"})
+/
+sum(kube_node_status_allocatable{resource="cpu"})
+
+-- Idle nodes (no pods scheduled, excluding daemonset-only)
+count(
+  kube_node_status_condition{condition="Ready",status="true"}
+) - count(
+  count by (node) (kube_pod_info{node!=""})
+)
+
+-- Cost per request (requires request-rate metric from APM + node cost)
+sum(rate(http_requests_total[5m]))
+/
+sum(node_total_hourly_cost)   # from OpenCost
+
+-- Namespace waste: allocated but unused CPU
+sum by (namespace) (
+  kube_pod_container_resource_requests{resource="cpu"}
+) - sum by (namespace) (
+  rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m])
+)</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Cost Efficiency Grafana Dashboard Panels</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Panel</th><th>Query Type</th><th>Threshold</th></tr></thead>
+<tbody>
+<tr><td>Monthly cloud spend trend</td><td>OpenCost API + Prometheus</td><td>Alert if +20% MoM</td></tr>
+<tr><td>Top 10 most expensive namespaces</td><td>OpenCost allocation API (bar chart)</td><td>Review top 3 for right-sizing</td></tr>
+<tr><td>CPU efficiency by namespace</td><td>PromQL ratio (actual/request)</td><td>Red: &lt;30%, Yellow: 30–60%, Green: &gt;60%</td></tr>
+<tr><td>Memory efficiency by namespace</td><td>PromQL ratio</td><td>Red: &lt;40%, Yellow: 40–70%, Green: &gt;70%</td></tr>
+<tr><td>Spot coverage %</td><td>kube_node_labels{label_karpenter_sh_capacity-type="spot"}</td><td>Target: &gt;60%</td></tr>
+<tr><td>Idle node count</td><td>PromQL (nodes with no non-daemonset pods)</td><td>Alert if &gt;3 nodes idle &gt;30min</td></tr>
+<tr><td>Unattached PVs</td><td>kube_persistentvolume_status_phase{phase="Released"}</td><td>Alert on any Released PVs</td></tr>
+<tr><td>Orphaned load balancers</td><td>kube_service_info{type="LoadBalancer"} with no Endpoints</td><td>Alert immediately</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="finops">FinOps Practices</h2>
+
+<p>FinOps is a cultural practice that brings financial accountability to cloud spend. The FinOps lifecycle has three phases: Inform, Optimize, Operate.</p>
+
+<h3>FinOps Maturity for Kubernetes</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Phase</th><th>Crawl</th><th>Walk</th><th>Run</th></tr></thead>
+<tbody>
+<tr><td><strong>Inform</strong></td><td>Cloud bill visible to central team</td><td>Per-namespace cost with showback</td><td>Real-time cost per team/service/feature; unit economics (cost per request)</td></tr>
+<tr><td><strong>Optimize</strong></td><td>Tag cloud resources; eliminate obvious waste (unused LBs, idle nodes)</td><td>Right-sizing recommendations acted on quarterly; spot for dev</td><td>Automated right-sizing (VPA); spot for &gt;60% workloads; KEDA scale-to-zero; savings plan coverage &gt;70%</td></tr>
+<tr><td><strong>Operate</strong></td><td>Monthly cost reviews</td><td>Cost budgets per team; chargeback model defined</td><td>Cost alerts trigger team tickets; anomaly detection; cost encoded in architectural decisions</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Weekly FinOps Review Checklist</h3>
+
+<pre><code class="language-bash">#!/bin/bash
+# weekly-finops-review.sh
+
+echo "=== COST ANOMALIES ==="
+# OpenCost: compare this week vs last week by namespace
+curl -s "http://opencost.opencost.svc:9003/allocation/compute?window=7d&aggregate=namespace&accumulate=true" | \
+  jq '.data[0] | to_entries | sort_by(-.value.totalCost) | .[0:10] |
+  .[] | "\(.key): $\(.value.totalCost | . * 100 | round / 100)"'
+
+echo "=== IDLE NODES ==="
+kubectl get nodes -o json | jq '
+  .items[] | select(.metadata.labels["karpenter.sh/capacity-type"] != null) |
+  {name: .metadata.name, capacity: .metadata.labels["karpenter.sh/capacity-type"]}'
+
+echo "=== UNATTACHED PVs ==="
+kubectl get pv -o json | jq '.items[] | select(.status.phase == "Released") |
+  {name: .metadata.name, capacity: .spec.capacity.storage, storageClass: .spec.storageClassName}'
+
+echo "=== VPA RECOMMENDATIONS (top savings) ==="
+kubectl get vpa -A -o json | jq '
+  .items[] | {
+    ns: .metadata.namespace, name: .metadata.name,
+    rec: .status.recommendation.containerRecommendations[0].target
+  }'
+
+echo "=== ORPHANED LOAD BALANCERS ==="
+kubectl get svc -A --field-selector spec.type=LoadBalancer -o json | jq '
+  .items[] | select(.spec.clusterIP != null) |
+  {ns: .metadata.namespace, name: .metadata.name, ip: .status.loadBalancer.ingress[0].ip}'</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="alerts">Cost Alerts &amp; Budgets</h2>
+
+<h3>PrometheusRule: Cost Anomaly Alerts</h3>
+
+<pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cost-management-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: cost.efficiency
+    rules:
+
+    # Namespace CPU efficiency < 20% for 1 hour (severe waste)
+    - alert: NamespaceLowCPUEfficiency
+      expr: |
+        (
+          sum by (namespace) (
+            rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[30m])
+          )
+          /
+          sum by (namespace) (
+            kube_pod_container_resource_requests{resource="cpu",container!=""}
+          )
+        ) < 0.20
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "Low CPU efficiency in namespace {{ $labels.namespace }}"
+        description: "CPU efficiency is {{ $value | humanizePercentage }}. Run VPA analysis."
+
+    # Unattached (Released) PersistentVolumes — pay for storage doing nothing
+    - alert: OrphanedPersistentVolume
+      expr: |
+        kube_persistentvolume_status_phase{phase="Released"} > 0
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Orphaned PersistentVolume: {{ $labels.persistentvolume }}"
+        description: "PV is in Released state and still incurring storage costs. Delete or recycle."
+
+    # Idle LoadBalancer service (no endpoints for 30 minutes)
+    - alert: IdleLoadBalancer
+      expr: |
+        kube_service_spec_type{type="LoadBalancer"} unless
+        kube_endpoint_address_available > 0
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Idle LoadBalancer {{ $labels.namespace }}/{{ $labels.service }}"
+        description: "LoadBalancer has no healthy endpoints. Still incurring hourly LB cost."
+
+    # Node underutilization — paying for idle nodes
+    - alert: NodeLowCPUUtilization
+      expr: |
+        (1 - avg by (node) (
+          rate(node_cpu_seconds_total{mode="idle"}[10m])
+        )) < 0.10
+      for: 2h
+      labels:
+        severity: info
+      annotations:
+        summary: "Node {{ $labels.node }} CPU < 10% for 2 hours"
+        description: "Consider Karpenter consolidation or draining this node."
+
+    # Namespace exceeding 90% of CPU quota (may need quota increase or right-sizing)
+    - alert: NamespaceCPURequestsNearQuota
+      expr: |
+        (
+          kube_resourcequota{type="used",resource="requests.cpu"}
+          /
+          kube_resourcequota{type="hard",resource="requests.cpu"}
+        ) > 0.90
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: "{{ $labels.namespace }} CPU requests at {{ $value | humanizePercentage }} of quota"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>OpenCost Budget API</h3>
+
+<pre><code class="language-bash"># Create a budget via Kubecost API (requires Kubecost enterprise for enforcement)
+curl -X POST http://kubecost.kubecost.svc:9090/budgets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "payments-team-monthly",
+    "window": "month",
+    "amount": 5000,
+    "filters": [{"property": "namespace", "value": "payments-api-production"}],
+    "actions": [{"threshold": 0.80, "type": "slack",
+                 "target": "https://hooks.slack.com/..."}]
+  }'</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card green">
+    <h4>Right-Size Before Scaling Out</h4>
+    <p>A 5× over-provisioned pod running on 10 replicas costs as much as 50 right-sized pods. Always run VPA in Off mode on new services for 2 weeks to collect recommendations, then apply targets before considering horizontal scale-out.</p>
+  </div>
+  <div class="card green">
+    <h4>Spot for All Stateless Workloads</h4>
+    <p>Design stateless services to tolerate 2-minute eviction from day one — <code>terminationGracePeriodSeconds: 60</code>, <code>preStop sleep 5</code>, ≥2 replicas, topology spread across AZs. Spot can cut compute bills by 60–80%.</p>
+  </div>
+  <div class="card blue">
+    <h4>Enforce Resource Requests via Policy</h4>
+    <p>Workloads without resource requests cannot be bin-packed by the scheduler. Use the Kyverno <code>require-requests-limits</code> policy from <a href="05-policy-enforcement.html">05-policy-enforcement.html</a> — this is a prerequisite for all cost optimization.</p>
+  </div>
+  <div class="card blue">
+    <h4>Label Everything for Attribution</h4>
+    <p>Cost allocation is only as good as your label taxonomy. Enforce <code>team</code>, <code>env</code>, <code>cost-center</code> labels on all namespaces and workloads via Kyverno. Without labels, 30–40% of spend is "unallocated" and impossible to optimize.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Scale to Zero with KEDA</h4>
+    <p>Non-production environments and event-driven workers that sit idle between jobs are zero-cost candidates. KEDA ScaledObjects with <code>minReplicaCount: 0</code> eliminate idle compute entirely when no work is queued.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Weekly Cost Reviews</h4>
+    <p>Cost waste accumulates silently. Schedule a 30-minute weekly review using the OpenCost dashboard: check top-10 namespaces for efficiency regression, review VPA recommendations, verify no orphaned PVs or idle LBs accumulated.</p>
+  </div>
+  <div class="card orange">
+    <h4>Commit After Observing</h4>
+    <p>Buy Reserved Instances/Savings Plans only after 3+ months of stable production usage data. Commit to ~70% of your average baseline, leave 30% for on-demand. Over-committing to the wrong instance types locks in waste.</p>
+  </div>
+  <div class="card red">
+    <h4>Watch Network Costs</h4>
+    <p>Cross-AZ traffic (a pod in AZ-a calling a pod in AZ-b) costs $0.01/GB and adds up fast at scale. Use topology-aware routing (<code>topologyKeys: topology.kubernetes.io/zone</code> in EndpointSlice or Cilium topology-aware hints) to prefer same-AZ communication.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage: 07 · Cost Management</summary>
+  <ul class="coverage-body">
+    <li>Kubernetes cost model diagram (compute/storage/network/managed services with % of bill)</li>
+    <li>Cost vs efficiency vs waste vs right-sizing gap vs utilization definitions table</li>
+    <li>Node billing callout (bills by node not pod; 85% waste at 15% utilization)</li>
+    <li>OpenCost architecture diagram (cloud APIs + K8s API → allocation engine → Prometheus/Grafana)</li>
+    <li>OpenCost Helm install (defaultClusterId, cloudCost enabled, AWS CUR Athena integration secret)</li>
+    <li>OpenCost API queries (namespace 7d/label 30d/pod namespace/asset costs/efficiency ratio via jq)</li>
+    <li>Kubecost Helm install (external Prometheus, savings.enabled, networkCosts.enabled)</li>
+    <li>OpenCost Prometheus metrics reference (node_total_hourly_cost, container_cpu/memory_allocation)</li>
+    <li>Tagging strategy YAML (team/env/cost-center/service/product/component labels)</li>
+    <li>EC2NodeClass tags block for Karpenter node AWS tag propagation</li>
+    <li>OpenCost allocation by label (monthly per-team, by env, multi-level team+service)</li>
+    <li>Showback vs chargeback comparison cards</li>
+    <li>Shared cost allocation strategies table (even split / proportional / weighted by usage / fixed overhead)</li>
+    <li>PromQL: CPU and memory efficiency ratios per deployment and namespace</li>
+    <li>Goldilocks Helm install (VPA recommendation-only mode + dashboard)</li>
+    <li>Right-sizing findings table (5 patterns: CPU over-provisioned / memory over-provisioned / limits>>requests / no limits / batch with prod requests)</li>
+    <li>VPA modes table (Off/Initial/Recreate/Auto with behavior, use case, risk)</li>
+    <li>VPA CRD: payments-api-vpa with minAllowed/maxAllowed/controlledResources</li>
+    <li>kubectl describe VPA output interpretation (LowerBound/Target/UncappedTarget/UpperBound)</li>
+    <li>Bulk VPA recommendation export via kubectl + jq</li>
+    <li>VPA + HPA conflict callout (do not use both on CPU; use HPA on custom metrics)</li>
+    <li>Workload suitability for spot table (stateless/batch/CI/dev/stateful/monitoring/system)</li>
+    <li>Karpenter NodePool: spot+on-demand requirements, instance generation/size constraints, consolidation budget 20%</li>
+    <li>AWS Node Termination Handler Helm install (SQS queue, spot interruption + rebalance + scheduled event draining)</li>
+    <li>Spot-resilient Deployment: maxUnavailable:1, topologySpreadConstraints (zone + capacity-type), terminationGracePeriodSeconds:60, preStop sleep</li>
+    <li>Karpenter consolidation monitoring (events, logs, nodeclaims)</li>
+    <li>Descheduler Helm install + DeschedulerPolicy: RemoveDuplicates/LowNodeUtilization(20→50%)/RemovePodsViolatingTopologySpreadConstraint</li>
+    <li>KEDA ScaledObject: scale-to-zero on SQS queue (minReplicaCount:0, queueLength target, IRSA)</li>
+    <li>Optimal coverage mix diagram (70% savings plans + 20% spot + 10% on-demand → ~45% discount)</li>
+    <li>AWS CLI: get-savings-plans-coverage + get-reservation-purchase-recommendation</li>
+    <li>Savings plan types comparison table (Compute/EC2 Instance/Reserved/GCP CUD/Azure RI with flexibility and discount)</li>
+    <li>Compute Savings Plans for Karpenter callout (commit to dollar amount not instance type)</li>
+    <li>Efficiency KPI targets (>60% CPU util, >70% RAM util, <30% idle nodes, 70%+ spot coverage)</li>
+    <li>Key efficiency PromQL queries (cluster CPU/memory/node allocatable/idle nodes/cost per request/namespace waste)</li>
+    <li>Grafana dashboard panels table (8 panels with queries, thresholds)</li>
+    <li>FinOps maturity table: Crawl/Walk/Run for Inform/Optimize/Operate phases</li>
+    <li>Weekly FinOps review shell script (cost anomalies/idle nodes/unattached PVs/VPA recs/orphaned LBs)</li>
+    <li>PrometheusRule: NamespaceLowCPUEfficiency / OrphanedPersistentVolume / IdleLoadBalancer / NodeLowCPUUtilization / NamespaceCPURequestsNearQuota</li>
+    <li>OpenCost/Kubecost Budget API (POST budget with namespace filter + Slack webhook threshold)</li>
+    <li>8 best practices cards (right-size before scale / spot for stateless / enforce requests / label everything / KEDA scale-to-zero / weekly reviews / commit after observing / watch network costs)</li>
+  </ul>
+</details>
+
+</main>
+
+<button class="back-top" id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none'
+  })
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>400)
+})
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button')
+  btn.className='copy-btn'
+  btn.textContent='Copy'
+  btn.onclick=function(){
+    navigator.clipboard.writeText(pre.innerText.replace('Copy\n','').replace('Copy',''))
+    btn.textContent='Copied!'
+    setTimeout(()=>btn.textContent='Copy',2000)
+  }
+  pre.appendChild(btn)
+})
+const headings=document.querySelectorAll('h2[id]')
+const tocLinks=document.querySelectorAll('.toc a')
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('toc-active'))
+      const l=document.querySelector(`.toc a[href="#${e.target.id}"]`)
+      if(l)l.classList.add('toc-active')
+    }
+  })
+},{root:document.getElementById('main'),threshold:0.3})
+headings.forEach(h=>obs.observe(h))
+</script>
+</body>
+</html>

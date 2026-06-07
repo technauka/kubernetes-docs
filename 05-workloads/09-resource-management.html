@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resource Management | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.main-content{margin-left:var(--sidebar-w);flex:1;padding:0;overflow-y:auto;height:100vh;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);position:fixed;top:0;right:0;height:100vh;overflow-y:auto;padding:24px 16px;}
+.content-area{max-width:900px;margin:0 auto;padding:40px 48px 80px;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-weight:600;font-size:16px;flex:1;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);cursor:pointer;padding:6px 12px;border-radius:6px;font-size:13px;}
+.back-to-top{position:fixed;bottom:32px;right:calc(var(--toc-w) + 16px);background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50;}
+.back-to-top.visible{opacity:1;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;color:var(--text2);}
+.sidebar-search{margin:12px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:calc(100% - 24px);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:6px 16px 6px 24px;font-size:13px;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover,.nav-section a.active{background:var(--bg3);color:var(--accent);text-decoration:none;}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover,.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);text-decoration:none;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-top:8px;}
+h3{font-size:17px;font-weight:600;margin:32px 0 12px;}
+h4{font-size:15px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{padding-left:24px;margin-bottom:16px;color:var(--text2);}
+li{margin-bottom:4px;}
+.subtitle{font-size:18px;color:var(--text2);margin-bottom:32px;}
+.meta{display:flex;gap:16px;margin-bottom:40px;flex-wrap:wrap;}
+.meta-tag{background:var(--bg3);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--text2);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;margin-bottom:24px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;line-height:1.7;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--text);border:1px solid var(--border);}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:16px 20px;margin-bottom:24px;border-left:4px solid;}
+.callout-warn{background:#d2992218;border-color:var(--yellow);}
+.callout-warn strong{color:var(--yellow);}
+.callout-danger{background:#f8514918;border-color:var(--red);}
+.callout-danger strong{color:var(--red);}
+.callout-info{background:#58a6ff18;border-color:var(--accent);}
+.callout-info strong{color:var(--accent);}
+.callout-success{background:#3fb95018;border-color:var(--green);}
+.callout-success strong{color:var(--green);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.section-divider{border:none;border-top:1px solid var(--border);margin:48px 0;}
+.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;margin-bottom:24px;color:var(--text2);}
+@media(max-width:1200px){.toc-panel{display:none;}.main-content{margin-left:var(--sidebar-w);}.back-to-top{right:16px;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.content-area{padding:24px 20px 60px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">Kubernetes Docs</div>
+  <input class="sidebar-search" id="nav-search" placeholder="Filter navigation..." type="text">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Kubernetes Overview</a>
+    <a href="../01-getting-started/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/02-control-plane-components.html">Control Plane Components</a>
+    <a href="../01-getting-started/03-node-components.html">Node Components</a>
+    <a href="../01-getting-started/04-api-server-deep-dive.html">API Server Deep Dive</a>
+    <a href="../01-getting-started/05-etcd.html">etcd</a>
+    <a href="../01-getting-started/06-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../02-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../02-networking/01-services.html">Services</a>
+    <a href="../02-networking/02-ingress.html">Ingress</a>
+    <a href="../02-networking/03-network-policies.html">Network Policies</a>
+    <a href="../02-networking/04-dns.html">DNS</a>
+    <a href="../02-networking/05-cni-plugins.html">CNI Plugins</a>
+    <a href="../02-networking/06-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../03-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../03-configuration/01-secrets.html">Secrets</a>
+    <a href="../03-configuration/02-resource-quotas.html">Resource Quotas</a>
+    <a href="../03-configuration/03-limit-ranges.html">Limit Ranges</a>
+    <a href="../03-configuration/04-namespaces.html">Namespaces</a>
+    <a href="../03-configuration/05-labels-annotations.html">Labels &amp; Annotations</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">Persistent Volumes</a>
+    <a href="../04-storage/02-storage-classes.html">Storage Classes</a>
+    <a href="../04-storage/03-volume-types.html">Volume Types</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+    <a href="../04-storage/05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="../04-storage/06-stateful-sets-storage.html">StatefulSet Storage</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html" class="active">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="main-content" id="main-content">
+<div class="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span class="topbar-title">Resource Management</span>
+  <button class="theme-btn" id="theme-btn">Light Mode</button>
+</div>
+
+<div class="content-area">
+
+<details class="coverage">
+  <summary>📋 Page Coverage Checklist</summary>
+  <div class="coverage-body">
+    <li>Requests vs limits: scheduling vs runtime enforcement distinction</li>
+    <li>CPU: CFS shares (requests) and CFS quota throttling (limits)</li>
+    <li>Memory: OOM scoring (requests), hard OOM kill (limits)</li>
+    <li>QoS classes: Guaranteed, Burstable, BestEffort — eviction order</li>
+    <li>LimitRange: Container/Pod/PVC scopes, all field types</li>
+    <li>ResourceQuota: namespace quotas, scoped quotas (BestEffort/PriorityClass)</li>
+    <li>Node allocatable: capacity vs allocatable, kube-reserved, system-reserved, eviction threshold</li>
+    <li>CPU throttling trap: CFS quota mechanics, detection via throttled_periods</li>
+    <li>Right-sizing workflow: kubectl top, VPA Off mode, Goldilocks</li>
+    <li>Extended resources: NVIDIA GPU, device plugins, fractional GPU</li>
+    <li>Ephemeral storage: requests/limits, container logs, eviction</li>
+    <li>Pod overhead: RuntimeClass overhead field for gVisor/Kata</li>
+    <li>FinOps: cost attribution with namespace labels, chargeback patterns</li>
+    <li>5 metrics + 4 alerting rules + 5 runbooks + 8 best practices</li>
+  </div>
+</details>
+
+<h1>Resource Management</h1>
+<p class="subtitle">Requests, limits, QoS classes, LimitRanges, ResourceQuotas, and right-sizing</p>
+<div class="meta">
+  <span class="meta-tag">v1/Pod</span>
+  <span class="meta-tag">v1/ResourceQuota</span>
+  <span class="meta-tag">v1/LimitRange</span>
+  <span class="meta-tag">Platform Engineer</span>
+</div>
+
+<p>Resource management in Kubernetes operates at two distinct layers: the <strong>scheduler</strong> uses resource <em>requests</em> to decide where pods land, and the <strong>Linux kernel</strong> uses resource <em>limits</em> to constrain what running containers can consume. Understanding this separation — and the mechanisms behind each — is essential for building clusters that are both highly utilized and operationally stable.</p>
+
+<!-- ============================================================ -->
+<h2 id="requests-limits">Requests vs Limits</h2>
+
+<div class="diagram">
+Resource model summary:
+
+  spec.containers[].resources:
+    requests:         ← Used by SCHEDULER for placement
+      cpu: 500m       ← Reserve 0.5 CPU shares on the node
+      memory: 512Mi   ← Reserve 512MiB for OOM scoring
+    limits:           ← Used by KERNEL at runtime
+      cpu: 2          ← CFS quota: max 2 CPU seconds per second
+      memory: 1Gi     ← Hard limit: OOM kill if exceeded
+
+  Scheduler sees:  sum(requests) ≤ node.allocatable
+  Kernel enforces: container cannot exceed limits
+
+  Overcommit:
+  Node capacity: 8 CPU, 32Gi memory
+  Total requests: 6 CPU, 24Gi  → fits on node ✓
+  Total limits:  24 CPU, 96Gi  → 3× overcommitted (allowed)
+</div>
+
+<table>
+  <thead><tr><th>Property</th><th>Requests</th><th>Limits</th></tr></thead>
+  <tbody>
+    <tr><td>Used by</td><td>kube-scheduler (pod placement)</td><td>Linux kernel cgroups (runtime enforcement)</td></tr>
+    <tr><td>CPU mechanism</td><td>CFS cpu.shares (proportional)</td><td>CFS cpu.cfs_quota_us (hard cap)</td></tr>
+    <tr><td>Memory mechanism</td><td>OOM score adjustment</td><td>cgroup memory.limit_in_bytes (hard kill)</td></tr>
+    <tr><td>Effect if exceeded</td><td>Pod won't schedule (Pending)</td><td>CPU: throttled; Memory: OOM killed</td></tr>
+    <tr><td>Required?</td><td>No (but strongly recommended)</td><td>No (but required for Guaranteed QoS)</td></tr>
+    <tr><td>Node overcommit</td><td>Sum of requests ≤ allocatable</td><td>Sum of limits may far exceed capacity</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="cpu-mechanics">CPU: CFS Shares and Quota</h2>
+
+<h3 id="cpu-requests-shares">CPU Requests → CFS Shares</h3>
+
+<p>CPU requests map to Linux CFS (Completely Fair Scheduler) <code>cpu.shares</code>. Shares are proportional — a pod with <code>requests.cpu: 1000m</code> gets twice as much CPU time as one with <code>requests.cpu: 500m</code> <em>when the node is contended</em>. When the node is idle, any container can use all available CPU regardless of its request.</p>
+
+<pre><code class="language-text">cpu.shares = request_millicores × 1024 / 1000
+  → requests.cpu: 500m  → cpu.shares = 512
+  → requests.cpu: 1     → cpu.shares = 1024
+  → requests.cpu: 250m  → cpu.shares = 256</code></pre>
+
+<h3 id="cpu-limits-quota">CPU Limits → CFS Quota (Throttling Trap)</h3>
+
+<p>CPU limits map to <code>cpu.cfs_quota_us</code> and <code>cpu.cfs_period_us</code>. Every 100ms (the default period), each container is allocated a quota of CPU time equal to its limit. If a container exhausts its quota before the period ends, it is <strong>throttled</strong> (suspended) until the next period — even if CPUs are otherwise idle.</p>
+
+<div class="diagram">
+CFS quota mechanics (limit: 1 CPU = 100ms quota per 100ms period):
+
+  Period 1 (0–100ms):
+    Container uses 100ms of CPU → quota exhausted at 80ms
+    Container THROTTLED for remaining 20ms (idle CPU wasted)
+
+  Period 2 (100–200ms):
+    Quota refills to 100ms
+    Container resumes
+
+  Result: p99 latency spikes every ~100ms even though the node has free CPU
+</div>
+
+<div class="callout callout-danger">
+  <strong>CPU throttling causes latency spikes, not errors</strong><br>
+  A throttled container doesn't crash — it silently pauses. This manifests as p99/p999 latency spikes, timeout errors from downstream callers, and HPA confusion (CPU utilization appears low because throttled time doesn't count as "used"). Throttling is one of the most common and least-diagnosed performance issues in Kubernetes. Monitor <code>container_cpu_cfs_throttled_periods_total</code> and alert when throttling exceeds 25%.
+</div>
+
+<pre><code class="language-bash"># Detect CPU throttling for a container
+kubectl exec -n &lt;ns&gt; &lt;pod&gt; -- cat /sys/fs/cgroup/cpu/cpu.stat
+# throttled_time: nanoseconds spent throttled
+# nr_throttled: number of periods where container was throttled
+
+# Prometheus query for throttling ratio
+# (throttled periods / total periods) per container
+rate(container_cpu_cfs_throttled_periods_total[5m])
+/ rate(container_cpu_cfs_periods_total[5m])</code></pre>
+
+<h3 id="cpu-no-limit">No CPU Limit Pattern</h3>
+
+<p>Some teams deliberately omit CPU limits to avoid throttling, relying on requests alone for scheduling. This is viable when:</p>
+<ul>
+  <li>Nodes run homogeneous workloads with predictable contention</li>
+  <li>ResourceQuota enforces limits at namespace level (<code>limits.cpu</code>)</li>
+  <li>LimitRange provides defaults so pods without limits still have them</li>
+</ul>
+
+<div class="callout callout-warn">
+  <strong>No CPU limit = unlimited burst potential</strong><br>
+  Without CPU limits, one misbehaving container can consume all idle CPU on a node, starving other pods' request allocations during CFS contention. If you run without per-pod CPU limits, use ResourceQuota at the namespace level to cap total CPU consumption.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="memory-mechanics">Memory: OOM Scoring and Hard Limits</h2>
+
+<h3 id="memory-requests-oom">Memory Requests → OOM Score</h3>
+
+<p>Memory requests affect the <strong>OOM score adjustment</strong> (oom_score_adj) of the container's processes. A lower score means the OOM killer is less likely to kill that process when the node runs out of memory.</p>
+
+<pre><code class="language-text">OOM score adjustment range: -1000 (never kill) to +1000 (kill first)
+
+  Guaranteed pods (req = limit):   oom_score_adj = -998  (protected)
+  Burstable pods:                  oom_score_adj = 2–999  (proportional to memory)
+  BestEffort pods (no requests):   oom_score_adj = 1000  (kill first)
+
+  Formula (Burstable):
+  oom_score_adj = 1000 - (1000 × memory_request / node_allocatable_memory)</code></pre>
+
+<h3 id="memory-limits-oom-kill">Memory Limits → Hard OOM Kill</h3>
+
+<p>When a container's RSS exceeds <code>limits.memory</code>, the kernel's OOM killer sends <strong>SIGKILL</strong> (exit code 137) to the container. Unlike CPU throttling, this is immediate and unrecoverable — the container is killed and restarted by kubelet (if <code>restartPolicy</code> allows).</p>
+
+<pre><code class="language-bash"># Check if container was OOM killed
+kubectl get pod &lt;pod&gt; -o jsonpath='{.status.containerStatuses[*].lastState.terminated.reason}'
+# → OOMKilled
+
+kubectl describe pod &lt;pod&gt; | grep -A3 "Last State"
+# Last State: Terminated
+#   Reason: OOMKilled
+#   Exit Code: 137</code></pre>
+
+<div class="callout callout-info">
+  <strong>Memory limit = RSS + page cache working set</strong><br>
+  The cgroup memory accounting includes both anonymous RSS (heap, stack) and file-backed page cache. A container reading large files can be OOM killed even if its heap is small if the total memory.usage_in_bytes hits the limit. Set limits with headroom for file I/O working sets, not just heap.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="qos-classes">QoS Classes</h2>
+
+<p>Kubernetes assigns one of three QoS classes to every pod based on its resource configuration. This class determines eviction order when nodes face memory pressure.</p>
+
+<table>
+  <thead><tr><th>QoS Class</th><th>Criteria</th><th>OOM priority</th><th>Eviction order</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Guaranteed</strong></td>
+      <td>Every container has both cpu and memory requests AND limits, and requests == limits</td>
+      <td>oom_score_adj = -998 (protected)</td>
+      <td>Last to be evicted</td>
+    </tr>
+    <tr>
+      <td><strong>Burstable</strong></td>
+      <td>At least one container has a request or limit set, but not all Guaranteed criteria met</td>
+      <td>oom_score_adj 2–999 (proportional)</td>
+      <td>Middle — evicted before Guaranteed</td>
+    </tr>
+    <tr>
+      <td><strong>BestEffort</strong></td>
+      <td>No containers have any requests or limits set</td>
+      <td>oom_score_adj = 1000 (first killed)</td>
+      <td>First to be evicted</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre><code class="language-yaml"># Guaranteed QoS — requests must equal limits for ALL containers
+containers:
+  - name: app
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 500m       # ← must equal request
+        memory: 512Mi   # ← must equal request
+
+# Burstable QoS — requests < limits (or only some containers have them)
+containers:
+  - name: app
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 2
+        memory: 1Gi     # Higher limits allow bursting
+
+# BestEffort QoS — no resources at all (avoid in production)
+containers:
+  - name: app
+    resources: {}       # No requests or limits</code></pre>
+
+<pre><code class="language-bash"># Check QoS class of a pod
+kubectl get pod &lt;pod&gt; -o jsonpath='{.status.qosClass}'
+# → Guaranteed | Burstable | BestEffort</code></pre>
+
+<div class="callout callout-warn">
+  <strong>Guaranteed QoS does not mean no CPU throttling</strong><br>
+  Even a Guaranteed pod (cpu request = limit) will be throttled by CFS quota when it exceeds its limit. Guaranteed QoS only controls OOM kill order and memory eviction priority, not CPU scheduling behavior.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="node-allocatable">Node Allocatable</h2>
+
+<p>Not all of a node's capacity is available for pods. The scheduler schedules pods against <code>Allocatable</code>, which reserves capacity for the OS, kubelet, and eviction headroom.</p>
+
+<div class="diagram">
+Node capacity breakdown:
+
+  Node capacity (e.g., 16 CPU, 64Gi RAM)
+  │
+  ├─ kube-reserved (reserved for kubelet, container runtime)
+  │   e.g., 500m CPU, 1Gi memory
+  │
+  ├─ system-reserved (reserved for OS daemons, sshd, etc.)
+  │   e.g., 500m CPU, 2Gi memory
+  │
+  ├─ eviction-threshold (kubelet memory buffer)
+  │   e.g., 100Mi memory (soft), 200Mi (hard)
+  │
+  └─ Allocatable = capacity - kube-reserved - system-reserved - eviction-threshold
+     = 16 CPU - 1 CPU    = 15 CPU allocatable
+     = 64Gi  - 3.3Gi    ≈ 60.7Gi allocatable
+
+  kubectl describe node &lt;node&gt; | grep -A5 "Allocatable:"
+</div>
+
+<pre><code class="language-bash"># Check node capacity and allocatable
+kubectl describe node &lt;node&gt; | grep -A10 "Capacity:\|Allocatable:"
+
+# Check current resource consumption vs allocatable
+kubectl describe node &lt;node&gt; | grep -A20 "Allocated resources:"
+
+# Get allocatable across all nodes (JSON)
+kubectl get nodes -o json | jq '.items[] | {
+  name: .metadata.name,
+  allocatable: .status.allocatable
+}'</code></pre>
+
+<pre><code class="language-yaml"># kubelet configuration for reservations (in KubeletConfiguration)
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+kubeReserved:
+  cpu: "500m"
+  memory: "1Gi"
+  ephemeral-storage: "2Gi"
+systemReserved:
+  cpu: "500m"
+  memory: "2Gi"
+evictionHard:
+  memory.available: "200Mi"
+  nodefs.available: "10%"
+  nodefs.inodesFree: "5%"
+evictionSoft:
+  memory.available: "500Mi"
+evictionSoftGracePeriod:
+  memory.available: "90s"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="limitrange">LimitRange</h2>
+
+<p>LimitRange sets default, minimum, and maximum resource values for containers, pods, and PVCs within a namespace. It applies at admission time — pods created without explicit resource values receive the defaults.</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: LimitRange
+metadata:
+  name: platform-limits
+  namespace: production
+spec:
+  limits:
+    # Container-level defaults and bounds
+    - type: Container
+      default:              # Applied as limit if none specified
+        cpu: "1"
+        memory: 512Mi
+      defaultRequest:       # Applied as request if none specified
+        cpu: 100m
+        memory: 128Mi
+      min:                  # Reject pods with requests below this
+        cpu: 50m
+        memory: 64Mi
+      max:                  # Reject pods with requests above this
+        cpu: "8"
+        memory: 16Gi
+      maxLimitRequestRatio: # Reject if limit/request exceeds this ratio
+        cpu: "10"           # Prevent limit 10× higher than request
+        memory: "4"
+
+    # Pod-level (sum of all containers)
+    - type: Pod
+      max:
+        cpu: "16"
+        memory: 32Gi
+
+    # PVC storage bounds
+    - type: PersistentVolumeClaim
+      min:
+        storage: 1Gi
+      max:
+        storage: 100Gi</code></pre>
+
+<div class="callout callout-info">
+  <strong>LimitRange defaults apply to containers without explicit resources</strong><br>
+  If a container specifies a limit but no request, LimitRange sets the request equal to the limit. If neither is specified, both default and defaultRequest apply. LimitRange does not retroactively change existing pods — it only affects pods created after the LimitRange exists.
+</div>
+
+<pre><code class="language-bash"># View effective LimitRange in a namespace
+kubectl describe limitrange -n production
+
+# Test what resources a new pod would get
+kubectl run test --image=nginx --dry-run=server -o yaml -n production | \
+  grep -A10 resources</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="resourcequota">ResourceQuota</h2>
+
+<p>ResourceQuota enforces aggregate resource consumption limits within a namespace. Unlike LimitRange (per-object bounds), ResourceQuota tracks cumulative usage across all objects.</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: production-quota
+  namespace: production
+spec:
+  hard:
+    # Compute resources
+    requests.cpu: "20"
+    requests.memory: 40Gi
+    limits.cpu: "100"
+    limits.memory: 200Gi
+
+    # Object counts
+    pods: "200"
+    services: "50"
+    secrets: "200"
+    configmaps: "100"
+    persistentvolumeclaims: "50"
+    services.loadbalancers: "5"
+    services.nodeports: "0"     # Prohibit NodePort services
+
+    # Storage
+    requests.storage: 2Ti
+    requests.ephemeral-storage: 50Gi
+
+    # Per-StorageClass storage quota
+    gold-ssd.storageclass.storage.k8s.io/requests.storage: 500Gi
+    standard.storageclass.storage.k8s.io/requests.storage: 1Ti</code></pre>
+
+<h3 id="scoped-quotas">Scoped Quotas</h3>
+
+<pre><code class="language-yaml"># Quota applying only to BestEffort pods (no resources set)
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: besteffort-quota
+  namespace: production
+spec:
+  hard:
+    pods: "10"
+  scopeSelector:
+    matchExpressions:
+      - scopeName: BestEffort
+
+---
+# Quota for high-priority batch jobs
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: high-priority-quota
+  namespace: platform
+spec:
+  hard:
+    requests.cpu: "50"
+    requests.memory: 100Gi
+    pods: "50"
+  scopeSelector:
+    matchExpressions:
+      - scopeName: PriorityClass
+        operator: In
+        values: ["high-priority"]</code></pre>
+
+<table>
+  <thead><tr><th>Scope</th><th>Matches pods that</th></tr></thead>
+  <tbody>
+    <tr><td><code>BestEffort</code></td><td>Have no requests or limits (BestEffort QoS)</td></tr>
+    <tr><td><code>NotBestEffort</code></td><td>Have at least one request or limit (Guaranteed or Burstable)</td></tr>
+    <tr><td><code>Terminating</code></td><td>Have <code>activeDeadlineSeconds</code> set (Jobs)</td></tr>
+    <tr><td><code>NotTerminating</code></td><td>Do not have <code>activeDeadlineSeconds</code> (long-running workloads)</td></tr>
+    <tr><td><code>PriorityClass</code></td><td>Have a specific PriorityClass name</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># Check quota usage in a namespace
+kubectl describe resourcequota -n production
+
+# Get quota as JSON for automation
+kubectl get resourcequota production-quota -n production \
+  -o jsonpath='{range .status.hard}{@.key}: hard={@.value}, used={.status.used[?(@.key)]}{"\n"}{end}'
+
+# Watch quota consumption
+watch kubectl get resourcequota -n production</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="extended-resources">Extended Resources</h2>
+
+<p>Extended resources represent non-standard hardware (GPUs, FPGAs, InfiniBand, SR-IOV NICs). They are advertised by node device plugins via the kubelet API and consumed in pod specs like CPU/memory.</p>
+
+<h3 id="gpu">NVIDIA GPU</h3>
+
+<pre><code class="language-yaml"># Pod requesting 1 NVIDIA GPU
+spec:
+  containers:
+    - name: ml-trainer
+      image: nvcr.io/nvidia/pytorch:23.10-py3
+      resources:
+        requests:
+          nvidia.com/gpu: 1
+        limits:
+          nvidia.com/gpu: 1   # GPU resources: requests must equal limits</code></pre>
+
+<div class="callout callout-info">
+  <strong>GPU resources must have requests == limits</strong><br>
+  Extended resources like GPUs are integer resources — they cannot be fractionally requested, and requests must always equal limits. Fractional GPU sharing (e.g., NVIDIA MIG, time-slicing) requires specific device plugin configurations that expose virtual GPU resources (e.g., <code>nvidia.com/mig-1g.5gb</code>).
+</div>
+
+<pre><code class="language-bash"># Check available GPU resources on nodes
+kubectl get nodes -o json | jq '.items[] | {
+  name: .metadata.name,
+  gpus: .status.allocatable["nvidia.com/gpu"]
+}'
+
+# Check GPU allocation per pod
+kubectl get pods -A -o json | jq '
+  .items[] | select(.spec.containers[].resources.requests["nvidia.com/gpu"] != null) | {
+    name: .metadata.name,
+    namespace: .metadata.namespace,
+    gpus: .spec.containers[].resources.requests["nvidia.com/gpu"]
+  }'</code></pre>
+
+<h3 id="custom-extended">Custom Extended Resources</h3>
+
+<pre><code class="language-bash"># Manually advertise an extended resource on a node (for testing)
+kubectl proxy &amp;
+curl -X PATCH \
+  "http://localhost:8001/api/v1/nodes/&lt;node&gt;/status" \
+  -H "Content-Type: application/json-patch+json" \
+  -d '[{"op":"add","path":"/status/capacity/example.com~1fpga","value":"2"}]'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="ephemeral-storage">Ephemeral Storage</h2>
+
+<p>Ephemeral storage includes emptyDir volumes, container logs, and container image layers written at runtime. Like CPU/memory, it can have requests and limits.</p>
+
+<pre><code class="language-yaml">resources:
+  requests:
+    ephemeral-storage: 1Gi    # Scheduler reserves this on the node
+  limits:
+    ephemeral-storage: 5Gi    # Pod evicted if total ephemeral usage exceeds this</code></pre>
+
+<p>Ephemeral storage is measured as the sum of:</p>
+<ul>
+  <li>Writable container layer (overlay diff from image)</li>
+  <li>Container logs written to <code>/var/log/pods/</code></li>
+  <li>emptyDir volumes (unless backed by tmpfs/memory)</li>
+</ul>
+
+<div class="callout callout-warn">
+  <strong>Log-heavy containers can exhaust ephemeral storage</strong><br>
+  A container writing 100MB/s of logs with <code>limits.ephemeral-storage: 2Gi</code> will be evicted within 20 seconds of its log rotation window if logs aren't shipped externally. Set explicit log rotation in your container runtime config (<code>--log-opt max-size=100m --log-opt max-file=5</code> for docker) and forward logs to an external system before relying on ephemeral storage limits.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pod-overhead">Pod Overhead (RuntimeClass)</h2>
+
+<p>Sandbox runtimes (gVisor, Kata Containers, Firecracker) introduce fixed overhead beyond what the containers request. The <code>overhead</code> field on a RuntimeClass declares this overhead, and the scheduler adds it to pod resource consumption.</p>
+
+<pre><code class="language-yaml">apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: kata-containers
+handler: kata
+overhead:
+  podFixed:
+    cpu: 250m         # Fixed overhead per pod for the VM/sandbox runtime
+    memory: 128Mi     # Included in scheduler placement decisions
+scheduling:
+  nodeClassification:
+    tolerations:
+      - key: kata-containers
+        operator: Exists
+        effect: NoSchedule</code></pre>
+
+<pre><code class="language-yaml"># Pod using this RuntimeClass
+spec:
+  runtimeClassName: kata-containers
+  containers:
+    - name: app
+      resources:
+        requests:
+          cpu: 500m      # Scheduler places on node with >= 750m available
+          memory: 512Mi  # (500m + 250m overhead = 750m total charged)
+        limits:
+          cpu: 2
+          memory: 1Gi</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="right-sizing">Right-Sizing Workflow</h2>
+
+<p>Over-requesting wastes cluster capacity; under-requesting causes throttling or OOM. A systematic right-sizing workflow:</p>
+
+<div class="diagram">
+Right-sizing workflow:
+
+  Step 1: Observe current usage
+  └─ kubectl top pods --containers -n &lt;ns&gt;
+     OR Prometheus: container_cpu_usage_seconds_total, container_memory_working_set_bytes
+
+  Step 2: Compare to requests (over/under-provisioned?)
+  └─ VPA Off mode creates recommendations in VPA.status
+     OR Goldilocks dashboard shows current vs recommended
+
+  Step 3: Apply recommendations
+  └─ Option A: Update Deployment manifest manually with VPA target values
+     Option B: VPA Initial/Recreate/Auto mode applies automatically
+     Option C: Use Goldilocks copy-paste YAML snippet
+
+  Step 4: Validate
+  └─ Monitor throttling ratio (should be < 5% for latency-sensitive)
+     Monitor OOM kill rate (should be 0)
+     Monitor HPA behavior (requests affect utilization %)
+
+  Step 5: Iterate
+  └─ Re-run after traffic pattern changes (seasonal, new features)
+</div>
+
+<pre><code class="language-bash"># Current pod resource usage vs requests
+kubectl top pods --containers -n production
+
+# Pods with no resource requests (risk: unknown scheduling behavior)
+kubectl get pods -A -o json | jq '
+  .items[] |
+  select(.spec.containers[].resources.requests == null) |
+  {ns: .metadata.namespace, name: .metadata.name}'
+
+# Namespace-level resource consumption summary
+kubectl describe resourcequota -n production | grep -E "requests|limits"
+
+# Find pods where actual CPU < 20% of requested (over-provisioned)
+# (requires Prometheus)
+# promql:
+# container_cpu_usage_seconds_total / container_spec_cpu_shares < 0.2</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="finops">FinOps: Cost Attribution</h2>
+
+<p>Resource requests are the primary driver of infrastructure cost in Kubernetes — node sizing, autoscaling, and reserved instance purchasing all flow from request profiles. Proper cost attribution requires namespace/team labeling.</p>
+
+<pre><code class="language-yaml"># Namespace with team labels for chargeback
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: checkout-service
+  labels:
+    team: checkout
+    cost-center: "CC-1042"
+    environment: production</code></pre>
+
+<pre><code class="language-bash"># Aggregate requested resources by namespace (rough cost proxy)
+kubectl get pods -A -o json | jq -r '
+  .items[] |
+  "\(.metadata.namespace) \(.spec.containers[].resources.requests.cpu // "0") \(.spec.containers[].resources.requests.memory // "0")"' | \
+  sort | uniq -c
+
+# Tools for cost attribution:
+# - Kubecost: per-namespace/pod/deployment cost breakdown
+# - OpenCost (CNCF): open-source Kubecost alternative
+# - Cloud provider cost allocation tags</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="resource-spec">Full Resource Spec Reference</h2>
+
+<pre><code class="language-yaml">containers:
+  - name: app
+    image: myapp:v2
+    resources:
+      requests:
+        cpu: "500m"              # 0.5 vCPU shares
+        memory: "512Mi"          # 512 mebibytes
+        ephemeral-storage: "1Gi" # Ephemeral storage reservation
+        hugepages-2Mi: "128Mi"   # Huge pages (if supported)
+      limits:
+        cpu: "2"                 # 2 vCPU hard cap (CFS quota)
+        memory: "1Gi"            # 1 GiB hard cap (OOM kill)
+        ephemeral-storage: "5Gi" # Ephemeral storage cap
+        nvidia.com/gpu: "1"      # 1 GPU (extended resource)
+        hugepages-2Mi: "128Mi"   # Huge pages (req must == limit)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Labels</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>container_cpu_cfs_throttled_periods_total</code></td><td><code>container</code>, <code>pod</code>, <code>namespace</code></td><td>CFS throttling periods — high ratio = CPU limit too tight</td></tr>
+    <tr><td><code>container_memory_working_set_bytes</code></td><td><code>container</code>, <code>pod</code>, <code>namespace</code></td><td>Actual memory in use (vs limit)</td></tr>
+    <tr><td><code>kube_pod_container_resource_requests</code></td><td><code>resource</code>, <code>container</code>, <code>namespace</code></td><td>Configured requests — denominator for utilization %</td></tr>
+    <tr><td><code>kube_resourcequota</code></td><td><code>resource</code>, <code>type</code> (hard/used)</td><td>Quota utilization — alert when near limit</td></tr>
+    <tr><td><code>kube_pod_container_status_last_terminated_reason</code></td><td><code>reason</code>=OOMKilled</td><td>OOM kill rate — should be 0 in steady state</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Alerting Rules</h2>
+
+<pre><code class="language-yaml">groups:
+  - name: resource-management
+    rules:
+      # CPU throttling exceeding 25%
+      - alert: ContainerCPUThrottling
+        expr: |
+          rate(container_cpu_cfs_throttled_periods_total{container!=""}[5m])
+          / rate(container_cpu_cfs_periods_total{container!=""}[5m]) > 0.25
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} is CPU throttled >25%"
+          description: "Increase CPU limit or reduce request/limit ratio"
+
+      # Container OOM killed
+      - alert: ContainerOOMKilled
+        expr: |
+          kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} OOM killed"
+
+      # ResourceQuota near limit (>85% used)
+      - alert: ResourceQuotaAlmostFull
+        expr: |
+          kube_resourcequota{type="used"} / kube_resourcequota{type="hard"} > 0.85
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ResourceQuota {{ $labels.namespace }}/{{ $labels.resourcequota }} {{ $labels.resource }} at >85%"
+
+      # Pods with no resource requests (scheduling risk)
+      - alert: PodMissingResourceRequests
+        expr: |
+          kube_pod_container_resource_requests{resource="cpu"} == 0
+          unless on(pod, namespace) kube_pod_status_phase{phase="Succeeded"}
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "{{ $labels.namespace }}/{{ $labels.pod }} has no CPU request"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="runbooks">Runbooks</h2>
+
+<h3>Container Stuck in CrashLoopBackOff with OOMKilled</h3>
+<pre><code class="language-bash"># Confirm OOM kill
+kubectl describe pod &lt;pod&gt; -n &lt;namespace&gt; | grep -A5 "Last State"
+
+# Check current memory limit
+kubectl get pod &lt;pod&gt; -n &lt;namespace&gt; -o jsonpath=\
+'{.spec.containers[*].resources.limits.memory}'
+
+# Check historical usage (Prometheus)
+# container_memory_working_set_bytes{pod="&lt;pod&gt;", container="app"}
+
+# Fix: increase memory limit
+kubectl set resources deployment &lt;name&gt; -n &lt;namespace&gt; \
+  --containers=app --limits=memory=2Gi
+
+# Or patch directly
+kubectl patch deployment &lt;name&gt; -n &lt;namespace&gt; --type=json -p='[
+  {"op":"replace","path":"/spec/template/spec/containers/0/resources/limits/memory","value":"2Gi"}
+]'</code></pre>
+
+<h3>Pod Pending Due to Insufficient Resources</h3>
+<pre><code class="language-bash"># Check pod events
+kubectl describe pod &lt;pod&gt; -n &lt;namespace&gt; | grep -A10 Events
+
+# Check node capacity
+kubectl describe nodes | grep -A5 "Allocatable:"
+
+# Check what's consuming resources on each node
+kubectl describe nodes | grep -A20 "Allocated resources:"
+
+# Find the most resource-hungry pods
+kubectl top pods -A --sort-by=memory | head -20
+
+# Check if ResourceQuota is blocking
+kubectl describe resourcequota -n &lt;namespace&gt; | grep -v "0/"</code></pre>
+
+<h3>CPU Throttling Causing Latency Spikes</h3>
+<pre><code class="language-bash"># Identify throttled containers
+kubectl top pods --containers -n &lt;namespace&gt;
+# Or check metrics directly in the container:
+kubectl exec -n &lt;ns&gt; &lt;pod&gt; -c &lt;container&gt; -- \
+  cat /sys/fs/cgroup/cpu/cpu.stat
+
+# Quick fix: remove CPU limit (allow bursting)
+kubectl patch deployment &lt;name&gt; -n &lt;namespace&gt; --type=json -p='[
+  {"op":"remove","path":"/spec/template/spec/containers/0/resources/limits/cpu"}
+]'
+
+# Better fix: increase CPU limit to match observed usage
+kubectl set resources deployment &lt;name&gt; -n &lt;namespace&gt; \
+  --containers=app --limits=cpu=2</code></pre>
+
+<h3>Namespace ResourceQuota Full</h3>
+<pre><code class="language-bash"># See what's using the quota
+kubectl describe resourcequota -n &lt;namespace&gt;
+
+# Find over-provisioned pods in the namespace
+kubectl top pods -n &lt;namespace&gt; --containers --sort-by=cpu
+
+# Identify pods with high request but low usage
+kubectl get pods -n &lt;namespace&gt; -o json | jq '
+  .items[] | {
+    name: .metadata.name,
+    cpu_request: .spec.containers[].resources.requests.cpu,
+    memory_request: .spec.containers[].resources.requests.memory
+  }'
+
+# Increase quota (requires cluster-admin)
+kubectl patch resourcequota production-quota -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"hard":{"requests.cpu":"30","requests.memory":"60Gi"}}}'</code></pre>
+
+<h3>LimitRange Rejecting Pod Creation</h3>
+<pre><code class="language-bash"># Check LimitRange in namespace
+kubectl describe limitrange -n &lt;namespace&gt;
+
+# Error from pod creation:
+# "pods maximum cpu usage per Container is 8, but limit is 16"
+# Fix: reduce the container's limit or update LimitRange max
+
+kubectl patch limitrange platform-limits -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"limits":[{"type":"Container","max":{"cpu":"16"}}]}}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Always set CPU and memory requests</strong> — without requests, pods receive BestEffort QoS and are first to be evicted under node pressure. The scheduler also cannot make intelligent placement decisions.</li>
+  <li><strong>Set memory limits conservatively (p99.9 of observed usage)</strong> — OOM kills are disruptive but better than unbounded memory consumption starving other pods. Give 20–30% headroom above steady-state RSS.</li>
+  <li><strong>Monitor CPU throttling, not just CPU usage</strong> — a container at 30% CPU utilization can still be throttled 80% of the time if its burst exceeds the limit. Check <code>container_cpu_cfs_throttled_periods_total</code> alongside utilization.</li>
+  <li><strong>Use LimitRange to enforce defaults in every namespace</strong> — prevents pods deployed without resource specs from becoming BestEffort or consuming unbounded resources.</li>
+  <li><strong>Apply ResourceQuota to every tenant namespace</strong> — without quotas, one team's bug (infinite loop, memory leak) can exhaust cluster capacity for all tenants.</li>
+  <li><strong>Right-size with VPA Off mode before enabling VPA updates</strong> — use Goldilocks to get recommendations passively for 1–2 weeks, then apply them in a controlled rollout. Don't jump straight to Auto mode.</li>
+  <li><strong>For latency-sensitive workloads, prefer Guaranteed QoS</strong> — set requests = limits to avoid OOM scoring disadvantage under memory pressure and make CPU scheduling predictable (though throttling still applies).</li>
+  <li><strong>Include ephemeral-storage limits for log-heavy workloads</strong> — without limits, a container writing excessive logs can fill the node's disk and trigger eviction of all pods on that node.</li>
+</ol>
+
+</div><!-- content-area -->
+<button class="back-to-top" id="back-to-top">↑ Top</button>
+</div><!-- main-content -->
+
+<nav class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#requests-limits">Requests vs Limits</a>
+  <a href="#cpu-mechanics">CPU Mechanics</a>
+  <a href="#cpu-requests-shares">CFS Shares</a>
+  <a href="#cpu-limits-quota">CFS Quota / Throttling</a>
+  <a href="#cpu-no-limit">No CPU Limit Pattern</a>
+  <a href="#memory-mechanics">Memory Mechanics</a>
+  <a href="#memory-limits-oom-kill">OOM Kill</a>
+  <a href="#qos-classes">QoS Classes</a>
+  <a href="#node-allocatable">Node Allocatable</a>
+  <a href="#limitrange">LimitRange</a>
+  <a href="#resourcequota">ResourceQuota</a>
+  <a href="#scoped-quotas">Scoped Quotas</a>
+  <a href="#extended-resources">Extended Resources (GPU)</a>
+  <a href="#ephemeral-storage">Ephemeral Storage</a>
+  <a href="#pod-overhead">Pod Overhead</a>
+  <a href="#right-sizing">Right-Sizing Workflow</a>
+  <a href="#finops">FinOps Attribution</a>
+  <a href="#resource-spec">Full Spec Reference</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#alerts">Alerting Rules</a>
+  <a href="#runbooks">Runbooks</a>
+  <a href="#best-practices">Best Practices</a>
+</nav>
+</div><!-- layout -->
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => btt.classList.toggle('visible', main.scrollTop > 400));
+btt.addEventListener('click', () => main.scrollTo({top: 0, behavior: 'smooth'}));
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText || pre.innerText);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+const tocLinks = document.querySelectorAll('.toc-panel a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, {root: main, threshold: 0.2});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+document.getElementById('nav-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

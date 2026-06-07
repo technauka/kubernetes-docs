@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disaster Recovery | Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+#sidebar-header h1{font-size:14px;font-weight:600;color:var(--text);}
+#sidebar-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+#sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+#sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none;}
+#sidebar-search input:focus{border-color:var(--accent);}
+#sidebar-nav{overflow-y:auto;flex:1;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);}
+#main{flex:1;overflow-y:auto;padding:40px 48px;position:relative;}
+.page-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.page-header .breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.page-header .breadcrumb span{color:var(--text2);}
+.page-header h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-header .subtitle{color:var(--text2);font-size:16px;line-height:1.6;}
+.page-header .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+#toc{float:right;width:220px;margin:0 0 24px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;position:sticky;top:24px;}
+#toc h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+#toc a{display:block;font-size:12px;color:var(--text2);padding:3px 0;border-left:2px solid transparent;padding-left:8px;transition:all .15s;}
+#toc a:hover{color:var(--text);text-decoration:none;}
+#toc a.active{color:var(--accent);border-left-color:var(--accent);}
+#toc a.toc-h3{padding-left:18px;font-size:11px;}
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);clear:both;}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px;}
+h4{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;}
+p{color:var(--text2);line-height:1.7;margin-bottom:12px;}
+ul,ol{color:var(--text2);line-height:1.7;padding-left:20px;margin-bottom:12px;}
+li{margin-bottom:4px;}
+strong{color:var(--text);font-weight:600;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:12px;color:var(--text);line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);color:var(--text);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card-accent-blue{border-top:3px solid var(--accent);}
+.card-accent-green{border-top:3px solid var(--green);}
+.card-accent-yellow{border-top:3px solid var(--yellow);}
+.card-accent-red{border-top:3px solid var(--red);}
+.card-accent-purple{border-top:3px solid var(--purple);}
+.card-accent-orange{border-top:3px solid var(--orange);}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout-body p,.callout-body ul{font-size:13px;margin:0;}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.diagram .title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:16px 0;}
+#back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;z-index:100;}
+#back-top.visible{opacity:1;}
+#back-top:hover{background:var(--bg4);color:var(--text);}
+.step-list{counter-reset:steps;}
+.step-list li{counter-increment:steps;list-style:none;padding-left:0;position:relative;margin-bottom:16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 16px 16px 52px;}
+.step-list li::before{content:counter(steps);position:absolute;left:16px;top:16px;width:24px;height:24px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--bg);}
+.step-list li strong{display:block;margin-bottom:4px;color:var(--text);}
+.step-list li p{margin:0;font-size:13px;}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Kubernetes Docs</h1>
+    <p>Production-Grade Reference</p>
+  </div>
+  <div id="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)" />
+  </div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Getting Started</div>
+      <a href="../00-foundations/00-overview.html">00 Foundations Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Storage & Data</div>
+      <a href="../07-storage-data/00-storage-overview.html">Storage Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/09-secrets-automation.html">Secrets Automation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="00-production-overview.html">Production Overview</a>
+      <a href="01-capacity-planning.html">Capacity Planning</a>
+      <a href="02-performance-tuning.html">Performance Tuning</a>
+      <a href="03-disaster-recovery.html" class="active">Disaster Recovery</a>
+      <a href="04-security-hardening.html">Security Hardening</a>
+      <a href="05-network-operations.html">Network Operations</a>
+      <a href="06-storage-operations.html">Storage Operations</a>
+      <a href="07-certificate-management.html">Certificate Management</a>
+      <a href="08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="09-incident-response.html">Incident Response</a>
+      <a href="10-sre-practices.html">SRE Practices</a>
+    </div>
+  </nav>
+</div>
+
+<div id="main">
+
+<nav id="toc">
+  <h3>On This Page</h3>
+  <a href="#rto-rpo">RTO &amp; RPO Targets</a>
+  <a href="#dr-architecture">DR Architecture</a>
+  <a href="#etcd-backup">etcd Backup</a>
+  <a href="#etcd-restore">etcd Restore</a>
+  <a href="#velero">Velero Workload Backup</a>
+  <a href="#velero-restore">Velero Restore</a>
+  <a href="#stateful-dr">Stateful Data DR</a>
+  <a href="#multi-cluster">Multi-Cluster Failover</a>
+  <a href="#gitops-dr">GitOps-Driven Recovery</a>
+  <a href="#dr-testing">DR Testing &amp; Drills</a>
+  <a href="#dr-alerts">DR Alerts</a>
+  <a href="#runbook">DR Runbook</a>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">09 — Production Operations / <span>03 Disaster Recovery</span></div>
+  <h1>Disaster Recovery</h1>
+  <p class="subtitle">etcd backup and restore, Velero workload backup, RTO/RPO targets, multi-cluster failover automation, and regular DR drill procedures.</p>
+  <div class="meta">
+    <span class="badge badge-red">Critical</span>
+    <span class="badge badge-blue">Backup</span>
+    <span class="badge badge-green">Restore</span>
+    <span class="badge badge-purple">Multi-Cluster</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="rto-rpo">RTO &amp; RPO Targets</h2>
+
+<p><strong>RTO (Recovery Time Objective)</strong> is the maximum acceptable downtime. <strong>RPO (Recovery Point Objective)</strong> is the maximum acceptable data loss (how old a restore can be). These must be defined per workload class before designing DR procedures — not after an incident.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Tier</th><th>Example Workloads</th><th>RTO Target</th><th>RPO Target</th><th>DR Strategy</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Tier 0 — Mission Critical</strong></td><td>Payment processing, authentication, core API</td><td>&lt; 15 min</td><td>&lt; 1 min</td><td>Active-active multi-cluster; real-time replication</td></tr>
+    <tr><td><strong>Tier 1 — Business Critical</strong></td><td>Order management, user accounts, notifications</td><td>&lt; 1 hour</td><td>&lt; 5 min</td><td>Active-passive; warm standby cluster; DB replica</td></tr>
+    <tr><td><strong>Tier 2 — Important</strong></td><td>Reporting, analytics, internal tools</td><td>&lt; 4 hours</td><td>&lt; 1 hour</td><td>Velero backup + GitOps re-deploy to standby</td></tr>
+    <tr><td><strong>Tier 3 — Standard</strong></td><td>Batch jobs, dev environments, CI</td><td>&lt; 24 hours</td><td>&lt; 24 hours</td><td>GitOps re-deploy; data rebuilt from source</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout callout-danger">
+  <div class="callout-icon">🚨</div>
+  <div class="callout-body">
+    <strong>An untested DR plan is not a DR plan</strong>
+    <p>Every RTO/RPO target in the table above is only achievable if the restore procedure has been tested end-to-end in the last 90 days. A restore that has never been practiced will take 3–5× longer than estimated under incident pressure. Schedule and run DR drills — they are as important as the backup jobs themselves.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="dr-architecture">DR Architecture Patterns</h2>
+
+<div class="diagram">
+  <div class="title">DR Strategy Spectrum</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Cost →                                                     ←  RTO/RPO
+
+  Backup/Restore        Pilot Light        Warm Standby        Active-Active
+  ─────────────         ──────────         ─────────────        ─────────────
+  Periodic backups      Minimal infra      Scaled-down          Full capacity
+  to S3/GCS             always running     replica running      in both regions
+  Restore on DR         Scale up on DR     Scale up on DR       Traffic split
+                                                                always
+  RTO: hours            RTO: 30–60 min     RTO: 10–30 min       RTO: &lt; 1 min
+  RPO: backup age       RPO: ~15 min       RPO: ~5 min          RPO: near-zero
+  Cost: $               Cost: $$           Cost: $$$            Cost: $$$$
+
+  Most K8s clusters:    ← Use Velero + GitOps for Tier 2/3  →   Tier 0 only</pre>
+</div>
+
+<div class="two-col">
+  <div class="card card-accent-blue">
+    <h3>What needs backup</h3>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;margin-top:8px;">
+      <li><strong>etcd:</strong> all K8s API objects (Deployments, ConfigMaps, Secrets, CRDs, RBAC)</li>
+      <li><strong>PersistentVolumes:</strong> stateful app data (databases, file stores)</li>
+      <li><strong>Container registry:</strong> images (ECR replication or OCI artifact copy)</li>
+      <li><strong>Certificates &amp; secrets:</strong> Vault raft snapshots; KMS key policy backups</li>
+      <li><strong>Git repositories:</strong> source of truth for manifests (GitHub/GitLab already replicated)</li>
+    </ul>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>What does NOT need backup</h3>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;margin-top:8px;">
+      <li>Stateless Deployment pods (re-create from image)</li>
+      <li>ConfigMaps/Secrets that ESO regenerates from Vault/ASM</li>
+      <li>Kubernetes node data (nodes are ephemeral by design)</li>
+      <li>Prometheus TSDB data older than retention window (rebuilds from metrics stream)</li>
+      <li>Anything stored in the Git-managed manifest repo</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="etcd-backup">etcd Backup</h2>
+
+<p>etcd is the authoritative store for all Kubernetes API objects. Without an etcd backup, a total control plane loss means re-creating every resource manually. Snapshot-based backup is the standard approach.</p>
+
+<h3>Manual etcd snapshot</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># On a control plane node (or from a pod with etcdctl access)
+ETCDCTL_API=3 etcdctl snapshot save /tmp/etcd-snapshot-$(date +%Y%m%d-%H%M%S).db \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+  --key=/etc/kubernetes/pki/etcd/healthcheck-client.key
+
+# Verify snapshot integrity
+ETCDCTL_API=3 etcdctl snapshot status /tmp/etcd-snapshot-*.db \
+  --write-out=table
+
+# Output:
+# +---------+----------+------------+------------+
+# |  HASH   | REVISION | TOTAL KEYS | TOTAL SIZE |
+# +---------+----------+------------+------------+
+# | 12ab34cd|   847291 |      15432 | 62 MB      |
+# +---------+----------+------------+------------+</code></pre>
+
+<h3>Automated etcd backup CronJob</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup
+  namespace: kube-system
+spec:
+  schedule: "0 */6 * * *"   # every 6 hours
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: etcd-backup
+          hostNetwork: true
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: ""
+          restartPolicy: OnFailure
+          containers:
+            - name: etcd-backup
+              image: registry.k8s.io/etcd:3.5.12-0
+              env:
+                - name: ETCDCTL_API
+                  value: "3"
+                - name: S3_BUCKET
+                  value: my-cluster-etcd-backups
+                - name: AWS_DEFAULT_REGION
+                  value: us-east-1
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  SNAPSHOT_FILE="/tmp/etcd-$(date +%Y%m%d-%H%M%S).db"
+
+                  echo "Taking etcd snapshot..."
+                  etcdctl snapshot save "$SNAPSHOT_FILE" \
+                    --endpoints=https://127.0.0.1:2379 \
+                    --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+                    --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+                    --key=/etc/kubernetes/pki/etcd/healthcheck-client.key
+
+                  echo "Verifying snapshot..."
+                  etcdctl snapshot status "$SNAPSHOT_FILE" --write-out=table
+
+                  echo "Uploading to S3..."
+                  aws s3 cp "$SNAPSHOT_FILE" \
+                    "s3://${S3_BUCKET}/$(date +%Y/%m/%d)/$(basename $SNAPSHOT_FILE)" \
+                    --sse aws:kms
+
+                  echo "Pruning old snapshots (keep 30 days)..."
+                  aws s3 ls "s3://${S3_BUCKET}/" --recursive | \
+                    awk '{print $4}' | \
+                    sort | \
+                    head -n -120 | \
+                    xargs -I{} aws s3 rm "s3://${S3_BUCKET}/{}" || true
+
+                  echo "Backup complete: $(basename $SNAPSHOT_FILE)"
+              volumeMounts:
+                - name: etcd-certs
+                  mountPath: /etc/kubernetes/pki/etcd
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+          volumes:
+            - name: etcd-certs
+              hostPath:
+                path: /etc/kubernetes/pki/etcd</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># IRSA ServiceAccount for S3 access (EKS)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: etcd-backup
+  namespace: kube-system
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/etcd-backup-role</code></pre>
+
+<h3>EKS etcd backup considerations</h3>
+
+<div class="callout callout-info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <strong>Managed Kubernetes (EKS/GKE/AKS) — etcd is managed</strong>
+    <p>On managed Kubernetes, the control plane (including etcd) is managed by the cloud provider. You cannot access etcd directly. Instead:<br>
+    • <strong>EKS:</strong> Use Velero for workload-level backup; AWS handles etcd; use cluster backup via AWS Backup (EKS resources).<br>
+    • <strong>GKE:</strong> Automated etcd snapshots; use Config Connector + Velero.<br>
+    • <strong>Self-managed (kubeadm):</strong> Full etcd access; use the CronJob above.<br>
+    The etcd backup CronJob applies to self-managed clusters only.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="etcd-restore">etcd Restore</h2>
+
+<div class="callout callout-danger">
+  <div class="callout-icon">🚨</div>
+  <div class="callout-body">
+    <strong>etcd restore is destructive and cluster-wide</strong>
+    <p>Restoring etcd overwrites all current cluster state. Every resource created after the backup timestamp will be lost. Restore etcd only when the control plane is completely unrecoverable. For partial data loss (accidentally deleted namespace), use Velero or kubectl to restore individual resources.</p>
+  </div>
+</div>
+
+<h3>Single-node etcd restore procedure</h3>
+
+<ol class="step-list">
+  <li>
+    <strong>Download the snapshot from S3</strong>
+    <pre style="margin:8px 0 0;"><code class="language-bash">aws s3 cp s3://my-cluster-etcd-backups/2026/05/20/etcd-20260520-060000.db \
+  /tmp/etcd-snapshot.db</code></pre>
+  </li>
+  <li>
+    <strong>Stop the API server and etcd (prevent writes during restore)</strong>
+    <pre style="margin:8px 0 0;"><code class="language-bash"># Move static pod manifests out of /etc/kubernetes/manifests/
+# kubelet stops the pods when manifests are removed
+mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/
+mv /etc/kubernetes/manifests/etcd.yaml /tmp/
+
+# Verify pods stopped
+crictl pods | grep -E "etcd|apiserver"   # should return empty</code></pre>
+  </li>
+  <li>
+    <strong>Restore snapshot to a new data directory</strong>
+    <pre style="margin:8px 0 0;"><code class="language-bash">ETCDCTL_API=3 etcdctl snapshot restore /tmp/etcd-snapshot.db \
+  --data-dir=/var/lib/etcd-restore \
+  --name=master-0 \
+  --initial-cluster=master-0=https://10.0.1.10:2380 \
+  --initial-cluster-token=etcd-cluster-restore \
+  --initial-advertise-peer-urls=https://10.0.1.10:2380</code></pre>
+  </li>
+  <li>
+    <strong>Swap the data directory</strong>
+    <pre style="margin:8px 0 0;"><code class="language-bash">mv /var/lib/etcd /var/lib/etcd-old-$(date +%Y%m%d)
+mv /var/lib/etcd-restore /var/lib/etcd
+chown -R etcd:etcd /var/lib/etcd</code></pre>
+  </li>
+  <li>
+    <strong>Restore the static pod manifests</strong>
+    <pre style="margin:8px 0 0;"><code class="language-bash">mv /tmp/etcd.yaml /etc/kubernetes/manifests/
+# Wait for etcd to start
+sleep 10
+mv /tmp/kube-apiserver.yaml /etc/kubernetes/manifests/
+
+# Verify
+kubectl get nodes
+kubectl get pods -A | head -20</code></pre>
+  </li>
+</ol>
+
+<h3>Multi-node etcd cluster restore</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># On ALL control plane nodes simultaneously (must use same snapshot + same token)
+# node-specific: adjust --name and --initial-advertise-peer-urls per node
+
+# Node 1
+ETCDCTL_API=3 etcdctl snapshot restore /tmp/etcd-snapshot.db \
+  --data-dir=/var/lib/etcd-restore \
+  --name=master-0 \
+  --initial-cluster=master-0=https://10.0.1.10:2380,master-1=https://10.0.1.11:2380,master-2=https://10.0.1.12:2380 \
+  --initial-cluster-token=etcd-cluster-restore-$(date +%Y%m%d) \
+  --initial-advertise-peer-urls=https://10.0.1.10:2380
+
+# Node 2
+ETCDCTL_API=3 etcdctl snapshot restore /tmp/etcd-snapshot.db \
+  --data-dir=/var/lib/etcd-restore \
+  --name=master-1 \
+  --initial-cluster=master-0=https://10.0.1.10:2380,master-1=https://10.0.1.11:2380,master-2=https://10.0.1.12:2380 \
+  --initial-cluster-token=etcd-cluster-restore-$(date +%Y%m%d) \
+  --initial-advertise-peer-urls=https://10.0.1.11:2380
+
+# Node 3
+ETCDCTL_API=3 etcdctl snapshot restore /tmp/etcd-snapshot.db \
+  --data-dir=/var/lib/etcd-restore \
+  --name=master-2 \
+  --initial-cluster=master-0=https://10.0.1.10:2380,master-1=https://10.0.1.11:2380,master-2=https://10.0.1.12:2380 \
+  --initial-cluster-token=etcd-cluster-restore-$(date +%Y%m%d) \
+  --initial-advertise-peer-urls=https://10.0.1.12:2380</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="velero">Velero Workload Backup</h2>
+
+<p>Velero backs up Kubernetes API objects and PersistentVolume data. It is the standard tool for application-level backup/restore and cluster-to-cluster migration. Unlike etcd snapshots, Velero backups are selective (namespace, label, resource type) and support incremental PV backup via Restic/Kopia.</p>
+
+<h3>Velero installation (AWS S3 + EBS)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Install Velero CLI
+brew install velero
+
+# Create S3 bucket for Velero backups
+aws s3api create-bucket \
+  --bucket my-cluster-velero-backups \
+  --region us-east-1
+
+aws s3api put-bucket-versioning \
+  --bucket my-cluster-velero-backups \
+  --versioning-configuration Status=Enabled
+
+aws s3api put-bucket-encryption \
+  --bucket my-cluster-velero-backups \
+  --server-side-encryption-configuration \
+  '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"aws:kms"}}]}'
+
+# Install Velero with IRSA (no static credentials)
+velero install \
+  --provider aws \
+  --plugins velero/velero-plugin-for-aws:v1.9.0 \
+  --bucket my-cluster-velero-backups \
+  --backup-location-config region=us-east-1 \
+  --snapshot-location-config region=us-east-1 \
+  --use-node-agent \
+  --default-volumes-to-fs-backup \
+  --sa-annotations eks.amazonaws.com/role-arn=arn:aws:iam::123456789:role/velero-role \
+  --no-secret \
+  --wait</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># BackupStorageLocation — verify Velero can reach S3
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: default
+  namespace: velero
+spec:
+  provider: aws
+  objectStorage:
+    bucket: my-cluster-velero-backups
+    prefix: prod-cluster
+  config:
+    region: us-east-1
+    s3ForcePathStyle: "false"
+    s3Url: ""     # empty = use AWS SDK default (VPC endpoint preferred)
+  credential:
+    name: ""      # empty = use IRSA
+  default: true
+
+---
+# VolumeSnapshotLocation — EBS snapshots
+apiVersion: velero.io/v1
+kind: VolumeSnapshotLocation
+metadata:
+  name: default
+  namespace: velero
+spec:
+  provider: aws
+  config:
+    region: us-east-1</code></pre>
+
+<h3>Scheduled backups</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Daily backup of all namespaces (Kubernetes objects + PV snapshots)
+velero schedule create daily-full \
+  --schedule="0 2 * * *" \
+  --ttl 720h \
+  --include-namespaces "*" \
+  --exclude-namespaces velero,kube-system,kube-public,kube-node-lease \
+  --snapshot-volumes=true \
+  --volume-snapshot-locations default
+
+# Hourly backup of critical namespace (Kubernetes objects only — no PV snap)
+velero schedule create hourly-payments \
+  --schedule="0 * * * *" \
+  --ttl 48h \
+  --include-namespaces payments,auth \
+  --snapshot-volumes=false
+
+# Every 15 minutes for stateful data using file-system backup (Kopia/Restic)
+velero schedule create frequent-payments-stateful \
+  --schedule="*/15 * * * *" \
+  --ttl 24h \
+  --include-namespaces payments \
+  --default-volumes-to-fs-backup=true \
+  --snapshot-volumes=false</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Backup CRD — declarative (GitOps-managed)
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: daily-full
+  namespace: velero
+spec:
+  schedule: "0 2 * * *"
+  template:
+    includedNamespaces:
+      - "*"
+    excludedNamespaces:
+      - velero
+      - kube-system
+      - kube-public
+      - kube-node-lease
+    includedResources:
+      - "*"
+    excludedResources:
+      - events
+      - events.events.k8s.io
+    snapshotVolumes: true
+    volumeSnapshotLocations:
+      - default
+    ttl: 720h0m0s
+    storageLocation: default
+    hooks:
+      resources:
+        - name: database-quiesce
+          includedNamespaces:
+            - payments
+          labelSelector:
+            matchLabels:
+              app: postgresql
+          pre:
+            - exec:
+                container: postgresql
+                command:
+                  - /bin/bash
+                  - -c
+                  - psql -U postgres -c "SELECT pg_start_backup('velero', true);"
+                onError: Fail
+                timeout: 60s
+          post:
+            - exec:
+                container: postgresql
+                command:
+                  - /bin/bash
+                  - -c
+                  - psql -U postgres -c "SELECT pg_stop_backup();"
+                onError: Continue
+                timeout: 60s</code></pre>
+
+<h3>Backup verification</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># List all backups with status
+velero backup get
+
+# Describe a specific backup (shows included resources, errors, warnings)
+velero backup describe daily-full-20260520020000 --details
+
+# Check backup logs for errors
+velero backup logs daily-full-20260520020000 | grep -i error
+
+# Verify S3 storage (backup content)
+aws s3 ls s3://my-cluster-velero-backups/prod-cluster/backups/ --recursive | \
+  sort -k1,2 | tail -20</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="velero-restore">Velero Restore</h2>
+
+<h3>Full namespace restore</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># List available backups
+velero backup get
+
+# Restore a specific namespace from backup
+velero restore create payments-restore-$(date +%Y%m%d-%H%M) \
+  --from-backup daily-full-20260520020000 \
+  --include-namespaces payments \
+  --restore-volumes=true \
+  --wait
+
+# Check restore status
+velero restore describe payments-restore-20260524-1430
+
+# Check for failures
+velero restore logs payments-restore-20260524-1430 | grep -i "error\|warn"</code></pre>
+
+<h3>Selective resource restore</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Restore only Deployments and Services (not PVCs — data already present)
+velero restore create deployments-only \
+  --from-backup daily-full-20260520020000 \
+  --include-namespaces payments \
+  --include-resources deployments,services,configmaps \
+  --restore-volumes=false
+
+# Restore a single resource by name
+velero restore create single-deployment \
+  --from-backup daily-full-20260520020000 \
+  --include-namespaces payments \
+  --selector "app=payment-service"
+
+# Restore to a different namespace (namespace mapping)
+velero restore create payments-to-staging \
+  --from-backup daily-full-20260520020000 \
+  --include-namespaces payments \
+  --namespace-mappings payments:payments-staging</code></pre>
+
+<h3>Cross-cluster restore (cluster migration)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Scenario: migrate from cluster-A to cluster-B (different region)
+# Both clusters must be able to access the same S3 backup bucket
+
+# On cluster-B: create a BackupStorageLocation pointing to cluster-A's bucket
+velero backup-location create cluster-a-backups \
+  --provider aws \
+  --bucket my-cluster-velero-backups \
+  --prefix prod-cluster \
+  --config region=us-east-1 \
+  --access-mode ReadOnly   # cluster-B only reads, doesn't overwrite
+
+# Sync backup metadata to cluster-B
+velero backup-location set cluster-a-backups --access-mode ReadOnly
+
+# Restore from cluster-A's backup into cluster-B
+velero restore create migrate-payments \
+  --from-backup daily-full-20260520020000 \
+  --include-namespaces payments \
+  --restore-volumes=true</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="stateful-dr">Stateful Data DR</h2>
+
+<h3>Database backup strategies</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Database</th><th>Backup Method</th><th>RPO</th><th>Tool</th></tr></thead>
+  <tbody>
+    <tr><td><strong>PostgreSQL</strong></td><td>pg_dump (logical) + WAL archiving (PITR) + EBS snapshot</td><td>~5 min (WAL) or backup age (pg_dump)</td><td>pgBackRest, Barman, Velero hook</td></tr>
+    <tr><td><strong>MySQL/MariaDB</strong></td><td>mysqldump + binary log + EBS snapshot</td><td>~5 min (binlog)</td><td>XtraBackup, Velero hook</td></tr>
+    <tr><td><strong>MongoDB</strong></td><td>mongodump + oplog + Atlas backup</td><td>~1 min (oplog)</td><td>Percona Backup for MongoDB</td></tr>
+    <tr><td><strong>Redis</strong></td><td>RDB snapshot (configurable) + AOF persistence</td><td>Configurable (1s–1h)</td><td>Redis built-in; Velero file-system backup</td></tr>
+    <tr><td><strong>etcd (app-level)</strong></td><td>etcdctl snapshot (same as control plane etcd)</td><td>Snapshot frequency</td><td>etcdctl + CronJob</td></tr>
+    <tr><td><strong>Kafka</strong></td><td>MirrorMaker 2 replication + topic offset backup</td><td>~minutes (MirrorMaker lag)</td><td>MirrorMaker 2, Confluent Replicator</td></tr>
+    <tr><td><strong>AWS RDS (via Crossplane)</strong></td><td>Automated RDS snapshots + cross-region copy</td><td>5 min (automated backup window)</td><td>AWS RDS automated backups + Crossplane MR status</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>PostgreSQL PITR with pgBackRest</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># pgBackRest sidecar pattern in PostgreSQL StatefulSet
+spec:
+  containers:
+    - name: postgres
+      image: postgres:16
+      env:
+        - name: PGBACKREST_STANZA
+          value: prod
+        - name: PGBACKREST_REPO1_TYPE
+          value: s3
+        - name: PGBACKREST_REPO1_S3_BUCKET
+          value: my-cluster-pgbackrest
+        - name: PGBACKREST_REPO1_S3_REGION
+          value: us-east-1
+        - name: PGBACKREST_REPO1_RETENTION_FULL
+          value: "7"
+        - name: PGBACKREST_ARCHIVE_PUSH_QUEUE_MAX
+          value: 4GiB
+
+    - name: pgbackrest
+      image: pgbackrest/pgbackrest:2.50
+      command:
+        - /bin/sh
+        - -c
+        - |
+          # Full backup at 2am
+          while true; do
+            sleep $(( 86400 - $(date +%s) % 86400 + 7200 ))
+            pgbackrest --stanza=prod backup --type=full
+          done</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Point-in-time recovery: restore to specific timestamp
+pgbackrest --stanza=prod restore \
+  --delta \
+  --target="2026-05-24 14:30:00" \
+  --target-action=promote
+
+# Restore latest backup
+pgbackrest --stanza=prod restore --delta</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="multi-cluster">Multi-Cluster Failover</h2>
+
+<p>For Tier 0 workloads with &lt;15 min RTO, a single-cluster restore procedure is too slow. Multi-cluster active-passive or active-active architecture is required.</p>
+
+<h3>Active-passive architecture</h3>
+
+<div class="diagram">
+  <div class="title">Active-Passive Failover</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+                   Route 53 / Global Load Balancer
+                          │
+           ┌──────────────┴─────────────┐
+           │                            │
+     Primary (us-east-1)           Standby (us-west-2)
+     All traffic → 100%            Cold/warm standby → 0%
+     ┌──────────────┐               ┌──────────────┐
+     │ K8s cluster  │               │ K8s cluster  │
+     │ PostgreSQL   │──replication──►│ PostgreSQL   │
+     │  primary     │               │  replica     │
+     │ Redis        │──replication──►│ Redis        │
+     └──────────────┘               └──────────────┘
+           │
+           ▼ Failure detected (health check fails 3×)
+           │
+     Route 53 routes 100% to us-west-2
+     Promote PostgreSQL replica → primary
+     Scale up standby K8s workloads (if warm standby)
+     Update DNS TTL 60s → fast propagation</pre>
+</div>
+
+<h3>Route 53 health check failover</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Create health check for primary cluster
+aws route53 create-health-check \
+  --caller-reference "primary-$(date +%s)" \
+  --health-check-config '{
+    "Type": "HTTPS",
+    "FullyQualifiedDomainName": "api.primary.example.com",
+    "Port": 443,
+    "ResourcePath": "/health",
+    "RequestInterval": 10,
+    "FailureThreshold": 3,
+    "EnableSNI": true
+  }'
+
+# Create primary DNS record (failover routing)
+aws route53 change-resource-record-sets \
+  --hosted-zone-id Z1234567890 \
+  --change-batch '{
+    "Changes": [{
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "api.example.com",
+        "Type": "A",
+        "SetIdentifier": "primary",
+        "Failover": "PRIMARY",
+        "TTL": 60,
+        "ResourceRecords": [{"Value": "1.2.3.4"}],
+        "HealthCheckId": "abc123"
+      }
+    },{
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "api.example.com",
+        "Type": "A",
+        "SetIdentifier": "secondary",
+        "Failover": "SECONDARY",
+        "TTL": 60,
+        "ResourceRecords": [{"Value": "5.6.7.8"}]
+      }
+    }]
+  }'</code></pre>
+
+<h3>Argo CD multi-cluster failover</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># ApplicationSet targeting standby cluster for DR workloads
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: payments-dr
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: prod-us-east-1
+            weight: "100"
+            suspended: "false"
+          - cluster: dr-us-west-2
+            weight: "0"
+            suspended: "true"     # suspended in normal ops; activate on DR
+  template:
+    metadata:
+      name: "payments-{{cluster}}"
+    spec:
+      project: production
+      source:
+        repoURL: https://github.com/org/gitops
+        targetRevision: HEAD
+        path: "clusters/{{cluster}}/payments"
+      destination:
+        server: "https://{{cluster}}.example.com"
+        namespace: payments
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Activate DR cluster (unsuspend Argo CD application)
+# Step 1: Update ApplicationSet in Git (remove suspended: "true")
+# Step 2: Argo CD syncs and deploys to DR cluster automatically
+
+# Or manually unsuspend via CLI for immediate failover:
+argocd app set payments-dr-us-west-2 --sync-policy automated
+argocd app sync payments-dr-us-west-2 --force</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="gitops-dr">GitOps-Driven Recovery</h2>
+
+<p>For Tier 2/3 workloads, GitOps is the DR strategy. The Git repository contains the complete desired state of every namespace. Re-deploying to a new or wiped cluster is a matter of pointing Argo CD at the repo.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">#!/bin/bash
+# Bootstrap a new cluster from GitOps in < 30 minutes
+# Assumes: new cluster exists, kubectl configured, AWS credentials present
+
+set -euo pipefail
+
+CLUSTER_NAME="${1:-disaster-recovery-$(date +%Y%m%d)}"
+GIT_REPO="https://github.com/org/gitops"
+ARGOCD_VERSION="v2.12.0"
+
+echo "=== GitOps DR Bootstrap: $CLUSTER_NAME ==="
+
+# 1. Install Argo CD (the bootstrap operator)
+echo "Installing Argo CD..."
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -n argocd \
+  -f "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
+kubectl wait --for=condition=available --timeout=300s \
+  deployment/argocd-server -n argocd
+
+# 2. Apply root App-of-Apps (points to cluster-specific overlay in Git)
+echo "Applying root application..."
+kubectl apply -f - <<EOF
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: ${GIT_REPO}
+    targetRevision: HEAD
+    path: clusters/${CLUSTER_NAME}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+EOF
+
+# 3. Wait for all apps to sync (wave-ordered)
+echo "Waiting for sync..."
+argocd app wait root --health --timeout 1800
+
+echo "Bootstrap complete. Check: argocd app list"</code></pre>
+
+<div class="callout callout-success">
+  <div class="callout-icon">✅</div>
+  <div class="callout-body">
+    <strong>What GitOps recovers automatically</strong>
+    <p>When Argo CD syncs to a new cluster, it restores: all Deployments, StatefulSets, Services, Ingresses, ConfigMaps, RBAC, NetworkPolicies, HPA, PodDisruptionBudgets, CRDs, and operator installations. What it does NOT restore: PersistentVolume data (needs Velero), Secrets not managed by ESO (need manual re-seeding from Vault), and in-flight workload state.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="dr-testing">DR Testing &amp; Drills</h2>
+
+<p>DR testing must be scheduled, documented, and measured. An ad-hoc restore under pressure is not a test — it is an incident.</p>
+
+<h3>DR drill schedule</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Drill Type</th><th>Frequency</th><th>Scope</th><th>Success Criteria</th><th>Duration</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Backup verification</strong></td><td>Weekly (automated)</td><td>Restore a backup to a temp namespace; verify resource count matches</td><td>Resource count matches source; no errors</td><td>15 min</td></tr>
+    <tr><td><strong>Namespace restore drill</strong></td><td>Monthly</td><td>Full Velero restore of one non-critical namespace to a staging cluster</td><td>All pods running; smoke test passes; RTO achieved</td><td>1–2 hours</td></tr>
+    <tr><td><strong>GitOps bootstrap drill</strong></td><td>Quarterly</td><td>Bootstrap a complete cluster from Git; route test traffic to it</td><td>All Tier 2+ workloads deployed; latency SLO met</td><td>2–4 hours</td></tr>
+    <tr><td><strong>etcd restore drill</strong></td><td>Quarterly</td><td>Restore etcd snapshot to a spare control plane node</td><td>kubectl functional; all resources present; completed in RTO</td><td>1 hour</td></tr>
+    <tr><td><strong>Full failover drill</strong></td><td>Annually (or after major changes)</td><td>Full production failover to DR cluster; traffic routed; RTO/RPO verified</td><td>RTO target achieved; no data loss beyond RPO; post-mortem filed</td><td>4–8 hours</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Automated backup verification job</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-verify
+  namespace: velero
+spec:
+  schedule: "0 6 * * 1"   # every Monday 6am
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: velero
+          restartPolicy: OnFailure
+          containers:
+            - name: verify
+              image: velero/velero:v1.14.0
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+
+                  # Get latest successful backup
+                  BACKUP=$(velero backup get -o json | \
+                    jq -r '[.items[] | select(.status.phase=="Completed")] | sort_by(.status.completionTimestamp) | last | .metadata.name')
+
+                  echo "Verifying backup: $BACKUP"
+
+                  # Restore to verification namespace
+                  RESTORE_NS="backup-verify-$(date +%Y%m%d)"
+                  velero restore create "$RESTORE_NS" \
+                    --from-backup "$BACKUP" \
+                    --include-namespaces payments \
+                    --namespace-mappings payments:$RESTORE_NS \
+                    --restore-volumes=false \
+                    --wait
+
+                  # Check restore status
+                  STATUS=$(velero restore get "$RESTORE_NS" -o json | \
+                    jq -r '.status.phase')
+
+                  if [ "$STATUS" != "Completed" ]; then
+                    echo "FAIL: Restore status = $STATUS"
+                    exit 1
+                  fi
+
+                  # Verify resource count
+                  PODS=$(kubectl get pods -n "$RESTORE_NS" --no-headers | wc -l)
+                  echo "Pods in restored namespace: $PODS"
+
+                  if [ "$PODS" -lt 1 ]; then
+                    echo "FAIL: No pods restored"
+                    exit 1
+                  fi
+
+                  # Cleanup verification namespace
+                  kubectl delete namespace "$RESTORE_NS" --wait=false
+
+                  echo "PASS: Backup $BACKUP verified successfully"</code></pre>
+
+<h3>Chaos engineering for DR validation</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># chaos-mesh: simulate AZ failure (drain all pods from one zone)
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: az-failure-simulation
+  namespace: chaos-testing
+spec:
+  action: pod-kill
+  mode: all
+  selector:
+    namespaces:
+      - payments
+    nodeSelectors:
+      topology.kubernetes.io/zone: us-east-1a   # target specific AZ
+  duration: "10m"   # 10 minute chaos window
+  scheduler:
+    cron: "0 14 * * 2"   # Tuesday 2pm — controlled DR drill time</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># chaos-mesh: etcd leader election disruption
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: etcd-partition
+  namespace: chaos-testing
+spec:
+  action: partition
+  mode: one   # partition one etcd member
+  selector:
+    namespaces:
+      - kube-system
+    labelSelectors:
+      component: etcd
+  direction: both
+  duration: "5m"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="dr-alerts">DR Monitoring Alerts</h2>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: disaster-recovery-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: dr.backup
+      rules:
+
+        # Velero backup not completed in 25 hours (daily backup missed)
+        - alert: VeleroBackupMissed
+          expr: |
+            time() - max(velero_backup_last_successful_timestamp{schedule="daily-full"}) > 90000
+          labels:
+            severity: critical
+          annotations:
+            summary: "Velero daily backup not completed in 25 hours"
+            description: "Last successful backup: {{ $value | humanizeDuration }} ago"
+            runbook_url: https://runbooks.example.com/dr/velero-backup-missed
+
+        # Velero backup failed
+        - alert: VeleroBackupFailed
+          expr: velero_backup_failure_total > 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Velero backup {{ $labels.schedule }} failed"
+            runbook_url: https://runbooks.example.com/dr/velero-backup-failed
+
+        # etcd snapshot stale (> 7 hours since last backup)
+        - alert: EtcdSnapshotStale
+          expr: |
+            time() - max(etcd_backup_last_success_timestamp) > 25200
+          labels:
+            severity: critical
+          annotations:
+            summary: "etcd snapshot backup stale — last backup > 7 hours ago"
+            runbook_url: https://runbooks.example.com/dr/etcd-snapshot-stale
+
+        # etcd quorum lost (fewer than 2 members healthy)
+        - alert: EtcdQuorumLost
+          expr: |
+            count(etcd_server_is_leader == 1) < 1
+              OR
+            count(up{job="etcd"}) < 2
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "etcd quorum lost — cluster control plane at risk"
+            runbook_url: https://runbooks.example.com/dr/etcd-quorum
+
+        # PVC not backed up (no Velero annotation or backup tag)
+        - alert: PVCWithoutBackupPolicy
+          expr: |
+            count(kube_persistentvolumeclaim_info{namespace!~"velero|kube-system"}) -
+            count(kube_persistentvolumeclaim_labels{label_velero_io_backup="true"}) > 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "PVCs exist without backup policy labels"
+            runbook_url: https://runbooks.example.com/dr/pvc-backup-policy
+
+        # Velero node agent not running on all nodes
+        - alert: VeleroNodeAgentNotRunning
+          expr: |
+            kube_daemonset_status_number_ready{daemonset="node-agent",namespace="velero"}
+              /
+            kube_daemonset_status_desired_number_scheduled{daemonset="node-agent",namespace="velero"}
+              < 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Velero node-agent DaemonSet not fully running — file-system backups affected"
+            runbook_url: https://runbooks.example.com/dr/velero-node-agent</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="runbook">DR Runbook Template</h2>
+
+<p>Every cluster should have a printed (or offline-accessible) DR runbook. When the cluster is down, the wiki might be too.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-markdown"># Cluster Disaster Recovery Runbook
+Last tested: 2026-03-15 | Next scheduled test: 2026-06-15
+Owner: platform-team@company.com | Emergency: +1-555-ONCALL
+
+## Prerequisites
+- [ ] kubectl access to DR cluster (context: dr-us-west-2)
+- [ ] AWS credentials with S3 + EC2 + Route53 access
+- [ ] Vault root token in break-glass secret (1Password: DR-Vault-Root)
+- [ ] This runbook (offline copy at /runbooks/dr.md on all SRE laptops)
+
+## Decision Tree
+1. Is the ENTIRE cluster unrecoverable?
+   YES → Go to Section A: Full Cluster Restore
+   NO  → Is it a namespace/application issue?
+         YES → Go to Section B: Velero Namespace Restore
+         NO  → Is it a control plane issue?
+               YES → Go to Section C: Control Plane Recovery
+
+## Section A: Full Cluster Restore (RTO: 60–90 min)
+...etcd restore procedure + GitOps bootstrap...
+
+## Section B: Velero Namespace Restore (RTO: 15–30 min)
+...velero restore commands...
+
+## Section C: Control Plane Recovery (RTO: 30–60 min)
+...kubeadm reset + rejoin + certificate rotation...
+
+## Post-Recovery Checklist
+- [ ] All pods Running (kubectl get pods -A | grep -v Running)
+- [ ] Route 53 health checks passing
+- [ ] Vault unsealed (kubectl exec -n vault vault-0 -- vault status)
+- [ ] ESO syncing secrets (kubectl get externalsecrets -A)
+- [ ] Argo CD healthy (argocd app list | grep -v Synced)
+- [ ] SLO burn rate normal (check Grafana SLO dashboard)
+- [ ] File post-mortem within 48 hours
+</code></pre>
+
+<!-- ============================================================ -->
+<h2>Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card card-accent-red">
+    <h3>Test every quarter</h3>
+    <p>An untested restore is not a DR plan. Run namespace restore drills monthly and full cluster restore annually. Measure actual RTO vs target.</p>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>3-2-1 backup rule</h3>
+    <p>3 copies of data, 2 different media, 1 offsite. etcd snapshots in S3 cross-region copy + Velero backups in a different S3 bucket + EBS snapshots.</p>
+  </div>
+  <div class="card card-accent-green">
+    <h3>GitOps is your fast path</h3>
+    <p>For stateless workloads, a GitOps re-deploy is faster than a Velero restore. Bootstrap Argo CD first; it re-creates everything in the Git repo automatically.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>Automate backup verification</h3>
+    <p>A CronJob that does a weekly restore to a verification namespace and counts resources catches silent backup failures before the real DR event.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>Separate DR credentials</h3>
+    <p>Break-glass credentials (Vault root token, kubeconfig, AWS DR role) must be stored offline (1Password, printed sheet in a safe). If the cluster is down, so is your secret manager.</p>
+  </div>
+  <div class="card card-accent-orange">
+    <h3>Match DR tier to cost</h3>
+    <p>Active-active is expensive. Most services don't need it. Use the tier table to assign the right strategy — warm standby for Tier 1, GitOps re-deploy for Tier 3.</p>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<button id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none';
+  });
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>300);
+});
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+const mainEl=document.getElementById('main');
+const headings=mainEl.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('#toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('#toc a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:mainEl,threshold:0.3});
+headings.forEach(h=>obs.observe(h));
+</script>
+</body>
+</html>

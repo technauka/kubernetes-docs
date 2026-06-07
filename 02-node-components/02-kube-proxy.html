@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>kube-proxy — K8s Internals</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code{font-family:'JetBrains Mono','Fira Code','Cascadia Code',monospace;font-size:.85em;background:var(--code-bg);padding:.15em .35em;border-radius:4px;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem 1.4rem;overflow-x:auto;position:relative;margin:1rem 0;}
+pre code{background:none;padding:0;font-size:.82em;line-height:1.65;}
+h1{font-size:2rem;font-weight:700;line-height:1.25;margin-bottom:.5rem;}
+h2{font-size:1.45rem;font-weight:700;margin:2.5rem 0 .8rem;padding-bottom:.4rem;border-bottom:1px solid var(--border);}
+h3{font-size:1.15rem;font-weight:600;margin:1.8rem 0 .5rem;}
+h4{font-size:1rem;font-weight:600;margin:1.4rem 0 .4rem;color:var(--text2);}
+p{margin:.6rem 0;}
+ul,ol{margin:.5rem 0 .5rem 1.6rem;}
+li{margin:.25rem 0;}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.88em;}
+th{background:var(--bg3);padding:.55rem .8rem;text-align:left;font-weight:600;border:1px solid var(--border);}
+td{padding:.5rem .8rem;border:1px solid var(--border);vertical-align:top;}
+tr:nth-child(even) td{background:var(--bg2);}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1rem;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:.75rem;}
+.topbar-right{display:flex;align-items:center;gap:.75rem;}
+.hamburger{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:.25rem;}
+.topbar-logo{font-weight:700;font-size:1rem;white-space:nowrap;}
+.topbar-logo span{color:var(--accent);}
+.breadcrumb{display:flex;align-items:center;gap:.35rem;font-size:.82em;color:var(--text2);}
+.breadcrumb span{color:var(--text3);}
+.search-wrap input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.35rem .7rem;color:var(--text);font-size:.83em;width:200px;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.82em;}
+.layout{display:flex;height:calc(100vh - 52px);}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;transition:transform .25s;}
+.sidebar-search{padding:.75rem;}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;color:var(--text);font-size:.82em;}
+nav{padding:.5rem 0 2rem;}
+.nav-section{margin-bottom:.25rem;}
+.nav-section-title{padding:.4rem 1rem .2rem;font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:flex;align-items:center;gap:.5rem;padding:.32rem 1rem;font-size:.83em;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);text-decoration:none;}
+.nav-section a.active{background:var(--bg4);color:var(--accent);font-weight:600;}
+.num{font-size:.72em;color:var(--text3);min-width:1.8em;}
+.main-content{flex:1;overflow-y:auto;padding:2rem 2.5rem 4rem;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:1rem .75rem;}
+.toc-panel h4{font-size:.72em;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:.5rem;}
+.toc-panel a{display:block;font-size:.8em;color:var(--text2);padding:.22rem .4rem;border-radius:4px;transition:background .15s,color .15s;}
+.toc-panel a:hover{color:var(--accent);text-decoration:none;}
+.toc-panel a.active{color:var(--accent);background:var(--bg3);}
+.toc-panel a.toc-h3{padding-left:1rem;font-size:.77em;color:var(--text3);}
+.file-meta{display:flex;gap:.75rem;flex-wrap:wrap;margin:.75rem 0 1.5rem;font-size:.8em;color:var(--text3);}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.2rem .55rem;font-size:.78em;}
+.callout{border-radius:8px;padding:1rem 1.2rem;margin:1.2rem 0;border-left:4px solid;}
+.callout.note{background:color-mix(in srgb,var(--accent) 8%,var(--bg2));border-color:var(--accent);}
+.callout.warn{background:color-mix(in srgb,var(--yellow) 8%,var(--bg2));border-color:var(--yellow);}
+.callout.danger{background:color-mix(in srgb,var(--red) 8%,var(--bg2));border-color:var(--red);}
+.callout.success{background:color-mix(in srgb,var(--green) 8%,var(--bg2));border-color:var(--green);}
+.callout-title{font-weight:700;font-size:.85em;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;}
+.callout.note .callout-title{color:var(--accent);}
+.callout.warn .callout-title{color:var(--yellow);}
+.callout.danger .callout-title{color:var(--red);}
+.callout.success .callout-title{color:var(--green);}
+details{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:.8rem 0;}
+details summary{padding:.75rem 1rem;cursor:pointer;font-weight:600;font-size:.9em;list-style:none;display:flex;align-items:center;gap:.5rem;}
+details summary::before{content:'▶';font-size:.7em;transition:transform .2s;color:var(--text3);}
+details[open] summary::before{transform:rotate(90deg);}
+.details-body{padding:0 1.2rem 1rem;}
+.flow-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.75rem 0;}
+.flow-box{padding:.45rem .9rem;border-radius:6px;font-size:.82em;font-weight:600;border:1px solid var(--border);white-space:nowrap;}
+.flow-box.cp{background:color-mix(in srgb,var(--accent) 15%,var(--bg3));border-color:var(--accent);color:var(--accent);}
+.flow-box.ok{background:color-mix(in srgb,var(--green) 15%,var(--bg3));border-color:var(--green);color:var(--green);}
+.flow-box.warn{background:color-mix(in srgb,var(--yellow) 15%,var(--bg3));border-color:var(--yellow);color:var(--yellow);}
+.flow-box.node{background:color-mix(in srgb,var(--purple) 15%,var(--bg3));border-color:var(--purple);color:var(--purple);}
+.flow-box.cloud{background:color-mix(in srgb,var(--orange) 15%,var(--bg3));border-color:var(--orange);color:var(--orange);}
+.flow-box.neutral{background:var(--bg3);color:var(--text2);}
+.flow-box.etcd{background:color-mix(in srgb,var(--red) 12%,var(--bg3));border-color:var(--red);color:var(--red);}
+.flow-arrow{color:var(--text3);font-size:1rem;}
+.component-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;margin:1rem 0;}
+.component-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;}
+.component-card h4{margin:0 0 .4rem;font-size:.9em;color:var(--accent);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:1rem 0;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;}
+.copy-btn{position:absolute;top:.5rem;right:.5rem;background:var(--bg4);border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:.2rem .55rem;font-size:.75em;cursor:pointer;}
+.copy-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.back-to-top{position:fixed;bottom:2rem;right:2rem;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .25s;z-index:200;}
+.back-to-top.visible{opacity:1;pointer-events:all;}
+.nav-footer{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-btn{display:inline-flex;align-items:center;gap:.5rem;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:.6rem 1.1rem;border-radius:8px;font-size:.88em;cursor:pointer;text-decoration:none;transition:border-color .2s,color .2s;}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
+.nav-btn.next{margin-left:auto;}
+mark.search-hl{background:var(--yellow);color:#000;border-radius:2px;padding:0 .1em;}
+svg text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+@media(max-width:1100px){.toc-panel{display:none;}}
+@media(max-width:768px){.sidebar{position:fixed;top:52px;left:0;height:calc(100vh - 52px);z-index:90;transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-content{padding:1.5rem 1.2rem 3rem;}.grid-2,.grid-3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger">&#9776;</button>
+    <span class="topbar-logo"><span>K8s</span> Internals</span>
+    <nav class="breadcrumb">
+      <a href="../00-foundations/00-introduction.html">Home</a><span>›</span>
+      <a href="00-worker-node-overview.html">Node Components</a><span>›</span>
+      <span>kube-proxy</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap"><input id="search-input" type="search" placeholder="Search…" autocomplete="off"/></div>
+    <button class="theme-btn" id="theme-btn">☀ Light</button>
+  </div>
+</div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="../01-control-plane/00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="../01-control-plane/01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="../01-control-plane/02-etcd.html"><span class="num">02</span>etcd</a>
+      <a href="../01-control-plane/03-kube-scheduler.html"><span class="num">03</span>kube-scheduler</a>
+      <a href="../01-control-plane/04-kube-controller-manager.html"><span class="num">04</span>kube-controller-manager</a>
+      <a href="../01-control-plane/05-cloud-controller-manager.html"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="../01-control-plane/06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="../01-control-plane/07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="02-kube-proxy.html" class="active"><span class="num">02</span>kube-proxy</a>
+      <a href="03-container-runtime.html"><span class="num">03</span>Container Runtime</a>
+      <a href="04-cri-interface.html"><span class="num">04</span>CRI Interface</a>
+      <a href="05-node-lifecycle.html"><span class="num">05</span>Node Lifecycle</a>
+      <a href="06-node-resource-management.html"><span class="num">06</span>Node Resource Mgmt</a>
+      <a href="07-windows-worker-nodes.html"><span class="num">07</span>Windows Worker Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="../03-networking/00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="../03-networking/01-pod-networking.html"><span class="num">01</span>Pod Networking</a>
+      <a href="../03-networking/02-cni-plugins.html"><span class="num">02</span>CNI Plugins</a>
+      <a href="../03-networking/03-services.html"><span class="num">03</span>Services</a>
+      <a href="../03-networking/04-kube-proxy-internals.html"><span class="num">04</span>kube-proxy Internals</a>
+      <a href="../03-networking/05-dns-coredns.html"><span class="num">05</span>DNS &amp; CoreDNS</a>
+      <a href="../03-networking/06-ingress-controllers.html"><span class="num">06</span>Ingress Controllers</a>
+      <a href="../03-networking/07-gateway-api.html"><span class="num">07</span>Gateway API</a>
+      <a href="../03-networking/08-network-policies.html"><span class="num">08</span>Network Policies</a>
+      <a href="../03-networking/09-ipv4-ipv6-dual-stack.html"><span class="num">09</span>IPv4/IPv6 Dual Stack</a>
+      <a href="../03-networking/10-ebpf-networking.html"><span class="num">10</span>eBPF Networking</a>
+      <a href="../03-networking/11-istio-linkerd-service-mesh.html"><span class="num">11</span>Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-csi-drivers.html"><span class="num">04</span>CSI Drivers</a>
+      <a href="../04-storage/05-statefulsets-storage.html"><span class="num">05</span>StatefulSets &amp; Storage</a>
+      <a href="../04-storage/06-volume-snapshots.html"><span class="num">06</span>Volume Snapshots</a>
+      <a href="../04-storage/07-backup-disaster-recovery.html"><span class="num">07</span>Backup &amp; DR</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html"><span class="num">01</span>Pods</a>
+      <a href="../05-workloads/02-deployments.html"><span class="num">02</span>Deployments</a>
+      <a href="../05-workloads/03-replicasets.html"><span class="num">03</span>ReplicaSets</a>
+      <a href="../05-workloads/04-statefulsets.html"><span class="num">04</span>StatefulSets</a>
+      <a href="../05-workloads/05-daemonsets.html"><span class="num">05</span>DaemonSets</a>
+      <a href="../05-workloads/06-jobs-cronjobs.html"><span class="num">06</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/07-init-containers.html"><span class="num">07</span>Init Containers</a>
+      <a href="../05-workloads/08-sidecar-containers.html"><span class="num">08</span>Sidecar Containers</a>
+      <a href="../05-workloads/09-pod-lifecycle.html"><span class="num">09</span>Pod Lifecycle</a>
+      <a href="../05-workloads/10-resource-management.html"><span class="num">10</span>Resource Management</a>
+      <a href="../05-workloads/11-autoscaling.html"><span class="num">11</span>Autoscaling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-rbac.html"><span class="num">01</span>RBAC</a>
+      <a href="../06-security/02-service-accounts.html"><span class="num">02</span>Service Accounts</a>
+      <a href="../06-security/03-pod-security.html"><span class="num">03</span>Pod Security</a>
+      <a href="../06-security/04-network-policies-security.html"><span class="num">04</span>Network Policy Security</a>
+      <a href="../06-security/05-secrets-management.html"><span class="num">05</span>Secrets Management</a>
+      <a href="../06-security/06-certificate-management.html"><span class="num">06</span>Certificate Management</a>
+      <a href="../06-security/07-audit-logging.html"><span class="num">07</span>Audit Logging</a>
+      <a href="../06-security/08-image-security.html"><span class="num">08</span>Image Security</a>
+      <a href="../06-security/09-runtime-security.html"><span class="num">09</span>Runtime Security</a>
+      <a href="../06-security/10-compliance-benchmarks.html"><span class="num">10</span>Compliance Benchmarks</a>
+      <a href="../06-security/11-supply-chain-security.html"><span class="num">11</span>Supply Chain Security</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics-prometheus.html"><span class="num">01</span>Metrics &amp; Prometheus</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Tracing</a>
+      <a href="../07-observability/04-events.html"><span class="num">04</span>Events</a>
+      <a href="../07-observability/05-alerting.html"><span class="num">05</span>Alerting</a>
+      <a href="../07-observability/06-dashboards.html"><span class="num">06</span>Dashboards</a>
+      <a href="../07-observability/07-debugging-production-issues.html"><span class="num">07</span>Debugging Production</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-engineering-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/01-helm.html"><span class="num">01</span>Helm</a>
+      <a href="../08-platform-engineering/02-kustomize.html"><span class="num">02</span>Kustomize</a>
+      <a href="../08-platform-engineering/03-gitops-argocd.html"><span class="num">03</span>GitOps &amp; ArgoCD</a>
+      <a href="../08-platform-engineering/04-flux.html"><span class="num">04</span>Flux</a>
+      <a href="../08-platform-engineering/05-operators.html"><span class="num">05</span>Operators</a>
+      <a href="../08-platform-engineering/06-crds.html"><span class="num">06</span>CRDs</a>
+      <a href="../08-platform-engineering/07-multi-tenancy.html"><span class="num">07</span>Multi-Tenancy</a>
+      <a href="../08-platform-engineering/08-cost-management.html"><span class="num">08</span>Cost Management</a>
+      <a href="../08-platform-engineering/09-developer-experience.html"><span class="num">09</span>Developer Experience</a>
+      <a href="../08-platform-engineering/10-cluster-api.html"><span class="num">10</span>Cluster API</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/01-cluster-sizing.html"><span class="num">01</span>Cluster Sizing</a>
+      <a href="../09-production-operations/02-high-availability.html"><span class="num">02</span>High Availability</a>
+      <a href="../09-production-operations/03-cluster-upgrades.html"><span class="num">03</span>Cluster Upgrades</a>
+      <a href="../09-production-operations/04-etcd-operations.html"><span class="num">04</span>etcd Operations</a>
+      <a href="../09-production-operations/05-node-management.html"><span class="num">05</span>Node Management</a>
+      <a href="../09-production-operations/06-resource-quotas.html"><span class="num">06</span>Resource Quotas</a>
+      <a href="../09-production-operations/07-limit-ranges.html"><span class="num">07</span>Limit Ranges</a>
+      <a href="../09-production-operations/08-pod-disruption-budgets.html"><span class="num">08</span>Pod Disruption Budgets</a>
+      <a href="../09-production-operations/09-capacity-planning.html"><span class="num">09</span>Capacity Planning</a>
+      <a href="../09-production-operations/10-real-world-incident-analysis.html"><span class="num">10</span>Incident Analysis</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-team-overview.html"><span class="num">00</span>Team Overview</a>
+      <a href="../10-team-workflows/01-kubectl-advanced.html"><span class="num">01</span>kubectl Advanced</a>
+      <a href="../10-team-workflows/02-kubeconfig.html"><span class="num">02</span>kubeconfig</a>
+      <a href="../10-team-workflows/03-namespaces-tenancy.html"><span class="num">03</span>Namespaces &amp; Tenancy</a>
+      <a href="../10-team-workflows/04-cicd-pipelines.html"><span class="num">04</span>CI/CD Pipelines</a>
+      <a href="../10-team-workflows/05-policy-as-code.html"><span class="num">05</span>Policy as Code</a>
+      <a href="../10-team-workflows/06-local-development.html"><span class="num">06</span>Local Development</a>
+      <a href="../10-team-workflows/07-testing-strategies.html"><span class="num">07</span>Testing Strategies</a>
+      <a href="../10-team-workflows/08-documentation-practices.html"><span class="num">08</span>Documentation</a>
+      <a href="../10-team-workflows/09-infrastructure-operations.html"><span class="num">09</span>Infrastructure Ops</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html"><span class="num">00</span>API Flow Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-deployment-rollout-flow.html"><span class="num">02</span>Deployment Rollout</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-service-endpoint-flow.html"><span class="num">03</span>Service Endpoint Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduling-decision-flow.html"><span class="num">04</span>Scheduling Decision</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-hpa-scaling-flow.html"><span class="num">05</span>HPA Scaling Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-pvc-binding-flow.html"><span class="num">06</span>PVC Binding Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-secret-projection-flow.html"><span class="num">07</span>Secret Projection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-admission-webhook-flow.html"><span class="num">08</span>Admission Webhook Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-rbac-authorization-flow.html"><span class="num">09</span>RBAC Auth Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-node-registration-flow.html"><span class="num">10</span>Node Registration</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-crd-reconcile-flow.html"><span class="num">11</span>CRD Reconcile Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-garbage-collection-flow.html"><span class="num">12</span>Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-certificate-rotation-flow.html"><span class="num">13</span>Cert Rotation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-packet-flow.html"><span class="num">14</span>Cross-Node Packet Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Troubleshooting Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-network-issues.html"><span class="num">02</span>Network Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html"><span class="num">03</span>Storage Issues</a>
+      <a href="../12-troubleshooting/04-control-plane-issues.html"><span class="num">04</span>Control Plane Issues</a>
+      <a href="../12-troubleshooting/05-performance-issues.html"><span class="num">05</span>Performance Issues</a>
+      <a href="../12-troubleshooting/06-security-issues.html"><span class="num">06</span>Security Issues</a>
+      <a href="../12-troubleshooting/07-cluster-upgrade-issues.html"><span class="num">07</span>Upgrade Issues</a>
+      <a href="../12-troubleshooting/08-etcd-issues.html"><span class="num">08</span>etcd Issues</a>
+      <a href="../12-troubleshooting/09-dns-issues.html"><span class="num">09</span>DNS Issues</a>
+      <a href="../12-troubleshooting/10-crashloopbackoff-analysis.html"><span class="num">10</span>CrashLoopBackOff</a>
+    </div>
+  </nav>
+</aside>
+
+<main class="main-content" id="main-content">
+<h1 id="top">kube-proxy</h1>
+<div class="file-meta">
+  <span class="tag">Node Components</span>
+  <span class="tag">Networking</span>
+  <span class="tag">iptables</span>
+  <span class="tag">IPVS</span>
+  <span class="tag">Services</span>
+  <span>02-node-components / 02-kube-proxy.html</span>
+</div>
+
+<p>kube-proxy is the network rules agent that runs on every node. Its sole job is to implement the Service abstraction at the network level: when a packet destined for a Service ClusterIP arrives at the node, kube-proxy's rules translate (DNAT) that virtual IP into a real pod IP and load-balance across healthy endpoints. kube-proxy itself never handles any packet in user-space — it programs the <em>kernel</em> to do the work.</p>
+
+<p>For a deep treatment of how Services work end-to-end, see <a href="../03-networking/03-services.html">Networking §Services</a> and <a href="../03-networking/04-kube-proxy-internals.html">kube-proxy Internals</a>. This page focuses on kube-proxy as a node component: its process, modes, configuration, and operations.</p>
+
+<h2 id="role">What kube-proxy Does (and Doesn't Do)</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>What it does</h4>
+    <ul>
+      <li>Watches Service and EndpointSlice objects from the API server</li>
+      <li>Programs iptables NAT rules, IPVS virtual servers, or nftables rules to implement ClusterIP load balancing</li>
+      <li>Implements NodePort — opens host ports and forwards to pod IPs</li>
+      <li>Implements ExternalIP — adds DNAT for externally-routable IPs</li>
+      <li>Handles <code>sessionAffinity: ClientIP</code> via iptables recent-match or IPVS persistence</li>
+      <li>Handles <code>externalTrafficPolicy: Local</code> — only forwards to local node endpoints for NodePort/LB traffic, preserving source IP</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>What it does NOT do</h4>
+    <ul>
+      <li>Does <strong>not</strong> forward packets itself — all forwarding is done by the kernel</li>
+      <li>Does <strong>not</strong> implement pod-to-pod networking — that's the CNI plugin's job</li>
+      <li>Does <strong>not</strong> enforce NetworkPolicy — that's the CNI plugin (e.g., Calico, Cilium)</li>
+      <li>Does <strong>not</strong> provide DNS — that's CoreDNS</li>
+      <li>Does <strong>not</strong> run on clusters using eBPF-based Service implementations (Cilium kube-proxy replacement, Calico eBPF)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout note">
+<div class="callout-title">kube-proxy is optional with eBPF CNIs</div>
+Clusters running Cilium or Calico with eBPF mode can completely replace kube-proxy. In these setups, eBPF programs attached to network interfaces handle Service load balancing directly in the kernel's fast path without any iptables rules. See <a href="../03-networking/10-ebpf-networking.html">eBPF Networking</a>.
+</div>
+
+<h2 id="proxy-modes">Proxy Modes</h2>
+
+<p>kube-proxy supports three implementation modes, selected via <code>--proxy-mode</code>:</p>
+
+<div class="component-grid">
+  <div class="component-card">
+    <h4>iptables (default)</h4>
+    <p>Programs chains in the <code>PREROUTING</code> and <code>OUTPUT</code> netfilter hooks. Each Service gets a chain; each endpoint gets a rule using <code>--probability</code> for random load balancing. Rule count grows linearly with Services × endpoints.</p>
+    <p><strong>Scale limit:</strong> ~10,000 Services (rule traversal is O(n)).</p>
+    <p><strong>Used when:</strong> default on most managed clusters; no kernel IPVS module required.</p>
+  </div>
+  <div class="component-card">
+    <h4>ipvs</h4>
+    <p>Uses the Linux IPVS kernel module (LVS). Creates a virtual server per Service ClusterIP:port and real servers per endpoint. Hash table lookup: O(1) regardless of Service count.</p>
+    <p><strong>Scale limit:</strong> 100,000+ Services with negligible per-rule overhead.</p>
+    <p><strong>Used when:</strong> large clusters (&gt;1000 Services) or when advanced LB algorithms are needed.</p>
+  </div>
+  <div class="component-card">
+    <h4>nftables (1.29 beta, GA 1.31)</h4>
+    <p>Uses nftables (Linux 3.13+) instead of legacy iptables. Verdict maps provide O(1) lookups similar to IPVS but without requiring a separate kernel module. Replaces iptables on modern Linux distributions.</p>
+    <p><strong>Used when:</strong> modern distros (RHEL 9, Ubuntu 22.04+) where iptables-legacy is deprecated.</p>
+  </div>
+</div>
+
+<h2 id="iptables-deep-dive">iptables Mode — Rule Structure</h2>
+
+<p>In iptables mode, kube-proxy creates a predictable chain hierarchy in the <code>nat</code> table. Understanding this structure is essential for debugging connectivity issues.</p>
+
+<svg viewBox="0 0 820 400" width="100%" style="max-width:820px;display:block;margin:1.5rem 0;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#8b949e"/></marker>
+    <marker id="ah-acc" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#58a6ff"/></marker>
+    <marker id="ah-grn" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3fb950"/></marker>
+  </defs>
+
+  <!-- Packet enters -->
+  <rect x="10" y="170" width="90" height="40" rx="6" fill="#21262d" stroke="#8b949e" stroke-width="1"/>
+  <text x="55" y="193" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="700">Packet</text>
+  <text x="55" y="207" text-anchor="middle" fill="#8b949e" font-size="9">dst: ClusterIP</text>
+
+  <!-- PREROUTING -->
+  <rect x="120" y="155" width="130" height="55" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="185" y="175" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="700">PREROUTING</text>
+  <text x="185" y="191" text-anchor="middle" fill="#8b949e" font-size="9">-j KUBE-SERVICES</text>
+  <text x="185" y="204" text-anchor="middle" fill="#6e7681" font-size="9">(external traffic)</text>
+
+  <!-- OUTPUT -->
+  <rect x="120" y="230" width="130" height="50" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="1.2"/>
+  <text x="185" y="252" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="700">OUTPUT</text>
+  <text x="185" y="267" text-anchor="middle" fill="#8b949e" font-size="9">-j KUBE-SERVICES</text>
+
+  <!-- KUBE-SERVICES -->
+  <rect x="290" y="145" width="150" height="70" rx="6" fill="#21262d" stroke="#d29922" stroke-width="1.5"/>
+  <text x="365" y="168" text-anchor="middle" fill="#d29922" font-size="10" font-weight="700">KUBE-SERVICES</text>
+  <text x="365" y="184" text-anchor="middle" fill="#8b949e" font-size="9">matches dst ClusterIP:port</text>
+  <text x="365" y="198" text-anchor="middle" fill="#8b949e" font-size="9">-j KUBE-SVC-&lt;hash&gt;</text>
+  <text x="365" y="212" text-anchor="middle" fill="#6e7681" font-size="9">one rule per Service</text>
+
+  <!-- KUBE-SVC hash -->
+  <rect x="480" y="80" width="160" height="80" rx="6" fill="#21262d" stroke="#bc8cff" stroke-width="1.5"/>
+  <text x="560" y="103" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="700">KUBE-SVC-&lt;hash&gt;</text>
+  <text x="560" y="119" text-anchor="middle" fill="#8b949e" font-size="9">--probability 0.33 -j SEP-1</text>
+  <text x="560" y="133" text-anchor="middle" fill="#8b949e" font-size="9">--probability 0.50 -j SEP-2</text>
+  <text x="560" y="147" text-anchor="middle" fill="#8b949e" font-size="9">-j SEP-3</text>
+
+  <!-- KUBE-SEP endpoints -->
+  <rect x="680" y="40" width="130" height="50" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="745" y="60" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">KUBE-SEP-1</text>
+  <text x="745" y="76" text-anchor="middle" fill="#8b949e" font-size="9">DNAT → 10.244.1.5:8080</text>
+
+  <rect x="680" y="105" width="130" height="50" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="745" y="125" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">KUBE-SEP-2</text>
+  <text x="745" y="141" text-anchor="middle" fill="#8b949e" font-size="9">DNAT → 10.244.2.8:8080</text>
+
+  <rect x="680" y="170" width="130" height="50" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="745" y="190" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">KUBE-SEP-3</text>
+  <text x="745" y="206" text-anchor="middle" fill="#8b949e" font-size="9">DNAT → 10.244.3.2:8080</text>
+
+  <!-- KUBE-NODEPORTS -->
+  <rect x="480" y="260" width="160" height="60" rx="6" fill="#21262d" stroke="#d18616" stroke-width="1.2"/>
+  <text x="560" y="283" text-anchor="middle" fill="#d18616" font-size="10" font-weight="700">KUBE-NODEPORTS</text>
+  <text x="560" y="299" text-anchor="middle" fill="#8b949e" font-size="9">matches dport 30000-32767</text>
+  <text x="560" y="313" text-anchor="middle" fill="#6e7681" font-size="9">-j KUBE-SVC-&lt;hash&gt;</text>
+
+  <!-- POSTROUTING / MASQUERADE -->
+  <rect x="290" y="330" width="150" height="50" rx="6" fill="#21262d" stroke="#f85149" stroke-width="1.2"/>
+  <text x="365" y="352" text-anchor="middle" fill="#f85149" font-size="10" font-weight="700">POSTROUTING</text>
+  <text x="365" y="368" text-anchor="middle" fill="#8b949e" font-size="9">KUBE-POSTROUTING: MASQUERADE</text>
+
+  <!-- Arrows -->
+  <line x1="100" y1="183" x2="118" y2="183" stroke="#8b949e" stroke-width="1.2" marker-end="url(#ah)"/>
+  <line x1="100" y1="183" x2="108" y2="250" stroke="#8b949e" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#ah)"/>
+  <line x1="250" y1="183" x2="288" y2="183" stroke="#d29922" stroke-width="1.2" marker-end="url(#ah)"/>
+  <line x1="440" y1="175" x2="478" y2="130" stroke="#bc8cff" stroke-width="1.2" marker-end="url(#ah)"/>
+  <line x1="440" y1="185" x2="478" y2="300" stroke="#d18616" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#ah)"/>
+  <line x1="640" y1="120" x2="678" y2="65" stroke="#3fb950" stroke-width="1" marker-end="url(#ah-grn)"/>
+  <line x1="640" y1="130" x2="678" y2="130" stroke="#3fb950" stroke-width="1" marker-end="url(#ah-grn)"/>
+  <line x1="640" y1="140" x2="678" y2="195" stroke="#3fb950" stroke-width="1" marker-end="url(#ah-grn)"/>
+
+  <text x="410" y="380" text-anchor="middle" fill="#6e7681" font-size="9.5">MASQUERADE applied to pod→Service traffic so return packets route back correctly</text>
+</svg>
+
+<h3>Key iptables Chains</h3>
+
+<table>
+  <thead><tr><th>Chain</th><th>Table</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>KUBE-SERVICES</code></td><td>nat</td><td>Entry point; one rule per Service matching dst ClusterIP:port; jumps to per-Service chain</td></tr>
+    <tr><td><code>KUBE-SVC-&lt;hash&gt;</code></td><td>nat</td><td>Per-Service chain; random load balancing across endpoints using <code>--probability</code> statistic match</td></tr>
+    <tr><td><code>KUBE-SEP-&lt;hash&gt;</code></td><td>nat</td><td>Per-endpoint chain; performs DNAT to the pod IP:port</td></tr>
+    <tr><td><code>KUBE-NODEPORTS</code></td><td>nat</td><td>Matches NodePort range (30000-32767); jumps to per-Service chain</td></tr>
+    <tr><td><code>KUBE-POSTROUTING</code></td><td>nat</td><td>MASQUERADE for pod→Service traffic (pod to its own Service) to fix return routing</td></tr>
+    <tr><td><code>KUBE-FORWARD</code></td><td>filter</td><td>Allows forwarding for established connections and explicitly accepted traffic</td></tr>
+    <tr><td><code>KUBE-FIREWALL</code></td><td>filter</td><td>Drops traffic marked for rejection (e.g., packets routed to unready endpoints)</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># Inspect kube-proxy's iptables rules
+iptables -t nat -L KUBE-SERVICES -n --line-numbers | head -30
+
+# Find the chain for a specific Service
+SVC_IP=$(kubectl get svc my-service -o jsonpath='{.spec.clusterIP}')
+iptables -t nat -L KUBE-SERVICES -n | grep $SVC_IP
+
+# Follow the chain for that Service
+iptables -t nat -L KUBE-SVC-XXXXXXXXXX -n --line-numbers
+
+# Count total kube-proxy rules (can be large)
+iptables-save | grep -c KUBE</code></pre>
+
+<h2 id="ipvs-deep-dive">IPVS Mode — Virtual Servers</h2>
+
+<p>In IPVS mode, kube-proxy creates a <em>dummy interface</em> called <code>kube-ipvs0</code> and assigns all Service ClusterIPs to it. This makes the kernel recognize those IPs as local, enabling IPVS to intercept packets before they leave the node. IPVS maintains a hash table of virtual servers and real servers in kernel space.</p>
+
+<pre><code class="language-bash"># Check IPVS virtual servers (requires ipvsadm)
+ipvsadm -Ln
+
+# Output example:
+# IP Virtual Server version 1.2.1 (size=4096)
+# Prot LocalAddress:Port Scheduler Flags
+#   -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+# TCP  10.96.0.1:443 rr
+#   -> 10.0.1.10:6443               Masq    1      5          0
+# TCP  10.96.0.10:53 rr
+#   -> 10.244.0.5:53                Masq    1      0          0
+#   -> 10.244.0.6:53                Masq    1      0          0
+# TCP  10.100.50.20:80 rr
+#   -> 10.244.1.5:8080              Masq    1      12         0
+#   -> 10.244.2.8:8080              Masq    1      8          0
+
+# Show the kube-ipvs0 dummy interface with all ClusterIPs
+ip addr show kube-ipvs0 | grep "inet " | head -20</code></pre>
+
+<h3>IPVS Scheduling Algorithms</h3>
+
+<table>
+  <thead><tr><th>Algorithm</th><th>Flag</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Round Robin</td><td><code>rr</code></td><td>Default. Distributes connections equally across backends. No state tracking.</td></tr>
+    <tr><td>Least Connection</td><td><code>lc</code></td><td>Sends to backend with fewest active connections. Better for heterogeneous request durations.</td></tr>
+    <tr><td>Destination Hashing</td><td><code>dh</code></td><td>Consistent mapping: same client always hits same backend (not based on src IP — use <code>sh</code> for that).</td></tr>
+    <tr><td>Source Hashing</td><td><code>sh</code></td><td>Consistent src IP → backend mapping. Implements sessionAffinity without explicit timeout tracking.</td></tr>
+    <tr><td>Shortest Expected Delay</td><td><code>sed</code></td><td>Considers both active connections and weight. Approximates least-loaded server.</td></tr>
+    <tr><td>Weighted Round Robin</td><td><code>wrr</code></td><td>Weight-based round robin. kube-proxy currently assigns equal weight to all endpoints.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+<div class="callout-title">IPVS requires kernel module and conntrack tuning</div>
+IPVS mode requires the <code>ip_vs</code>, <code>ip_vs_rr</code>, <code>ip_vs_wrr</code>, <code>ip_vs_sh</code>, and <code>nf_conntrack</code> kernel modules. In addition, the conntrack table size (<code>nf_conntrack_max</code>) must be sized appropriately — IPVS still uses conntrack for NAT tracking. Default conntrack max (65536) is insufficient for large clusters; set to at least 1M on large nodes.
+</div>
+
+<pre><code class="language-bash"># Check required kernel modules for IPVS
+lsmod | grep -e ip_vs -e nf_conntrack
+
+# Load modules if needed
+modprobe ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh nf_conntrack
+
+# Make persistent (Ubuntu/Debian)
+cat >> /etc/modules-load.d/ipvs.conf << 'EOF'
+ip_vs
+ip_vs_rr
+ip_vs_wrr
+ip_vs_sh
+nf_conntrack
+EOF
+
+# Tune conntrack (critical for IPVS at scale)
+sysctl -w net.netfilter.nf_conntrack_max=1048576
+sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=86400</code></pre>
+
+<h2 id="service-types">Service Type Implementation</h2>
+
+<table>
+  <thead><tr><th>Service type</th><th>What kube-proxy does</th><th>What it does NOT do</th></tr></thead>
+  <tbody>
+    <tr><td><code>ClusterIP</code></td><td>Programs DNAT rules for the ClusterIP:port → endpoint IPs</td><td>Does not provision cloud load balancers (that's CCM)</td></tr>
+    <tr><td><code>NodePort</code></td><td>Opens the NodePort on ALL nodes (KUBE-NODEPORTS chain); forwards to endpoints</td><td>Does not ensure the port is accessible through firewalls</td></tr>
+    <tr><td><code>LoadBalancer</code></td><td>Same as NodePort (backend); cloud LB is provisioned by CCM</td><td>Does not program the cloud LB; does not manage ExternalIP from LB status by default</td></tr>
+    <tr><td><code>ExternalIP</code></td><td>Programs DNAT for the explicitly specified external IP addresses</td><td>Does not route external IPs to the node (that's BGP/cloud routing)</td></tr>
+    <tr><td>Headless (<code>ClusterIP: None</code>)</td><td>No rules — DNS returns pod IPs directly; no kube-proxy involvement</td><td>N/A</td></tr>
+  </tbody>
+</table>
+
+<h2 id="external-traffic-policy">externalTrafficPolicy</h2>
+
+<p>This field on a Service controls how traffic arriving at a NodePort or LoadBalancer is handled:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>externalTrafficPolicy: Cluster (default)</h4>
+    <p>Traffic arriving at any node's NodePort is forwarded to <em>any</em> healthy endpoint in the cluster, potentially hair-pinning to another node. The source IP is SNAT'd to the node's IP (source IP is lost).</p>
+    <pre><code>Client → Node A :30080
+  → SNAT to Node A IP
+  → Pod on Node B :8080
+  (src IP = Node A, not client)</code></pre>
+  </div>
+  <div class="card">
+    <h4>externalTrafficPolicy: Local</h4>
+    <p>Traffic is only forwarded to endpoints on the <em>same node</em>. If no local endpoints exist, the connection is dropped (health checks will fail, causing the LB to route elsewhere). Source IP is preserved.</p>
+    <pre><code>Client → Node A :30080
+  → Pod on Node A :8080 only
+  → src IP = Client IP preserved
+
+  (Node A with no local pods:
+   connection dropped — LB
+   will not route here)</code></pre>
+  </div>
+</div>
+
+<div class="callout note">
+<div class="callout-title">internalTrafficPolicy (1.26 GA)</div>
+Analogous to <code>externalTrafficPolicy</code> but for traffic originating from inside the cluster. When set to <code>Local</code>, ClusterIP traffic is only forwarded to endpoints on the same node. Useful for node-local caches (DaemonSets) where you want pods to always hit the local instance.
+</div>
+
+<h2 id="endpointslices">EndpointSlices</h2>
+
+<p>kube-proxy has fully migrated from watching <code>Endpoints</code> objects to watching <code>EndpointSlice</code> objects (GA 1.21, default from 1.17). EndpointSlices shard endpoints into slices of up to 100 endpoints each, drastically reducing the size of individual watch events.</p>
+
+<p>With old <code>Endpoints</code>: a single endpoint change in a Service with 1000 pods triggered a 1000-entry object update broadcast to every kube-proxy in the cluster. With <code>EndpointSlice</code>: only the slice containing the changed endpoint is updated — at most 100 endpoints per event.</p>
+
+<pre><code class="language-bash"># View EndpointSlices for a Service
+kubectl get endpointslices -l kubernetes.io/service-name=my-service
+
+# EndpointSlice object
+kubectl get endpointslice my-service-abc12 -o yaml</code></pre>
+
+<pre><code class="language-yaml">apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: my-service-abc12
+  labels:
+    kubernetes.io/service-name: my-service
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+addressType: IPv4
+ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+endpoints:
+  - addresses: ["10.244.1.5"]
+    conditions:
+      ready: true
+      serving: true       # Is currently serving (even during termination)
+      terminating: false  # Is in graceful termination
+    nodeName: worker-1
+    zone: us-east-1a
+    hints:
+      forZones:
+        - name: us-east-1a  # Topology Aware Routing hint</code></pre>
+
+<h2 id="topology-aware">Topology Aware Routing</h2>
+
+<p>When <code>service.kubernetes.io/topology-mode: auto</code> is set on a Service (GA 1.27), the EndpointSlice controller adds <code>hints.forZones</code> annotations to endpoints. kube-proxy then preferentially routes to endpoints in the same zone as the requesting pod, reducing cross-zone traffic costs.</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  annotations:
+    service.kubernetes.io/topology-mode: "auto"   # Enable topology-aware routing
+spec:
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+      targetPort: 8080</code></pre>
+
+<div class="callout warn">
+<div class="callout-title">Topology routing requires balanced endpoint distribution</div>
+If endpoints are not evenly distributed across zones, the EndpointSlice controller disables topology hints for that Service (to avoid routing all traffic to a zone with very few endpoints). Monitor <code>endpoint_slice_controller_endpoints_added_per_sync</code> and check EndpointSlice <code>hints</code> fields to verify topology routing is active.
+</div>
+
+<h2 id="kube-proxy-config">KubeProxyConfiguration Reference</h2>
+
+<pre><code class="language-yaml">apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+
+# --- Core settings ---
+bindAddress: "0.0.0.0"
+clusterCIDR: "10.244.0.0/16"   # Pod CIDR; used to detect traffic that needs SNAT
+hostnameOverride: ""            # Override node name if different from hostname
+
+# --- Proxy mode ---
+mode: "ipvs"                    # iptables | ipvs | nftables | "" (auto-detect)
+
+# --- IPVS settings (only relevant when mode=ipvs) ---
+ipvs:
+  scheduler: "rr"               # rr | lc | dh | sh | sed | wrr
+  syncPeriod: "30s"             # Full sync interval
+  minSyncPeriod: "1s"           # Minimum time between partial syncs
+  tcpTimeout: "0s"              # 0 = use kernel default (900s)
+  tcpFinTimeout: "0s"
+  udpTimeout: "0s"
+  excludeCIDRs: []              # CIDRs to exclude from IPVS (e.g., cloud metadata)
+  strictARP: true               # Required for MetalLB; sets arp_announce=2 on all interfaces
+
+# --- iptables settings ---
+iptables:
+  masqueradeAll: false          # SNAT all traffic (not just pod-to-Service)
+  masqueradeBit: 14             # Bit in fwmark used to identify traffic for masquerade
+  syncPeriod: "30s"
+  minSyncPeriod: "1s"
+
+# --- nftables settings ---
+nftables:
+  masqueradeAll: false
+  masqueradeBit: 14
+  syncPeriod: "30s"
+  minSyncPeriod: "1s"
+
+# --- API server connection ---
+clientConnection:
+  kubeconfig: "/var/lib/kube-proxy/kubeconfig.conf"
+  acceptContentTypes: ""
+  contentType: "application/vnd.kubernetes.protobuf"
+  qps: 10
+  burst: 20                     # Increase for large clusters with frequent endpoint churn
+
+# --- Ports ---
+metricsBindAddress: "127.0.0.1:10249"   # Prometheus metrics
+healthzBindAddress: "0.0.0.0:10256"     # Health check
+
+# --- Feature gates ---
+featureGates:
+  TopologyAwareHints: true</code></pre>
+
+<h2 id="daemonset">kube-proxy DaemonSet</h2>
+
+<p>kube-proxy runs as a DaemonSet in <code>kube-system</code>. It requires elevated host privileges to program kernel networking rules:</p>
+
+<pre><code class="language-yaml">apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-proxy
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      k8s-app: kube-proxy
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s-app: kube-proxy
+    spec:
+      priorityClassName: system-node-critical
+      tolerations:
+        - operator: Exists            # Run on ALL nodes including control plane
+      hostNetwork: true               # Needs host network namespace for iptables
+      serviceAccountName: kube-proxy
+      containers:
+        - name: kube-proxy
+          image: registry.k8s.io/kube-proxy:v1.29.3
+          command:
+            - /usr/local/bin/kube-proxy
+            - --config=/var/lib/kube-proxy/config.conf
+            - --hostname-override=$(NODE_NAME)
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            privileged: true          # Required for iptables/IPVS/nftables
+          volumeMounts:
+            - mountPath: /var/lib/kube-proxy
+              name: kube-proxy
+            - mountPath: /run/xtables.lock
+              name: xtables-lock
+              readOnly: false
+            - mountPath: /lib/modules
+              name: lib-modules
+              readOnly: true
+      volumes:
+        - name: kube-proxy
+          configMap:
+            name: kube-proxy
+        - name: xtables-lock
+          hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules</code></pre>
+
+<div class="callout note">
+<div class="callout-title">xtables-lock prevents concurrent rule programming</div>
+The <code>/run/xtables.lock</code> volume mount ensures kube-proxy and any other process (e.g., a CNI plugin) that modifies iptables use the same lock file. Without this, concurrent iptables modifications can cause partial rule application or <code>iptables: Resource temporarily unavailable</code> errors.
+</div>
+
+<h2 id="metrics">Prometheus Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>kubeproxy_sync_proxy_rules_duration_seconds</code></td><td>Histogram</td><td>Time to sync all proxy rules. Alert if p99 &gt; 10s.</td></tr>
+    <tr><td><code>kubeproxy_sync_proxy_rules_last_queued_timestamp_seconds</code></td><td>Gauge</td><td>When the last sync was triggered. Large lag = kube-proxy falling behind.</td></tr>
+    <tr><td><code>kubeproxy_sync_proxy_rules_iptables_total</code></td><td>Gauge</td><td>Total number of iptables rules currently programmed (iptables mode)</td></tr>
+    <tr><td><code>kubeproxy_sync_proxy_rules_iptables_restore_failures_total</code></td><td>Counter</td><td>Failed iptables-restore calls. Any value &gt; 0 means rules are not being applied.</td></tr>
+    <tr><td><code>kubeproxy_network_programming_duration_seconds</code></td><td>Histogram</td><td>End-to-end latency from endpoint change detected to rules programmed</td></tr>
+  </tbody>
+</table>
+
+<h3>Alerting Rules</h3>
+
+<pre><code class="language-yaml">groups:
+  - name: kube-proxy
+    rules:
+      - alert: KubeProxyRuleSyncLatencyHigh
+        expr: |
+          histogram_quantile(0.99,
+            rate(kubeproxy_sync_proxy_rules_duration_seconds_bucket[5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "kube-proxy rule sync p99 > 10s on {{ $labels.instance }}"
+          description: "May indicate iptables rule count too high — consider IPVS or eBPF mode"
+
+      - alert: KubeProxyIptablesRestoreFailure
+        expr: increase(kubeproxy_sync_proxy_rules_iptables_restore_failures_total[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "iptables-restore failing on {{ $labels.instance }} — Service rules not being applied"
+
+      - alert: KubeProxyNotRunning
+        expr: kube_daemonset_status_number_ready{daemonset="kube-proxy"} < kube_daemonset_status_desired_number_scheduled{daemonset="kube-proxy"}
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "kube-proxy not running on all nodes — Service connectivity broken"</code></pre>
+
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<details>
+<summary>Runbook 1: Service ClusterIP not reachable from pod</summary>
+<div class="details-body">
+<pre><code class="language-bash"># 1. Verify Service and endpoints exist
+kubectl get svc my-service
+kubectl get endpoints my-service
+# If Endpoints shows "<none>": selector doesn't match any pods
+
+# 2. Verify kube-proxy is running on target node
+kubectl get pods -n kube-system -l k8s-app=kube-proxy -o wide
+kubectl logs -n kube-system kube-proxy-xxxxx --tail=50
+
+# 3. Check iptables rules for the ClusterIP
+SVC_IP=$(kubectl get svc my-service -o jsonpath='{.spec.clusterIP}')
+iptables -t nat -L KUBE-SERVICES -n | grep $SVC_IP
+# If missing: kube-proxy hasn't synced yet or is failing
+
+# 4. Check IPVS (if in IPVS mode)
+ipvsadm -Ln | grep -A5 $SVC_IP
+
+# 5. Test connectivity directly to pod IP (bypassing Service)
+POD_IP=$(kubectl get endpoints my-service -o jsonpath='{.subsets[0].addresses[0].ip}')
+kubectl exec -it test-pod -- curl http://$POD_IP:8080
+
+# 6. Check kube-proxy sync errors
+kubectl logs -n kube-system -l k8s-app=kube-proxy | grep -i error | tail -20</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Runbook 2: NodePort not accessible from outside cluster</summary>
+<div class="details-body">
+<pre><code class="language-bash"># 1. Get the NodePort
+kubectl get svc my-service -o jsonpath='{.spec.ports[0].nodePort}'
+# e.g. 30080
+
+# 2. Verify KUBE-NODEPORTS chain has the rule
+iptables -t nat -L KUBE-NODEPORTS -n | grep 30080
+# Should see: tcp dpt:30080 -> KUBE-SVC-...
+
+# 3. Check firewall / security groups (cloud)
+# The node's firewall must allow TCP/UDP 30000-32767 from external
+
+# 4. Verify kube-proxy binds to the node's IP
+kubectl get cm -n kube-system kube-proxy -o yaml | grep bindAddress
+
+# 5. Test from inside the node
+NODE_IP=$(kubectl get node worker-1 -o jsonpath='{.status.addresses[0].address}')
+curl http://$NODE_IP:30080
+
+# 6. If externalTrafficPolicy: Local, verify local endpoints exist
+kubectl get endpoints my-service -o yaml | grep -A5 nodeName</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Runbook 3: iptables rule sync is slow — kube-proxy lagging</summary>
+<div class="details-body">
+<pre><code class="language-bash"># Symptom: new Services take minutes to become reachable
+# or kubeproxy_sync_proxy_rules_duration_seconds p99 > 10s
+
+# 1. Count current iptables rules
+iptables-save | wc -l
+iptables-save | grep -c KUBE
+# If > 10000 rules: time to consider IPVS or eBPF
+
+# 2. Check Services with many endpoints (each endpoint = 1 rule)
+kubectl get endpoints --all-namespaces -o json | jq '
+  .items[] | {
+    name: .metadata.name,
+    ns: .metadata.namespace,
+    count: (.subsets[0].addresses | length)
+  }' | sort -k3 -rn | head -10
+
+# 3. Switch to IPVS mode
+# Edit kube-proxy ConfigMap:
+kubectl edit cm kube-proxy -n kube-system
+# Change: mode: "ipvs"
+# Add: ipvs.strictARP: true (if using MetalLB)
+
+# 4. Restart kube-proxy DaemonSet to apply
+kubectl rollout restart daemonset/kube-proxy -n kube-system
+
+# 5. Clean up legacy iptables rules after switching to IPVS
+iptables-save | grep -v KUBE | iptables-restore
+# WARNING: review carefully before running in production</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Runbook 4: Source IP lost — need to preserve client IP</summary>
+<div class="details-body">
+<pre><code class="language-bash"># Symptom: application sees node IP instead of client IP
+
+# 1. Check current externalTrafficPolicy
+kubectl get svc my-service -o jsonpath='{.spec.externalTrafficPolicy}'
+# Returns: Cluster (source IP is SNAT'd)
+
+# 2. Change to Local to preserve source IP
+kubectl patch svc my-service \
+  -p '{"spec":{"externalTrafficPolicy":"Local"}}'
+
+# 3. Verify the Service has local endpoints on target nodes
+kubectl get endpoints my-service -o yaml | grep nodeName
+
+# 4. Configure your cloud LB health check to respect Local policy
+# Most cloud LBs will stop routing to nodes with 0 local endpoints
+# Health check: GET /healthz on NodePort
+# Kubernetes provides this automatically when externalTrafficPolicy=Local
+
+# 5. For intra-cluster source IP preservation (1.26+):
+kubectl patch svc my-service \
+  -p '{"spec":{"internalTrafficPolicy":"Local"}}'</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Runbook 5: IPVS conntrack table exhaustion</summary>
+<div class="details-body">
+<pre><code class="language-bash"># Symptom: connections randomly fail; dmesg shows "nf_conntrack: table full, dropping packet"
+
+# 1. Check current conntrack usage
+cat /proc/sys/net/netfilter/nf_conntrack_count
+cat /proc/sys/net/netfilter/nf_conntrack_max
+# If count approaching max: need to increase max
+
+# 2. Increase conntrack max (immediately, not persistent)
+sysctl -w net.netfilter.nf_conntrack_max=2097152
+sysctl -w net.core.netdev_max_backlog=250000
+
+# 3. Make persistent
+cat >> /etc/sysctl.d/99-conntrack.conf << 'EOF'
+net.netfilter.nf_conntrack_max = 2097152
+net.netfilter.nf_conntrack_tcp_timeout_established = 86400
+net.netfilter.nf_conntrack_tcp_timeout_close_wait = 60
+EOF
+sysctl --system
+
+# 4. Tune IPVS timeouts to reduce stale entries
+kubectl edit cm kube-proxy -n kube-system
+# Set: ipvs.tcpTimeout: "900s"  (15 minutes, down from kernel default)
+#      ipvs.tcpFinTimeout: "30s"
+
+# 5. Monitor conntrack with Prometheus
+# node_nf_conntrack_entries vs node_nf_conntrack_entries_limit</code></pre>
+</div>
+</details>
+
+<h2 id="kube-proxy-alternatives">kube-proxy Alternatives</h2>
+
+<table>
+  <thead><tr><th>Alternative</th><th>Mechanism</th><th>Advantage over kube-proxy</th><th>Requirement</th></tr></thead>
+  <tbody>
+    <tr><td>Cilium (kube-proxy replacement)</td><td>eBPF programs on tc/XDP hooks</td><td>O(1) lookup, no conntrack for Service traffic, lower latency</td><td>Kernel 4.19+; Cilium CNI installed</td></tr>
+    <tr><td>Calico eBPF</td><td>eBPF</td><td>Same as Cilium; integrates with Calico networking</td><td>Calico CNI in eBPF mode</td></tr>
+    <tr><td>kube-router</td><td>IPVS + BGP</td><td>Combines kube-proxy (IPVS) + CNI + BGP in one binary</td><td>Replaces kube-proxy DaemonSet entirely</td></tr>
+    <tr><td>MetalLB (speaker)</td><td>BGP/L2 advertisement</td><td>Handles LoadBalancer type on bare metal (not a kube-proxy replacement)</td><td>Bare metal or non-cloud clusters</td></tr>
+  </tbody>
+</table>
+
+<h2 id="best-practices">Production Best Practices</h2>
+
+<ol>
+  <li><strong>Use IPVS mode for clusters with &gt;1000 Services.</strong> iptables rule count grows as Services × endpoints, and rule traversal is O(n). IPVS uses hash tables (O(1)) and handles 100,000+ Services without degradation. Verify the kernel modules are loaded on all nodes before switching.</li>
+  <li><strong>Set <code>strictARP: true</code> in IPVS mode when using MetalLB or kube-vip.</strong> Without it, ARP requests for Service IPs may be answered by the wrong interface, breaking L2 advertisement.</li>
+  <li><strong>Tune the conntrack table size on IPVS nodes.</strong> IPVS still uses conntrack for NAT. Default max (65536) is exhausted quickly on busy nodes. Start with <code>nf_conntrack_max = 1048576</code> and monitor <code>node_nf_conntrack_entries</code>.</li>
+  <li><strong>Use <code>externalTrafficPolicy: Local</code> for services where client IP matters</strong> (TLS SNI, rate limiting by IP, geo-routing). Accept that this requires the load balancer to health-check nodes and stop routing to nodes with no local endpoints.</li>
+  <li><strong>Consider replacing kube-proxy with Cilium's kube-proxy replacement</strong> for new clusters. eBPF-based Service implementation has measurably lower latency (no conntrack NAT for service traffic) and is simpler to operate — one less DaemonSet to manage.</li>
+  <li><strong>Monitor <code>kubeproxy_sync_proxy_rules_duration_seconds</code> p99.</strong> Values above 1s in iptables mode indicate the rule table is growing too large. Alert at 5s; act at 10s.</li>
+  <li><strong>Set <code>minSyncPeriod</code> to at least 1s.</strong> Without a minimum sync period, kube-proxy re-programs all rules for every single endpoint change event, causing CPU spikes during rolling deployments.</li>
+  <li><strong>Use Topology Aware Routing</strong> (<code>service.kubernetes.io/topology-mode: auto</code>) in multi-zone clusters to reduce cross-zone traffic costs, but verify the endpoint distribution is balanced enough for hints to be active.</li>
+</ol>
+
+<div class="nav-footer">
+  <a href="01-kubelet.html" class="nav-btn">← kubelet</a>
+  <a href="03-container-runtime.html" class="nav-btn next">Container Runtime →</a>
+</div>
+</main>
+
+<aside class="toc-panel" id="toc-panel">
+  <h4>On this page</h4>
+  <a href="#role">What kube-proxy Does</a>
+  <a href="#proxy-modes">Proxy Modes</a>
+  <a href="#iptables-deep-dive">iptables Mode</a>
+  <a href="#ipvs-deep-dive">IPVS Mode</a>
+  <a href="#service-types">Service Type Implementation</a>
+  <a href="#external-traffic-policy">externalTrafficPolicy</a>
+  <a href="#endpointslices">EndpointSlices</a>
+  <a href="#topology-aware">Topology Aware Routing</a>
+  <a href="#kube-proxy-config">KubeProxyConfiguration</a>
+  <a href="#daemonset">DaemonSet</a>
+  <a href="#metrics">Prometheus Metrics</a>
+  <a href="#troubleshooting">Troubleshooting Runbooks</a>
+  <a href="#kube-proxy-alternatives">Alternatives</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<button class="back-to-top" id="back-to-top">↑</button>
+
+<script>
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');btn.className='copy-btn';btn.textContent='Copy';
+  pre.style.position='relative';pre.appendChild(btn);
+  btn.addEventListener('click',()=>{navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('.toc-panel a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+document.getElementById('search-input').addEventListener('input',function(){
+  const q=this.value.trim();
+  main.querySelectorAll('mark.search-hl').forEach(m=>{
+    const p=m.parentNode;p.replaceChild(document.createTextNode(m.textContent),m);p.normalize();
+  });
+  if(!q)return;
+  const walk=document.createTreeWalker(main,NodeFilter.SHOW_TEXT);
+  const nodes=[];let n;
+  while((n=walk.nextNode()))nodes.push(n);
+  const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  nodes.forEach(node=>{
+    if(!node.textContent.match(re))return;
+    const span=document.createElement('span');
+    span.innerHTML=node.textContent.replace(re,m=>'<mark class="search-hl">'+m+'</mark>');
+    node.parentNode.replaceChild(span,node);
+  });
+});
+</script>
+</body>
+</html>

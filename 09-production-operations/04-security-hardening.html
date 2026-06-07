@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Hardening | Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+#sidebar-header h1{font-size:14px;font-weight:600;color:var(--text);}
+#sidebar-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+#sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+#sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none;}
+#sidebar-search input:focus{border-color:var(--accent);}
+#sidebar-nav{overflow-y:auto;flex:1;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);}
+#main{flex:1;overflow-y:auto;padding:40px 48px;position:relative;}
+.page-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.page-header .breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.page-header .breadcrumb span{color:var(--text2);}
+.page-header h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-header .subtitle{color:var(--text2);font-size:16px;line-height:1.6;}
+.page-header .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+#toc{float:right;width:220px;margin:0 0 24px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;position:sticky;top:24px;}
+#toc h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+#toc a{display:block;font-size:12px;color:var(--text2);padding:3px 0;border-left:2px solid transparent;padding-left:8px;transition:all .15s;}
+#toc a:hover{color:var(--text);text-decoration:none;}
+#toc a.active{color:var(--accent);border-left-color:var(--accent);}
+#toc a.toc-h3{padding-left:18px;font-size:11px;}
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);clear:both;}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px;}
+h4{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;}
+p{color:var(--text2);line-height:1.7;margin-bottom:12px;}
+ul,ol{color:var(--text2);line-height:1.7;padding-left:20px;margin-bottom:12px;}
+li{margin-bottom:4px;}
+strong{color:var(--text);font-weight:600;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:12px;color:var(--text);line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);color:var(--text);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card-accent-blue{border-top:3px solid var(--accent);}
+.card-accent-green{border-top:3px solid var(--green);}
+.card-accent-yellow{border-top:3px solid var(--yellow);}
+.card-accent-red{border-top:3px solid var(--red);}
+.card-accent-purple{border-top:3px solid var(--purple);}
+.card-accent-orange{border-top:3px solid var(--orange);}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout-body p,.callout-body ul{font-size:13px;margin:0;}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.diagram .title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+#back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;z-index:100;}
+#back-top.visible{opacity:1;}
+#back-top:hover{background:var(--bg4);color:var(--text);}
+.severity-critical{color:var(--red);font-weight:600;}
+.severity-high{color:var(--orange);font-weight:600;}
+.severity-medium{color:var(--yellow);}
+.severity-low{color:var(--green);}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Kubernetes Docs</h1>
+    <p>Production-Grade Reference</p>
+  </div>
+  <div id="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)" />
+  </div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Getting Started</div>
+      <a href="../00-foundations/00-overview.html">00 Foundations Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Security</div>
+      <a href="../05-security/00-security-overview.html">Security Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/05-policy-enforcement.html">Policy Enforcement</a>
+      <a href="../08-platform-engineering/09-secrets-automation.html">Secrets Automation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="00-production-overview.html">Production Overview</a>
+      <a href="01-capacity-planning.html">Capacity Planning</a>
+      <a href="02-performance-tuning.html">Performance Tuning</a>
+      <a href="03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="04-security-hardening.html" class="active">Security Hardening</a>
+      <a href="05-network-operations.html">Network Operations</a>
+      <a href="06-storage-operations.html">Storage Operations</a>
+      <a href="07-certificate-management.html">Certificate Management</a>
+      <a href="08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="09-incident-response.html">Incident Response</a>
+      <a href="10-sre-practices.html">SRE Practices</a>
+    </div>
+  </nav>
+</div>
+
+<div id="main">
+
+<nav id="toc">
+  <h3>On This Page</h3>
+  <a href="#defense-in-depth">Defense in Depth</a>
+  <a href="#cis-benchmark">CIS Benchmark</a>
+  <a href="#kube-bench">kube-bench</a>
+  <a href="#node-hardening">Node Hardening</a>
+  <a href="#rbac-hardening">RBAC Hardening</a>
+  <a href="#network-hardening">Network Hardening</a>
+  <a href="#supply-chain">Supply Chain Security</a>
+  <a href="#falco">Falco Runtime Detection</a>
+  <a href="#trivy-operator">Trivy Operator</a>
+  <a href="#audit-logs">Audit Log Analysis</a>
+  <a href="#etcd-encryption">etcd Encryption</a>
+  <a href="#secrets-hardening">Secrets Hardening</a>
+  <a href="#hardening-alerts">Hardening Alerts</a>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">09 — Production Operations / <span>04 Security Hardening</span></div>
+  <h1>Security Hardening</h1>
+  <p class="subtitle">CIS Kubernetes Benchmark, runtime threat detection with Falco, continuous vulnerability scanning, audit log analysis, and supply chain security for production clusters.</p>
+  <div class="meta">
+    <span class="badge badge-red">Security</span>
+    <span class="badge badge-blue">CIS Benchmark</span>
+    <span class="badge badge-purple">Falco</span>
+    <span class="badge badge-yellow">Supply Chain</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="defense-in-depth">Defense in Depth</h2>
+
+<p>Security hardening is not a checklist you complete once — it is a continuous process across multiple layers. No single control prevents all attacks. The goal is to make lateral movement expensive enough that attackers are detected before they reach critical assets.</p>
+
+<div class="diagram">
+  <div class="title">Kubernetes Security Layers</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Layer 7: Supply chain    ← Image signing, SBOM, Cosign, SLSA
+  Layer 6: Workload        ← Pod Security Standards, securityContext
+  Layer 5: Application     ← RBAC, ServiceAccount, NetworkPolicy
+  Layer 4: Secrets         ← Vault, ESO, etcd encryption, IRSA
+  Layer 3: Cluster         ← CIS benchmark, admission control, audit logs
+  Layer 2: Node            ← OS hardening, IMDSv2, containerd AppArmor/Seccomp
+  Layer 1: Network         ← VPC isolation, private endpoint, Security Groups
+  Layer 0: Identity        ← IAM roles, OIDC federation, MFA, PAM
+
+  Attacker must breach ALL layers. Defender needs to stop at ANY layer.</pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Threat</th><th>Primary Control</th><th>Detection</th></tr></thead>
+  <tbody>
+    <tr><td>Container escape (kernel exploit)</td><td>seccomp RuntimeDefault, AppArmor, non-root, read-only rootfs</td><td>Falco: syscall anomaly</td></tr>
+    <tr><td>Privileged container abuse</td><td>PSS Restricted, Kyverno disallow-privileged</td><td>Falco: privileged spawn, kube-bench</td></tr>
+    <tr><td>Lateral movement via ServiceAccount</td><td>automountServiceAccountToken: false, least-privilege RBAC</td><td>Audit logs: unexpected API calls</td></tr>
+    <tr><td>Secret exfiltration</td><td>etcd encryption, Vault, NetworkPolicy restrict egress</td><td>Falco: /proc/*/environ read, unusual network</td></tr>
+    <tr><td>Malicious image</td><td>Cosign image signing, Kyverno verifyImages</td><td>Trivy Operator: CVE scan on running pods</td></tr>
+    <tr><td>RBAC escalation</td><td>No cluster-admin, audit RoleBindings quarterly</td><td>Audit logs: bind/escalate verbs</td></tr>
+    <tr><td>Node compromise via IMDS</td><td>IMDSv2 mandatory, hop-limit 1 (blocks pod access)</td><td>CloudTrail: unexpected IAM calls from EC2</td></tr>
+    <tr><td>etcd direct access</td><td>etcd mTLS, private subnet, no public endpoint</td><td>etcd audit logs</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cis-benchmark">CIS Kubernetes Benchmark</h2>
+
+<p>The CIS Kubernetes Benchmark provides prescriptive hardening guidance covering control plane, worker nodes, policies, and managed services. The benchmark is versioned per Kubernetes release — use the version matching your cluster.</p>
+
+<h3>Key CIS control areas</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Section</th><th>Key Controls</th><th>Automated Check</th></tr></thead>
+  <tbody>
+    <tr><td><strong>1. Control Plane</strong></td><td>API server flags: anonymous-auth=false, kubelet HTTPS, RBAC enabled, NodeRestriction admission, audit logging</td><td>kube-bench section 1</td></tr>
+    <tr><td><strong>2. etcd</strong></td><td>TLS client auth, data encryption at rest, separate etcd network interface</td><td>kube-bench section 2</td></tr>
+    <tr><td><strong>3. Control Plane Config</strong></td><td>Controller manager: service-account-private-key, root-ca-file, profiling disabled</td><td>kube-bench section 3</td></tr>
+    <tr><td><strong>4. Worker Nodes</strong></td><td>kubelet: anonymous auth disabled, authorization mode Webhook, read-only port disabled, TLS cert rotation, protect kernel defaults</td><td>kube-bench section 4</td></tr>
+    <tr><td><strong>5. Policies</strong></td><td>RBAC, ServiceAccount token projection, Pod Security Standards, Network Policies, Secrets encryption</td><td>kube-bench section 5</td></tr>
+    <tr><td><strong>EKS/GKE/AKS</strong></td><td>Managed plane controls; focus on worker node hardening + policies</td><td>kube-bench with --benchmark eks-stig-node or gke</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="kube-bench">kube-bench</h2>
+
+<p>kube-bench runs CIS Kubernetes Benchmark checks automatically against a live cluster. It auto-detects the Kubernetes version and selects the corresponding benchmark.</p>
+
+<h3>Running kube-bench</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Run against current cluster as a Job (recommended over local binary)
+kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job.yaml
+
+# Wait for completion and get results
+kubectl wait --for=condition=complete job/kube-bench --timeout=120s
+kubectl logs job/kube-bench
+
+# EKS-specific benchmark
+kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job-eks.yaml
+kubectl logs job/kube-bench-eks
+
+# Worker node only (run on each node)
+kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job-node.yaml</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># kube-bench Job with JSON output to S3 (for centralized reporting)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kube-bench
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      hostPID: true
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+      restartPolicy: Never
+      volumes:
+        - name: var-lib-etcd
+          hostPath:
+            path: /var/lib/etcd
+        - name: etc-kubernetes
+          hostPath:
+            path: /etc/kubernetes
+        - name: usr-local-mount-1
+          hostPath:
+            path: /usr/local/mount-from-host/bin
+        - name: etc-cni-netd
+          hostPath:
+            path: /etc/cni/net.d/
+        - name: opt-cni-bin
+          hostPath:
+            path: /opt/cni/bin/
+      containers:
+        - name: kube-bench
+          image: aquasec/kube-bench:v0.8.0
+          command:
+            - kube-bench
+            - --json
+            - --outputfile
+            - /tmp/kube-bench-results.json
+          volumeMounts:
+            - name: var-lib-etcd
+              mountPath: /var/lib/etcd
+              readOnly: true
+            - name: etc-kubernetes
+              mountPath: /etc/kubernetes
+              readOnly: true
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName</code></pre>
+
+<h3>Interpreting and prioritizing results</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Parse kube-bench JSON output — show only FAILs
+kubectl logs job/kube-bench | \
+  python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for c in data.get('Controls', []):
+    for g in c.get('tests', []):
+        for t in g.get('results', []):
+            if t['status'] == 'FAIL':
+                print(f\"[FAIL] {t['test_number']}: {t['test_desc']}\")
+                print(f\"       Remediation: {t.get('remediation','N/A')[:120]}\")
+                print()
+"
+
+# Quick summary
+kubectl logs job/kube-bench | grep -E "^\[FAIL\]|^\[WARN\]|^== Summary" | head -40</code></pre>
+
+<h3>Common kube-bench remediations</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Check ID</th><th>Description</th><th>Remediation</th></tr></thead>
+  <tbody>
+    <tr><td>1.2.1</td><td>anonymous-auth not disabled</td><td><code>--anonymous-auth=false</code> on kube-apiserver</td></tr>
+    <tr><td>1.2.6</td><td>NodeRestriction admission not enabled</td><td>Add <code>NodeRestriction</code> to <code>--enable-admission-plugins</code></td></tr>
+    <tr><td>1.2.22</td><td>Audit logging not enabled</td><td>Add <code>--audit-log-path</code>, <code>--audit-policy-file</code>, <code>--audit-log-maxage=30</code></td></tr>
+    <tr><td>4.2.1</td><td>kubelet anonymous auth enabled</td><td><code>authentication.anonymous.enabled: false</code> in kubelet config</td></tr>
+    <tr><td>4.2.2</td><td>kubelet authorization mode not Webhook</td><td><code>authorization.mode: Webhook</code> in kubelet config</td></tr>
+    <tr><td>4.2.6</td><td>Read-only port not disabled</td><td><code>readOnlyPort: 0</code> in kubelet config</td></tr>
+    <tr><td>5.1.3</td><td>Wildcards in ClusterRoles</td><td>Replace <code>*</code> verbs/resources with explicit permissions</td></tr>
+    <tr><td>5.2.2</td><td>Privileged containers allowed</td><td>Enforce PSS Restricted or Kyverno policy</td></tr>
+    <tr><td>5.3.2</td><td>NetworkPolicies not set</td><td>Default-deny + explicit allow rules per namespace</td></tr>
+    <tr><td>5.4.1</td><td>Secrets not encrypted at rest</td><td>Enable EncryptionConfiguration for etcd</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="node-hardening">Node Hardening</h2>
+
+<h3>IMDSv2 enforcement (AWS EKS)</h3>
+
+<p>Instance Metadata Service v2 (IMDSv2) requires a session token for all IMDS calls. This prevents pods from stealing the node's IAM role credentials via SSRF or IMDS abuse.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Enforce IMDSv2 with hop limit 1 on all new instances
+# Set in EKS managed node group launch template (or Karpenter EC2NodeClass)
+aws ec2 modify-instance-metadata-options \
+  --instance-id i-0123456789abcdef0 \
+  --http-tokens required \
+  --http-put-response-hop-limit 1 \
+  --http-endpoint enabled
+
+# Karpenter EC2NodeClass — enforce on all Karpenter-managed nodes
+metadataOptions:
+  httpTokens: required
+  httpPutResponseHopLimit: 1
+  httpEndpoint: enabled</code></pre>
+
+<div class="callout callout-danger">
+  <div class="callout-icon">🚨</div>
+  <div class="callout-body">
+    <strong>hop-limit=1 is critical</strong>
+    <p>The default hop limit of 2 allows pods to reach IMDS directly (pod → node → IMDS = 2 hops). Setting <code>httpPutResponseHopLimit: 1</code> restricts IMDS access to the node itself (only 1 hop allowed). This prevents any pod from calling IMDS even if IRSA is not used — a critical defense against credential theft.</p>
+  </div>
+</div>
+
+<h3>kubelet hardening configuration</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># /etc/kubernetes/kubelet-config.yaml (kubeadm or EKS custom kubelet config)
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+
+# Authentication
+authentication:
+  anonymous:
+    enabled: false          # CIS 4.2.1
+  webhook:
+    enabled: true
+    cacheTTL: 2m
+  x509:
+    clientCAFile: /etc/kubernetes/pki/ca.crt
+
+# Authorization
+authorization:
+  mode: Webhook             # CIS 4.2.2
+  webhook:
+    cacheAuthorizedTTL: 5m
+    cacheUnauthorizedTTL: 30s
+
+# TLS
+tlsMinVersion: VersionTLS12
+tlsCipherSuites:
+  - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+  - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+  - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+  - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+# Port security
+readOnlyPort: 0             # CIS 4.2.6 — disable unauthenticated port
+
+# Certificate rotation
+rotateCertificates: true    # CIS 4.2.11 — auto-renew client certs
+
+# Protect kernel defaults
+protectKernelDefaults: true # CIS 4.2.7 — prevent unsafe sysctl from pods
+
+# Event recording
+eventRecordQPS: 5
+
+# Resource management
+maxPods: 110
+kubeReserved:
+  cpu: "250m"
+  memory: "1Gi"
+systemReserved:
+  cpu: "250m"
+  memory: "500Mi"
+evictionHard:
+  memory.available: "500Mi"
+  nodefs.available: "10%"</code></pre>
+
+<h3>AppArmor and Seccomp profiles</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Pod-level seccomp (RuntimeDefault restricts dangerous syscalls)
+spec:
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault   # uses containerd/runc default seccomp profile
+
+# Custom seccomp profile (Localhost type)
+spec:
+  securityContext:
+    seccompProfile:
+      type: Localhost
+      localhostProfile: profiles/payment-service.json
+      # Profile stored at: /var/lib/kubelet/seccomp/profiles/payment-service.json</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-json">{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "architectures": ["SCMP_ARCH_X86_64", "SCMP_ARCH_X86", "SCMP_ARCH_X32"],
+  "syscalls": [
+    {
+      "names": [
+        "accept4", "access", "arch_prctl", "bind", "brk", "capget",
+        "capset", "chdir", "chmod", "chown", "clock_gettime", "clone",
+        "close", "connect", "dup", "dup2", "epoll_create1", "epoll_ctl",
+        "epoll_wait", "execve", "exit", "exit_group", "fchmod", "fchown",
+        "fcntl", "fstat", "fstatfs", "futex", "getcwd", "getdents64",
+        "getegid", "geteuid", "getgid", "getpid", "getppid", "getuid",
+        "ioctl", "listen", "lseek", "madvise", "mmap", "mprotect",
+        "munmap", "nanosleep", "open", "openat", "pipe2", "poll",
+        "prctl", "pread64", "pwrite64", "read", "readlink", "recvfrom",
+        "recvmsg", "rt_sigaction", "rt_sigprocmask", "rt_sigreturn",
+        "sched_getaffinity", "sendmsg", "sendto", "set_tid_address",
+        "setgid", "setgroups", "setuid", "sigaltstack", "socket",
+        "stat", "statfs", "tgkill", "uname", "unlink", "wait4", "write",
+        "writev"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    }
+  ]
+}</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="rbac-hardening">RBAC Hardening</h2>
+
+<h3>Audit existing RBAC for over-privilege</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Find all ClusterRoleBindings granting cluster-admin
+kubectl get clusterrolebindings -o json | \
+  jq -r '.items[] | select(.roleRef.name=="cluster-admin") |
+  "\(.metadata.name) → \(.subjects[]?.kind)/\(.subjects[]?.name)"'
+
+# Find ClusterRoles with wildcard (*) permissions
+kubectl get clusterroles -o json | \
+  jq -r '.items[] | select(
+    .rules[]?.verbs[]? == "*" or
+    .rules[]?.resources[]? == "*" or
+    .rules[]?.apiGroups[]? == "*"
+  ) | .metadata.name' | grep -v "^system:"
+
+# Find ServiceAccounts with cluster-admin
+kubectl get clusterrolebindings -o json | \
+  jq -r '.items[] |
+  select(.roleRef.name=="cluster-admin") |
+  select(.subjects[]?.kind=="ServiceAccount") |
+  "CRB: \(.metadata.name) → SA: \(.subjects[]?.namespace)/\(.subjects[]?.name)"'
+
+# who-can audit (krew plugin)
+kubectl who-can create pods --all-namespaces
+kubectl who-can delete secrets --all-namespaces
+kubectl who-can escalate clusterroles --all-namespaces
+
+# access-matrix: show all permissions for a ServiceAccount
+kubectl access-matrix --sa payments:payment-service</code></pre>
+
+<h3>Disable automounted ServiceAccount tokens</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Default ServiceAccount: disable auto-mount cluster-wide
+# Every namespace's default SA should have this set
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: payments
+automountServiceAccountToken: false   # Pods without explicit SA get no token
+
+---
+# Dedicated SA for services that need API access (explicit, scoped)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: payment-service
+  namespace: payments
+automountServiceAccountToken: false   # mount explicitly in pod spec
+
+---
+# In the pod: explicitly mount with projected token (short TTL)
+spec:
+  serviceAccountName: payment-service
+  automountServiceAccountToken: false  # belt + suspenders
+  volumes:
+    - name: kube-api-access
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: https://kubernetes.default.svc.cluster.local
+              expirationSeconds: 3600   # 1h vs default 1y
+              path: token
+          - configMap:
+              name: kube-root-ca.crt
+              items:
+                - key: ca.crt
+                  path: ca.crt
+  containers:
+    - name: payment-service
+      volumeMounts:
+        - name: kube-api-access
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true</code></pre>
+
+<h3>RBAC least-privilege patterns</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Good: namespace-scoped, explicit resources and verbs
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: payment-service-role
+  namespace: payments
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["payment-config", "feature-flags"]   # name-scoped
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+    resourceNames: ["db-credentials"]   # only specific secret
+
+---
+# BAD: avoid these patterns
+# - apiGroups: ["*"]       # wildcard API group
+#   resources: ["*"]       # wildcard resource
+#   verbs: ["*"]           # wildcard verb
+# - apiGroups: [""]
+#   resources: ["secrets"] # all secrets in namespace
+#   verbs: ["list"]        # list + watch leaks secret names even without "get"</code></pre>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body">
+    <strong>list + watch on Secrets leaks secret names</strong>
+    <p><code>list</code> on Secrets returns the secret names and metadata even if the pod can't <code>get</code> the contents. An attacker with only <code>list</code> can enumerate all secrets in a namespace to identify targets. Only grant <code>get</code> on explicitly named secrets, never <code>list</code> on secrets broadly.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="network-hardening">Network Hardening</h2>
+
+<h3>API server access restriction</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># EKS: restrict API server access to VPN CIDR + CI/CD runner IPs only
+aws eks update-cluster-config \
+  --name my-cluster \
+  --resources-vpc-config \
+    endpointPublicAccess=true,\
+    publicAccessCidrs="10.100.0.0/16,203.0.113.10/32",\
+    endpointPrivateAccess=true
+
+# Verify
+aws eks describe-cluster --name my-cluster \
+  --query 'cluster.resourcesVpcConfig'</code></pre>
+
+<h3>Zero-trust network policy baseline</h3>
+
+<p>Every namespace should start with a default-deny NetworkPolicy and add explicit allows. This is covered in detail in <a href="../08-platform-engineering/06-multi-tenancy.html">Section 08-06</a>. The security-hardening perspective adds monitoring of policy coverage:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Find namespaces without any NetworkPolicy (gaps in zero-trust)
+comm -23 \
+  <(kubectl get namespaces -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | \
+    grep -v "^kube-\|^velero\|^monitoring" | sort) \
+  <(kubectl get networkpolicies -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | \
+    sort -u)
+
+# Find pods not covered by any NetworkPolicy (Cilium)
+kubectl get pods -A -o json | \
+  jq -r '.items[] | select(.metadata.namespace | test("^kube-|^velero") | not) |
+  "\(.metadata.namespace)/\(.metadata.name)"' | \
+  while read pod; do
+    ns=$(echo $pod | cut -d/ -f1)
+    pod_name=$(echo $pod | cut -d/ -f2)
+    labels=$(kubectl get pod "$pod_name" -n "$ns" -o jsonpath='{.metadata.labels}' 2>/dev/null)
+    # Check if any NetworkPolicy selects this pod...
+    echo "$pod — check manually"
+  done</code></pre>
+
+<h3>Egress restriction for workloads</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Payments service: only allow egress to known upstreams
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: payment-service-egress
+  namespace: payments
+spec:
+  podSelector:
+    matchLabels:
+      app: payment-service
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS (always required)
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+
+    # Allow PostgreSQL database
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: databases
+          podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - port: 5432
+
+    # Allow Stripe API (external; use FQDN in Cilium or CIDR for vanilla CNI)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - port: 443</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="supply-chain">Supply Chain Security</h2>
+
+<p>Supply chain attacks target the software delivery pipeline — compromised base images, malicious dependencies, or tampered build artifacts. The defense is cryptographic verification at every stage.</p>
+
+<div class="diagram">
+  <div class="title">Supply Chain Security Gates</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Developer   CI Pipeline        Registry        Cluster
+  ─────────   ───────────        ────────        ───────
+  git push →  build image    →   push + tag  →   admission webhook
+              scan (Trivy)       sign (Cosign)    verifyImages (Kyverno)
+              SBOM (Syft)        attest SBOM      Trivy Operator scan
+              unit tests         OCI artifact     block :latest
+              lint + SAST        immutable tag     require digest</pre>
+</div>
+
+<h3>Cosign image signing and verification</h3>
+
+<p>Full Cosign setup is covered in <a href="../08-platform-engineering/03-ci-cd-pipelines.html">Section 08-03</a>. The key runtime enforcement is via Kyverno <code>verifyImages</code>:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signatures
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: verify-cosign-signature
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+              namespaces: ["payments", "auth", "orders"]
+      verifyImages:
+        - imageReferences:
+            - "123456789.dkr.ecr.us-east-1.amazonaws.com/*"
+          attestors:
+            - count: 1
+              entries:
+                - keyless:
+                    subject: "https://github.com/org/repo/.github/workflows/ci.yaml@refs/heads/main"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev
+          mutateDigest: true    # replace :tag with @sha256:... at admission
+          verifyDigest: true    # reject if digest doesn't match signed content
+          required: true</code></pre>
+
+<h3>SLSA provenance verification</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Verify SLSA provenance attestation (generated by GitHub Actions SLSA builder)
+cosign verify-attestation \
+  --type slsaprovenance \
+  --certificate-identity-regexp "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  123456789.dkr.ecr.us-east-1.amazonaws.com/payment-service:v1.2.3 | \
+  jq '.payload | @base64d | fromjson | .predicate.buildType'
+
+# Expected output: "https://slsa.dev/provenance/v0.2"</code></pre>
+
+<h3>Allowed registries enforcement</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+spec:
+  validationFailureAction: Enforce
+  rules:
+    - name: allowed-registries
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+      exclude:
+        any:
+          - resources:
+              namespaces: ["kube-system"]
+      validate:
+        message: "Images must come from approved registries"
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.image }}"
+                    operator: NotIn
+                    value:
+                      - "123456789.dkr.ecr.us-east-1.amazonaws.com/*"
+                      - "registry.k8s.io/*"
+                      - "gcr.io/distroless/*"
+                      - "quay.io/prometheus/*"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="falco">Falco Runtime Detection</h2>
+
+<p>Falco monitors Linux system calls and Kubernetes audit events in real time. It detects container escapes, privilege escalation, unexpected network connections, file system modifications in sensitive paths, and many other runtime threats.</p>
+
+<h3>Falco installation</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">helm repo add falcosecurity https://falcosecurity.github.io/charts
+helm repo update
+
+helm install falco falcosecurity/falco \
+  --namespace falco \
+  --create-namespace \
+  --version 4.3.0 \
+  -f falco-values.yaml</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># falco-values.yaml
+falco:
+  grpc:
+    enabled: true
+  grpc_output:
+    enabled: true
+  # JSON output for log aggregation
+  json_output: true
+  json_include_output_property: true
+  # Output to stdout (captured by Loki/Fluent Bit)
+  stdout_output:
+    enabled: true
+  # Kubernetes audit events (requires audit webhook in apiserver)
+  k8s_audit:
+    enabled: true
+
+driver:
+  kind: modern_ebpf   # preferred: no kernel module, no eBPF CO-RE issues
+  # alternatives: module (requires kernel headers), ebpf (legacy)
+
+falcoctl:
+  artifact:
+    follow:
+      enabled: true    # auto-update rules from falcosecurity artifact registry
+
+# Priority: only alert on ERROR and above (reduce noise)
+falco:
+  priority: warning
+
+# Falco Sidekick: forward alerts to Slack/PagerDuty/Elasticsearch
+falcosidekick:
+  enabled: true
+  config:
+    slack:
+      webhookurl: "https://hooks.slack.com/services/..."
+      minimumpriority: error
+      messageformat: "long"
+    pagerduty:
+      routingkey: "your-pagerduty-integration-key"
+      minimumpriority: critical
+    elasticsearch:
+      hostport: "https://elasticsearch.monitoring.svc:9200"
+      index: falco
+      minimumpriority: warning
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi</code></pre>
+
+<h3>Critical Falco rules</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># /etc/falco/rules.d/custom-rules.yaml
+
+# Detect container escape attempt via nsenter/chroot
+- rule: Container Escape Attempt
+  desc: Detect nsenter or chroot execution inside container
+  condition: >
+    spawned_process and
+    container.id != host and
+    (proc.name = "nsenter" or proc.name = "chroot" or
+     proc.cmdline contains "mount --bind" or
+     proc.cmdline contains "/proc/1/root")
+  output: >
+    Container escape attempt (user=%user.name command=%proc.cmdline
+    container=%container.name image=%container.image.repository)
+  priority: CRITICAL
+  tags: [container, escape]
+
+# Detect shell spawned in production container
+- rule: Shell Spawned in Production Container
+  desc: A shell was spawned in a production container
+  condition: >
+    spawned_process and
+    container.id != host and
+    (proc.name = bash or proc.name = sh or proc.name = zsh or proc.name = fish) and
+    not proc.pname in (containerd, dockerd, runc, kubectl) and
+    not container.image.repository in (
+      "registry.k8s.io/pause",
+      "nicolaka/netshoot",
+      "busybox"
+    )
+  output: >
+    Shell spawned in production container
+    (user=%user.name shell=%proc.name parent=%proc.pname
+    image=%container.image.repository:%container.image.tag
+    pod=%k8s.pod.name ns=%k8s.ns.name)
+  priority: WARNING
+  tags: [container, shell, mitre_execution]
+
+# Detect write to /etc inside container
+- rule: Write to Sensitive Directory
+  desc: Detect writes to /etc, /usr, /bin inside running container
+  condition: >
+    open_write and
+    container.id != host and
+    (fd.name startswith /etc/ or
+     fd.name startswith /usr/ or
+     fd.name startswith /bin/ or
+     fd.name startswith /sbin/) and
+    not proc.name in (sed, find, chmod, chown, cp, mv, ln)
+  output: >
+    File written in sensitive directory
+    (user=%user.name file=%fd.name proc=%proc.name
+    image=%container.image.repository pod=%k8s.pod.name ns=%k8s.ns.name)
+  priority: ERROR
+  tags: [container, filesystem]
+
+# Detect unexpected outbound connection
+- rule: Unexpected Outbound Connection
+  desc: Container connects to unexpected external IP
+  condition: >
+    outbound and
+    container.id != host and
+    not fd.sip in (allowed_outbound_destinations) and
+    not fd.sport in (53, 443, 80) and
+    fd.net != "127.0.0.0/8" and
+    fd.net != "10.0.0.0/8" and
+    fd.net != "172.16.0.0/12"
+  output: >
+    Unexpected outbound connection
+    (proc=%proc.name sip=%fd.sip sport=%fd.sport
+    image=%container.image.repository pod=%k8s.pod.name)
+  priority: WARNING
+  tags: [network, exfiltration]
+
+# Detect privileged container started
+- rule: Privileged Container Started
+  desc: A privileged container was started
+  condition: >
+    container_started and
+    container.privileged = true and
+    not container.image.repository in (
+      "falcosecurity/falco",
+      "quay.io/cilium/cilium"
+    )
+  output: >
+    Privileged container started
+    (image=%container.image.repository pod=%k8s.pod.name ns=%k8s.ns.name)
+  priority: CRITICAL
+  tags: [container, privilege_escalation]
+
+# Detect read of service account token
+- rule: ServiceAccount Token Read
+  desc: Unexpected process reading the SA token
+  condition: >
+    open_read and
+    container.id != host and
+    fd.name in (/var/run/secrets/kubernetes.io/serviceaccount/token,
+                /run/secrets/kubernetes.io/serviceaccount/token) and
+    not proc.name in (java, python3, node, ruby, python, go)
+  output: >
+    Service account token read by unexpected process
+    (proc=%proc.name image=%container.image.repository pod=%k8s.pod.name)
+  priority: WARNING
+  tags: [secrets, lateral_movement]</code></pre>
+
+<h3>Falco Kubernetes audit rules</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Falco K8s audit: configure kube-apiserver audit webhook
+# Add to /etc/kubernetes/manifests/kube-apiserver.yaml:
+# --audit-webhook-config-file=/etc/kubernetes/audit-webhook.yaml
+# --audit-webhook-batch-max-size=400
+# --audit-webhook-batch-max-wait=5s
+
+# /etc/kubernetes/audit-webhook.yaml
+apiVersion: v1
+kind: Config
+clusters:
+  - name: falco
+    cluster:
+      server: http://falco.falco.svc.cluster.local:9765/k8s-audit
+users:
+  - name: ""
+contexts:
+  - context:
+      cluster: falco
+      user: ""
+    name: default-context
+current-context: default-context</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="trivy-operator">Trivy Operator</h2>
+
+<p>Trivy Operator runs continuously in the cluster, scanning all running workloads for CVEs, misconfigurations, exposed secrets, and RBAC risks. Unlike one-time CI scans, it catches newly disclosed CVEs in already-deployed images.</p>
+
+<h3>Installation and configuration</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">helm repo add aquasecurity https://aquasecurity.github.io/helm-charts
+helm repo update
+
+helm install trivy-operator aquasecurity/trivy-operator \
+  --namespace trivy-system \
+  --create-namespace \
+  --version 0.24.0 \
+  --set="trivy.ignoreUnfixed=true" \
+  --set="trivy.severity=CRITICAL,HIGH" \
+  --set="operator.scanJobTTL=1h" \
+  --set="operator.vulnerabilityReportsPlugin=Trivy" \
+  --set="operator.configAuditScannerEnabled=true" \
+  --set="operator.rbacAssessmentScannerEnabled=true" \
+  --set="operator.infraAssessmentScannerEnabled=true" \
+  --set="operator.clusterComplianceEnabled=true" \
+  --set="compliance.cron=0 */6 * * *"</code></pre>
+
+<h3>Trivy Operator report types</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Report Kind</th><th>What it checks</th><th>Scope</th></tr></thead>
+  <tbody>
+    <tr><td><code>VulnerabilityReport</code></td><td>Container image CVEs (OS + language packages)</td><td>Per Pod/container</td></tr>
+    <tr><td><code>ConfigAuditReport</code></td><td>Kubernetes manifest misconfigurations (30+ checks)</td><td>Per workload resource</td></tr>
+    <tr><td><code>RbacAssessmentReport</code></td><td>RBAC over-privilege, risky permissions</td><td>Per ClusterRole/Role</td></tr>
+    <tr><td><code>InfraAssessmentReport</code></td><td>Node and control plane component security</td><td>Per node</td></tr>
+    <tr><td><code>ExposedSecretReport</code></td><td>Secrets accidentally baked into images or env vars</td><td>Per Pod/container</td></tr>
+    <tr><td><code>ClusterComplianceReport</code></td><td>CIS Kubernetes Benchmark or NSA/CISA guidance</td><td>Cluster-wide</td></tr>
+    <tr><td><code>SbomReport</code></td><td>Software Bill of Materials (CycloneDX or SPDX)</td><td>Per Pod/container</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Querying reports</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># List CRITICAL/HIGH vulnerabilities in payments namespace
+kubectl get vulnerabilityreports -n payments -o json | \
+  jq -r '.items[] |
+  .metadata.name as $name |
+  .report.summary |
+  "\($name): CRITICAL=\(.criticalCount) HIGH=\(.highCount)"' | \
+  sort -t= -k2 -rn | head -20
+
+# List all CRITICAL CVEs with fix available
+kubectl get vulnerabilityreports -A -o json | \
+  jq -r '.items[].report.vulnerabilities[] |
+  select(.severity=="CRITICAL" and .fixedVersion != "") |
+  "\(.vulnerabilityID) \(.resource) \(.installedVersion) → \(.fixedVersion)"' | \
+  sort -u | head -30
+
+# Config audit failures (HIGH severity) in payments
+kubectl get configauditreports -n payments -o json | \
+  jq -r '.items[] |
+  .metadata.name as $name |
+  .report.checks[] |
+  select(.severity == "HIGH" and .success == false) |
+  "\($name): [\(.checkID)] \(.title)"'
+
+# Exposed secrets in any namespace
+kubectl get exposedsecretreports -A -o json | \
+  jq -r '.items[] |
+  select(.report.summary.criticalCount > 0) |
+  "\(.metadata.namespace)/\(.metadata.name): \(.report.summary.criticalCount) secrets exposed"'</code></pre>
+
+<h3>Trivy Operator Prometheus metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># Total CRITICAL CVEs by namespace
+sum by (namespace) (
+  trivy_image_vulnerabilities{severity="CRITICAL"}
+)
+
+# Workloads with exposed secrets
+sum(trivy_exposed_secrets{severity="CRITICAL"}) by (namespace)
+
+# Config audit HIGH failures by resource kind
+sum by (resource_kind) (
+  trivy_resource_configaudits{severity="HIGH",status="FAIL"}
+)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="audit-logs">Audit Log Analysis</h2>
+
+<p>Kubernetes audit logs record every API server request — who did what, when, on which resource, from which IP. Continuous audit log analysis detects RBAC abuse, credential theft, and reconnaissance activity.</p>
+
+<h3>Audit policy configuration</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># /etc/kubernetes/audit-policy.yaml
+apiVersion: audit.k8s.io/v1
+kind: Policy
+omitStages:
+  - RequestReceived   # skip early stage (reduce volume)
+rules:
+  # Log all secret/configmap access at RequestResponse level
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["secrets", "configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Log all auth/RBAC changes
+  - level: RequestResponse
+    resources:
+      - group: "rbac.authorization.k8s.io"
+        resources:
+          - clusterroles
+          - clusterrolebindings
+          - roles
+          - rolebindings
+    verbs: ["create", "update", "patch", "delete"]
+
+  # Log pod exec and port-forward (potential compromise vector)
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["pods/exec", "pods/portforward", "pods/attach"]
+
+  # Log namespace creation/deletion
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["namespaces"]
+    verbs: ["create", "delete"]
+
+  # Log node changes (potential node compromise)
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["nodes"]
+    verbs: ["patch", "update", "delete"]
+
+  # Log all failed requests at Metadata level
+  - level: Metadata
+    omitStages:
+      - RequestReceived
+    # Matches any request not matched above
+
+  # Reduce noise: skip read-only requests to common non-sensitive resources
+  - level: None
+    resources:
+      - group: ""
+        resources:
+          - events
+          - endpoints
+          - services
+    verbs: ["get", "list", "watch"]
+
+  # Skip health checks
+  - level: None
+    users: ["system:kube-proxy"]
+    verbs: ["watch"]
+    resources:
+      - group: ""
+        resources: ["endpoints", "services", "services/status"]
+
+  # Default: log metadata for all other requests
+  - level: Metadata</code></pre>
+
+<h3>Audit log analysis queries (Loki)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-logql"># Detect cluster-admin binding events (RBAC escalation)
+{job="kubernetes-audit"}
+  | json
+  | objectRef_resource = "clusterrolebindings"
+  | verb = "create"
+  | line_contains "cluster-admin"
+
+# Detect pod exec events (interactive access to production pods)
+{job="kubernetes-audit"}
+  | json
+  | objectRef_subresource = "exec"
+  | namespace_name !~ "kube-system|velero|monitoring"
+
+# Detect secret listing (reconnaissance)
+{job="kubernetes-audit"}
+  | json
+  | objectRef_resource = "secrets"
+  | verb = "list"
+  | user_username !~ "system:.*"
+
+# Detect API server access from unexpected user agents (not kubectl or controller)
+{job="kubernetes-audit"}
+  | json
+  | userAgent !~ "kubectl.*|kube-.*|argocd.*|velero.*|cert-manager.*"
+  | user_username !~ "system:.*"
+  | responseStatus_code != "401"</code></pre>
+
+<h3>Audit log alert patterns</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Real-time alert: escalate/bind verb on RBAC resources
+# In Falco k8s audit rules or Loki alert:
+
+# Who accessed secrets in the last hour (from audit logs)
+kubectl logs -n kube-system kube-apiserver-master-0 2>/dev/null | \
+  grep '"resource":"secrets"' | \
+  grep -v '"verb":"watch"' | \
+  jq -r '"\(.user.username) \(.verb) \(.objectRef.namespace)/\(.objectRef.name) from \(.sourceIPs[0])"' | \
+  sort | uniq -c | sort -rn | head -20
+
+# EKS: audit logs in CloudWatch Logs
+aws logs filter-log-events \
+  --log-group-name "/aws/eks/my-cluster/cluster" \
+  --log-stream-names "kube-apiserver-audit*" \
+  --filter-pattern '{ $.verb = "create" && $.objectRef.resource = "clusterrolebindings" }' \
+  --start-time $(date -d '1 hour ago' +%s000) \
+  --query 'events[].message' \
+  --output text | jq -r '"\(.user.username) bound \(.requestObject.subjects[].name) to \(.requestObject.roleRef.name)"'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="etcd-encryption">etcd Encryption at Rest</h2>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># /etc/kubernetes/encryption-config.yaml
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+      - secrets
+      - configmaps
+    providers:
+      # Primary: AES-GCM with 256-bit key (fast + authenticated)
+      - aescbc:
+          keys:
+            - name: key1
+              secret: <base64-encoded-32-byte-key>   # openssl rand -base64 32
+      # Fallback: identity (plaintext — for reading unencrypted data during migration)
+      - identity: {}
+
+  # Also encrypt CRDs that may contain sensitive data
+  - resources:
+      - externalsecrets.external-secrets.io
+      - sealedsecrets.bitnami.com
+    providers:
+      - aescbc:
+          keys:
+            - name: key1
+              secret: <base64-encoded-32-byte-key></code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Add to kube-apiserver flags:
+# --encryption-provider-config=/etc/kubernetes/encryption-config.yaml
+
+# Rotate encryption key: add new key as first provider, old key second
+# Then re-encrypt all secrets:
+kubectl get secrets -A -o json | kubectl replace -f -
+
+# Verify a secret is encrypted (should show encrypted bytes, not plaintext)
+ETCDCTL_API=3 etcdctl get /registry/secrets/default/my-secret \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+  --key=/etc/kubernetes/pki/etcd/healthcheck-client.key | \
+  hexdump -C | head -5
+# Should start with: "k8s:enc:aescbc:v1:key1:" prefix (not plaintext JSON)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="secrets-hardening">Secrets Hardening</h2>
+
+<p>Kubernetes Secrets are base64-encoded (not encrypted) by default. Full secrets hardening requires layered controls:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Control</th><th>What it prevents</th><th>Implementation</th></tr></thead>
+  <tbody>
+    <tr><td>etcd encryption at rest</td><td>etcd disk dump reveals plaintext secrets</td><td>EncryptionConfiguration above</td></tr>
+    <tr><td>ESO + Vault / ASM</td><td>Secrets stored in etcd entirely</td><td><a href="../08-platform-engineering/09-secrets-automation.html">Section 08-09</a></td></tr>
+    <tr><td>No <code>list/watch</code> on Secrets</td><td>RBAC enumeration of secret names</td><td>RBAC least-privilege above</td></tr>
+    <tr><td>No env vars for secrets</td><td><code>printenv</code> / <code>/proc/*/environ</code> exposure</td><td>Use volume mounts, not <code>envFrom</code></td></tr>
+    <tr><td>Falco: SA token read detection</td><td>Unexpected process reads token</td><td>Falco rule above</td></tr>
+    <tr><td>Audit log on secrets get</td><td>Detect bulk secret reads</td><td>Audit policy above</td></tr>
+    <tr><td>Trivy: ExposedSecretReport</td><td>Secrets baked into images</td><td>Trivy Operator above</td></tr>
+  </tbody>
+</table>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Prefer volume-mounted secrets over environment variables
+spec:
+  volumes:
+    - name: db-secret
+      secret:
+        secretName: db-credentials
+        defaultMode: 0400   # read-only, owner only
+  containers:
+    - name: payment-service
+      volumeMounts:
+        - name: db-secret
+          mountPath: /run/secrets/db
+          readOnly: true
+      # App reads from file: /run/secrets/db/password
+      # NOT from env var: DB_PASSWORD (visible in /proc/*/environ)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="hardening-alerts">Security Hardening Alerts</h2>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: security-hardening-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: security.hardening
+      rules:
+
+        # Falco critical alert rate spike
+        - alert: FalcoCriticalAlertsHigh
+          expr: |
+            sum(rate(falco_events{priority="Critical"}[5m])) > 0.1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Falco critical security events firing"
+            description: "{{ $value | humanize }} critical events/sec — potential active attack"
+            runbook_url: https://runbooks.example.com/security/falco-critical
+
+        # Trivy CRITICAL CVE in running pod
+        - alert: CriticalCVEInRunningPod
+          expr: |
+            sum by (namespace, resource_name) (
+              trivy_image_vulnerabilities{severity="CRITICAL"}
+            ) > 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "CRITICAL CVE in running pod {{ $labels.namespace }}/{{ $labels.resource_name }}"
+            runbook_url: https://runbooks.example.com/security/critical-cve
+
+        # kube-bench FAIL count (run weekly)
+        - alert: KubeBenchFailuresHigh
+          expr: |
+            kube_bench_test_status{status="FAIL"} > 20
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "kube-bench reports {{ $value }} CIS benchmark failures"
+            runbook_url: https://runbooks.example.com/security/kube-bench
+
+        # Privileged pod running
+        - alert: PrivilegedPodRunning
+          expr: |
+            count(kube_pod_container_info{namespace!~"kube-system|falco|cilium"}) by (namespace, pod, container)
+            * on (namespace, pod, container)
+            group_left()
+            kube_pod_container_status_running{namespace!~"kube-system|falco|cilium"} > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Privileged container {{ $labels.namespace }}/{{ $labels.pod }} detected"
+            runbook_url: https://runbooks.example.com/security/privileged-container
+
+        # Exposed secret in image
+        - alert: ExposedSecretInImage
+          expr: |
+            sum by (namespace, resource_name) (
+              trivy_exposed_secrets{severity="CRITICAL"}
+            ) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Secret exposed in image for {{ $labels.namespace }}/{{ $labels.resource_name }}"
+            runbook_url: https://runbooks.example.com/security/exposed-secret
+
+        # No NetworkPolicy in namespace
+        - alert: NamespaceWithoutNetworkPolicy
+          expr: |
+            count by (namespace) (kube_namespace_labels{namespace!~"kube-.*|velero|monitoring"})
+            unless
+            count by (namespace) (kube_networkpolicy_info)
+            > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Namespace {{ $labels.namespace }} has no NetworkPolicy"
+            runbook_url: https://runbooks.example.com/security/missing-networkpolicy</code></pre>
+
+<!-- ============================================================ -->
+<h2>Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card card-accent-red">
+    <h3>Run kube-bench weekly</h3>
+    <p>Automate kube-bench as a weekly CronJob. Track FAIL count over time — any increase means a configuration drift or new cluster component introduced a gap.</p>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>IMDSv2 + hop-limit 1</h3>
+    <p>This single control prevents pods from stealing the node IAM role. Apply it to ALL nodes via launch template or EC2NodeClass. It's the highest-value AWS-specific hardening step.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>Falco in production</h3>
+    <p>Falco with modern eBPF driver has &lt;2% CPU overhead and zero kernel module risk. Run it on every node. Start with default rules; suppress false positives with macros before writing custom rules.</p>
+  </div>
+  <div class="card card-accent-green">
+    <h3>Audit RBAC quarterly</h3>
+    <p>Run the <code>who-can</code> and <code>access-matrix</code> queries quarterly. Privilege creep is the norm — developers request broad permissions for debugging and never revoke them.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>Encrypt etcd + use Vault</h3>
+    <p>etcd encryption at rest is table stakes. Then eliminate secrets from etcd entirely via ESO + Vault. The goal is zero plaintext secrets in etcd.</p>
+  </div>
+  <div class="card card-accent-orange">
+    <h3>Require Cosign signatures</h3>
+    <p>Kyverno <code>verifyImages</code> with <code>required: true</code> in production namespaces means unsigned images are rejected at admission — even if an attacker pushes them to the registry directly.</p>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<button id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none';
+  });
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>300);
+});
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+const mainEl=document.getElementById('main');
+const headings=mainEl.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('#toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('#toc a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:mainEl,threshold:0.3});
+headings.forEach(h=>obs.observe(h));
+</script>
+</body>
+</html>

@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>cloud-controller-manager | K8s Internals</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;
+  --red:#f85149;--purple:#bc8cff;--orange:#d18616;
+  --code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;
+}
+:root[data-theme="light"]{
+  --bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;
+  --border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;
+  --accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;
+  --red:#d1242f;--purple:#8250df;--orange:#953800;
+  --code-bg:#f6f8fa;--sidebar-w:280px;--toc-w:240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow:hidden;height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:.85em;background:var(--code-bg);padding:2px 6px;border-radius:4px;color:var(--purple)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;position:relative;margin:.75rem 0}
+pre code{background:none;padding:0;color:var(--text);font-size:.82rem}
+h1{font-size:2rem;font-weight:700;line-height:1.25}
+h2{font-size:1.4rem;font-weight:600;margin:2rem 0 .75rem;padding-top:.5rem}
+h3{font-size:1.1rem;font-weight:600;margin:1.5rem 0 .5rem;color:var(--text)}
+h4{font-size:.95rem;font-weight:600;margin:1rem 0 .4rem;color:var(--text2)}
+p{margin:.6rem 0}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}
+li{margin:.2rem 0}
+table{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.85rem}
+th{background:var(--bg3);text-align:left;padding:.5rem .75rem;border:1px solid var(--border);font-weight:600}
+td{padding:.45rem .75rem;border:1px solid var(--border);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg2)}
+.topbar{position:sticky;top:0;z-index:200;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1rem;gap:.75rem}
+.topbar-left{display:flex;align-items:center;gap:.75rem;min-width:0}
+.topbar-right{display:flex;align-items:center;gap:.75rem;flex-shrink:0}
+.hamburger{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:4px 6px;border-radius:4px}
+.hamburger:hover{background:var(--bg3)}
+.topbar-logo{font-weight:700;font-size:1rem;white-space:nowrap}
+.topbar-logo span{color:var(--accent)}
+.breadcrumb{display:flex;align-items:center;gap:.35rem;font-size:.8rem;color:var(--text2);white-space:nowrap}
+.breadcrumb span{color:var(--text3)}
+.search-wrap input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.3rem .6rem;border-radius:6px;font-size:.82rem;width:180px}
+.search-wrap input:focus{outline:none;border-color:var(--accent)}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.3rem .7rem;border-radius:6px;cursor:pointer;font-size:.8rem;white-space:nowrap}
+.theme-btn:hover{background:var(--bg4)}
+.layout{display:flex;height:calc(100vh - 52px)}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;height:calc(100vh - 52px);position:sticky;top:52px}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--bg4)}
+.sidebar-search{padding:.6rem .75rem;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.35rem .6rem;border-radius:6px;font-size:.8rem}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+nav{padding:.5rem 0}
+.nav-section{margin-bottom:.25rem}
+.nav-section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:.4rem .75rem .2rem}
+.nav-section a{display:flex;align-items:center;gap:.5rem;padding:.28rem .75rem;font-size:.82rem;color:var(--text2);transition:background .15s,color .15s}
+.nav-section a:hover{background:var(--bg3);color:var(--text);text-decoration:none}
+.nav-section a.active{background:var(--accent2);color:#fff;border-radius:4px;margin:0 .4rem;padding:.28rem .4rem}
+.nav-section a .num{font-size:.7rem;color:var(--text3);min-width:22px}
+.nav-section a.active .num{color:#cde}
+.main-content{flex:1;overflow-y:auto;height:calc(100vh - 52px);padding:0}
+.main-content::-webkit-scrollbar{width:6px}
+.main-content::-webkit-scrollbar-thumb{background:var(--bg4)}
+.content-wrap{max-width:900px;margin:0 auto;padding:2rem 2rem 4rem}
+.toc-panel{width:var(--toc-w);flex-shrink:0;height:calc(100vh - 52px);overflow-y:auto;position:sticky;top:52px;padding:1rem .75rem;border-left:1px solid var(--border)}
+.toc-panel::-webkit-scrollbar{width:3px}
+.toc-panel h4{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:.5rem}
+.toc-panel a{display:block;font-size:.78rem;color:var(--text2);padding:.2rem .4rem;border-radius:4px;line-height:1.4;transition:color .15s}
+.toc-panel a:hover{color:var(--text);text-decoration:none;background:var(--bg3)}
+.toc-panel a.toc-active{color:var(--accent);font-weight:600}
+.toc-panel a.toc-h3{padding-left:1rem;font-size:.74rem}
+.page-header{padding:2rem 0 1.5rem;border-bottom:1px solid var(--border);margin-bottom:2rem}
+.file-meta{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:.72rem;color:var(--text2)}
+.callout{border-radius:8px;padding:.75rem 1rem;margin:.75rem 0;border-left:3px solid}
+.callout.note{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout.warn{background:rgba(210,153,34,.1);border-color:var(--yellow)}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout-title{font-weight:700;font-size:.82rem;margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem}
+.callout.note .callout-title{color:var(--accent)}
+.callout.warn .callout-title{color:var(--yellow)}
+.callout.danger .callout-title{color:var(--red)}
+.callout.success .callout-title{color:var(--green)}
+details{border:1px solid var(--border);border-radius:8px;margin:.6rem 0}
+details summary{padding:.6rem 1rem;cursor:pointer;font-weight:600;font-size:.9rem;list-style:none;display:flex;align-items:center;gap:.5rem}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'▶';font-size:.7rem;color:var(--text3);transition:transform .2s}
+details[open] summary::before{transform:rotate(90deg)}
+details .details-body{padding:.75rem 1rem 1rem;border-top:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin:.75rem 0}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:.75rem 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.card h4{margin-top:0}
+.component-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.75rem;margin:.75rem 0}
+.component-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem}
+.component-card h4{margin-top:0;font-size:.85rem;color:var(--accent)}
+.flow-row{display:flex;align-items:center;gap:.5rem;margin:.4rem 0;flex-wrap:wrap}
+.flow-box{padding:.35rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid;white-space:nowrap}
+.flow-box.cp{background:rgba(88,166,255,.12);border-color:var(--accent);color:var(--accent)}
+.flow-box.etcd{background:rgba(188,140,255,.12);border-color:var(--purple);color:var(--purple)}
+.flow-box.ok{background:rgba(63,185,80,.1);border-color:var(--green);color:var(--green)}
+.flow-box.warn{background:rgba(210,153,34,.1);border-color:var(--yellow);color:var(--yellow)}
+.flow-box.cloud{background:rgba(209,134,22,.12);border-color:var(--orange);color:var(--orange)}
+.flow-box.neutral{background:var(--bg3);border-color:var(--border);color:var(--text)}
+.flow-arrow{color:var(--text3);font-size:1.1rem}
+.nav-footer{display:flex;justify-content:space-between;gap:1rem;padding:2rem 0;margin-top:2rem;border-top:1px solid var(--border)}
+.nav-btn{display:inline-flex;flex-direction:column;padding:.6rem 1rem;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:.82rem;transition:border-color .2s,color .2s;max-width:220px}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.nav-btn span{font-size:.7rem;color:var(--text3)}
+.nav-btn.next{text-align:right}
+.copy-btn{position:absolute;top:.4rem;right:.4rem;background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;font-size:.72rem;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.back-to-top{position:fixed;bottom:2rem;right:2rem;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .3s;z-index:100}
+.back-to-top.visible{opacity:1;pointer-events:auto}
+mark.search-hl{background:rgba(210,153,34,.45);border-radius:2px;padding:0 1px}
+svg text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+@media(max-width:1100px){.toc-panel{display:none}}
+@media(max-width:768px){.sidebar{position:fixed;left:-300px;top:52px;z-index:150;transition:left .25s}.sidebar.open{left:0}.grid-2,.grid-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger">&#9776;</button>
+    <span class="topbar-logo"><span>K8s</span> Internals</span>
+    <nav class="breadcrumb">
+      <a href="../00-foundations/00-introduction.html">Home</a><span>›</span>
+      <a href="00-control-plane-overview.html">Control Plane</a><span>›</span>
+      <span>cloud-controller-manager</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap"><input id="search-input" type="search" placeholder="Search…" autocomplete="off"/></div>
+    <button class="theme-btn" id="theme-btn">☀ Light</button>
+  </div>
+</div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="02-etcd.html"><span class="num">02</span>etcd</a>
+      <a href="03-kube-scheduler.html"><span class="num">03</span>kube-scheduler</a>
+      <a href="04-kube-controller-manager.html"><span class="num">04</span>kube-controller-manager</a>
+      <a href="05-cloud-controller-manager.html" class="active"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html"><span class="num">02</span>kube-proxy</a>
+      <a href="../02-node-components/03-container-runtime-interface.html"><span class="num">03</span>CRI</a>
+      <a href="../02-node-components/04-cni-plugins.html"><span class="num">04</span>CNI Plugins</a>
+      <a href="../02-node-components/05-csi-plugins.html"><span class="num">05</span>CSI Plugins</a>
+      <a href="../02-node-components/06-node-lifecycle.html"><span class="num">06</span>Node Lifecycle</a>
+      <a href="../02-node-components/07-windows-worker-nodes.html"><span class="num">07</span>Windows Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="../03-networking/00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="../03-networking/01-pod-networking.html"><span class="num">01</span>Pod Networking</a>
+      <a href="../03-networking/02-services.html"><span class="num">02</span>Services</a>
+      <a href="../03-networking/03-ingress.html"><span class="num">03</span>Ingress</a>
+      <a href="../03-networking/04-gateway-api.html"><span class="num">04</span>Gateway API</a>
+      <a href="../03-networking/05-dns.html"><span class="num">05</span>DNS</a>
+      <a href="../03-networking/06-network-policies.html"><span class="num">06</span>Network Policies</a>
+      <a href="../03-networking/07-load-balancing.html"><span class="num">07</span>Load Balancing</a>
+      <a href="../03-networking/08-ebpf-networking.html"><span class="num">08</span>eBPF Networking</a>
+      <a href="../03-networking/09-ipv4-ipv6-dual-stack.html"><span class="num">09</span>Dual Stack</a>
+      <a href="../03-networking/10-multicluster-networking.html"><span class="num">10</span>Multi-Cluster</a>
+      <a href="../03-networking/11-istio-linkerd-service-mesh.html"><span class="num">11</span>Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-statefulsets-storage.html"><span class="num">04</span>StatefulSets &amp; Storage</a>
+      <a href="../04-storage/05-csi-deep-dive.html"><span class="num">05</span>CSI Deep Dive</a>
+      <a href="../04-storage/06-volume-snapshots.html"><span class="num">06</span>Volume Snapshots</a>
+      <a href="../04-storage/07-backup-disaster-recovery.html"><span class="num">07</span>Backup &amp; DR</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html"><span class="num">01</span>Pods</a>
+      <a href="../05-workloads/02-replicasets.html"><span class="num">02</span>ReplicaSets</a>
+      <a href="../05-workloads/03-deployments.html"><span class="num">03</span>Deployments</a>
+      <a href="../05-workloads/04-statefulsets.html"><span class="num">04</span>StatefulSets</a>
+      <a href="../05-workloads/05-daemonsets.html"><span class="num">05</span>DaemonSets</a>
+      <a href="../05-workloads/06-jobs-cronjobs.html"><span class="num">06</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/07-init-containers.html"><span class="num">07</span>Init Containers</a>
+      <a href="../05-workloads/08-sidecar-containers.html"><span class="num">08</span>Sidecar Containers</a>
+      <a href="../05-workloads/09-resource-management.html"><span class="num">09</span>Resource Management</a>
+      <a href="../05-workloads/10-pod-disruption-budgets.html"><span class="num">10</span>PodDisruptionBudgets</a>
+      <a href="../05-workloads/11-autoscaling.html"><span class="num">11</span>Autoscaling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-rbac.html"><span class="num">01</span>RBAC</a>
+      <a href="../06-security/02-pod-security.html"><span class="num">02</span>Pod Security</a>
+      <a href="../06-security/03-network-policies-security.html"><span class="num">03</span>Network Policy Security</a>
+      <a href="../06-security/04-secrets-management.html"><span class="num">04</span>Secrets Management</a>
+      <a href="../06-security/05-image-security.html"><span class="num">05</span>Image Security</a>
+      <a href="../06-security/06-audit-logging.html"><span class="num">06</span>Audit Logging</a>
+      <a href="../06-security/07-certificate-management.html"><span class="num">07</span>Certificate Management</a>
+      <a href="../06-security/08-oidc-authentication.html"><span class="num">08</span>OIDC Authentication</a>
+      <a href="../06-security/09-admission-security.html"><span class="num">09</span>Admission Security</a>
+      <a href="../06-security/10-runtime-security.html"><span class="num">10</span>Runtime Security</a>
+      <a href="../06-security/11-supply-chain-security.html"><span class="num">11</span>Supply Chain Security</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics.html"><span class="num">01</span>Metrics</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Tracing</a>
+      <a href="../07-observability/04-alerting.html"><span class="num">04</span>Alerting</a>
+      <a href="../07-observability/05-dashboards.html"><span class="num">05</span>Dashboards</a>
+      <a href="../07-observability/06-ebpf-observability.html"><span class="num">06</span>eBPF Observability</a>
+      <a href="../07-observability/07-debugging-production-issues.html"><span class="num">07</span>Debugging Production</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-engineering-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/01-crds-and-operators.html"><span class="num">01</span>CRDs &amp; Operators</a>
+      <a href="../08-platform-engineering/02-controller-runtime.html"><span class="num">02</span>controller-runtime</a>
+      <a href="../08-platform-engineering/03-admission-webhooks.html"><span class="num">03</span>Admission Webhooks</a>
+      <a href="../08-platform-engineering/04-custom-schedulers.html"><span class="num">04</span>Custom Schedulers</a>
+      <a href="../08-platform-engineering/05-aggregated-apiserver.html"><span class="num">05</span>Aggregated API Servers</a>
+      <a href="../08-platform-engineering/06-gitops.html"><span class="num">06</span>GitOps</a>
+      <a href="../08-platform-engineering/07-helm.html"><span class="num">07</span>Helm</a>
+      <a href="../08-platform-engineering/08-kustomize.html"><span class="num">08</span>Kustomize</a>
+      <a href="../08-platform-engineering/09-crossplane.html"><span class="num">09</span>Crossplane</a>
+      <a href="../08-platform-engineering/10-cluster-api.html"><span class="num">10</span>Cluster API</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/01-cluster-setup.html"><span class="num">01</span>Cluster Setup</a>
+      <a href="../09-production-operations/02-upgrades.html"><span class="num">02</span>Upgrades</a>
+      <a href="../09-production-operations/03-capacity-planning.html"><span class="num">03</span>Capacity Planning</a>
+      <a href="../09-production-operations/04-cost-optimization.html"><span class="num">04</span>Cost Optimization</a>
+      <a href="../09-production-operations/05-multi-tenancy.html"><span class="num">05</span>Multi-Tenancy</a>
+      <a href="../09-production-operations/06-disaster-recovery.html"><span class="num">06</span>Disaster Recovery</a>
+      <a href="../09-production-operations/07-compliance.html"><span class="num">07</span>Compliance</a>
+      <a href="../09-production-operations/08-performance-tuning.html"><span class="num">08</span>Performance Tuning</a>
+      <a href="../09-production-operations/09-node-management.html"><span class="num">09</span>Node Management</a>
+      <a href="../09-production-operations/10-real-world-incident-analysis.html"><span class="num">10</span>Incident Analysis</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-team-overview.html"><span class="num">00</span>Team Overview</a>
+      <a href="../10-team-workflows/01-developer-workflows.html"><span class="num">01</span>Developer Workflows</a>
+      <a href="../10-team-workflows/02-ci-cd-integration.html"><span class="num">02</span>CI/CD Integration</a>
+      <a href="../10-team-workflows/03-local-development.html"><span class="num">03</span>Local Development</a>
+      <a href="../10-team-workflows/04-code-review-practices.html"><span class="num">04</span>Code Review</a>
+      <a href="../10-team-workflows/05-incident-response.html"><span class="num">05</span>Incident Response</a>
+      <a href="../10-team-workflows/06-on-call-runbooks.html"><span class="num">06</span>On-Call Runbooks</a>
+      <a href="../10-team-workflows/07-capacity-review.html"><span class="num">07</span>Capacity Review</a>
+      <a href="../10-team-workflows/08-security-review.html"><span class="num">08</span>Security Review</a>
+      <a href="../10-team-workflows/09-infrastructure-operations.html"><span class="num">09</span>Infra Operations</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html"><span class="num">00</span>API Flow Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-deployment-rollout.html"><span class="num">02</span>Deployment Rollout</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-service-endpoint-update.html"><span class="num">03</span>Service Endpoint Update</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduler-decision.html"><span class="num">04</span>Scheduler Decision</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-rbac-authorization.html"><span class="num">05</span>RBAC Authorization</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-webhook-lifecycle.html"><span class="num">06</span>Webhook Lifecycle</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-crd-creation.html"><span class="num">07</span>CRD Creation</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-volume-provisioning.html"><span class="num">08</span>Volume Provisioning</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-node-registration.html"><span class="num">09</span>Node Registration</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-hpa-scaling.html"><span class="num">10</span>HPA Scaling</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-secret-injection.html"><span class="num">11</span>Secret Injection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-leader-election.html"><span class="num">12</span>Leader Election</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-garbage-collection.html"><span class="num">13</span>Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-packet-flow.html"><span class="num">14</span>Cross-Node Packet Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Troubleshooting Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-networking-issues.html"><span class="num">02</span>Networking Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html"><span class="num">03</span>Storage Issues</a>
+      <a href="../12-troubleshooting/04-scheduler-failures.html"><span class="num">04</span>Scheduler Failures</a>
+      <a href="../12-troubleshooting/05-control-plane-failures.html"><span class="num">05</span>Control Plane Failures</a>
+      <a href="../12-troubleshooting/06-node-failures.html"><span class="num">06</span>Node Failures</a>
+      <a href="../12-troubleshooting/07-performance-issues.html"><span class="num">07</span>Performance Issues</a>
+      <a href="../12-troubleshooting/08-security-incidents.html"><span class="num">08</span>Security Incidents</a>
+      <a href="../12-troubleshooting/09-etcd-recovery.html"><span class="num">09</span>etcd Recovery</a>
+      <a href="../12-troubleshooting/10-crashloopbackoff-analysis.html"><span class="num">10</span>CrashLoopBackOff</a>
+    </div>
+  </nav>
+</aside>
+<main class="main-content" id="main-content">
+<div class="content-wrap">
+
+<div class="page-header">
+  <div class="file-meta">
+    <span class="tag">01-control-plane/05-cloud-controller-manager.html</span>
+    <span class="tag">Port: :10258 (secure)</span>
+    <span class="tag">Prerequisites: 04-kube-controller-manager.html</span>
+    <span class="tag">Related: 02-node-components/06-node-lifecycle.html</span>
+  </div>
+  <h1 id="top">cloud-controller-manager</h1>
+  <p style="color:var(--text2);font-size:1rem">The bridge between Kubernetes and cloud provider APIs — how nodes get addresses, load balancers get provisioned, routes get programmed, and zones get discovered. Covers the CCM architecture, the cloud provider interface, out-of-tree provider pattern, and all four built-in controllers.</p>
+</div>
+
+<!-- ── 1. Why CCM Exists ── -->
+<h2 id="why">Why cloud-controller-manager Exists</h2>
+<p>Before Kubernetes 1.6, cloud-specific logic (AWS ELB creation, GCE route management, Azure VM metadata) was compiled directly into kube-apiserver, kube-controller-manager, and kubelet. This created a tight coupling: every cloud provider had to submit code to the upstream Kubernetes repo, and a bug in the AWS provider could break GKE clusters.</p>
+
+<p>CCM extracts all cloud-specific code into a separate binary that runs alongside — not inside — the core Kubernetes components. This enables:</p>
+<ul>
+  <li>Cloud providers to release fixes independently of the Kubernetes release cycle</li>
+  <li>Clusters to run without any cloud provider (bare-metal, on-premises)</li>
+  <li>Third-party cloud providers (Hetzner, DigitalOcean, OVH) to integrate without upstream changes</li>
+  <li>The core Kubernetes binary to shrink and stabilize</li>
+</ul>
+
+<svg width="700" height="200" viewBox="0 0 700 200" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs><marker id="acc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker></defs>
+  <text x="350" y="20" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">In-Tree (Old) vs Out-of-Tree (CCM) Architecture</text>
+  <!-- Old architecture -->
+  <rect x="10" y="35" width="300" height="140" rx="8" fill="#21262d" stroke="#f85149" stroke-dasharray="5,3"/>
+  <text x="160" y="55" text-anchor="middle" fill="#f85149" font-size="10" font-weight="700">❌ Old: In-Tree Cloud Code</text>
+  <rect x="20" y="65" width="80" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="60" y="85" text-anchor="middle" fill="#8b949e" font-size="9">kube-apiserver</text>
+  <rect x="115" y="65" width="90" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="160" y="85" text-anchor="middle" fill="#8b949e" font-size="9">kube-ctrl-mgr</text>
+  <rect x="220" y="65" width="80" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="260" y="85" text-anchor="middle" fill="#8b949e" font-size="9">kubelet</text>
+  <text x="160" y="120" text-anchor="middle" fill="#f85149" font-size="9">AWS/GCE/Azure code compiled IN</text>
+  <text x="160" y="135" text-anchor="middle" fill="#f85149" font-size="9">Cloud bug = Kubernetes release</text>
+  <text x="160" y="150" text-anchor="middle" fill="#f85149" font-size="9">No cloud = still link all providers</text>
+  <!-- New architecture -->
+  <rect x="330" y="35" width="360" height="140" rx="8" fill="#21262d" stroke="#3fb950" stroke-dasharray="5,3"/>
+  <text x="510" y="55" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">✓ New: Out-of-Tree CCM</text>
+  <rect x="340" y="65" width="80" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="380" y="85" text-anchor="middle" fill="#8b949e" font-size="9">kube-apiserver</text>
+  <rect x="435" y="65" width="90" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="480" y="85" text-anchor="middle" fill="#8b949e" font-size="9">kube-ctrl-mgr</text>
+  <rect x="540" y="65" width="80" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="580" y="85" text-anchor="middle" fill="#8b949e" font-size="9">kubelet</text>
+  <rect x="420" y="110" width="170" height="30" rx="4" fill="#21262d" stroke="#d18616"/>
+  <text x="505" y="130" text-anchor="middle" fill="#d18616" font-size="10" font-weight="700">cloud-controller-manager</text>
+  <text x="505" y="160" text-anchor="middle" fill="#3fb950" font-size="9">Released independently, versioned separately</text>
+  <line x1="480" y1="95" x2="480" y2="109" stroke="#d18616" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#acc)"/>
+</svg>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Process identity</h4>
+    <ul>
+      <li>Binary: <code>cloud-controller-manager</code> (cloud-provider-specific build)</li>
+      <li>Secure port: <code>:10258</code> (HTTPS, metrics + healthz)</li>
+      <li>Leader-elected: one active instance per cluster</li>
+      <li>Kubeconfig: typically <code>/etc/kubernetes/cloud-controller-manager.conf</code></li>
+      <li>Cloud credentials: IAM role (preferred), static key file, or Workload Identity</li>
+      <li>Deployed as: DaemonSet on control-plane nodes, or Deployment</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>What it manages</h4>
+    <ul>
+      <li><strong>Node controller</strong>: cloud metadata on Node objects (addresses, zones, instance type)</li>
+      <li><strong>Route controller</strong>: cloud VPC routing tables for pod CIDR blocks</li>
+      <li><strong>Service controller</strong>: cloud load balancers for <code>type: LoadBalancer</code> Services</li>
+      <li><strong>Cloud node lifecycle</strong>: detect and handle cloud instance termination</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ── 2. Architecture ── -->
+<h2 id="architecture">CCM Architecture and the Cloud Provider Interface</h2>
+<p>CCM implements the same reconciliation loop pattern as kube-controller-manager (see <a href="04-kube-controller-manager.html#reconcile-loop">04-kube-controller-manager.html § Reconciliation Loop</a>). It watches Kubernetes API objects and calls cloud provider APIs to converge state.</p>
+
+<svg width="700" height="240" viewBox="0 0 700 240" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs><marker id="aarch" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker>
+  <marker id="aarch2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#d18616"/></marker></defs>
+  <text x="350" y="20" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">cloud-controller-manager Architecture</text>
+  <!-- kube-apiserver -->
+  <rect x="10" y="40" width="130" height="50" rx="6" fill="#21262d" stroke="#388bfd"/>
+  <text x="75" y="70" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">kube-apiserver</text>
+  <!-- CCM -->
+  <rect x="200" y="30" width="300" height="170" rx="8" fill="#21262d" stroke="#d18616"/>
+  <text x="350" y="52" text-anchor="middle" fill="#d18616" font-size="11" font-weight="700">cloud-controller-manager</text>
+  <rect x="215" y="60" width="120" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="275" y="80" text-anchor="middle" fill="#8b949e" font-size="9">Node Controller</text>
+  <rect x="350" y="60" width="140" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="420" y="80" text-anchor="middle" fill="#8b949e" font-size="9">Service Controller</text>
+  <rect x="215" y="100" width="120" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="275" y="120" text-anchor="middle" fill="#8b949e" font-size="9">Route Controller</text>
+  <rect x="350" y="100" width="140" height="30" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="420" y="120" text-anchor="middle" fill="#8b949e" font-size="9">Cloud Node Lifecycle</text>
+  <!-- Cloud Provider Interface -->
+  <rect x="215" y="145" width="275" height="40" rx="4" fill="#161b22" stroke="#d18616" stroke-dasharray="3,2"/>
+  <text x="352" y="163" text-anchor="middle" fill="#d18616" font-size="9" font-weight="700">Cloud Provider Interface</text>
+  <text x="352" y="177" text-anchor="middle" fill="#6e7681" font-size="8">Instances / Routes / LoadBalancer / Zones</text>
+  <!-- Cloud API -->
+  <rect x="560" y="40" width="130" height="160" rx="6" fill="#21262d" stroke="#d18616"/>
+  <text x="625" y="62" text-anchor="middle" fill="#d18616" font-size="10" font-weight="700">Cloud API</text>
+  <text x="625" y="82" text-anchor="middle" fill="#6e7681" font-size="9">EC2 / GCE / AKS</text>
+  <text x="625" y="100" text-anchor="middle" fill="#6e7681" font-size="9">ELB / NLB</text>
+  <text x="625" y="118" text-anchor="middle" fill="#6e7681" font-size="9">VPC Routes</text>
+  <text x="625" y="136" text-anchor="middle" fill="#6e7681" font-size="9">Instance Metadata</text>
+  <text x="625" y="154" text-anchor="middle" fill="#6e7681" font-size="9">Autoscaling Groups</text>
+  <!-- Arrows -->
+  <line x1="140" y1="65" x2="198" y2="65" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#aarch)"/>
+  <text x="169" y="58" text-anchor="middle" fill="#8b949e" font-size="8">Watch/PATCH</text>
+  <line x1="500" y1="120" x2="558" y2="120" stroke="#d18616" stroke-width="1.5" marker-end="url(#aarch2)"/>
+  <text x="529" y="113" text-anchor="middle" fill="#d18616" font-size="8">API calls</text>
+</svg>
+
+<h3 id="cloud-provider-interface">The Cloud Provider Interface (Go)</h3>
+<p>Every CCM implementation must implement the <code>cloudprovider.Interface</code> Go interface from <code>k8s.io/cloud-provider</code>. This defines the contract between Kubernetes and any cloud platform.</p>
+
+<pre><code>// k8s.io/cloud-provider/cloud.go (simplified)
+type Interface interface {
+    Initialize(clientBuilder ControllerClientBuilder, stop &lt;-chan struct{})
+    LoadBalancer() (LoadBalancer, bool)      // nil, false if not supported
+    Instances() (Instances, bool)            // VM metadata lookup
+    InstancesV2() (InstancesV2, bool)        // newer V2 interface
+    Zones() (Zones, bool)                    // zone/region metadata
+    Clusters() (Clusters, bool)              // cluster management (rarely used)
+    Routes() (Routes, bool)                  // VPC route table management
+    ProviderName() string                    // "aws", "gce", "azure", etc.
+    HasClusterID() bool
+}
+
+type LoadBalancer interface {
+    GetLoadBalancer(ctx, clusterName, service) (*LoadBalancerStatus, bool, error)
+    GetLoadBalancerName(ctx, clusterName, service) string
+    EnsureLoadBalancer(ctx, clusterName, service, nodes) (*LoadBalancerStatus, error)
+    UpdateLoadBalancer(ctx, clusterName, service, nodes) error
+    EnsureLoadBalancerDeleted(ctx, clusterName, service) error
+}
+
+type Instances interface {
+    NodeAddresses(ctx, nodeName) ([]NodeAddress, error)
+    NodeAddressesByProviderID(ctx, providerID) ([]NodeAddress, error)
+    InstanceID(ctx, nodeName) (string, error)
+    InstanceType(ctx, nodeName) (string, error)
+    InstanceTypeByProviderID(ctx, providerID) (string, error)
+    InstanceExistsByProviderID(ctx, providerID) (bool, error)
+    InstanceShutdownByProviderID(ctx, providerID) (bool, error)
+}</code></pre>
+
+<!-- ── 3. The Four Built-in Controllers ── -->
+<h2 id="four-controllers">The Four Built-in Controllers</h2>
+
+<h3 id="node-controller">Node Controller</h3>
+<p>The Node Controller populates cloud-specific metadata on Node objects after they register. When a new Node appears with <code>spec.providerID</code> set but no zone/address annotations, this controller calls the cloud API to fetch instance details and patches the Node.</p>
+
+<div class="flow-row">
+  <div class="flow-box neutral">Node registers (kubelet)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box cp">CCM watches Node</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box cloud">Cloud API: DescribeInstance</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box ok">PATCH node.status + labels</div>
+</div>
+
+<p>Fields populated by the Node Controller:</p>
+<pre><code># After CCM processes the new node:
+status:
+  addresses:
+  - type: InternalIP
+    address: "10.0.1.42"
+  - type: ExternalIP
+    address: "54.123.45.67"     # AWS: EIP or public IP
+  - type: InternalDNS
+    address: "ip-10-0-1-42.ec2.internal"
+  - type: ExternalDNS
+    address: "ec2-54-123-45-67.compute-1.amazonaws.com"
+  - type: Hostname
+    address: "ip-10-0-1-42.ec2.internal"
+
+# Labels added by cloud provider
+labels:
+  topology.kubernetes.io/zone: "us-east-1a"
+  topology.kubernetes.io/region: "us-east-1"
+  node.kubernetes.io/instance-type: "m5.xlarge"
+  failure-domain.beta.kubernetes.io/zone: "us-east-1a"   # legacy label
+  failure-domain.beta.kubernetes.io/region: "us-east-1"  # legacy label
+
+# ProviderID set by kubelet, used by CCM to look up instance
+spec:
+  providerID: "aws:///us-east-1a/i-0abc123def456"</code></pre>
+
+<div class="callout note">
+  <div class="callout-title">▶ providerID Format</div>
+  <p>Each cloud has its own <code>providerID</code> format. AWS: <code>aws:///&lt;zone&gt;/&lt;instance-id&gt;</code>. GCE: <code>gce://&lt;project&gt;/&lt;zone&gt;/&lt;instance-name&gt;</code>. Azure: <code>azure:///subscriptions/&lt;sub&gt;/resourceGroups/&lt;rg&gt;/providers/Microsoft.Compute/virtualMachines/&lt;name&gt;</code>. The providerID is set by kubelet via <code>--provider-id</code> flag or auto-detected from the instance metadata service (IMDS).</p>
+</div>
+
+<h3 id="route-controller">Route Controller</h3>
+<p>Kubernetes requires every Pod to be directly reachable from every other Pod without NAT. On cloud platforms, this means each node's pod CIDR must be programmed into the cloud's VPC routing table so that inter-node pod traffic is routed correctly.</p>
+
+<div class="flow-row">
+  <div class="flow-box cp">Node gets podCIDR assigned</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box cp">CCM watches Node.spec.podCIDR</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box cloud">Cloud API: CreateRoute</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box ok">VPC route: 10.244.1.0/24 → i-0abc123</div>
+</div>
+
+<pre><code># Example VPC route entry created by CCM (AWS)
+# Destination: 10.244.1.0/24 (pod CIDR for node worker-1)
+# Target:      i-0abc123def456 (EC2 instance ID for worker-1)
+
+# This allows pod-on-worker-2 (10.244.2.5) to reach pod-on-worker-1 (10.244.1.3)
+# without SNAT — traffic routes directly through the VPC.
+
+# Check routes created by CCM
+aws ec2 describe-route-tables --filter Name=tag:kubernetes.io/cluster/my-cluster,Values=owned \
+  --query 'RouteTables[].Routes[]' | jq '.[] | select(.DestinationCidrBlock | startswith("10.244"))'
+
+# On GCP:
+gcloud compute routes list --filter="name~k8s-*"</code></pre>
+
+<div class="callout note">
+  <div class="callout-title">▶ Route Controller vs CNI</div>
+  <p>Not all CNI plugins need the Route Controller. Flannel in VXLan mode encapsulates inter-node traffic in UDP — no VPC routes needed. Calico in BGP mode programs routes via BGP peers — no CCM involvement. The Route Controller is specifically for <strong>AWS VPC CNI</strong>, <strong>GCE native routing</strong>, and similar "native routing" setups where pod IPs are directly routable in the cloud network without encapsulation.</p>
+</div>
+
+<h3 id="service-controller">Service Controller (LoadBalancer Provisioning)</h3>
+<p>When a Service of <code>type: LoadBalancer</code> is created, the Service Controller calls the cloud's load balancer API to provision an external LB, then writes the allocated IP/hostname back to <code>service.status.loadBalancer.ingress</code>.</p>
+
+<svg width="700" height="260" viewBox="0 0 700 260" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs>
+    <marker id="alb" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker>
+    <marker id="alb2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#d18616"/></marker>
+  </defs>
+  <text x="350" y="20" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">LoadBalancer Service Provisioning Sequence</text>
+  <text x="80" y="48" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="700">kubectl / User</text>
+  <line x1="80" y1="52" x2="80" y2="250" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="250" y="48" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="700">kube-apiserver</text>
+  <line x1="250" y1="52" x2="250" y2="250" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="430" y="48" text-anchor="middle" fill="#d18616" font-size="10" font-weight="700">CCM Service Ctrl</text>
+  <line x1="430" y1="52" x2="430" y2="250" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="610" y="48" text-anchor="middle" fill="#d18616" font-size="10" font-weight="700">Cloud LB API</text>
+  <line x1="610" y1="52" x2="610" y2="250" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <line x1="80" y1="75" x2="240" y2="75" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#alb)"/>
+  <text x="160" y="68" text-anchor="middle" fill="#8b949e" font-size="9">POST /services (type: LoadBalancer)</text>
+
+  <line x1="250" y1="92" x2="90" y2="92" stroke="#3fb950" stroke-width="1.5" marker-end="url(#alb)"/>
+  <text x="170" y="104" text-anchor="middle" fill="#3fb950" font-size="9">201 Created (status.loadBalancer={})</text>
+
+  <line x1="250" y1="118" x2="420" y2="118" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#alb)"/>
+  <text x="335" y="111" text-anchor="middle" fill="#8b949e" font-size="9">WATCH: Service ADDED event</text>
+
+  <line x1="430" y1="135" x2="600" y2="135" stroke="#d18616" stroke-width="1.5" marker-end="url(#alb2)"/>
+  <text x="515" y="128" text-anchor="middle" fill="#d18616" font-size="9">CreateLoadBalancer(svc, nodes)</text>
+
+  <line x1="610" y1="152" x2="440" y2="152" stroke="#d18616" stroke-width="1.5" marker-end="url(#alb2)"/>
+  <text x="525" y="165" text-anchor="middle" fill="#d18616" font-size="9">LB hostname: a1b2.elb.amazonaws.com</text>
+
+  <line x1="430" y1="178" x2="260" y2="178" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#alb)"/>
+  <text x="345" y="171" text-anchor="middle" fill="#8b949e" font-size="9">PATCH /services/nginx/status</text>
+
+  <line x1="250" y1="195" x2="90" y2="195" stroke="#3fb950" stroke-width="1.5" marker-end="url(#alb)"/>
+  <text x="170" y="207" text-anchor="middle" fill="#3fb950" font-size="9">WATCH event: Service MODIFIED (ingress populated)</text>
+
+  <line x1="250" y1="222" x2="90" y2="222" stroke="#3fb950" stroke-width="1.5" marker-end="url(#alb)"/>
+  <text x="170" y="215" text-anchor="middle" fill="#3fb950" font-size="9">kubectl get svc shows EXTERNAL-IP</text>
+</svg>
+
+<pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  annotations:
+    # AWS-specific annotations controlling LB behavior
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:us-east-1:123:certificate/abc"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "ssl"
+    # GCP-specific
+    cloud.google.com/load-balancer-type: "Internal"
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+  - port: 443
+    targetPort: 8443
+status:
+  loadBalancer:
+    ingress:
+    - hostname: a1b2c3d4e5.elb.amazonaws.com  # set by CCM after provisioning</code></pre>
+
+<h3 id="cloud-node-lifecycle">Cloud Node Lifecycle Controller</h3>
+<p>This controller handles the case where a cloud VM is terminated externally (e.g., AWS terminates a spot instance, or an admin deletes a VM in the cloud console). Without this controller, the deleted VM's Node object would remain in the cluster indefinitely, and workloads wouldn't be rescheduled.</p>
+
+<div class="flow-row">
+  <div class="flow-box cloud">Cloud terminates VM</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box cloud">CCM: InstanceExistsByProviderID = false</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box warn">Node tainted: node.cloudprovider.kubernetes.io/shutdown</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box node">Node deleted from API</div>
+</div>
+
+<pre><code># The cloud-node-lifecycle controller polls cloud API for each node
+# If the instance no longer exists in the cloud:
+# 1. Add taint: node.cloudprovider.kubernetes.io/shutdown:NoSchedule
+# 2. After configurable delay, delete the Node object
+# This triggers the node lifecycle controller in kcm to evict pods
+
+# Check for nodes in shutdown state
+kubectl get nodes -o wide | grep -v Ready
+kubectl describe node &lt;node&gt; | grep -A5 "Taints:"
+
+# Spot instance interruption handling (AWS):
+# AWS sends 2-minute warning → IMDS endpoint /spot/termination-notice
+# Cluster Autoscaler + cloud-node-lifecycle controller coordinate graceful drain</code></pre>
+
+<!-- ── 4. Out-of-Tree Provider Pattern ── -->
+<h2 id="out-of-tree">Out-of-Tree Provider Pattern</h2>
+<p>Every major cloud provider now ships its own CCM binary, versioned and released independently from Kubernetes core. The provider's CCM binary imports <code>k8s.io/cloud-provider</code> and implements the interface.</p>
+
+<table>
+<tr><th>Cloud Provider</th><th>Repository</th><th>Notes</th></tr>
+<tr><td>AWS</td><td><code>kubernetes/cloud-provider-aws</code></td><td>Classic ELB/NLB provisioning. AWS Load Balancer Controller (separate) handles ALB via Ingress</td></tr>
+<tr><td>GCP</td><td><code>kubernetes/cloud-provider-gcp</code></td><td>GCE persistent disk, GKE integrated LB, Cloud NAT routes</td></tr>
+<tr><td>Azure</td><td><code>kubernetes-sigs/cloud-provider-azure</code></td><td>Azure Load Balancer, Azure Disk/File CSI, AKS nodepools</td></tr>
+<tr><td>OpenStack</td><td><code>kubernetes/cloud-provider-openstack</code></td><td>Octavia LB, Cinder volumes, Nova instance metadata</td></tr>
+<tr><td>vSphere</td><td><code>kubernetes/cloud-provider-vsphere</code></td><td>vCenter VMs, vSAN storage, NSX-T networking</td></tr>
+<tr><td>Hetzner</td><td><code>hetznercloud/hcloud-cloud-controller-manager</code></td><td>Community provider; Hcloud LB, Floating IPs</td></tr>
+<tr><td>DigitalOcean</td><td><code>digitalocean/digitalocean-cloud-controller-manager</code></td><td>DO Load Balancers, Floating IPs</td></tr>
+<tr><td>Bare metal / None</td><td>N/A</td><td>Run with <code>--cloud-provider=external</code> but no CCM deployed; route/LB controllers disabled</td></tr>
+</table>
+
+<h3 id="migration">In-Tree to Out-of-Tree Migration</h3>
+<p>Clusters created before CCM existed may still use the in-tree cloud providers via <code>--cloud-provider=aws</code> on kube-apiserver and kube-controller-manager. This is deprecated since 1.29 and will be removed. Migration steps:</p>
+
+<pre><code># Step 1: Update kube-apiserver and kube-controller-manager flags
+# Remove: --cloud-provider=aws
+# Add:    --cloud-provider=external
+
+# Step 2: Deploy the out-of-tree CCM DaemonSet
+# (example: AWS CCM via Helm)
+helm repo add aws-cloud-controller-manager https://kubernetes.github.io/cloud-provider-aws
+helm upgrade --install aws-cloud-controller-manager \
+  aws-cloud-controller-manager/aws-cloud-controller-manager \
+  --namespace kube-system \
+  --set args={"--v=2","--cloud-provider=aws"}
+
+# Step 3: Verify nodes get cloud metadata from CCM
+kubectl get nodes -o yaml | grep -A 10 "addresses:"
+
+# Step 4: CSI migration — replace in-tree volume plugins
+# In-tree: kubernetes.io/aws-ebs (deprecated)
+# Out-of-tree: ebs.csi.aws.com (CSI driver)
+# Migration controlled by feature gate: CSIMigrationAWS=true (default in 1.23+)
+
+# Check if CSI migration is active
+kubectl get csidriver ebs.csi.aws.com
+kubectl get storageclass | grep ebs</code></pre>
+
+<!-- ── 5. Kubelet Integration ── -->
+<h2 id="kubelet-integration">Kubelet and the --cloud-provider=external Flag</h2>
+<p>Kubelet must be told to wait for CCM to initialize the Node before marking it Ready for scheduling. Without this, pods may be scheduled to a node whose zone/address labels haven't been populated yet.</p>
+
+<pre><code># kubelet flag required when using CCM:
+--cloud-provider=external
+
+# Effect: kubelet adds taint to newly registered node:
+# node.cloudprovider.kubernetes.io/uninitialized:NoSchedule
+# CCM Node Controller removes this taint after populating cloud metadata
+# Only then does the scheduler consider the node for pod placement
+
+# Verify the taint is removed after CCM processes the node
+kubectl describe node new-node | grep -A5 Taints:
+# Should show: &lt;none&gt; (or only user-defined taints)
+
+# If node stays with uninitialized taint:
+kubectl -n kube-system logs &lt;ccm-pod&gt; | grep "node controller"</code></pre>
+
+<div class="callout warn">
+  <div class="callout-title">⚠ Missing --cloud-provider=external</div>
+  <p>If kubelet is not started with <code>--cloud-provider=external</code>, nodes will be marked Ready immediately without the <code>uninitialized</code> taint. Pods may land on nodes whose zone labels are still empty, breaking topology-aware routing and zone-aware scheduling. Always set this flag on all kubelets when deploying CCM.</p>
+</div>
+
+<!-- ── 6. RBAC and Credentials ── -->
+<h2 id="rbac">RBAC, Credentials, and Security</h2>
+
+<h3>Kubernetes RBAC</h3>
+<p>CCM needs broad Kubernetes API access to watch and patch Nodes, Services, and Events. A ClusterRole is required:</p>
+
+<pre><code>apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:cloud-controller-manager
+rules:
+- apiGroups: [""]
+  resources: [events]
+  verbs: [create, patch, update]
+- apiGroups: [""]
+  resources: [nodes]
+  verbs: [get, list, watch, delete, patch, update]
+- apiGroups: [""]
+  resources: [nodes/status]
+  verbs: [patch]
+- apiGroups: [""]
+  resources: [services]
+  verbs: [get, list, watch, patch]
+- apiGroups: [""]
+  resources: [services/status]
+  verbs: [update, patch]
+- apiGroups: [""]
+  resources: [serviceaccounts]
+  verbs: [create]
+- apiGroups: [""]
+  resources: [persistentvolumes]
+  verbs: [get, list, update, watch]
+- apiGroups: [""]
+  resources: [endpoints]
+  verbs: [create, get, list, watch, update]
+- apiGroups: ["coordination.k8s.io"]
+  resources: [leases]
+  verbs: [get, create, update]</code></pre>
+
+<h3>Cloud Provider Credentials</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>IAM Role (Recommended — AWS)</h4>
+    <p>Attach an IAM role to the EC2 instances running the control plane. CCM uses the EC2 instance metadata service (IMDS) to fetch credentials. No key files on disk — credentials rotate automatically.</p>
+    <pre><code># Required IAM permissions for AWS CCM:
+ec2:DescribeInstances
+ec2:DescribeRegions
+ec2:DescribeRouteTables
+ec2:CreateRoute
+ec2:DeleteRoute
+ec2:ModifyInstanceAttribute
+elasticloadbalancing:* (for Service controller)
+autoscaling:DescribeAutoScalingGroups</code></pre>
+  </div>
+  <div class="card">
+    <h4>Workload Identity (GCP)</h4>
+    <p>GKE uses Workload Identity to bind a Kubernetes ServiceAccount to a GCP ServiceAccount. CCM's pod SA is annotated with the GCP SA — no JSON key files needed.</p>
+    <pre><code># GKE Workload Identity annotation
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: \
+      ccm@my-project.iam.gserviceaccount.com
+
+# Required GCP roles:
+roles/compute.instanceAdmin.v1
+roles/compute.networkAdmin
+roles/iam.serviceAccountUser</code></pre>
+  </div>
+  <div class="card">
+    <h4>Azure Managed Identity</h4>
+    <p>AKS uses Managed Identity (system-assigned or user-assigned) for the CCM. No client secrets — IMDS provides a token. Ensure the managed identity has Contributor on the MC_ resource group and Network Contributor on the VNet.</p>
+    <pre><code># Azure CCM config (cloud-config secret)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloud-config
+  namespace: kube-system
+data:
+  cloud-config: |
+    {
+      "cloud": "AzurePublicCloud",
+      "useManagedIdentityExtension": true,
+      "subscriptionId": "...",
+      "resourceGroup": "...",
+      "vnetName": "..."
+    }</code></pre>
+  </div>
+  <div class="card">
+    <h4>Static Credentials (Not Recommended)</h4>
+    <p>A JSON/YAML config file containing API keys, client secrets, or access keys mounted as a Secret into the CCM pod. Acceptable for dev/test but not production — credentials don't auto-rotate and are stored in etcd (encrypted at rest required).</p>
+    <pre><code># Flag to pass static credentials
+--cloud-config=/etc/kubernetes/cloud-config.json
+
+# Ensure Secrets are encrypted at rest!
+# See 01-kube-apiserver.html § Encryption at Rest</code></pre>
+  </div>
+</div>
+
+<!-- ── 7. Deployment Patterns ── -->
+<h2 id="deployment">Deployment Patterns</h2>
+
+<h3>DaemonSet on Control Plane Nodes (most common)</h3>
+<pre><code>apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cloud-controller-manager
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      component: cloud-controller-manager
+  template:
+    metadata:
+      labels:
+        component: cloud-controller-manager
+    spec:
+      serviceAccountName: cloud-controller-manager
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane   # run on control-plane nodes
+        effect: NoSchedule
+      - key: node.cloudprovider.kubernetes.io/uninitialized  # tolerate uninitialized nodes
+        effect: NoSchedule
+        value: "true"
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      priorityClassName: system-cluster-critical
+      hostNetwork: true          # access cloud IMDS on link-local (169.254.169.254)
+      containers:
+      - name: cloud-controller-manager
+        image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.30.0
+        command:
+        - /bin/aws-cloud-controller-manager
+        - --cloud-provider=aws
+        - --leader-elect=true
+        - --use-service-account-credentials=true
+        - --configure-cloud-routes=true  # enable Route Controller
+        - --v=2</code></pre>
+
+<div class="callout note">
+  <div class="callout-title">▶ Why tolerations for uninitialized nodes?</div>
+  <p>The CCM pod itself must be able to run on nodes that have the <code>node.cloudprovider.kubernetes.io/uninitialized</code> taint — otherwise there's a chicken-and-egg deadlock: the taint prevents pods from running, but the CCM pod (which removes the taint) can't be scheduled. The <code>hostNetwork: true</code> is needed to reach the cloud IMDS at <code>169.254.169.254</code>, which is link-local and not routable through the pod network.</p>
+</div>
+
+<!-- ── 8. Configuration Reference ── -->
+<h2 id="config">Configuration Reference</h2>
+
+<table>
+<tr><th>Flag</th><th>Default</th><th>Purpose</th></tr>
+<tr><td><code>--cloud-provider</code></td><td>—</td><td>Cloud provider name (must match ProviderName() implementation)</td></tr>
+<tr><td><code>--cloud-config</code></td><td>—</td><td>Path to cloud provider config file (credentials, region, VPC IDs)</td></tr>
+<tr><td><code>--leader-elect</code></td><td>true</td><td>Enable leader election; only one CCM active at a time</td></tr>
+<tr><td><code>--use-service-account-credentials</code></td><td>false</td><td>Use individual SA tokens per controller (mirrors kcm behavior)</td></tr>
+<tr><td><code>--configure-cloud-routes</code></td><td>true</td><td>Enable Route Controller (set false for encapsulated CNIs like Calico VXLAN)</td></tr>
+<tr><td><code>--cluster-name</code></td><td>—</td><td>Cluster name used to tag cloud resources; must match the value used when provisioning</td></tr>
+<tr><td><code>--cidr-allocator-type</code></td><td>RangeAllocator</td><td>CIDR allocation strategy: RangeAllocator or CloudAllocator</td></tr>
+<tr><td><code>--cluster-cidr</code></td><td>—</td><td>Pod CIDR range (required for Route Controller)</td></tr>
+<tr><td><code>--allocate-node-cidrs</code></td><td>false</td><td>Enable CIDR allocation by CCM instead of kube-controller-manager</td></tr>
+<tr><td><code>--node-sync-period</code></td><td>10s</td><td>How often Node Controller polls cloud API for node metadata</td></tr>
+<tr><td><code>--route-reconciliation-period</code></td><td>10s</td><td>How often Route Controller reconciles VPC routes</td></tr>
+<tr><td><code>--concurrent-service-syncs</code></td><td>1</td><td>Number of Service LB provisioning goroutines</td></tr>
+<tr><td><code>--v</code></td><td>2</td><td>Log verbosity. 4+ shows cloud API calls</td></tr>
+</table>
+
+<!-- ── 9. Metrics ── -->
+<h2 id="metrics">Metrics and Alerting</h2>
+
+<pre><code># Scrape CCM metrics
+curl -sk https://localhost:10258/metrics
+
+# Key metrics
+cloudprovider_aws_api_request_duration_seconds{request="DescribeInstances"}
+cloudprovider_aws_api_request_errors_total{request="CreateLoadBalancer"}
+
+# Controller-generic metrics (same workqueue metrics as kcm)
+workqueue_depth{name="cloud-node"}
+workqueue_depth{name="service"}
+workqueue_depth{name="cloud-node-lifecycle"}
+workqueue_retries_total{name="service"}
+
+# Load balancer specific (varies by provider)
+cloudprovider_aws_api_throttled_requests_total   # AWS throttling events
+cloud_provider_reconcile_attempts_total{provider="aws",controller="service"}
+
+# Node initialization health
+# Monitor: nodes stuck with uninitialized taint &gt; 2 minutes
+kubectl get nodes -o json | jq -r '
+  .items[] |
+  select(.spec.taints != null) |
+  select(.spec.taints[] | .key == "node.cloudprovider.kubernetes.io/uninitialized") |
+  .metadata.name
+'</code></pre>
+
+<details>
+<summary>Prometheus Alerting Rules</summary>
+<div class="details-body">
+<pre><code>groups:
+- name: cloud-controller-manager
+  rules:
+  - alert: CCMDown
+    expr: absent(up{job="cloud-controller-manager"} == 1)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "cloud-controller-manager is down"
+      description: "No CCM is running. LoadBalancer Services will not be provisioned and new nodes will stay uninitialized."
+
+  - alert: CCMNodeUninitializedStuck
+    expr: |
+      kube_node_spec_taint{key="node.cloudprovider.kubernetes.io/uninitialized"} > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Node stuck with cloud-uninitialized taint"
+      description: "Node {{ $labels.node }} has been uninitialized for >5m. Check CCM logs."
+
+  - alert: CCMCloudAPIErrors
+    expr: rate(cloudprovider_aws_api_request_errors_total[5m]) > 0.1
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CCM cloud API error rate"
+      description: "CCM is seeing {{ $value }} cloud API errors/s on {{ $labels.request }}."
+
+  - alert: CCMLoadBalancerSyncFailed
+    expr: rate(workqueue_retries_total{job="cloud-controller-manager",name="service"}[5m]) > 0.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Service LB sync failing repeatedly"
+      description: "CCM service controller is retrying LB sync at {{ $value }}/s."</code></pre>
+</div>
+</details>
+
+<!-- ── 10. Troubleshooting ── -->
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<details>
+<summary>Service type LoadBalancer stuck in &lt;pending&gt;</summary>
+<div class="details-body">
+<pre><code># Check CCM is running
+kubectl -n kube-system get pods -l component=cloud-controller-manager
+
+# Check CCM logs for the service
+kubectl -n kube-system logs -l component=cloud-controller-manager | grep -i "service\|loadbalancer\|error" | tail -30
+
+# Check service events
+kubectl describe service my-svc | grep -A 10 Events:
+# Look for: "Error creating load balancer", "Timeout", "Throttling"
+
+# AWS: check IAM permissions
+# "AccessDenied" errors indicate missing IAM policy on control plane node role
+aws iam simulate-principal-policy \
+  --policy-source-arn arn:aws:iam::ACCOUNT:role/k8s-control-plane \
+  --action-names "elasticloadbalancing:CreateLoadBalancer" \
+  --resource-arns "*"
+
+# GCP: check service account permissions
+gcloud projects get-iam-policy my-project \
+  --flatten="bindings[].members" \
+  --filter="bindings.members:serviceAccount:ccm@my-project.iam.gserviceaccount.com"</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Nodes stuck with cloud-uninitialized taint</summary>
+<div class="details-body">
+<pre><code># Check CCM logs for node initialization
+kubectl -n kube-system logs &lt;ccm-pod&gt; | grep "node controller\|initialize\|providerID"
+
+# Verify providerID is set on the node (required for CCM lookup)
+kubectl get node &lt;node-name&gt; -o jsonpath='{.spec.providerID}'
+# Should be: aws:///us-east-1a/i-0abc123def456
+# If empty, kubelet is missing --provider-id or --cloud-provider=external
+
+# Check IMDS access from CCM pod (for IAM role fetching)
+kubectl -n kube-system exec &lt;ccm-pod&gt; -- \
+  curl -s http://169.254.169.254/latest/meta-data/instance-id
+# Must return an instance ID; failure = network/IMDS issue
+
+# Check if Node has valid providerID format for the cloud
+kubectl get nodes -o json | jq -r '.items[] | "\(.metadata.name): \(.spec.providerID)"'</code></pre>
+</div>
+</details>
+
+<details>
+<summary>VPC routes not created / pod cross-node connectivity broken</summary>
+<div class="details-body">
+<pre><code># Verify Route Controller is enabled
+kubectl -n kube-system logs &lt;ccm-pod&gt; | grep -i "route"
+
+# Check nodes have podCIDR assigned
+kubectl get nodes -o json | jq -r '.items[] | "\(.metadata.name): \(.spec.podCIDR)"'
+
+# AWS: verify routes in VPC route table
+aws ec2 describe-route-tables \
+  --filter Name=vpc-id,Values=vpc-0abc123 \
+  --query 'RouteTables[].Routes[?InstanceId!=null]'
+
+# If using Calico VXLAN or Flannel VXLAN, routes are NOT needed:
+# Set --configure-cloud-routes=false to disable Route Controller
+
+# Check if cloud CIDR conflicts with VPC CIDR
+# Pod CIDR should not overlap with VPC subnet CIDRs</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Cloud API rate limiting / throttling</summary>
+<div class="details-body">
+<pre><code># AWS: EC2 API has per-region throttling limits
+# Reduce polling frequency:
+# --node-sync-period=30s (default 10s)
+# --route-reconciliation-period=30s
+
+# Check for throttling in CCM logs
+kubectl -n kube-system logs &lt;ccm-pod&gt; | grep -i "throttl\|rateLim\|RequestLimitExceeded"
+
+# AWS: request a limit increase for EC2 API calls via AWS console
+
+# GCP: Cloud Resource Manager API quotas
+# Enable API rate limiting in cloud config:
+# rateLimitConfig:
+#   cloudProviderRateLimit: true
+#   cloudProviderRateLimitQPS: 3
+#   cloudProviderRateLimitBucket: 5
+
+# Monitor cloud API call rate
+kubectl get --raw /metrics | grep cloudprovider_.*_api_request_duration</code></pre>
+</div>
+</details>
+
+<!-- ── 11. On-Premises / No Cloud ── -->
+<h2 id="on-premises">On-Premises Clusters Without CCM</h2>
+<p>Clusters running on bare metal, VMware, or private cloud without a CCM must handle the functionality themselves or accept limitations.</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Load Balancer alternatives</h4>
+    <p><strong>MetalLB</strong>: BGP or L2 mode load balancer for bare metal. Acts as a CCM Service controller substitute. Watches <code>type: LoadBalancer</code> Services and allocates IPs from configured address pools.<br/><strong>kube-vip</strong>: VIP-based LB using ARP/BGP. Works well for small clusters.<br/><strong>External DNS + NodePort</strong>: Route traffic to NodePort services via external DNS A records pointing to node IPs.</p>
+  </div>
+  <div class="card">
+    <h4>Node metadata alternatives</h4>
+    <p>Without CCM, manually label nodes with topology information:<br/><code>kubectl label node worker-1 topology.kubernetes.io/zone=dc1-rack-a</code><br/><code>kubectl label node worker-1 topology.kubernetes.io/region=dc1</code><br/>Or use <strong>Node Feature Discovery (NFD)</strong> to auto-label nodes based on CPU features, PCI devices, and kernel capabilities.</p>
+  </div>
+  <div class="card">
+    <h4>Route controller alternatives</h4>
+    <p>On bare metal, pod routing is handled entirely by the CNI plugin:<br/><strong>Calico BGP</strong>: advertises pod CIDRs via BGP to ToR switches<br/><strong>Cilium</strong>: eBPF-based routing without VPC routes needed<br/><strong>Flannel VXLAN</strong>: encapsulates pod traffic, no underlay routing required</p>
+  </div>
+  <div class="card">
+    <h4>Node deletion handling</h4>
+    <p>Without CCM's cloud-node-lifecycle controller, deleted VMs leave stale Node objects. Use <strong>node problem detector</strong> + custom scripts, or run <code>kubectl delete node</code> manually. Some node managers (like Cluster Autoscaler) have built-in cleanup logic.</p>
+  </div>
+</div>
+
+<!-- ── 12. Production Best Practices ── -->
+<h2 id="production">Production Best Practices</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Use IAM roles / Workload Identity, never static credentials</h4>
+    <p>Static credentials in a Secret or config file require manual rotation, are stored in etcd, and are a security liability. IAM roles (AWS), Workload Identity (GCP), or Managed Identity (Azure) auto-rotate and follow least-privilege without keys on disk.</p>
+  </div>
+  <div class="card">
+    <h4>Match CCM version to Kubernetes version</h4>
+    <p>CCM follows the same N±1 skew policy as other control plane components. Deploy the CCM version that matches your Kubernetes minor version. Cloud providers typically release a new CCM tag within days of a Kubernetes release.</p>
+  </div>
+  <div class="card">
+    <h4>Disable Route Controller for overlay CNIs</h4>
+    <p>If using Calico VXLAN, Flannel VXLAN, or Cilium with VXLAN/Geneve encapsulation, set <code>--configure-cloud-routes=false</code>. Creating unused VPC routes wastes cloud API quota and can cause routing conflicts if pod CIDRs overlap with subnet CIDRs.</p>
+  </div>
+  <div class="card">
+    <h4>Run on control-plane nodes with system-cluster-critical priority</h4>
+    <p>CCM must run before worker nodes can be initialized. Place it on control-plane nodes (taints tolerated) with <code>priorityClassName: system-cluster-critical</code> to prevent eviction during resource pressure.</p>
+  </div>
+  <div class="card">
+    <h4>Tag cloud resources for cluster isolation</h4>
+    <p>CCM uses <code>--cluster-name</code> to tag all cloud resources (LBs, routes, security groups) it creates. On clusters sharing a VPC, mismatched cluster names cause CCM to fight over the same resources. Always set a unique, stable cluster name at cluster creation.</p>
+  </div>
+  <div class="card">
+    <h4>Monitor node initialization latency</h4>
+    <p>Alert if any node has the <code>uninitialized</code> taint for more than 2 minutes. This indicates CCM is having trouble reaching the cloud API (throttling, IAM permission issue, or CCM pod is not running). Nodes stuck uninitialized cannot receive workloads.</p>
+  </div>
+  <div class="card">
+    <h4>Use Service annotations for LB customization</h4>
+    <p>Cloud-specific Service annotations (AWS, GCP, Azure) control LB type (NLB vs CLB), scheme (internal vs internet-facing), health check paths, SSL certificates, and more. Document your organization's standard LB annotations in a runbook — they vary significantly between clouds.</p>
+  </div>
+  <div class="card">
+    <h4>Plan for LB provisioning latency</h4>
+    <p>Cloud LB provisioning takes 30 seconds to 3 minutes depending on provider and LB type. Do not treat a newly-created Service's EXTERNAL-IP as instantly ready. Use health check endpoints and readiness gates in your CI/CD pipeline rather than a fixed sleep.</p>
+  </div>
+</div>
+
+<div class="nav-footer">
+  <a class="nav-btn" href="04-kube-controller-manager.html">
+    <span>← Previous</span>
+    kube-controller-manager
+  </a>
+  <a class="nav-btn next" href="06-admission-controllers.html">
+    <span>Next →</span>
+    Admission Controllers
+  </a>
+</div>
+
+</div><!-- /content-wrap -->
+</main>
+<aside class="toc-panel">
+  <h4>On This Page</h4>
+  <a href="#why">Why CCM Exists</a>
+  <a href="#architecture">Architecture &amp; Cloud Provider Interface</a>
+  <a href="#cloud-provider-interface" class="toc-h3">Go Interface</a>
+  <a href="#four-controllers">The Four Built-in Controllers</a>
+  <a href="#node-controller" class="toc-h3">Node Controller</a>
+  <a href="#route-controller" class="toc-h3">Route Controller</a>
+  <a href="#service-controller" class="toc-h3">Service Controller (LB)</a>
+  <a href="#cloud-node-lifecycle" class="toc-h3">Cloud Node Lifecycle</a>
+  <a href="#out-of-tree">Out-of-Tree Provider Pattern</a>
+  <a href="#migration" class="toc-h3">In-Tree Migration</a>
+  <a href="#kubelet-integration">Kubelet Integration</a>
+  <a href="#rbac">RBAC &amp; Credentials</a>
+  <a href="#deployment">Deployment Patterns</a>
+  <a href="#config">Configuration Reference</a>
+  <a href="#metrics">Metrics &amp; Alerting</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#on-premises">On-Premises / No Cloud</a>
+  <a href="#production">Production Best Practices</a>
+</aside>
+</div>
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
+<script>
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  pre.style.position='relative';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('toc-active'));
+      const act=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if(act)act.classList.add('toc-active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+const searchInput=document.getElementById('search-input');
+function clearHighlights(){
+  document.querySelectorAll('mark.search-hl').forEach(m=>{
+    m.replaceWith(document.createTextNode(m.textContent));
+  });
+  document.normalize();
+}
+function highlightText(root,term){
+  if(!term)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false);
+  const nodes=[];let n;
+  while(n=walker.nextNode()){
+    if(n.parentElement.closest('.topbar,.sidebar'))continue;
+    if(n.textContent.toLowerCase().includes(term))nodes.push(n);
+  }
+  nodes.forEach(node=>{
+    const frag=document.createDocumentFragment();
+    const parts=node.textContent.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'));
+    parts.forEach(p=>{
+      if(p.toLowerCase()===term){
+        const m=document.createElement('mark');m.className='search-hl';m.textContent=p;frag.appendChild(m);
+      } else frag.appendChild(document.createTextNode(p));
+    });
+    node.replaceWith(frag);
+  });
+}
+searchInput.addEventListener('input',function(){
+  clearHighlights();
+  const q=this.value.trim().toLowerCase();
+  if(q.length>=2)highlightText(document.getElementById('main-content'),q);
+});
+</script>
+</body>
+</html>

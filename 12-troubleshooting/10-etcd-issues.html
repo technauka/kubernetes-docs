@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>etcd Issues — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.07)}
+main{flex:1;overflow-y:auto;padding:0;max-width:960px}
+.content{padding:40px 48px 80px}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:36px}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px}
+.breadcrumb a{color:var(--text3)}
+h1{font-size:32px;font-weight:700;line-height:1.2;margin-bottom:10px}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--text2)}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:14px;color:var(--text2)}
+ul,ol{margin:0 0 14px 20px;color:var(--text2)}
+li{margin-bottom:4px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:'JetBrains Mono','Fira Code',monospace;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;background:var(--bg3);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout strong{display:block;margin-bottom:4px;font-size:13px}
+.callout p{margin:0;font-size:13px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+td{padding:9px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin:0 0 8px;color:var(--text);font-size:14px;text-transform:none;letter-spacing:0}
+.card p{margin:0;font-size:13px}
+.card .tag{margin-top:8px;display:inline-block}
+.section-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:13px;color:var(--text2);transition:all .15s}
+.section-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:0 0 32px;display:inline-block;min-width:280px;max-width:420px}
+.toc-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:18px}
+.toc li{margin-bottom:3px;font-size:13px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;line-height:1}
+.btt{position:fixed;bottom:32px;right:32px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200}
+@media(max-width:768px){.sidebar{display:none;position:fixed;z-index:300;height:100vh}.sidebar.open{display:flex}.topbar{display:flex}.content{padding:24px 20px 60px}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter…" id="nav-filter"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Foundations</div>
+    <a href="../00-foundations/00-introduction.html">Introduction</a>
+    <a href="../00-foundations/01-history-of-kubernetes.html">History</a>
+    <a href="../00-foundations/02-container-orchestration.html">Container Orchestration</a>
+    <a href="../00-foundations/03-cluster-architecture-overview.html">Architecture Overview</a>
+    <a href="../00-foundations/04-kubernetes-api-model.html">API Model</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">Overview</a>
+    <a href="../01-control-plane/01-kube-apiserver.html">kube-apiserver</a>
+    <a href="../01-control-plane/02-etcd.html">etcd</a>
+    <a href="../01-control-plane/03-kube-scheduler.html">kube-scheduler</a>
+    <a href="../01-control-plane/04-kube-controller-manager.html">controller-manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">cloud-controller</a>
+    <a href="../01-control-plane/06-admission-controllers.html">Admission Controllers</a>
+    <a href="../01-control-plane/07-api-aggregation.html">API Aggregation</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">Overview</a>
+    <a href="../02-node-components/01-kubelet.html">kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime.html">Container Runtime</a>
+    <a href="../02-node-components/04-cri-interface.html">CRI Interface</a>
+    <a href="../02-node-components/05-node-lifecycle.html">Node Lifecycle</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Overview</a>
+    <a href="../03-networking/01-pod-networking.html">Pod Networking</a>
+    <a href="../03-networking/02-cni-plugins.html">CNI Plugins</a>
+    <a href="../03-networking/04-dns.html">DNS</a>
+    <a href="../03-networking/05-ingress.html">Ingress</a>
+    <a href="../03-networking/07-network-policies.html">Network Policies</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Overview</a>
+    <a href="../04-storage/01-volumes.html">Volumes</a>
+    <a href="../04-storage/02-persistent-volumes.html">PV &amp; PVC</a>
+    <a href="../04-storage/03-storage-classes.html">StorageClasses</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../05-workloads/00-workloads-overview.html">Overview</a>
+    <a href="../05-workloads/01-pods.html">Pods</a>
+    <a href="../05-workloads/02-deployments.html">Deployments</a>
+    <a href="../05-workloads/03-statefulsets.html">StatefulSets</a>
+    <a href="../05-workloads/05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../05-workloads/06-horizontal-pod-autoscaler.html">HPA</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="../06-security/00-security-overview.html">Overview</a>
+    <a href="../06-security/01-rbac.html">RBAC</a>
+    <a href="../06-security/02-pod-security.html">Pod Security</a>
+    <a href="../06-security/04-secrets-management.html">Secrets</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="../07-observability/00-observability-overview.html">Overview</a>
+    <a href="../07-observability/01-metrics.html">Metrics</a>
+    <a href="../07-observability/02-logging.html">Logging</a>
+    <a href="../07-observability/03-tracing.html">Tracing</a>
+    <a href="../07-observability/06-alerting.html">Alerting</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Platform Engineering</div>
+    <a href="../08-platform-engineering/00-platform-overview.html">Overview</a>
+    <a href="../08-platform-engineering/02-gitops.html">GitOps</a>
+    <a href="../08-platform-engineering/03-ci-cd-pipelines.html">CI/CD Pipelines</a>
+    <a href="../08-platform-engineering/05-policy-enforcement.html">Policy Enforcement</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Production Operations</div>
+    <a href="../09-production-operations/00-production-overview.html">Overview</a>
+    <a href="../09-production-operations/09-incident-response.html">Incident Response</a>
+    <a href="../09-production-operations/10-sre-practices.html">SRE Practices</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Team Workflows</div>
+    <a href="../10-team-workflows/00-workflows-overview.html">Overview</a>
+    <a href="../10-team-workflows/01-local-development.html">Local Development</a>
+    <a href="../10-team-workflows/02-ci-cd-pipelines.html">CI/CD Pipelines</a>
+    <a href="../10-team-workflows/03-helm.html">Helm</a>
+    <a href="../10-team-workflows/04-kustomize.html">Kustomize</a>
+    <a href="../10-team-workflows/05-testing-strategies.html">Testing Strategies</a>
+    <a href="../10-team-workflows/06-progressive-delivery.html">Progressive Delivery</a>
+    <a href="../10-team-workflows/07-developer-self-service.html">Developer Self-Service</a>
+    <a href="../10-team-workflows/08-runbooks.html">Runbooks</a>
+    <a href="../10-team-workflows/09-on-call.html">On-Call</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">API Flows</div>
+    <a href="../11-api-flows-and-sequence-diagrams/00-overview.html">Overview</a>
+    <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html">Pod Creation</a>
+    <a href="../11-api-flows-and-sequence-diagrams/02-service-account-token.html">Service Account Token</a>
+    <a href="../11-api-flows-and-sequence-diagrams/03-admission-flow.html">Admission Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/04-scheduler-flow.html">Scheduler Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/05-rolling-update-flow.html">Rolling Update</a>
+    <a href="../11-api-flows-and-sequence-diagrams/06-hpa-flow.html">HPA Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/07-csi-flow.html">CSI Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/08-network-policy-flow.html">Network Policy Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/09-rbac-flow.html">RBAC Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/10-garbage-collection.html">Garbage Collection</a>
+    <a href="../11-api-flows-and-sequence-diagrams/11-leader-election.html">Leader Election</a>
+    <a href="../11-api-flows-and-sequence-diagrams/12-webhook-flow.html">Webhook Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/13-cni-setup-flow.html">CNI Setup Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/14-volume-attach-flow.html">Volume Attach Flow</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Troubleshooting</div>
+    <a href="../12-troubleshooting/00-troubleshooting-overview.html">Overview</a>
+    <a href="../12-troubleshooting/01-pod-failures.html">Pod Failures</a>
+    <a href="../12-troubleshooting/02-network-issues.html">Network Issues</a>
+    <a href="../12-troubleshooting/03-storage-issues.html">Storage Issues</a>
+    <a href="../12-troubleshooting/04-performance-issues.html">Performance Issues</a>
+    <a href="../12-troubleshooting/05-control-plane-issues.html">Control Plane Issues</a>
+    <a href="../12-troubleshooting/06-node-issues.html">Node Issues</a>
+    <a href="../12-troubleshooting/07-security-issues.html">Security Issues</a>
+    <a href="../12-troubleshooting/08-dns-issues.html">DNS Issues</a>
+    <a href="../12-troubleshooting/09-ingress-issues.html">Ingress Issues</a>
+    <a href="../12-troubleshooting/10-etcd-issues.html" class="active">etcd Issues</a>
+  </div>
+</nav>
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span style="font-size:14px;font-weight:600;color:var(--text)">etcd Issues</span>
+</div>
+<main id="main">
+<div class="content">
+<div class="breadcrumb"><a href="../COVERAGE.html">Home</a> › <a href="00-troubleshooting.html">Troubleshooting</a> › etcd Issues</div>
+<div class="page-header">
+  <h1>etcd Issues</h1>
+  <div class="page-meta">
+    <span>Section 12</span>
+    <span>Deep-dive diagnosis and recovery procedures for etcd — high latency, database size, compaction, defragmentation, member …</span>
+  </div>
+</div>
+<div class="section-nav">
+  <a href="09-ingress-issues.html">← Previous</a>
+
+</div>
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#overview">1. Overview</a></li>
+    <li><a href="#etcd-health-check">2. etcd Health Check</a></li>
+    <li><a href="#etcd-latency-issues">3. etcd Latency Issues</a></li>
+    <li><a href="#etcd-database-size">4. etcd Database Size</a></li>
+    <li><a href="#member-failure-and-recovery">5. Member Failure and Recovery</a></li>
+    <li><a href="#quorum-loss-recovery-disaster">6. Quorum Loss Recovery (Disaster)</a></li>
+    <li><a href="#etcd-backup-strategy">7. etcd Backup Strategy</a></li>
+    <li><a href="#etcd-performance-tuning">8. etcd Performance Tuning</a></li>
+    <li><a href="#etcd-monitoring-alerts">9. etcd Monitoring Alerts</a></li>
+    <li><a href="#related">10. Related</a></li>
+  </ol>
+</div>
+<h2 id="overview">Overview</h2>
+<p>Deep-dive diagnosis and recovery procedures for etcd — high latency, database size, compaction, defragmentation, member loss, quorum recovery, and backup/restore.</p>
+<h2 id="etcd-health-check">etcd Health Check</h2>
+<pre><code class="language-bash"># Set up etcdctl shorthand (kubeadm cluster)
+alias etcdctl='kubectl exec -n kube-system etcd-control-plane-1 -- \
+  etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+  --key=/etc/kubernetes/pki/etcd/healthcheck-client.key'
+
+# Cluster health
+etcdctl endpoint health --cluster
+# https://10.0.0.5:2379 is healthy: successfully committed proposal
+# https://10.0.0.6:2379 is healthy: ...
+# https://10.0.0.7:2379 is healthy: ...
+
+# Member list
+etcdctl member list -w table
+# ID               STATUS   NAME       PEER ADDRS             CLIENT ADDRS
+# abc123           started  cp-node-1  https://10.0.0.5:2380  https://10.0.0.5:2379
+
+# Endpoint status (leader, db size, raft index)
+etcdctl endpoint status -w table
+# ENDPOINT         ID      VERSION  DB SIZE  IS LEADER  IS LEARNER  RAFT TERM  RAFT INDEX
+# 127.0.0.1:2379   abc123  3.5.0    45 MB    true       false       12         1234567</code></pre>
+<h2 id="etcd-latency-issues">etcd Latency Issues</h2>
+<pre><code class="language-bash"># High latency causes: API server timeouts, controller reconciliation slowdown
+
+# Check etcd metrics
+kubectl exec -n kube-system etcd-control-plane-1 -- \
+  curl -s http://localhost:2381/metrics | grep fsync
+
+# Key metrics:
+# etcd_disk_wal_fsync_duration_seconds — fsync latency (must be &lt; 10ms p99)
+# etcd_disk_backend_commit_duration_seconds — backend commit latency
+# etcd_server_proposals_committed_total — proposal rate
+# etcd_server_leader_changes_seen_total — leader election count
+
+# PromQL: etcd WAL fsync p99 latency
+histogram_quantile(0.99,
+  sum(rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])) by (le, instance)
+)
+# Target: &lt; 10ms. If &gt; 10ms: disk is the bottleneck
+
+# Check disk I/O on etcd nodes
+kubectl debug node/&lt;cp-node&gt; -it --image=ubuntu -- \
+  iostat -x 1 5
+# Look for: %util near 100%, high w_await (ms write latency)
+
+# Fix disk latency:
+# 1. Use dedicated SSD for /var/lib/etcd (NVMe preferred)
+# 2. Separate etcd from other workloads on control plane
+# 3. Use io scheduler: none or deadline (not cfq)
+#    echo deadline &gt; /sys/block/nvme0n1/queue/scheduler
+
+# Check if etcd is on slow network storage (EBS gp2 vs gp3)
+# etcd should use NVMe instance storage or dedicated gp3 io1 EBS, NOT gp2</code></pre>
+<h2 id="etcd-database-size">etcd Database Size</h2>
+<pre><code class="language-bash"># etcd database grows as objects are created/updated
+# Each update creates a new revision; old revisions accumulate
+
+# Check database size
+etcdctl endpoint status -w table
+# DB SIZE column: should be &lt; 2GB for healthy clusters
+# Default quota: 2GB (can increase to 8GB with --quota-backend-bytes=8589934592)
+
+# etcd size breakdown by key prefix
+etcdctl get "" --prefix --keys-only | \
+  sed 's|/[^/]*$||' | sort | uniq -c | sort -rn | head -20
+# Typical large consumers:
+# /registry/events  — Event objects (auto-TTL'd but can accumulate)
+# /registry/pods    — Pod history
+# /registry/leases  — Leader election leases
+
+# If database is &gt; 80% of quota:
+# API server starts rejecting writes with "etcdserver: mvcc: database space exceeded"
+
+# Step 1: Compact old revisions
+REVISION=$(etcdctl endpoint status -w json | jq '.[0].Status.header.revision')
+etcdctl compact $REVISION
+# "compacted revision 1234567"
+
+# Step 2: Defragment (reclaims space after compaction)
+etcdctl defrag --cluster
+# This takes each member offline briefly — run during low-traffic window
+# Defrag releases file space; compact only removes logical entries
+
+# Step 3: Verify space is reclaimed
+etcdctl endpoint status -w table
+# DB SIZE should be smaller
+
+# Auto-compact configuration (set in etcd flags):
+# --auto-compaction-mode=periodic
+# --auto-compaction-retention=1h   (compact hourly, keep 1h of history)</code></pre>
+<h2 id="member-failure-and-recovery">Member Failure and Recovery</h2>
+<pre><code class="language-bash"># One etcd member is down
+etcdctl member list
+# abc123 started cp-node-1 PEER  CLIENT  ← running
+# def456 started cp-node-2 PEER  CLIENT  ← running
+# ghi789 started cp-node-3 PEER  CLIENT  ← down / unhealthy
+
+etcdctl endpoint health --cluster
+# https://10.0.0.7:2379 is unhealthy: ...
+
+# Step 1: Determine if quorum is still met
+# 3-member cluster: 2 members up = quorum OK (can still write)
+# 3-member cluster: only 1 member up = quorum LOST (no writes)
+
+# Step 2: Replace the failed member
+# a) Remove the failed member
+etcdctl member remove ghi789
+
+# b) Add new member (before starting it — generates peer URLs)
+etcdctl member add cp-node-3-new --peer-urls=https://10.0.0.8:2380
+# Member abc890 added to cluster xyz
+
+# c) Start the new etcd member with:
+# --initial-cluster-state=existing  (not "new")
+# --initial-cluster="cp-node-1=...,cp-node-2=...,cp-node-3-new=..."
+
+# Step 3: Verify member joined
+etcdctl member list
+etcdctl endpoint health --cluster
+
+# For kubeadm clusters: use kubeadm to re-initialize control plane on new node
+kubeadm join &lt;apiserver&gt;:6443 --control-plane ...</code></pre>
+<h2 id="quorum-loss-recovery-disaster">Quorum Loss Recovery (Disaster)</h2>
+<pre><code>3-member cluster: 2 or 3 members dead → quorum lost → cluster cannot accept writes
+Symptoms: kubectl returns "etcdserver: request timed out" or "no leader"
+
+This is the most severe etcd failure scenario.
+Recovery options (in order of preference):
+  1. Restore the failed nodes (if hardware failure — data preserved on disk)
+  2. Restore from most recent etcd snapshot backup
+  3. Force a new cluster from the single surviving member (data loss possible)</code></pre>
+<pre><code class="language-bash"># Check if there is a leader
+etcdctl endpoint status -w table
+# IS LEADER column: should have exactly one "true"
+
+# Option 1: Restart dead etcd members (if disk data intact)
+# SSH to dead control plane node
+systemctl restart etcd
+
+# Option 2: Restore from snapshot
+# Copy snapshot to control plane node
+scp etcd-backup.db cp-node-1:/var/lib/etcd/snapshot.db
+
+# Stop etcd and kube-apiserver
+mv /etc/kubernetes/manifests/etcd.yaml /tmp/
+mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/
+
+# Restore snapshot
+etcdutl snapshot restore /var/lib/etcd/snapshot.db \
+  --name cp-node-1 \
+  --initial-cluster "cp-node-1=https://10.0.0.5:2380" \
+  --initial-advertise-peer-urls https://10.0.0.5:2380 \
+  --data-dir /var/lib/etcd-new
+
+# Replace data directory
+mv /var/lib/etcd /var/lib/etcd-old
+mv /var/lib/etcd-new /var/lib/etcd
+
+# Restart etcd and kube-apiserver
+mv /tmp/etcd.yaml /etc/kubernetes/manifests/
+mv /tmp/kube-apiserver.yaml /etc/kubernetes/manifests/
+
+# Option 3: Force single-member cluster (last resort, possible data loss)
+# Requires etcd --force-new-cluster flag
+# This creates a new cluster from the single member's current state</code></pre>
+<h2 id="etcd-backup-strategy">etcd Backup Strategy</h2>
+<pre><code class="language-bash"># Take snapshot (run regularly as CronJob)
+etcdctl snapshot save /backup/etcd-$(date +%Y%m%d-%H%M%S).db
+
+# Verify snapshot
+etcdctl snapshot status /backup/etcd-*.db -w table
+# HASH        REVISION  TOTAL KEYS  TOTAL SIZE
+# abc12345    1234567   5000        45 MB
+
+# CronJob to backup every 6 hours to S3
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup
+  namespace: kube-system
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          hostNetwork: true
+          nodeName: cp-node-1   # run on control plane
+          containers:
+          - name: backup
+            image: bitnami/etcd:3.5
+            command:
+            - /bin/sh
+            - -c
+            - |
+              etcdctl --endpoints=https://127.0.0.1:2379 \
+                --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+                --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+                --key=/etc/kubernetes/pki/etcd/healthcheck-client.key \
+                snapshot save /tmp/etcd-snapshot.db
+              aws s3 cp /tmp/etcd-snapshot.db \
+                s3://my-cluster-backups/etcd/etcd-$(date +%Y%m%d-%H%M%S).db
+            volumeMounts:
+            - name: etcd-certs
+              mountPath: /etc/kubernetes/pki/etcd
+          volumes:
+          - name: etcd-certs
+            hostPath:
+              path: /etc/kubernetes/pki/etcd
+          restartPolicy: OnFailure
+          serviceAccountName: etcd-backup-sa
+
+# Verify backup retention (keep last 7 days):
+aws s3 ls s3://my-cluster-backups/etcd/ | tail -20</code></pre>
+<h2 id="etcd-performance-tuning">etcd Performance Tuning</h2>
+<pre><code class="language-yaml"># etcd flags for performance (in static pod manifest)
+# /etc/kubernetes/manifests/etcd.yaml
+
+spec:
+  containers:
+  - command:
+    - etcd
+    - --auto-compaction-mode=periodic
+    - --auto-compaction-retention=1h      # compact hourly
+    - --quota-backend-bytes=8589934592    # 8GB (default 2GB)
+    - --max-request-bytes=33554432        # 32MB (default 1.5MB for large objects)
+    - --heartbeat-interval=100            # ms (default 100)
+    - --election-timeout=1000             # ms (default 1000)
+    # For high-latency networks (multi-region):
+    # --heartbeat-interval=500
+    # --election-timeout=2500</code></pre>
+<pre><code class="language-bash"># Check Raft timing
+etcdctl endpoint status -w json | \
+  jq '.[].Status | {leader:.leader, raftIndex:.raftIndex, raftTerm:.raftTerm}'
+
+# High leader changes indicate instability
+etcdctl endpoint status -w json | \
+  jq '.[].Status.raftTerm'   # incrementing fast = leader elections happening
+
+# Check etcd peer connectivity
+kubectl exec -n kube-system etcd-control-plane-1 -- \
+  etcdctl check perf
+
+# etcd peer latency
+# Must be &lt; 100ms for stable operation
+# Cross-AZ: typically 1-5ms intra-region
+# Cross-region: NOT recommended (too high latency for Raft consensus)</code></pre>
+<h2 id="etcd-monitoring-alerts">etcd Monitoring Alerts</h2>
+<pre><code class="language-yaml"># PrometheusRule for etcd
+- alert: EtcdMemberDown
+  expr: up{job="etcd"} == 0
+  for: 1m
+  labels:
+    severity: critical
+
+- alert: EtcdHighFsyncLatency
+  expr: histogram_quantile(0.99,
+    rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])) &gt; 0.01
+  for: 10m
+  labels:
+    severity: warning
+
+- alert: EtcdDatabaseSpaceExceeded80Pct
+  expr: etcd_mvcc_db_total_size_in_bytes / etcd_server_quota_backend_bytes &gt; 0.8
+  for: 5m
+  labels:
+    severity: warning
+
+- alert: EtcdLeaderChanges
+  expr: increase(etcd_server_leader_changes_seen_total[1h]) &gt; 3
+  for: 0m
+  labels:
+    severity: warning
+
+- alert: EtcdNoLeader
+  expr: etcd_server_has_leader == 0
+  for: 1m
+  labels:
+    severity: critical</code></pre>
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="./05-control-plane-issues.html">05 — Control Plane Issues</a> — API server and etcd interaction</li>
+<li><a href="../11-api-flows-and-sequence-diagrams/11-leader-election.html">11 — Leader Election</a> — Lease API uses etcd</li>
+<li><a href="../09-production-operations/08-cluster-maintenance.html">08 — Cluster Maintenance</a> — upgrade and maintenance procedures</li>
+</ul>
+
+</div>
+</main>
+<button class="btt" id="btt" title="Back to top">↑</button>
+
+<script>
+const sidebar = document.getElementById('sidebar');
+document.getElementById('hamburger').addEventListener('click', () => sidebar.classList.toggle('open'));
+document.getElementById('btt').addEventListener('click', () => document.getElementById('main').scrollTo({top:0,behavior:'smooth'}));
+document.getElementById('main').addEventListener('scroll', function(){
+  document.getElementById('btt').style.display = this.scrollTop > 400 ? 'flex' : 'none';
+});
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn'; btn.textContent = 'copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.innerText.replace(/^copy\n/,''));
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+document.getElementById('nav-filter').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+const tocLinks = document.querySelectorAll('.toc a');
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector('.toc a[href="#'+e.target.id+'"]');
+      if(a) a.classList.add('active');
+    }
+  });
+}, {root: document.getElementById('main'), rootMargin: '-20% 0px -70% 0px'});
+headings.forEach(h => obs.observe(h));
+</script>
+
+</body>
+</html>

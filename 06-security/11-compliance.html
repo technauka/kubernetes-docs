@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compliance | Kubernetes Documentation</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#30363d;
+  --border:#30363d; --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --accent:#58a6ff; --accent2:#388bfd; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --orange:#d18616; --code-bg:#161b22;
+}
+[data-theme="light"] {
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eaeef2; --bg4:#d0d7de;
+  --border:#d0d7de; --text:#24292f; --text2:#57606a; --text3:#6e7781;
+  --accent:#0969da; --accent2:#0550ae; --green:#1a7f37; --yellow:#9a6700;
+  --red:#cf222e; --purple:#8250df; --orange:#953800; --code-bg:#f6f8fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-filter{padding:12px 16px;border-bottom:1px solid var(--border);}
+.sidebar-filter input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;}
+.sidebar-filter input:focus{outline:none;border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+
+.main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
+.page-header{margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.breadcrumb{font-size:13px;color:var(--text3);margin-bottom:12px;}
+.breadcrumb a{color:var(--text3);}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;margin-bottom:12px;}
+.page-desc{font-size:16px;color:var(--text2);line-height:1.6;}
+.meta-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.tag{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--text2);}
+.tag.adv{border-color:var(--red);color:var(--red);}
+
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{margin:0 0 16px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'SF Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+.copy-btn:hover{color:var(--text);}
+
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid;}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.warning{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-size:13px;font-weight:700;margin-bottom:6px;}
+.callout.danger .callout-title{color:var(--red);}
+.callout.warning .callout-title{color:var(--yellow);}
+.callout.info .callout-title{color:var(--accent);}
+.callout.success .callout-title{color:var(--green);}
+.callout p{margin-bottom:0;font-size:14px;}
+
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);border-bottom:1px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 10px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card.danger{border-color:var(--red);}
+.card.warning{border-color:var(--yellow);}
+.card.success{border-color:var(--green);}
+.card.info{border-color:var(--accent);}
+
+.steps{display:flex;flex-direction:column;gap:0;margin:20px 0;}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step-num{width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.step-num.green{background:var(--green);}
+.step-num.yellow{background:var(--yellow);}
+.step-content h4{margin:0 0 4px;font-size:14px;color:var(--text);}
+.step-content p{margin:0;font-size:13px;}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge.red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge.green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge.yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge.blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge.purple{background:rgba(188,140,255,.15);color:var(--purple);}
+
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden;}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;border-top:1px solid var(--border);}
+.coverage-body li{font-size:13px;color:var(--text2);}
+
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:32px;}
+.toc-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{font-size:13px;margin-bottom:4px;}
+.toc a{color:var(--text2);}
+.toc a:hover{color:var(--accent);}
+.toc a.active{color:var(--accent);}
+
+.toolbar{position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:100;}
+.toolbar button{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+.toolbar button:hover{color:var(--text);border-color:var(--text3);}
+.back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;}
+.back-to-top.visible{opacity:1;}
+
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;}
+@media(max-width:768px){
+  .hamburger{display:block;}
+  .sidebar{position:fixed;left:-280px;top:0;z-index:150;transition:left .25s;}
+  .sidebar.open{left:0;}
+  .main{padding:24px 20px;}
+}
+
+.k{color:#ff7b72;} .s{color:#a5d6ff;} .c{color:#8b949e;font-style:italic;} .n{color:#ffa657;} .cm{color:#3fb950;}
+
+.framework-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:20px 0;}
+.framework-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.framework-card .fw-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.framework-card .fw-scope{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.framework-card p{margin:0;font-size:12px;}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">K8s <span>Docs</span></div>
+  </div>
+  <div class="sidebar-filter">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="00-security-overview.html">Security Overview</a>
+    <a href="01-rbac.html">RBAC</a>
+    <a href="02-pod-security.html">Pod Security</a>
+    <a href="03-network-policies.html">Network Policies</a>
+    <a href="04-secrets-management.html">Secrets Management</a>
+    <a href="05-service-accounts.html">Service Accounts</a>
+    <a href="06-admission-controllers.html">Admission Controllers</a>
+    <a href="07-image-security.html">Image Security</a>
+    <a href="08-audit-logging.html">Audit Logging</a>
+    <a href="09-encryption-at-rest.html">Encryption at Rest</a>
+    <a href="10-supply-chain-security.html">Supply Chain Security</a>
+    <a href="11-compliance.html" class="active">Compliance</a>
+  </div>
+</nav>
+
+<main class="main" id="main">
+  <div class="toolbar">
+    <button onclick="toggleTheme()">Theme</button>
+  </div>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-security-overview.html">Security</a> › Compliance</div>
+    <h1>Compliance</h1>
+    <p class="page-desc">Mapping Kubernetes security controls to compliance frameworks — CIS Benchmarks, PCI DSS, SOC 2, HIPAA, FedRAMP, and ISO 27001. Automated compliance scanning, evidence collection, continuous compliance monitoring, and gap remediation.</p>
+    <div class="meta-tags">
+      <span class="tag adv">Advanced</span>
+      <span class="tag">Compliance</span>
+      <span class="tag">Security</span>
+      <span class="tag">CIS</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">On This Page</div>
+    <ol>
+      <li><a href="#frameworks">Compliance Frameworks Overview</a></li>
+      <li><a href="#cis-benchmark">CIS Kubernetes Benchmark</a></li>
+      <li><a href="#pci-dss">PCI DSS</a></li>
+      <li><a href="#soc2">SOC 2</a></li>
+      <li><a href="#hipaa">HIPAA</a></li>
+      <li><a href="#fedramp">FedRAMP / NIST 800-53</a></li>
+      <li><a href="#iso27001">ISO 27001</a></li>
+      <li><a href="#control-mapping">Kubernetes Control Mapping</a></li>
+      <li><a href="#automated-scanning">Automated Compliance Scanning</a></li>
+      <li><a href="#evidence">Evidence Collection</a></li>
+      <li><a href="#continuous">Continuous Compliance</a></li>
+      <li><a href="#observability">Metrics, Alerts &amp; Runbooks</a></li>
+      <li><a href="#best-practices">Best Practices</a></li>
+    </ol>
+  </div>
+
+  <details class="coverage">
+    <summary>Coverage Checklist</summary>
+    <ul class="coverage-body">
+      <li>Compliance frameworks: CIS / PCI DSS / SOC 2 / HIPAA / FedRAMP / ISO 27001</li>
+      <li>CIS Kubernetes Benchmark sections and scoring</li>
+      <li>kube-bench: automated CIS scan, output formats</li>
+      <li>kube-bench in-cluster Job YAML</li>
+      <li>PCI DSS requirements mapped to K8s controls</li>
+      <li>PCI DSS: network segmentation with NetworkPolicy</li>
+      <li>PCI DSS: CHD namespace isolation pattern</li>
+      <li>SOC 2 Trust Services Criteria mapped to K8s</li>
+      <li>HIPAA § 164.312 technical safeguards</li>
+      <li>FedRAMP impact levels and NIST 800-53 controls</li>
+      <li>ISO 27001 Annex A controls mapped to K8s</li>
+      <li>Kubernetes control mapping master table</li>
+      <li>kube-bench automated scanning</li>
+      <li>Polaris: workload best practices audit</li>
+      <li>Checkov: IaC compliance scanning</li>
+      <li>Trivy: combined vuln + misconfig scan</li>
+      <li>OPA Gatekeeper: policy-as-code for compliance</li>
+      <li>Evidence collection: commands for each control area</li>
+      <li>Compliance report generation</li>
+      <li>Continuous compliance: Kyverno Policy Reports</li>
+      <li>5 metrics, 4 alerts, 5 runbooks, 8 best practices</li>
+    </ul>
+  </details>
+
+  <!-- ───── FRAMEWORKS ───── -->
+  <h2 id="frameworks">Compliance Frameworks Overview</h2>
+
+  <p>Multiple compliance frameworks apply to Kubernetes-hosted workloads. The controls they require significantly overlap — a well-secured Kubernetes cluster simultaneously satisfies requirements across frameworks.</p>
+
+  <div class="framework-grid">
+    <div class="framework-card">
+      <div class="fw-name">CIS Kubernetes Benchmark</div>
+      <div class="fw-scope">Technical hardening</div>
+      <p>Prescriptive configuration recommendations for Kubernetes components. Automated via kube-bench. The technical foundation all other frameworks build on.</p>
+    </div>
+    <div class="framework-card">
+      <div class="fw-name">PCI DSS v4.0</div>
+      <div class="fw-scope">Payment card data</div>
+      <p>Required for any organization that processes, stores, or transmits cardholder data. Strong network segmentation, access control, and audit logging requirements.</p>
+    </div>
+    <div class="framework-card">
+      <div class="fw-name">SOC 2 Type II</div>
+      <div class="fw-scope">Service organizations</div>
+      <p>AICPA Trust Services Criteria: Security, Availability, Confidentiality, Processing Integrity, Privacy. Audit over a period (typically 6–12 months).</p>
+    </div>
+    <div class="framework-card">
+      <div class="fw-name">HIPAA</div>
+      <div class="fw-scope">Healthcare / ePHI</div>
+      <p>Required for covered entities and business associates handling electronic protected health information. Technical and administrative safeguards.</p>
+    </div>
+    <div class="framework-card">
+      <div class="fw-name">FedRAMP</div>
+      <div class="fw-scope">US federal cloud</div>
+      <p>Based on NIST 800-53. Required for cloud services used by US federal agencies. Three impact levels: Low / Moderate / High.</p>
+    </div>
+    <div class="framework-card">
+      <div class="fw-name">ISO 27001:2022</div>
+      <div class="fw-scope">Information security</div>
+      <p>International standard for ISMS (Information Security Management System). Annex A contains 93 controls mapped to 4 themes.</p>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <div class="callout-title">Compliance ≠ Security</div>
+    <p>Compliance frameworks define minimum bars, not best practices. Passing a CIS benchmark scan does not mean your cluster is secure — it means it meets a specific configuration baseline. Use compliance as a floor, not a ceiling. Many real-world breaches occurred in compliant environments.</p>
+  </div>
+
+  <!-- ───── CIS BENCHMARK ───── -->
+  <h2 id="cis-benchmark">CIS Kubernetes Benchmark</h2>
+
+  <p>The CIS Kubernetes Benchmark (current: v1.9.0 for Kubernetes 1.29+) defines configuration recommendations across six sections. Each check is scored (mandatory) or not scored (advisory).</p>
+
+  <h3>Benchmark Sections</h3>
+
+  <table>
+    <thead><tr><th>Section</th><th>Component</th><th>Key Checks</th><th>Auto-Remediable</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>1</strong></td>
+        <td>Control Plane Components</td>
+        <td>API server flags: anonymous-auth, insecure-port, audit-log, authorization-mode</td>
+        <td><span class="badge yellow">Partial</span></td>
+      </tr>
+      <tr>
+        <td><strong>2</strong></td>
+        <td>etcd</td>
+        <td>TLS peer/client auth, data directory permissions, encryption at rest</td>
+        <td><span class="badge yellow">Partial</span></td>
+      </tr>
+      <tr>
+        <td><strong>3</strong></td>
+        <td>Control Plane Config</td>
+        <td>Audit policy completeness, encryption config, admission plugins</td>
+        <td><span class="badge yellow">Partial</span></td>
+      </tr>
+      <tr>
+        <td><strong>4</strong></td>
+        <td>Worker Nodes</td>
+        <td>kubelet auth, anonymous-auth=false, protect-kernel-defaults, TLS cert rotation</td>
+        <td><span class="badge yellow">Partial</span></td>
+      </tr>
+      <tr>
+        <td><strong>5</strong></td>
+        <td>Kubernetes Policies</td>
+        <td>RBAC, NetworkPolicy, PSS, Secrets management, image policy</td>
+        <td><span class="badge green">Yes (Kyverno)</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>kube-bench: Automated CIS Scanning</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Run kube-bench on control plane node</span>
+kube-bench run --targets master
+
+<span class="c"># Run on worker node</span>
+kube-bench run --targets node
+
+<span class="c"># Run all targets</span>
+kube-bench run
+
+<span class="c"># Output as JSON for SIEM ingestion</span>
+kube-bench run --json > kube-bench-results.json
+
+<span class="c"># Output as JUnit XML for CI integration</span>
+kube-bench run --junit > kube-bench-results.xml
+
+<span class="c"># Run against specific benchmark version</span>
+kube-bench run --benchmark cis-1.9</code></pre>
+
+  <h3>kube-bench as In-Cluster Job</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Run kube-bench as a Kubernetes Job (node perspective)</span>
+<span class="k">apiVersion</span>: <span class="s">batch/v1</span>
+<span class="k">kind</span>: <span class="s">Job</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">kube-bench</span>
+  <span class="k">namespace</span>: <span class="s">kube-system</span>
+<span class="k">spec</span>:
+  <span class="k">template</span>:
+    <span class="k">spec</span>:
+      <span class="k">hostPID</span>: <span class="s">true</span>       <span class="c"># Required to inspect host processes</span>
+      <span class="k">nodeSelector</span>:
+        <span class="k">node-role.kubernetes.io/control-plane</span>: <span class="s">""</span>
+      <span class="k">tolerations</span>:
+      - <span class="k">key</span>: <span class="s">node-role.kubernetes.io/control-plane</span>
+        <span class="k">operator</span>: <span class="s">Exists</span>
+        <span class="k">effect</span>: <span class="s">NoSchedule</span>
+      <span class="k">containers</span>:
+      - <span class="k">name</span>: <span class="s">kube-bench</span>
+        <span class="k">image</span>: <span class="s">aquasec/kube-bench:latest</span>
+        <span class="k">command</span>: [<span class="s">"kube-bench"</span>, <span class="s">"run"</span>, <span class="s">"--targets"</span>, <span class="s">"master,etcd,policies"</span>, <span class="s">"--json"</span>]
+        <span class="k">volumeMounts</span>:
+        - <span class="k">name</span>: <span class="s">var-lib-etcd</span>
+          <span class="k">mountPath</span>: <span class="s">/var/lib/etcd</span>
+          <span class="k">readOnly</span>: <span class="s">true</span>
+        - <span class="k">name</span>: <span class="s">etc-kubernetes</span>
+          <span class="k">mountPath</span>: <span class="s">/etc/kubernetes</span>
+          <span class="k">readOnly</span>: <span class="s">true</span>
+      <span class="k">restartPolicy</span>: <span class="s">Never</span>
+      <span class="k">volumes</span>:
+      - <span class="k">name</span>: <span class="s">var-lib-etcd</span>
+        <span class="k">hostPath</span>: { <span class="k">path</span>: <span class="s">/var/lib/etcd</span> }
+      - <span class="k">name</span>: <span class="s">etc-kubernetes</span>
+        <span class="k">hostPath</span>: { <span class="k">path</span>: <span class="s">/etc/kubernetes</span> }</code></pre>
+
+  <h3>Key CIS Controls and Kubernetes Implementation</h3>
+
+  <table>
+    <thead><tr><th>CIS Check</th><th>ID</th><th>Implementation</th></tr></thead>
+    <tbody>
+      <tr><td>Disable anonymous API auth</td><td>1.2.1</td><td><code>--anonymous-auth=false</code> on kube-apiserver</td></tr>
+      <tr><td>Use RBAC authorization</td><td>1.2.7</td><td><code>--authorization-mode=Node,RBAC</code></td></tr>
+      <tr><td>Enable audit logging</td><td>3.2.1</td><td><code>--audit-log-path</code> + <code>--audit-policy-file</code></td></tr>
+      <tr><td>Encrypt secrets at rest</td><td>1.2.31</td><td><code>--encryption-provider-config</code> with KMS/secretbox</td></tr>
+      <tr><td>Disable kubelet anonymous auth</td><td>4.2.1</td><td><code>authentication.anonymous.enabled: false</code> in kubelet config</td></tr>
+      <tr><td>Restrict kubelet API access</td><td>4.2.2</td><td><code>authorization.mode: Webhook</code> in kubelet config</td></tr>
+      <tr><td>Protect kernel defaults</td><td>4.2.6</td><td><code>--protect-kernel-defaults=true</code> on kubelet</td></tr>
+      <tr><td>Restrict pod capabilities</td><td>5.2.8</td><td>PSA restricted + <code>securityContext.capabilities.drop: [ALL]</code></td></tr>
+      <tr><td>Apply NetworkPolicies</td><td>5.3.2</td><td>Default-deny NetworkPolicy + explicit allow policies per namespace</td></tr>
+      <tr><td>Avoid default ServiceAccounts</td><td>5.1.5</td><td><code>automountServiceAccountToken: false</code> on default SA</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── PCI DSS ───── -->
+  <h2 id="pci-dss">PCI DSS v4.0</h2>
+
+  <p>PCI DSS applies when Kubernetes runs workloads that process, store, or transmit cardholder data (CHD). The entire cluster doesn't need to be in scope — scope reduction via network segmentation is critical.</p>
+
+  <h3>Key PCI DSS Requirements → Kubernetes Controls</h3>
+
+  <table>
+    <thead><tr><th>PCI Requirement</th><th>Kubernetes Implementation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Req 1:</strong> Network security controls</td>
+        <td>NetworkPolicy default-deny in CHD namespace; separate namespace per PCI scope boundary; Calico GlobalNetworkPolicy for node-level isolation</td>
+      </tr>
+      <tr>
+        <td><strong>Req 2:</strong> Secure configurations</td>
+        <td>CIS Kubernetes Benchmark pass; kube-bench automated scan; Polaris workload policy; no default credentials</td>
+      </tr>
+      <tr>
+        <td><strong>Req 3:</strong> Protect stored account data</td>
+        <td>Secrets encryption at rest (KMS v2); etcd encryption for all CHD-adjacent namespaces; no CHD in logs</td>
+      </tr>
+      <tr>
+        <td><strong>Req 4:</strong> Protect cardholder data in transit</td>
+        <td>mTLS between services (Istio/Linkerd); TLS termination at ingress; cert-manager certificate lifecycle</td>
+      </tr>
+      <tr>
+        <td><strong>Req 5:</strong> Protect against malware</td>
+        <td>Image scanning (Trivy, no CRITICAL/HIGH CVEs); Falco runtime monitoring; distroless images</td>
+      </tr>
+      <tr>
+        <td><strong>Req 6:</strong> Develop/maintain secure systems</td>
+        <td>SLSA provenance; dependency scanning; Cosign image signing; Kyverno registry policy</td>
+      </tr>
+      <tr>
+        <td><strong>Req 7:</strong> Restrict access to system components</td>
+        <td>RBAC least-privilege; namespace-scoped Roles; no wildcard resource permissions</td>
+      </tr>
+      <tr>
+        <td><strong>Req 8:</strong> Identify users and authenticate</td>
+        <td>OIDC authentication; MFA for kubectl access; no static kubeconfig shared between users</td>
+      </tr>
+      <tr>
+        <td><strong>Req 10:</strong> Log and monitor all access</td>
+        <td>Audit logging at Request level for CHD resources; SIEM integration; 12-month retention</td>
+      </tr>
+      <tr>
+        <td><strong>Req 11:</strong> Test security of systems</td>
+        <td>kube-bench quarterly; penetration testing; Trivy Operator continuous scanning</td>
+      </tr>
+      <tr>
+        <td><strong>Req 12:</strong> Policies and procedures</td>
+        <td>Kyverno policies as code = policy documentation; GitOps policy review process</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>CHD Namespace Isolation Pattern</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># PCI-scoped namespace with all controls applied</span>
+<span class="k">apiVersion</span>: <span class="s">v1</span>
+<span class="k">kind</span>: <span class="s">Namespace</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">pci-cardholder</span>
+  <span class="k">labels</span>:
+    <span class="k">pci-scope</span>: <span class="s">"true"</span>
+    <span class="c"># Pod Security Admission: enforce restricted</span>
+    <span class="k">pod-security.kubernetes.io/enforce</span>: <span class="s">restricted</span>
+    <span class="k">pod-security.kubernetes.io/enforce-version</span>: <span class="s">v1.29</span>
+    <span class="k">pod-security.kubernetes.io/audit</span>: <span class="s">restricted</span>
+    <span class="k">pod-security.kubernetes.io/warn</span>: <span class="s">restricted</span>
+---
+<span class="c"># Default-deny NetworkPolicy for CHD namespace</span>
+<span class="k">apiVersion</span>: <span class="s">networking.k8s.io/v1</span>
+<span class="k">kind</span>: <span class="s">NetworkPolicy</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">default-deny-all</span>
+  <span class="k">namespace</span>: <span class="s">pci-cardholder</span>
+<span class="k">spec</span>:
+  <span class="k">podSelector</span>: {}
+  <span class="k">policyTypes</span>: [<span class="s">Ingress</span>, <span class="s">Egress</span>]
+<span class="c"># Explicit allow policies added per service</span></code></pre>
+
+  <!-- ───── SOC 2 ───── -->
+  <h2 id="soc2">SOC 2</h2>
+
+  <p>SOC 2 audits against the AICPA Trust Services Criteria. The Security criteria (Common Criteria, CC) are required for every SOC 2 report; the others (Availability, Confidentiality, Processing Integrity, Privacy) are optional and selected based on the service's scope.</p>
+
+  <h3>Common Criteria → Kubernetes Controls</h3>
+
+  <table>
+    <thead><tr><th>CC Control</th><th>Description</th><th>Kubernetes Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>CC6.1</td><td>Logical access security</td><td>RBAC policies, OIDC auth, MFA for cluster access, SA token binding</td></tr>
+      <tr><td>CC6.2</td><td>Access provisioning and deprovisioning</td><td>RBAC creation/deletion audit logs; offboarding removes RoleBindings</td></tr>
+      <tr><td>CC6.3</td><td>Least privilege enforcement</td><td>RBAC role scope review; rbac-police policy violations; no wildcard permissions</td></tr>
+      <tr><td>CC6.6</td><td>Logical access from outside boundaries</td><td>NetworkPolicy egress; API server endpoint restriction; ingress authentication</td></tr>
+      <tr><td>CC6.7</td><td>Encryption of data in transit and at rest</td><td>etcd encryption at rest (KMS v2); TLS for all API communications; mTLS</td></tr>
+      <tr><td>CC7.1</td><td>Detection of vulnerabilities</td><td>Trivy Operator continuous scanning; Falco runtime detection</td></tr>
+      <tr><td>CC7.2</td><td>Monitoring of security events</td><td>Audit logging → SIEM; Falco → alerting; PagerDuty integration</td></tr>
+      <tr><td>CC7.3</td><td>Security incident response</td><td>Runbooks; audit log retention; incident response playbooks</td></tr>
+      <tr><td>CC8.1</td><td>Change management</td><td>GitOps (ArgoCD); image signing; admission webhooks enforce policy</td></tr>
+      <tr><td>A1.1</td><td>Availability capacity planning</td><td>Resource requests/limits; HPA; cluster autoscaler; PodDisruptionBudgets</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── HIPAA ───── -->
+  <h2 id="hipaa">HIPAA</h2>
+
+  <p>HIPAA applies to covered entities (healthcare providers, health plans, clearinghouses) and their business associates who access electronic protected health information (ePHI).</p>
+
+  <h3>§ 164.312 Technical Safeguards → Kubernetes</h3>
+
+  <table>
+    <thead><tr><th>HIPAA Safeguard</th><th>Standard</th><th>Kubernetes Implementation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Access Control</td>
+        <td>§ 164.312(a)(1)</td>
+        <td>RBAC with unique user identification; no shared kubeconfigs; namespace isolation for ePHI workloads</td>
+      </tr>
+      <tr>
+        <td>Automatic Logoff</td>
+        <td>§ 164.312(a)(2)(iii)</td>
+        <td>Short-lived OIDC tokens (1h); kubectl context expiry; bound ServiceAccount tokens (1h TTL)</td>
+      </tr>
+      <tr>
+        <td>Encryption and Decryption</td>
+        <td>§ 164.312(a)(2)(iv)</td>
+        <td>Secrets encryption at rest; TLS for all data in transit; mTLS for service-to-service</td>
+      </tr>
+      <tr>
+        <td>Audit Controls</td>
+        <td>§ 164.312(b)</td>
+        <td>Kubernetes audit logging for all ePHI namespace access; SIEM integration; 6-year retention</td>
+      </tr>
+      <tr>
+        <td>Integrity</td>
+        <td>§ 164.312(c)(1)</td>
+        <td>Image signing (Cosign); admission control (signed images only); etcd checksums</td>
+      </tr>
+      <tr>
+        <td>Person or Entity Authentication</td>
+        <td>§ 164.312(d)</td>
+        <td>OIDC with MFA; no anonymous authentication; audit trail per user identity</td>
+      </tr>
+      <tr>
+        <td>Transmission Security</td>
+        <td>§ 164.312(e)(1)</td>
+        <td>NetworkPolicy: deny all egress outside ePHI boundary; TLS 1.2+ minimum; certificate rotation</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <div class="callout-title">HIPAA Business Associate Agreement</div>
+    <p>If your Kubernetes cluster runs on a managed cloud (EKS, GKE, AKS), ensure you have a signed Business Associate Agreement (BAA) with the cloud provider covering the managed control plane. The cloud provider's access to your cluster infrastructure creates a BAA requirement.</p>
+  </div>
+
+  <!-- ───── FEDRAMP ───── -->
+  <h2 id="fedramp">FedRAMP / NIST 800-53</h2>
+
+  <p>FedRAMP authorizations are based on NIST SP 800-53 Rev 5 control baselines. The impact level (Low/Moderate/High) determines which controls are required.</p>
+
+  <table>
+    <thead><tr><th>NIST 800-53 Family</th><th>Key Controls</th><th>Kubernetes Implementation</th></tr></thead>
+    <tbody>
+      <tr><td>AC — Access Control</td><td>AC-2, AC-3, AC-6, AC-17</td><td>RBAC; OIDC; least privilege; remote access audit logging</td></tr>
+      <tr><td>AU — Audit &amp; Accountability</td><td>AU-2, AU-3, AU-9, AU-12</td><td>Audit logging; log integrity (immutable storage); log coverage</td></tr>
+      <tr><td>CA — Assessment &amp; Authorization</td><td>CA-7</td><td>Continuous monitoring; Trivy Operator; kube-bench scheduled scans</td></tr>
+      <tr><td>CM — Configuration Mgmt</td><td>CM-2, CM-6, CM-7</td><td>GitOps (ArgoCD); admission webhooks; CIS benchmark hardening</td></tr>
+      <tr><td>IA — Identification &amp; Auth</td><td>IA-2, IA-5, IA-8</td><td>OIDC MFA; no static credentials; certificate-based authentication</td></tr>
+      <tr><td>SC — System &amp; Comm Protection</td><td>SC-7, SC-8, SC-28</td><td>NetworkPolicy; TLS; encryption at rest</td></tr>
+      <tr><td>SI — System &amp; Info Integrity</td><td>SI-2, SI-3, SI-7</td><td>Patch management; image scanning; integrity verification</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── ISO 27001 ───── -->
+  <h2 id="iso27001">ISO 27001:2022</h2>
+
+  <table>
+    <thead><tr><th>Annex A Theme</th><th>Key Controls</th><th>Kubernetes Evidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Organizational (A.5)</strong></td>
+        <td>A.5.10 Acceptable use; A.5.15 Access control; A.5.23 Cloud services</td>
+        <td>RBAC policies; cloud-provider security configuration; container security policy</td>
+      </tr>
+      <tr>
+        <td><strong>People (A.6)</strong></td>
+        <td>A.6.3 Security awareness; A.6.5 Offboarding</td>
+        <td>RBAC removal on offboarding; audit log per user identity</td>
+      </tr>
+      <tr>
+        <td><strong>Physical (A.7)</strong></td>
+        <td>A.7.8 Equipment security</td>
+        <td>Node disk encryption (LUKS); managed hardware (cloud providers)</td>
+      </tr>
+      <tr>
+        <td><strong>Technological (A.8)</strong></td>
+        <td>A.8.5 Secure auth; A.8.8 Vulnerability mgmt; A.8.9 Configuration mgmt; A.8.11 Data masking; A.8.12 Data leakage; A.8.15 Logging; A.8.24 Encryption</td>
+        <td>OIDC; Trivy scanning; CIS benchmark; Secrets management; audit logging; encryption at rest and in transit</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ───── CONTROL MAPPING ───── -->
+  <h2 id="control-mapping">Kubernetes Control Mapping</h2>
+
+  <p>This master table maps Kubernetes security controls to multiple frameworks simultaneously. Implementing one control often satisfies requirements across all frameworks.</p>
+
+  <table>
+    <thead><tr><th>Kubernetes Control</th><th>CIS</th><th>PCI DSS</th><th>SOC 2</th><th>HIPAA</th></tr></thead>
+    <tbody>
+      <tr><td>RBAC least-privilege</td><td>5.1.x</td><td>Req 7</td><td>CC6.1, CC6.3</td><td>§164.312(a)</td></tr>
+      <tr><td>OIDC authentication + MFA</td><td>1.2.2</td><td>Req 8</td><td>CC6.1</td><td>§164.312(d)</td></tr>
+      <tr><td>Audit logging (API server)</td><td>3.2.x</td><td>Req 10</td><td>CC7.2</td><td>§164.312(b)</td></tr>
+      <tr><td>Secrets encryption at rest</td><td>1.2.31</td><td>Req 3</td><td>CC6.7</td><td>§164.312(a)(iv)</td></tr>
+      <tr><td>NetworkPolicy default-deny</td><td>5.3.2</td><td>Req 1</td><td>CC6.6</td><td>§164.312(e)</td></tr>
+      <tr><td>mTLS between services</td><td>—</td><td>Req 4</td><td>CC6.7</td><td>§164.312(e)</td></tr>
+      <tr><td>Image vulnerability scanning</td><td>5.4.x</td><td>Req 5, 6</td><td>CC7.1</td><td>§164.312(c)</td></tr>
+      <tr><td>Image signing (Cosign)</td><td>—</td><td>Req 6</td><td>CC8.1</td><td>§164.312(c)</td></tr>
+      <tr><td>PSA restricted enforcement</td><td>5.2.x</td><td>Req 2</td><td>CC6.1</td><td>—</td></tr>
+      <tr><td>Resource quotas + limits</td><td>—</td><td>—</td><td>A1.1</td><td>—</td></tr>
+      <tr><td>PodDisruptionBudgets</td><td>—</td><td>—</td><td>A1.1, A1.2</td><td>—</td></tr>
+      <tr><td>GitOps change control</td><td>—</td><td>Req 12</td><td>CC8.1</td><td>§164.312(c)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── AUTOMATED SCANNING ───── -->
+  <h2 id="automated-scanning">Automated Compliance Scanning</h2>
+
+  <h3>Polaris: Workload Best Practices</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Polaris: audit workload configurations against best practices</span>
+<span class="c"># Install as in-cluster audit tool</span>
+helm repo add fairwinds-stable https://charts.fairwinds.com/stable
+helm install polaris fairwinds-stable/polaris \
+  --namespace polaris \
+  --create-namespace
+
+<span class="c"># Run as CLI audit against cluster</span>
+polaris audit --cluster --format pretty
+
+<span class="c"># Run against a specific namespace</span>
+polaris audit --cluster --namespace production --format json > polaris-report.json
+
+<span class="c"># Run against local YAML files (CI gate)</span>
+polaris audit --audit-path ./k8s/ --format pretty --set-exit-code-on-danger
+
+<span class="c"># Polaris checks: readinessProbe, livenessProbe, resources, securityContext,</span>
+<span class="c"># image tags, privileged containers, hostPath, runAsNonRoot, etc.</span></code></pre>
+
+  <h3>Checkov: IaC Compliance Scanning</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Checkov: static analysis of Kubernetes manifests and Terraform</span>
+pip install checkov
+
+<span class="c"># Scan Kubernetes manifests</span>
+checkov -d ./k8s/ --framework kubernetes
+
+<span class="c"># Scan with specific checks only (CIS benchmark checks)</span>
+checkov -d ./k8s/ --framework kubernetes \
+  --check CKV_K8S_1,CKV_K8S_2,CKV_K8S_8,CKV_K8S_9
+
+<span class="c"># Output as SARIF for GitHub Security tab</span>
+checkov -d ./k8s/ --framework kubernetes \
+  --output sarif --output-file checkov-results.sarif
+
+<span class="c"># Scan Helm charts</span>
+checkov -d ./charts/ --framework helm</code></pre>
+
+  <h3>Trivy: Combined Vulnerability + Misconfiguration Scan</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Trivy: scan cluster for both CVEs and misconfigurations</span>
+trivy k8s --report summary cluster
+
+<span class="c"># Detailed report with misconfig and CVE findings</span>
+trivy k8s --report all \
+  --format json \
+  --output trivy-cluster-report.json \
+  cluster
+
+<span class="c"># Scan specific namespace</span>
+trivy k8s --namespace production --report all cluster
+
+<span class="c"># Scan Kubernetes manifests for misconfigurations (CI gate)</span>
+trivy config ./k8s/ --exit-code 1 --severity HIGH,CRITICAL</code></pre>
+
+  <h3>OPA Gatekeeper: Policy-as-Code for Compliance</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Gatekeeper ConstraintTemplate: require resource limits (PCI/SOC2/CIS 5.2)</span>
+<span class="k">apiVersion</span>: <span class="s">templates.gatekeeper.sh/v1</span>
+<span class="k">kind</span>: <span class="s">ConstraintTemplate</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">k8srequiredresources</span>
+<span class="k">spec</span>:
+  <span class="k">crd</span>:
+    <span class="k">spec</span>:
+      <span class="k">names</span>:
+        <span class="k">kind</span>: <span class="s">K8sRequiredResources</span>
+  <span class="k">targets</span>:
+  - <span class="k">target</span>: <span class="s">admission.k8s.gatekeeper.sh</span>
+    <span class="k">rego</span>: |
+      package k8srequiredresources
+
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.containers[_]
+        not container.resources.limits.memory
+        msg := sprintf("Container '%v' must have memory limit", [container.name])
+      }
+
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.containers[_]
+        not container.resources.requests.cpu
+        msg := sprintf("Container '%v' must have CPU request", [container.name])
+      }</code></pre>
+
+  <!-- ───── EVIDENCE ───── -->
+  <h2 id="evidence">Evidence Collection</h2>
+
+  <p>Compliance audits require producing evidence that controls are in place and operating effectively. This section provides commands to collect evidence for each major control area.</p>
+
+  <h3>Access Control Evidence</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># List all ClusterRoleBindings (evidence of privilege assignment)</span>
+kubectl get clusterrolebindings -o json | \
+  jq '.items[] | {name:.metadata.name, role:.roleRef.name, subjects:.subjects}'
+
+<span class="c"># List all users with cluster-admin</span>
+kubectl get clusterrolebindings -o json | \
+  jq '.items[] | select(.roleRef.name=="cluster-admin") | .subjects[]'
+
+<span class="c"># RBAC permissions for a specific service account</span>
+kubectl auth can-i --list \
+  --as=system:serviceaccount:production:myapp-sa \
+  --namespace production
+
+<span class="c"># All RoleBindings in a namespace</span>
+kubectl get rolebindings,clusterrolebindings -n production -o yaml</code></pre>
+
+  <h3>Encryption Evidence</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Verify API server has encryption config flag</span>
+kubectl get pod kube-apiserver-$(hostname) -n kube-system -o yaml | \
+  grep encryption-provider-config
+
+<span class="c"># Verify a secret is encrypted in etcd</span>
+ETCDCTL_API=3 etcdctl \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  get /registry/secrets/production/db-password | head -c 40
+<span class="c"># Must start with: k8s:enc:</span>
+
+<span class="c"># Check KMS health endpoint</span>
+kubectl get --raw /healthz/kms-providers</code></pre>
+
+  <h3>Audit Logging Evidence</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code"><span class="c"># Verify audit logging is enabled</span>
+kubectl get pod kube-apiserver-$(hostname) -n kube-system -o yaml | \
+  grep -E "audit-log-path|audit-policy-file"
+
+<span class="c"># Show audit policy in use</span>
+cat /etc/kubernetes/audit-policy.yaml
+
+<span class="c"># Verify audit logs are being written</span>
+ls -lh /var/log/kubernetes/audit/
+tail -1 /var/log/kubernetes/audit/audit.log | jq .stageTimestamp
+
+<span class="c"># Count audit events in last hour (proves logging is active)</span>
+find /var/log/kubernetes/audit/ -newer /tmp/one-hour-ago | \
+  xargs wc -l</code></pre>
+
+  <h3>Network Security Evidence</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># List all NetworkPolicies (evidence of network segmentation)</span>
+kubectl get networkpolicies --all-namespaces -o wide
+
+<span class="c"># Verify default-deny exists in sensitive namespaces</span>
+kubectl get networkpolicy -n pci-cardholder default-deny-all -o yaml
+
+<span class="c"># Show namespaces WITHOUT NetworkPolicy (compliance gap)</span>
+for ns in $(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}'); do
+  count=$(kubectl get networkpolicies -n "$ns" --no-headers 2>/dev/null | wc -l)
+  if [ "$count" -eq 0 ]; then
+    echo "NO NetworkPolicy: $ns"
+  fi
+done</code></pre>
+
+  <h3>Generating a Compliance Report</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Generate comprehensive compliance snapshot</span>
+#!/bin/bash
+REPORT_DIR="compliance-evidence-$(date +%Y%m%d)"
+mkdir -p "$REPORT_DIR"
+
+<span class="c"># kube-bench CIS scan</span>
+kube-bench run --json > "$REPORT_DIR/kube-bench.json"
+
+<span class="c"># Polaris workload audit</span>
+polaris audit --cluster --format json > "$REPORT_DIR/polaris.json"
+
+<span class="c"># Trivy cluster scan</span>
+trivy k8s --report all --format json \
+  --output "$REPORT_DIR/trivy-cluster.json" cluster
+
+<span class="c"># RBAC snapshot</span>
+kubectl get clusterrolebindings -o json > "$REPORT_DIR/clusterrolebindings.json"
+kubectl get rolebindings --all-namespaces -o json > "$REPORT_DIR/rolebindings.json"
+
+<span class="c"># NetworkPolicy snapshot</span>
+kubectl get networkpolicies --all-namespaces -o json > "$REPORT_DIR/networkpolicies.json"
+
+<span class="c"># Encrypt the evidence package before storing</span>
+tar czf - "$REPORT_DIR/" | \
+  gpg --symmetric --cipher-algo AES256 \
+  > "compliance-evidence-$(date +%Y%m%d).tar.gz.gpg"
+
+echo "Compliance evidence collected in $REPORT_DIR"</code></pre>
+
+  <!-- ───── CONTINUOUS ───── -->
+  <h2 id="continuous">Continuous Compliance</h2>
+
+  <p>Point-in-time compliance scans create gaps between audits. Continuous compliance uses policy enforcement and automated scanning to detect drift immediately.</p>
+
+  <h3>Kyverno Policy Reports</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Kyverno generates PolicyReport and ClusterPolicyReport CRDs</span>
+<span class="c"># Policy Reporter UI provides dashboard over these reports</span>
+
+<span class="c"># View policy violations in a namespace</span>
+kubectl get policyreport -n production -o yaml
+
+<span class="c"># View cluster-scoped policy violations</span>
+kubectl get clusterpolicyreport -o yaml
+
+<span class="c"># Install Policy Reporter for dashboard</span>
+helm install policy-reporter policy-reporter/policy-reporter \
+  --namespace policy-reporter \
+  --create-namespace \
+  --set ui.enabled=true \
+  --set kyvernoPlugin.enabled=true</code></pre>
+
+  <h3>Continuous Compliance Architecture</h3>
+
+  <div class="card-grid">
+    <div class="card success">
+      <h4>Admission-Time Enforcement</h4>
+      <p>Kyverno ClusterPolicies / OPA Gatekeeper / ValidatingAdmissionPolicy reject non-compliant resources on creation — prevents drift before it starts.</p>
+    </div>
+    <div class="card info">
+      <h4>Background Scan</h4>
+      <p>Kyverno background scanning runs policies against existing resources (not just new admits) and generates PolicyReports for violations — detects drift in resources that pre-date the policy.</p>
+    </div>
+    <div class="card info">
+      <h4>Scheduled Scans</h4>
+      <p>kube-bench CronJob runs daily. Trivy Operator continuously re-scans running images. Polaris in audit mode runs weekly. Results shipped to SIEM.</p>
+    </div>
+    <div class="card warning">
+      <h4>Drift Detection</h4>
+      <p>GitOps (ArgoCD) detects configuration drift from desired state. Any manual <code>kubectl apply</code> that deviates from Git triggers an out-of-sync alert.</p>
+    </div>
+  </div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># kube-bench CronJob — daily scheduled CIS scan</span>
+<span class="k">apiVersion</span>: <span class="s">batch/v1</span>
+<span class="k">kind</span>: <span class="s">CronJob</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">kube-bench-daily</span>
+  <span class="k">namespace</span>: <span class="s">kube-system</span>
+<span class="k">spec</span>:
+  <span class="k">schedule</span>: <span class="s">"0 2 * * *"</span>    <span class="c"># Daily at 2 AM</span>
+  <span class="k">jobTemplate</span>:
+    <span class="k">spec</span>:
+      <span class="k">template</span>:
+        <span class="k">spec</span>:
+          <span class="k">hostPID</span>: <span class="s">true</span>
+          <span class="k">nodeSelector</span>:
+            <span class="k">node-role.kubernetes.io/control-plane</span>: <span class="s">""</span>
+          <span class="k">tolerations</span>:
+          - <span class="k">key</span>: <span class="s">node-role.kubernetes.io/control-plane</span>
+            <span class="k">operator</span>: <span class="s">Exists</span>
+            <span class="k">effect</span>: <span class="s">NoSchedule</span>
+          <span class="k">containers</span>:
+          - <span class="k">name</span>: <span class="s">kube-bench</span>
+            <span class="k">image</span>: <span class="s">aquasec/kube-bench:v0.7.3</span>
+            <span class="k">command</span>: [<span class="s">"kube-bench"</span>, <span class="s">"run"</span>, <span class="s">"--json"</span>]
+            <span class="k">volumeMounts</span>:
+            - <span class="k">name</span>: <span class="s">etc-kubernetes</span>
+              <span class="k">mountPath</span>: <span class="s">/etc/kubernetes</span>
+              <span class="k">readOnly</span>: <span class="s">true</span>
+          <span class="k">restartPolicy</span>: <span class="s">Never</span>
+          <span class="k">volumes</span>:
+          - <span class="k">name</span>: <span class="s">etc-kubernetes</span>
+            <span class="k">hostPath</span>: { <span class="k">path</span>: <span class="s">/etc/kubernetes</span> }</code></pre>
+
+  <!-- ───── OBSERVABILITY ───── -->
+  <h2 id="observability">Metrics, Alerts &amp; Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Source</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>kyverno_policy_results_total{result="fail"}</code></td><td>Kyverno</td><td>Compliance policy violations currently active</td></tr>
+      <tr><td><code>polaris_score</code></td><td>Polaris</td><td>Overall workload compliance score (0–100)</td></tr>
+      <tr><td><code>kube_bench_failed_checks_total</code></td><td>kube-bench + custom exporter</td><td>CIS benchmark failed checks by section</td></tr>
+      <tr><td><code>trivy_vulnerability_id{severity="CRITICAL"}</code></td><td>Trivy Operator</td><td>Critical CVEs in running workloads</td></tr>
+      <tr><td><code>namespaces_without_network_policy</code></td><td>Custom / kube-state-metrics</td><td>Namespaces with no NetworkPolicy applied</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Alerts</h3>
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Alert: Compliance policy violations above threshold</span>
+- <span class="k">alert</span>: <span class="s">CompliancePolicyViolations</span>
+  <span class="k">expr</span>: <span class="s">sum(kyverno_policy_results_total{result="fail",policy_type="validate"}) > 10</span>
+  <span class="k">for</span>: <span class="s">15m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"More than 10 active compliance policy violations"</span>
+
+<span class="c"># Alert: New namespace without NetworkPolicy</span>
+- <span class="k">alert</span>: <span class="s">NamespaceWithoutNetworkPolicy</span>
+  <span class="k">expr</span>: <span class="s">namespaces_without_network_policy > 0</span>
+  <span class="k">for</span>: <span class="s">10m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Namespace created without NetworkPolicy — open network access"</span>
+
+<span class="c"># Alert: kube-bench FAIL count increased</span>
+- <span class="k">alert</span>: <span class="s">CISBenchmarkRegressions</span>
+  <span class="k">expr</span>: <span class="s">kube_bench_failed_checks_total > kube_bench_failed_checks_total offset 24h</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"CIS benchmark failure count increased since yesterday — configuration regression"</span>
+
+<span class="c"># Alert: Critical CVE in PCI-scoped namespace</span>
+- <span class="k">alert</span>: <span class="s">CriticalCVEInPCIScope</span>
+  <span class="k">expr</span>: <span class="s">sum by (namespace, workload) (trivy_vulnerability_id{severity="CRITICAL", namespace="pci-cardholder"}) > 0</span>
+  <span class="k">for</span>: <span class="s">5m</span>
+  <span class="k">severity</span>: <span class="s">critical</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Critical CVE in PCI-scoped workload — immediate remediation required"</span></code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>New kube-bench CIS Failures</h4>
+      <p>1. Review kube-bench JSON output for FAIL items<br>2. Map to specific K8s configuration flag or policy<br>3. Create a PR to fix the configuration via GitOps<br>4. Re-run kube-bench to verify remediation<br>5. Document in compliance register if accepted risk</p>
+    </div>
+    <div class="card">
+      <h4>Compliance Audit Preparation</h4>
+      <p>1. Run evidence collection script 2 weeks before audit<br>2. Review kube-bench output and remediate FAIL items<br>3. Export Kyverno PolicyReports — address violations<br>4. Verify audit log retention policy is met<br>5. Prepare RBAC review documentation</p>
+    </div>
+    <div class="card">
+      <h4>Policy Violation Remediation</h4>
+      <p>1. Query Kyverno PolicyReport: <code>kubectl get policyreport -A</code><br>2. Identify resource and owning team<br>3. Create ticket for remediation with SLA per violation severity<br>4. For critical violations in PCI scope: immediate escalation</p>
+    </div>
+    <div class="card">
+      <h4>Scope Creep (PCI / HIPAA)</h4>
+      <p>1. Identify new workload/namespace in regulated scope<br>2. Apply PSA labels, NetworkPolicy, RBAC to new namespace<br>3. Ensure audit logging covers new namespace<br>4. Update compliance scope documentation<br>5. Notify security/compliance team</p>
+    </div>
+    <div class="card">
+      <h4>Audit Log Gap Detected</h4>
+      <p>1. Determine gap window: when did logging stop/restart<br>2. Check for compliance-reportable events in window (secret access, RBAC changes)<br>3. Document as compensating control if gap was &lt;15 min<br>4. File incident report if gap exceeds framework threshold</p>
+    </div>
+  </div>
+
+  <!-- ───── BEST PRACTICES ───── -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num green">1</div>
+      <div class="step-content">
+        <h4>Run kube-bench at cluster provisioning and on every upgrade</h4>
+        <p>CIS benchmark results establish a hardening baseline and catch configuration drift introduced by upgrades. Automate with a CronJob and alert on regression.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">2</div>
+      <div class="step-content">
+        <h4>Encode compliance requirements as Kyverno policies</h4>
+        <p>Policy-as-code means your compliance requirements are version-controlled, reviewed, and continuously enforced — not just documented. Kyverno <code>background: true</code> audits existing resources, not just new admits.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h4>Separate regulated workloads into dedicated namespaces</h4>
+        <p>Namespace-level scope isolation (CHD in <code>pci-cardholder</code>, ePHI in <code>hipaa-phi</code>) minimizes the blast radius of a compromise and makes audit scope clear. Apply tighter PSA/NetworkPolicy/RBAC to these namespaces.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
+      <div class="step-content">
+        <h4>Automate evidence collection for audit readiness</h4>
+        <p>Scrambling to collect evidence during an audit window is high-risk. Run evidence collection scripts regularly, store outputs in immutable storage, and practice the audit evidence handoff process with your compliance team.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">5</div>
+      <div class="step-content">
+        <h4>Map every compliance requirement to a specific Kubernetes control</h4>
+        <p>The compliance-to-K8s mapping table ensures you can demonstrate coverage to auditors. When a new framework requirement is added, trace it to the K8s control that satisfies it before the audit.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">6</div>
+      <div class="step-content">
+        <h4>Document accepted risks formally</h4>
+        <p>Not every kube-bench FAIL needs immediate remediation — some controls don't apply or have compensating controls. Document accepted risks with a risk owner, justification, and review date. Auditors care more about documented decisions than zero failures.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">7</div>
+      <div class="step-content">
+        <h4>Treat compliance as continuous, not periodic</h4>
+        <p>Point-in-time assessments create a false sense of security. Deploy Kyverno background scanning, Trivy Operator, and GitOps drift detection to maintain compliance posture between audits. Alert on regression, not just on failures at audit time.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">8</div>
+      <div class="step-content">
+        <h4>Use shared controls to satisfy multiple frameworks</h4>
+        <p>Audit logging, RBAC, encryption at rest, and image scanning simultaneously satisfy PCI DSS, SOC 2, HIPAA, and ISO 27001 requirements. Implement each control once with the most stringent requirement in mind, then document it satisfies all applicable frameworks.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="back-to-top" id="back-to-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+</main>
+
+<script>
+function toggleTheme(){
+  const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  if(t !== 'dark') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('k8s-theme', t);
+}
+(function(){
+  const t = localStorage.getItem('k8s-theme');
+  if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+})();
+
+function copyCode(btn){
+  const pre = btn.parentElement;
+  const code = pre.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display = a.textContent.toLowerCase().includes(v.toLowerCase()) ? '' : 'none';
+  });
+}
+
+const main = document.getElementById('main');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{
+  btt.classList.toggle('visible', main.scrollTop > 400);
+});
+
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    const id = e.target.id;
+    const link = document.querySelector(`.toc a[href="#${id}"]`);
+    if(link) link.classList.toggle('active', e.isIntersecting);
+  });
+},{root: main, rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('h2[id]').forEach(h=>observer.observe(h));
+</script>
+</body>
+</html>

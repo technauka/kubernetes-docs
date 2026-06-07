@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform APIs | Kubernetes Platform Engineering</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px}
+.sidebar-subtitle{font-size:11px;color:var(--text3);margin-top:2px}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:6px 16px 4px}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover,.nav-section a.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent);text-decoration:none}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+main{margin-left:280px;flex:1;padding:40px 48px;max-width:1100px}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px}
+.hero{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:12px;padding:36px 40px;margin-bottom:40px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);color:var(--accent);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:14px}
+.hero h1{font-size:32px;font-weight:800;line-height:1.2;margin-bottom:12px;background:linear-gradient(90deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text2);font-size:16px;max-width:700px;margin-bottom:16px}
+.hero-meta{display:flex;gap:24px;flex-wrap:wrap}
+.hero-meta span{font-size:12px;color:var(--text3)}
+h2{font-size:22px;font-weight:700;color:var(--text);margin:44px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h2:first-of-type{margin-top:0}
+h3{font-size:17px;font-weight:600;color:var(--text);margin:28px 0 12px}
+h4{font-size:15px;font-weight:600;color:var(--accent);margin:20px 0 8px}
+p{color:var(--text2);margin-bottom:14px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg3);color:var(--text)}
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;display:flex;gap:12px;align-items:flex-start}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3)}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3)}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3)}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:14px;color:var(--text2)}
+.callout-body strong{color:var(--text)}
+.table-wrap{overflow-x:auto;margin:20px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card h4{margin:0 0 8px;font-size:14px;color:var(--text)}
+.card p{font-size:13px;color:var(--text2);margin:0}
+.card.green{border-top:3px solid var(--green)}
+.card.yellow{border-top:3px solid var(--yellow)}
+.card.red{border-top:3px solid var(--red)}
+.card.purple{border-top:3px solid var(--purple)}
+.card.blue{border-top:3px solid var(--accent)}
+.card.orange{border-top:3px solid var(--orange)}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:40px}
+.toc h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin:0 0 12px}
+.toc ol{padding-left:20px}
+.toc li{margin:5px 0}
+.toc a{font-size:13px;color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.8}
+.back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50}
+.back-top.visible{opacity:1}
+.back-top:hover{color:var(--accent)}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:48px}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;display:inline-block}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border)}
+@media(max-width:700px){.coverage-body{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{margin-left:0;padding:24px 16px}}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">⎈ Kubernetes Docs</div>
+    <div class="sidebar-subtitle">Production-Grade Reference</div>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="00-platform-overview.html">00 · Overview</a>
+      <a href="01-cluster-provisioning.html">01 · Cluster Provisioning</a>
+      <a href="02-gitops.html">02 · GitOps</a>
+      <a href="03-ci-cd-pipelines.html">03 · CI/CD Pipelines</a>
+      <a href="04-developer-portal.html">04 · Developer Portal</a>
+      <a href="05-policy-enforcement.html">05 · Policy Enforcement</a>
+      <a href="06-multi-tenancy.html">06 · Multi-Tenancy</a>
+      <a href="07-cost-management.html">07 · Cost Management</a>
+      <a href="08-service-catalog.html">08 · Service Catalog</a>
+      <a href="09-secrets-automation.html">09 · Secrets Automation</a>
+      <a href="10-platform-apis.html" class="active">10 · Platform APIs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Quick Links</div>
+      <a href="../index.html">← Home</a>
+      <a href="../COVERAGE.html">Coverage Dashboard</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">82 of 91 files generated · 90%</div>
+</aside>
+
+<main id="main">
+
+<div class="hero">
+  <div class="hero-badge">⚙️ Platform APIs</div>
+  <h1>Platform APIs: Extending Kubernetes</h1>
+  <p>Complete guide to extending the Kubernetes API — Custom Resource Definitions, Admission Webhooks, API Aggregation, Operator patterns, controller development with controller-runtime, and building internal developer APIs that feel native to the Kubernetes ecosystem.</p>
+  <div class="hero-meta">
+    <span>📦 CRDs &amp; Webhooks</span>
+    <span>🤖 Operator Pattern</span>
+    <span>🔧 controller-runtime</span>
+    <span>🧩 API Aggregation</span>
+    <span>🏗️ Kubebuilder</span>
+  </div>
+</div>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#extension-points">Kubernetes Extension Points</a></li>
+    <li><a href="#crds">Custom Resource Definitions</a></li>
+    <li><a href="#validation">CRD Validation &amp; Conversion</a></li>
+    <li><a href="#admission-webhooks">Admission Webhooks</a></li>
+    <li><a href="#operator-pattern">Operator Pattern</a></li>
+    <li><a href="#kubebuilder">Kubebuilder &amp; controller-runtime</a></li>
+    <li><a href="#reconciler">Writing a Reconciler</a></li>
+    <li><a href="#api-aggregation">API Aggregation Layer</a></li>
+    <li><a href="#platform-api-design">Platform API Design Principles</a></li>
+    <li><a href="#testing">Testing Operators &amp; Webhooks</a></li>
+    <li><a href="#observability">Operator Observability</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="extension-points">Kubernetes Extension Points</h2>
+
+<p>Kubernetes is designed as an extensible platform. Rather than building every feature into core, it provides stable hooks that allow the platform team to add domain-specific abstractions while inheriting the full K8s control loop, RBAC, audit logging, and tooling.</p>
+
+<div class="arch-diagram">
+KUBERNETES EXTENSION MECHANISMS
+
+  kube-apiserver
+  ├── Built-in APIs (v1, apps/v1, batch/v1 ...)
+  │
+  ├── Custom Resource Definitions (CRDs)       ← Add new resource types
+  │   └── Operator/Controller watches CRDs     ← Custom reconciliation logic
+  │
+  ├── Admission Webhooks                        ← Intercept API requests
+  │   ├── MutatingAdmissionWebhook             ← Modify objects (defaults, injection)
+  │   └── ValidatingAdmissionWebhook           ← Accept/reject objects (policy)
+  │
+  ├── API Aggregation Layer                     ← Proxy to external API server
+  │   └── APIService → custom API server        (metrics-server, custom metrics)
+  │
+  └── ValidatingAdmissionPolicy (CEL)           ← In-process CEL validation (1.30 GA)
+
+  kubectl / CI / GitOps interact with ALL of these via standard K8s API verbs
+  (get, list, watch, create, update, patch, delete)
+</div>
+
+<h3>Extension Mechanism Decision Guide</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Use Case</th><th>Mechanism</th><th>Complexity</th></tr></thead>
+<tbody>
+<tr><td>Store custom configuration with K8s RBAC + audit</td><td>CRD (no controller)</td><td>Low</td></tr>
+<tr><td>Automate lifecycle of cloud resources or K8s objects</td><td>CRD + Operator (controller-runtime)</td><td>Medium</td></tr>
+<tr><td>Inject defaults / mutate objects at admission time</td><td>MutatingAdmissionWebhook</td><td>Medium</td></tr>
+<tr><td>Enforce business rules at admission time</td><td>ValidatingAdmissionWebhook or Kyverno/Gatekeeper</td><td>Low (policy engine) / Medium (custom)</td></tr>
+<tr><td>Simple in-process validation rules</td><td>ValidatingAdmissionPolicy (CEL)</td><td>Low</td></tr>
+<tr><td>Serve custom metrics (HPA scale target)</td><td>Custom Metrics API (API Aggregation)</td><td>High</td></tr>
+<tr><td>Extend kubectl with new subcommands</td><td>kubectl plugin (krew)</td><td>Low</td></tr>
+<tr><td>Multi-cluster or cross-namespace resource management</td><td>CRD + Operator with multi-cluster watch</td><td>High</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="crds">Custom Resource Definitions</h2>
+
+<p>CRDs add new resource types to the Kubernetes API. Once registered, teams can <code>kubectl apply</code>, <code>kubectl get</code>, and <code>kubectl watch</code> the new types — with full RBAC, audit logging, and GitOps support automatically inherited.</p>
+
+<h3>Full CRD Example: Application</h3>
+
+<pre><code class="language-yaml">apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: applications.platform.example.com
+spec:
+  group: platform.example.com
+  scope: Namespaced
+  names:
+    plural: applications
+    singular: application
+    kind: Application
+    shortNames: ["app"]
+    categories: ["platform"]   # appears in kubectl get platform
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true              # only one version is storage version
+    subresources:
+      status: {}               # enable /status subresource (separate RBAC)
+      scale:                   # enable /scale subresource (HPA support)
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
+    additionalPrinterColumns:  # kubectl get app output
+    - name: Desired
+      type: integer
+      jsonPath: .spec.replicas
+    - name: Ready
+      type: integer
+      jsonPath: .status.readyReplicas
+    - name: Phase
+      type: string
+      jsonPath: .status.phase
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+    schema:
+      openAPIV3Schema:
+        type: object
+        required: ["spec"]
+        properties:
+          spec:
+            type: object
+            required: ["image","port"]
+            properties:
+              image:
+                type: string
+                description: "Container image (must include digest or semver tag)"
+              port:
+                type: integer
+                minimum: 1
+                maximum: 65535
+              replicas:
+                type: integer
+                minimum: 1
+                maximum: 100
+                default: 2
+              resources:
+                type: object
+                properties:
+                  cpu:
+                    type: string
+                    pattern: "^[0-9]+(m|\\.[0-9]+)?$"
+                  memory:
+                    type: string
+                    pattern: "^[0-9]+(Mi|Gi)$"
+              env:
+                type: array
+                items:
+                  type: object
+                  required: ["name","value"]
+                  properties:
+                    name:
+                      type: string
+                    value:
+                      type: string
+              ingress:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                    default: false
+                  host:
+                    type: string
+                  tlsEnabled:
+                    type: boolean
+                    default: true
+          status:
+            type: object
+            properties:
+              phase:
+                type: string
+                enum: ["Pending","Deploying","Running","Degraded","Failed"]
+              readyReplicas:
+                type: integer
+              conditions:
+                type: array
+                items:
+                  type: object
+                  required: ["type","status"]
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                    reason:
+                      type: string
+                    message:
+                      type: string
+                    lastTransitionTime:
+                      type: string
+                      format: date-time</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>CRD Instance</h3>
+
+<pre><code class="language-yaml">apiVersion: platform.example.com/v1alpha1
+kind: Application
+metadata:
+  name: payments-api
+  namespace: payments-api-production
+  labels:
+    team: payments
+    env: production
+spec:
+  image: 123456789.dkr.ecr.us-east-1.amazonaws.com/payments-api@sha256:abc123
+  port: 8080
+  replicas: 3
+  resources:
+    cpu: "500m"
+    memory: "512Mi"
+  env:
+  - name: LOG_LEVEL
+    value: info
+  ingress:
+    enabled: true
+    host: payments-api.company.com
+    tlsEnabled: true</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="validation">CRD Validation &amp; Conversion</h2>
+
+<h3>CEL Validation Rules (x-kubernetes-validations)</h3>
+
+<pre><code class="language-yaml"># Add CEL validation rules directly in the CRD schema (K8s 1.25+)
+# These run in-process in the API server — no webhook needed
+spec:
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            x-kubernetes-validations:
+            # Cross-field validation: production must have >= 2 replicas
+            - rule: "!(self.env == 'production' && self.replicas < 2)"
+              message: "Production applications must have at least 2 replicas"
+            # Image must not use :latest in production
+            - rule: "!self.image.endsWith(':latest')"
+              message: "Image tag ':latest' is not allowed"
+            properties:
+              replicas:
+                type: integer
+                minimum: 1
+                x-kubernetes-validations:
+                - rule: "self >= oldSelf || self >= 1"
+                  message: "Replicas cannot be reduced below 1"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>CRD Version Conversion Webhook</h3>
+
+<pre><code class="language-yaml"># When you add v1beta1 alongside v1alpha1, a conversion webhook translates between versions
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: applications.platform.example.com
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      conversionReviewVersions: ["v1","v1beta1"]
+      clientConfig:
+        service:
+          name: platform-operator-webhook
+          namespace: platform-system
+          path: /convert
+        caBundle: "LS0tLS1CRUdJT..."</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="admission-webhooks">Admission Webhooks</h2>
+
+<p>Admission webhooks intercept API server requests before persistence. They are the right tool for logic that cannot be expressed in CEL validation rules — injecting sidecar containers, generating child resources, or calling external systems for approval.</p>
+
+<h3>Mutating Webhook: Inject Default Labels</h3>
+
+<pre><code class="language-go">// webhook/defaulter.go — using controller-runtime's webhook builder
+package webhook
+
+import (
+    "context"
+    "encoding/json"
+
+    corev1 "k8s.io/api/core/v1"
+    "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+type PodDefaulter struct {
+    decoder *admission.Decoder
+}
+
+func (d *PodDefaulter) Handle(ctx context.Context, req admission.Request) admission.Response {
+    pod := &corev1.Pod{}
+    if err := d.decoder.Decode(req, pod); err != nil {
+        return admission.Errored(400, err)
+    }
+
+    // Inject defaults
+    if pod.Labels == nil {
+        pod.Labels = map[string]string{}
+    }
+    if _, ok := pod.Labels["managed-by"]; !ok {
+        pod.Labels["managed-by"] = "platform"
+    }
+
+    // Set default terminationGracePeriodSeconds if not set
+    if pod.Spec.TerminationGracePeriodSeconds == nil {
+        grace := int64(60)
+        pod.Spec.TerminationGracePeriodSeconds = &grace
+    }
+
+    // Return JSON patch
+    marshaledPod, err := json.Marshal(pod)
+    if err != nil {
+        return admission.Errored(500, err)
+    }
+    return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Register Webhook in main.go</h3>
+
+<pre><code class="language-go">// main.go
+mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+    Scheme: scheme,
+    Port:   9443,   // webhook server port
+    CertDir: "/tmp/k8s-webhook-server/serving-certs",
+})
+
+// Register mutating webhook
+mgr.GetWebhookServer().Register("/mutate-v1-pod",
+    &webhook.Admission{Handler: &PodDefaulter{decoder: admission.NewDecoder(scheme)}})
+
+// Register validating webhook
+mgr.GetWebhookServer().Register("/validate-platform-v1alpha1-application",
+    &webhook.Admission{Handler: &ApplicationValidator{}})</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>MutatingWebhookConfiguration</h3>
+
+<pre><code class="language-yaml">apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: platform-mutating-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: platform-system/platform-operator-tls
+spec:
+  webhooks:
+  - name: mpod.platform.example.com
+    admissionReviewVersions: ["v1"]
+    clientConfig:
+      service:
+        name: platform-operator-webhook-service
+        namespace: platform-system
+        path: /mutate-v1-pod
+    rules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      operations: ["CREATE"]
+      resources: ["pods"]
+      scope: Namespaced
+    namespaceSelector:
+      matchExpressions:
+      - key: platform.example.com/inject-defaults
+        operator: Exists
+    failurePolicy: Ignore    # don't block pods if webhook is down
+    sideEffects: None
+    timeoutSeconds: 5
+    reinvocationPolicy: IfNeeded</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>cert-manager webhook TLS injection.</strong> Add <code>cert-manager.io/inject-ca-from</code> annotation on the WebhookConfiguration and create a cert-manager <code>Certificate</code> for the webhook service. cert-manager's cainjector automatically patches the <code>caBundle</code> field, eliminating manual cert rotation for webhook TLS.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="operator-pattern">Operator Pattern</h2>
+
+<p>An Operator encodes human operational knowledge as code. It watches a CRD and reconciles the real world to match the desired state — creating, updating, and deleting dependent K8s and cloud resources as needed.</p>
+
+<div class="arch-diagram">
+Operator Reconcile Loop
+
+  User applies Application CR
+         │
+         ▼ API server stores CR
+  etcd (desired state)
+         │
+         ▼ Informer watch fires
+  Operator Reconciler
+  ├── Read Application spec
+  ├── Get/List owned Deployments, Services, Ingresses
+  ├── Compare desired vs actual
+  ├── Create/Update/Delete resources to match desired
+  ├── Update Application.status
+  └── Return Result{RequeueAfter: 5m}
+         │
+         ▼ After RequeueAfter
+  Reconciler runs again (drift detection)
+
+  Operator also handles:
+  ├── Owned resource changes (ownerReference watch)
+  ├── Error backoff (exponential retry)
+  └── Finalizers (cleanup before deletion)
+</div>
+
+<h3>Operator Maturity Model</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>Capabilities</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>Level 1: Basic Install</strong></td><td>Automated provisioning and configuration</td><td>Create Deployment+Service from CRD spec</td></tr>
+<tr><td><strong>Level 2: Seamless Upgrades</strong></td><td>Patch and minor version upgrades, config changes</td><td>Rolling update when image field changes</td></tr>
+<tr><td><strong>Level 3: Full Lifecycle</strong></td><td>Backup, restore, failure recovery</td><td>Auto-backup on schedule, restore from snapshot</td></tr>
+<tr><td><strong>Level 4: Deep Insights</strong></td><td>Metrics, alerting, log processing, workload analysis</td><td>Expose per-instance Prometheus metrics</td></tr>
+<tr><td><strong>Level 5: Auto Pilot</strong></td><td>Horizontal/vertical scaling, auto-config tuning</td><td>Auto-tune JVM heap based on pod memory</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="kubebuilder">Kubebuilder &amp; controller-runtime</h2>
+
+<p>Kubebuilder is the official SDK for building Kubernetes operators. It scaffolds a project with <code>controller-runtime</code> (the Go library), generates CRD manifests from Go struct tags, and provides a webhook framework.</p>
+
+<h3>Bootstrap a New Operator</h3>
+
+<pre><code class="language-bash"># Install kubebuilder
+curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
+chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
+
+# Create project
+mkdir platform-operator && cd platform-operator
+kubebuilder init \
+  --domain platform.example.com \
+  --repo github.com/myorg/platform-operator
+
+# Create API (CRD + Controller skeleton)
+kubebuilder create api \
+  --group platform \
+  --version v1alpha1 \
+  --kind Application \
+  --resource --controller
+
+# Create webhook
+kubebuilder create webhook \
+  --group platform \
+  --version v1alpha1 \
+  --kind Application \
+  --defaulting --programmatic-validation
+
+# Generate CRD manifests and DeepCopy methods
+make generate manifests</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Go Type Definition (generates CRD schema)</h3>
+
+<pre><code class="language-go">// api/v1alpha1/application_types.go
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas
+// +kubebuilder:printcolumn:name="Desired",type="integer",JSONPath=".spec.replicas"
+// +kubebuilder:printcolumn:name="Ready",type="integer",JSONPath=".status.readyReplicas"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:resource:shortName=app;apps,categories=platform
+
+type Application struct {
+    metav1.TypeMeta   `json:",inline"`
+    metav1.ObjectMeta `json:"metadata,omitempty"`
+    Spec   ApplicationSpec   `json:"spec,omitempty"`
+    Status ApplicationStatus `json:"status,omitempty"`
+}
+
+type ApplicationSpec struct {
+    // +kubebuilder:validation:Required
+    Image string `json:"image"`
+
+    // +kubebuilder:validation:Required
+    // +kubebuilder:validation:Minimum=1
+    // +kubebuilder:validation:Maximum=65535
+    Port int32 `json:"port"`
+
+    // +kubebuilder:default=2
+    // +kubebuilder:validation:Minimum=1
+    // +kubebuilder:validation:Maximum=100
+    Replicas *int32 `json:"replicas,omitempty"`
+
+    Resources *ResourceRequirements `json:"resources,omitempty"`
+    Env       []corev1.EnvVar       `json:"env,omitempty"`
+    Ingress   *IngressSpec          `json:"ingress,omitempty"`
+}
+
+// +kubebuilder:validation:Enum=Pending;Deploying;Running;Degraded;Failed
+type Phase string
+
+type ApplicationStatus struct {
+    Phase         Phase              `json:"phase,omitempty"`
+    ReadyReplicas int32              `json:"readyReplicas,omitempty"`
+    Conditions    []metav1.Condition `json:"conditions,omitempty"`
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="reconciler">Writing a Reconciler</h2>
+
+<pre><code class="language-go">// controllers/application_controller.go
+package controllers
+
+import (
+    "context"
+    "fmt"
+
+    appsv1 "k8s.io/api/apps/v1"
+    corev1 "k8s.io/api/core/v1"
+    "k8s.io/apimachinery/pkg/api/errors"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/runtime"
+    ctrl "sigs.k8s.io/controller-runtime"
+    "sigs.k8s.io/controller-runtime/pkg/client"
+    "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+    platformv1alpha1 "github.com/myorg/platform-operator/api/v1alpha1"
+)
+
+const finalizerName = "platform.example.com/finalizer"
+
+type ApplicationReconciler struct {
+    client.Client
+    Scheme *runtime.Scheme
+}
+
+// +kubebuilder:rbac:groups=platform.example.com,resources=applications,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=platform.example.com,resources=applications/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=platform.example.com,resources=applications/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+
+func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+    log := ctrl.LoggerFrom(ctx)
+
+    // 1. Fetch the Application
+    app := &platformv1alpha1.Application{}
+    if err := r.Get(ctx, req.NamespacedName, app); err != nil {
+        if errors.IsNotFound(err) {
+            return ctrl.Result{}, nil  // deleted; nothing to do
+        }
+        return ctrl.Result{}, err
+    }
+
+    // 2. Handle deletion (finalizer pattern)
+    if !app.DeletionTimestamp.IsZero() {
+        if controllerutil.ContainsFinalizer(app, finalizerName) {
+            if err := r.cleanup(ctx, app); err != nil {
+                return ctrl.Result{}, err
+            }
+            controllerutil.RemoveFinalizer(app, finalizerName)
+            return ctrl.Result{}, r.Update(ctx, app)
+        }
+        return ctrl.Result{}, nil
+    }
+
+    // 3. Add finalizer
+    if !controllerutil.ContainsFinalizer(app, finalizerName) {
+        controllerutil.AddFinalizer(app, finalizerName)
+        if err := r.Update(ctx, app); err != nil {
+            return ctrl.Result{}, err
+        }
+    }
+
+    // 4. Reconcile Deployment
+    deployment := r.desiredDeployment(app)
+    if err := controllerutil.SetControllerReference(app, deployment, r.Scheme); err != nil {
+        return ctrl.Result{}, err
+    }
+    result, err := controllerutil.CreateOrUpdate(ctx, r.Client, deployment, func() error {
+        r.updateDeployment(deployment, app)
+        return nil
+    })
+    if err != nil {
+        return ctrl.Result{}, err
+    }
+    log.Info("Deployment reconciled", "result", result)
+
+    // 5. Reconcile Service
+    svc := r.desiredService(app)
+    controllerutil.SetControllerReference(app, svc, r.Scheme)
+    if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, svc, func() error {
+        r.updateService(svc, app)
+        return nil
+    }); err != nil {
+        return ctrl.Result{}, err
+    }
+
+    // 6. Update status
+    app.Status.Phase = platformv1alpha1.PhaseRunning
+    app.Status.ReadyReplicas = deployment.Status.ReadyReplicas
+    if err := r.Status().Update(ctx, app); err != nil {
+        return ctrl.Result{}, err
+    }
+
+    // 7. Requeue periodically for drift detection
+    return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+}
+
+func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+    return ctrl.NewControllerManagedBy(mgr).
+        For(&platformv1alpha1.Application{}).
+        Owns(&appsv1.Deployment{}).  // watch owned Deployments too
+        Owns(&corev1.Service{}).
+        WithOptions(controller.Options{
+            MaxConcurrentReconciles: 4,
+            RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(
+                500*time.Millisecond, 5*time.Minute,
+            ),
+        }).
+        Complete(r)
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>desiredDeployment Helper</h3>
+
+<pre><code class="language-go">func (r *ApplicationReconciler) desiredDeployment(app *platformv1alpha1.Application) *appsv1.Deployment {
+    labels := map[string]string{
+        "app.kubernetes.io/name":       app.Name,
+        "app.kubernetes.io/managed-by": "platform-operator",
+    }
+    return &appsv1.Deployment{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:      app.Name,
+            Namespace: app.Namespace,
+            Labels:    labels,
+        },
+        Spec: appsv1.DeploymentSpec{
+            Replicas: app.Spec.Replicas,
+            Selector: &metav1.LabelSelector{MatchLabels: labels},
+            Template: corev1.PodTemplateSpec{
+                ObjectMeta: metav1.ObjectMeta{Labels: labels},
+                Spec: corev1.PodSpec{
+                    Containers: []corev1.Container{{
+                        Name:  app.Name,
+                        Image: app.Spec.Image,
+                        Ports: []corev1.ContainerPort{{
+                            ContainerPort: app.Spec.Port,
+                        }},
+                        Env: app.Spec.Env,
+                    }},
+                },
+            },
+        },
+    }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="api-aggregation">API Aggregation Layer</h2>
+
+<p>The API Aggregation Layer allows registering a custom API server that the kube-apiserver proxies requests to. This is how <code>metrics-server</code> (for <code>kubectl top</code>) and custom metrics APIs (for HPA) work.</p>
+
+<h3>Custom Metrics API for HPA</h3>
+
+<pre><code class="language-yaml"># APIService registers your custom metrics server with the aggregation layer
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1beta1.custom.metrics.k8s.io
+spec:
+  service:
+    name: custom-metrics-apiserver
+    namespace: custom-metrics
+    port: 443
+  group: custom.metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: false
+  caBundle: "LS0tLS1CRUdJTi..."
+  groupPriorityMinimum: 100
+  versionPriority: 100</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>HPA on Custom Metric</h3>
+
+<pre><code class="language-yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: payments-api-hpa
+  namespace: payments-api-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payments-api
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+  # Scale on Prometheus metric via KEDA or custom metrics adapter
+  - type: External
+    external:
+      metric:
+        name: payments_queue_depth
+        selector:
+          matchLabels:
+            queue: payments-processing
+      target:
+        type: AverageValue
+        averageValue: "10"   # scale out when queue > 10 items per replica</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="platform-api-design">Platform API Design Principles</h2>
+
+<p>Platform APIs are consumed by developers every day. Poor API design creates friction, bugs, and support burden. These principles apply whether you're designing a CRD, a Crossplane XRD (see <a href="08-service-catalog.html">08-service-catalog.html</a>), or a Backstage template.</p>
+
+<h3>API Design Guidelines</h3>
+
+<div class="card-grid">
+  <div class="card blue">
+    <h4>Intent over Implementation</h4>
+    <p>Teams declare <em>what</em> they want, not <em>how</em> to achieve it. <code>spec.size: medium</code> instead of <code>spec.instanceType: m5.xlarge</code>. The operator maps intent to implementation — teams are insulated from AWS instance type changes.</p>
+  </div>
+  <div class="card blue">
+    <h4>Sensible Defaults</h4>
+    <p>Every optional field should have a default that works for 80% of cases. Use <code>+kubebuilder:default=</code> markers and CRD <code>default:</code> in OpenAPI schema. Teams shouldn't need to specify 20 fields to get a working deployment.</p>
+  </div>
+  <div class="card green">
+    <h4>Immutable Fields via CEL</h4>
+    <p>Some fields should never change after creation (database name, region). Mark them with <code>x-kubernetes-validations: rule: "self == oldSelf"</code>. This prevents accidental data loss from field updates that would trigger destructive replacement.</p>
+  </div>
+  <div class="card green">
+    <h4>Status Conditions (Standard)</h4>
+    <p>Use the standard <code>metav1.Condition</code> type for status conditions — <code>type</code>, <code>status</code>, <code>reason</code>, <code>message</code>, <code>lastTransitionTime</code>. This integrates with kubectl wait, Argo CD health checks, and standard tooling without custom logic.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Additive-Only Evolution</h4>
+    <p>Never remove or rename fields in a served version. Add new fields with defaults. When breaking changes are needed, add a new API version (<code>v1beta1</code>) alongside the old one and provide a conversion webhook.</p>
+  </div>
+  <div class="card yellow">
+    <h4>ownerReferences for Garbage Collection</h4>
+    <p>Set <code>SetControllerReference</code> on every resource an operator creates. When the parent CRD is deleted, K8s cascades deletion to all owned resources automatically. Without this, orphaned Deployments and Services accumulate.</p>
+  </div>
+</div>
+
+<h3>API Versioning Lifecycle</h3>
+
+<pre><code class="language-yaml"># Serving multiple versions simultaneously
+spec:
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: false    # deprecated; still served for old clients
+    deprecated: true
+    deprecationWarning: "v1alpha1 is deprecated; use v1beta1"
+  - name: v1beta1
+    served: true
+    storage: true     # new storage version
+  - name: v1
+    served: true
+    storage: false    # GA; not yet storage (migration in progress)</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="testing">Testing Operators &amp; Webhooks</h2>
+
+<h3>envtest: Integration Tests Without a Cluster</h3>
+
+<pre><code class="language-go">// suite_test.go — envtest starts a real API server + etcd in-process
+package controllers_test
+
+import (
+    "testing"
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
+    "sigs.k8s.io/controller-runtime/pkg/envtest"
+    ctrl "sigs.k8s.io/controller-runtime"
+)
+
+var (
+    testEnv   *envtest.Environment
+    k8sClient client.Client
+)
+
+func TestControllers(t *testing.T) {
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "Controller Suite")
+}
+
+var _ = BeforeSuite(func() {
+    testEnv = &envtest.Environment{
+        CRDDirectoryPaths: []string{"../config/crd/bases"},
+        WebhookInstallOptions: envtest.WebhookInstallOptions{
+            Paths: []string{"../config/webhook"},
+        },
+    }
+    cfg, err := testEnv.Start()
+    Expect(err).NotTo(HaveOccurred())
+
+    k8sClient, err = client.New(cfg, client.Options{})
+    Expect(err).NotTo(HaveOccurred())
+
+    // Start the manager with controllers
+    mgr, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme})
+    Expect(err).NotTo(HaveOccurred())
+    Expect((&ApplicationReconciler{Client: mgr.GetClient(), Scheme: mgr.GetScheme()}).
+        SetupWithManager(mgr)).To(Succeed())
+    go mgr.Start(context.Background())
+})
+
+var _ = AfterSuite(func() {
+    testEnv.Stop()
+})</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Reconciler Test</h3>
+
+<pre><code class="language-go">var _ = Describe("Application controller", func() {
+    It("should create a Deployment when an Application is created", func() {
+        app := &platformv1alpha1.Application{
+            ObjectMeta: metav1.ObjectMeta{
+                Name:      "test-app",
+                Namespace: "default",
+            },
+            Spec: platformv1alpha1.ApplicationSpec{
+                Image:    "nginx:1.25.0",
+                Port:     80,
+                Replicas: ptr.To(int32(2)),
+            },
+        }
+        Expect(k8sClient.Create(ctx, app)).To(Succeed())
+
+        // Wait for Deployment to be created
+        deployment := &appsv1.Deployment{}
+        Eventually(func() error {
+            return k8sClient.Get(ctx, types.NamespacedName{
+                Name: "test-app", Namespace: "default",
+            }, deployment)
+        }, 10*time.Second, 100*time.Millisecond).Should(Succeed())
+
+        Expect(*deployment.Spec.Replicas).To(Equal(int32(2)))
+        Expect(deployment.Spec.Template.Spec.Containers[0].Image).To(Equal("nginx:1.25.0"))
+
+        // Verify ownerReference is set
+        Expect(deployment.OwnerReferences).To(HaveLen(1))
+        Expect(deployment.OwnerReferences[0].Name).To(Equal("test-app"))
+    })
+})</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Webhook Test with fake decoder</h3>
+
+<pre><code class="language-go">var _ = Describe("Application defaulting webhook", func() {
+    It("should set default replicas to 2", func() {
+        app := &platformv1alpha1.Application{
+            Spec: platformv1alpha1.ApplicationSpec{
+                Image: "nginx:1.25.0",
+                Port:  80,
+                // Replicas intentionally omitted
+            },
+        }
+        // Defaulting webhook should set Replicas = 2
+        app.Default()
+        Expect(*app.Spec.Replicas).To(Equal(int32(2)))
+    })
+
+    It("should reject :latest image tag", func() {
+        app := &platformv1alpha1.Application{
+            Spec: platformv1alpha1.ApplicationSpec{
+                Image:    "nginx:latest",
+                Port:     80,
+                Replicas: ptr.To(int32(2)),
+            },
+        }
+        _, err := app.ValidateCreate()
+        Expect(err).To(HaveOccurred())
+        Expect(err.Error()).To(ContainSubstring("latest"))
+    })
+})</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="observability">Operator Observability</h2>
+
+<h3>controller-runtime Built-in Metrics</h3>
+
+<pre><code class="language-bash"># controller-runtime exposes these metrics automatically
+controller_runtime_reconcile_total{controller,result}        # reconcile count by result (success/error/requeue)
+controller_runtime_reconcile_errors_total{controller}        # error count
+controller_runtime_reconcile_time_seconds{controller}        # reconcile duration histogram
+controller_runtime_webhook_requests_total{webhook,code}      # webhook call count
+controller_runtime_webhook_latency_seconds{webhook}          # webhook latency
+workqueue_depth{name}                                        # items waiting in work queue
+workqueue_queue_duration_seconds{name}                       # time items spend queued</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Custom Operator Metrics</h3>
+
+<pre><code class="language-go">// Register custom metrics
+var (
+    applicationTotal = prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "platform_application_total",
+            Help: "Total number of Application instances by phase",
+        },
+        []string{"namespace", "phase"},
+    )
+    reconcileDuration = prometheus.NewHistogramVec(
+        prometheus.HistogramOpts{
+            Name:    "platform_reconcile_duration_seconds",
+            Help:    "Time taken to reconcile an Application",
+            Buckets: prometheus.DefBuckets,
+        },
+        []string{"controller"},
+    )
+)
+
+func init() {
+    metrics.Registry.MustRegister(applicationTotal, reconcileDuration)
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>PrometheusRule for Operator Health</h3>
+
+<pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform-operator-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: platform.operator
+    rules:
+    - alert: PlatformOperatorHighErrorRate
+      expr: |
+        rate(controller_runtime_reconcile_errors_total{
+          controller="application"
+        }[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Platform operator reconcile error rate high"
+        description: "{{ $value | humanize }} errors/s for Application controller"
+
+    - alert: PlatformOperatorQueueBacklog
+      expr: |
+        workqueue_depth{name="application"} > 50
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Platform operator work queue depth {{ $value }}"
+        description: "Large backlog may indicate reconciliation is stuck or too slow."
+
+    - alert: PlatformApplicationDegraded
+      expr: |
+        platform_application_total{phase="Degraded"} > 0
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "{{ $value }} Application(s) in Degraded phase"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card green">
+    <h4>Idempotent Reconcilers</h4>
+    <p>A reconciler must be safe to call any number of times with the same input. Use <code>controllerutil.CreateOrUpdate</code> instead of create-then-check patterns. Every reconcile should produce the same result regardless of how many times it runs — the K8s control loop guarantees it will run many times.</p>
+  </div>
+  <div class="card green">
+    <h4>Status Conditions Over Phase Strings</h4>
+    <p>Use <code>metav1.Condition</code> array for status (type/status/reason/message/lastTransitionTime) rather than a single <code>phase</code> string. Conditions compose — an Application can be <code>Progressing=True</code> and <code>Available=True</code> simultaneously. This is what kubectl wait and Argo CD health checks understand natively.</p>
+  </div>
+  <div class="card blue">
+    <h4>Exponential Backoff on Errors</h4>
+    <p>Never return a bare error from Reconcile without understanding the retry behavior. controller-runtime uses an exponential backoff rate limiter by default. For transient errors (network), return the error. For permanent errors (invalid spec), update status and return <code>nil</code> — don't keep retrying what will never succeed.</p>
+  </div>
+  <div class="card blue">
+    <h4>Leader Election for HA</h4>
+    <p>Run operator replicas with leader election (<code>ctrl.Options{LeaderElection: true, LeaderElectionID: "platform-operator-leader"}</code>). Only the leader reconciles; others are hot standbys. Without this, multiple replicas will conflict on concurrent updates to the same resource.</p>
+  </div>
+  <div class="card yellow">
+    <h4>RBAC via Markers</h4>
+    <p>Use <code>// +kubebuilder:rbac:</code> markers on the Reconcile function. <code>make manifests</code> generates the ClusterRole automatically. This keeps RBAC in sync with what the controller actually needs — no manually maintained ClusterRole that drifts over time.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Webhook TLS via cert-manager</h4>
+    <p>Never manually manage webhook TLS certificates. Create a cert-manager <code>Certificate</code> for the webhook service and annotate the WebhookConfiguration with <code>cert-manager.io/inject-ca-from</code>. cert-manager's cainjector patches the <code>caBundle</code> automatically on rotation.</p>
+  </div>
+  <div class="card orange">
+    <h4>Test with envtest, Not mocks</h4>
+    <p>Test reconcilers against a real API server via <code>envtest</code> — not with mocked clients. Mocks miss critical behaviors like watch cache delays, conflict errors on concurrent updates, and admission webhook calls. envtest runs in CI with no cluster dependency.</p>
+  </div>
+  <div class="card red">
+    <h4>Finalizers for Cleanup</h4>
+    <p>If your operator creates cloud resources, always add a finalizer. Without it, deleting the CRD object immediately removes the K8s resource — but the cloud resource (RDS, S3 bucket) lives on as orphaned, billing waste. The finalizer prevents deletion until the operator has cleaned up external state.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage: 10 · Platform APIs</summary>
+  <ul class="coverage-body">
+    <li>Kubernetes extension mechanisms diagram (CRDs/Webhooks/API Aggregation/VAP with relationship to API server)</li>
+    <li>Extension mechanism decision guide table (8 use cases mapped to mechanism + complexity)</li>
+    <li>Full CRD YAML (Application): group/scope/names/shortNames/categories/versions/subresources (status+scale)/additionalPrinterColumns/full openAPIV3Schema with nested properties/status conditions array</li>
+    <li>CRD instance YAML (Application with image/port/replicas/resources/env/ingress)</li>
+    <li>CEL validation rules in CRD schema (x-kubernetes-validations: cross-field prod requires 2 replicas, no :latest, replicas cannot reduce below 1)</li>
+    <li>CRD version conversion webhook configuration (strategy:Webhook, conversionReviewVersions, clientConfig)</li>
+    <li>Mutating webhook Go handler: PodDefaulter (inject managed-by label, set terminationGracePeriodSeconds, return JSON patch)</li>
+    <li>Register webhooks in main.go (mgr.GetWebhookServer().Register for mutate + validate paths)</li>
+    <li>MutatingWebhookConfiguration YAML (cert-manager inject-ca-from annotation, namespaceSelector matchExpressions, failurePolicy:Ignore, reinvocationPolicy:IfNeeded)</li>
+    <li>cert-manager webhook TLS injection callout (cainjector patches caBundle automatically)</li>
+    <li>Operator reconcile loop architecture diagram (desired state → informer → reconciler → create/update/delete → status → requeue)</li>
+    <li>Operator maturity model table (Level 1-5: Basic Install/Upgrades/Full Lifecycle/Insights/Auto Pilot)</li>
+    <li>Kubebuilder scaffold commands (init, create api, create webhook, make generate manifests)</li>
+    <li>Go type definition with kubebuilder markers (object:root/subresource:status+scale/printcolumn/resource shortName/validation markers)</li>
+    <li>Full Reconciler (Reconcile function): fetch object/handle deletion with finalizer/add finalizer/CreateOrUpdate Deployment/CreateOrUpdate Service/update status/RequeueAfter 5m</li>
+    <li>SetupWithManager: For/Owns Deployment+Service/WithOptions MaxConcurrentReconciles+RateLimiter</li>
+    <li>desiredDeployment helper function (labels/ObjectMeta/DeploymentSpec from ApplicationSpec)</li>
+    <li>APIService CRD for custom metrics aggregation (group/service/caBundle/groupPriorityMinimum)</li>
+    <li>HPA on external custom metric (payments_queue_depth with AverageValue:10)</li>
+    <li>Platform API design principles: 6 cards (intent over implementation/defaults/immutable CEL/status conditions/additive evolution/ownerReferences)</li>
+    <li>CRD API versioning lifecycle YAML (served/storage/deprecated flags for v1alpha1+v1beta1+v1)</li>
+    <li>envtest integration test suite (BeforeSuite: start testEnv/start manager/register reconciler)</li>
+    <li>Reconciler test (create Application → Eventually check Deployment created → verify replicas+image+ownerReference)</li>
+    <li>Webhook test (defaulting sets replicas:2, validation rejects :latest)</li>
+    <li>controller-runtime built-in metrics reference (reconcile_total/errors/time/webhook latency/workqueue_depth)</li>
+    <li>Custom operator metrics in Go (GaugeVec for application phases, HistogramVec for reconcile duration)</li>
+    <li>PrometheusRule: PlatformOperatorHighErrorRate / PlatformOperatorQueueBacklog / PlatformApplicationDegraded</li>
+    <li>8 best practices cards (idempotent reconcilers/status conditions/exponential backoff/leader election/RBAC markers/cert-manager TLS/envtest not mocks/finalizers for cleanup)</li>
+  </ul>
+</details>
+
+</main>
+
+<button class="back-top" id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none'
+  })
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>400)
+})
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button')
+  btn.className='copy-btn'
+  btn.textContent='Copy'
+  btn.onclick=function(){
+    navigator.clipboard.writeText(pre.innerText.replace('Copy\n','').replace('Copy',''))
+    btn.textContent='Copied!'
+    setTimeout(()=>btn.textContent='Copy',2000)
+  }
+  pre.appendChild(btn)
+})
+const headings=document.querySelectorAll('h2[id]')
+const tocLinks=document.querySelectorAll('.toc a')
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('toc-active'))
+      const l=document.querySelector(`.toc a[href="#${e.target.id}"]`)
+      if(l)l.classList.add('toc-active')
+    }
+  })
+},{root:document.getElementById('main'),threshold:0.3})
+headings.forEach(h=>obs.observe(h))
+</script>
+</body>
+</html>

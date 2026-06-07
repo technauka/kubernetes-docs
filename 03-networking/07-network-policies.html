@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Network Policies — Kubernetes Networking</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.sidebar-logo{font-size:15px;font-weight:700;color:var(--accent);text-decoration:none;display:block;margin-bottom:12px;}
+.sidebar-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;}
+.sidebar-filter:focus{border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding:6px 16px 4px;}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);text-decoration:none;border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:90;}
+.hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text2);cursor:pointer;font-size:12px;}
+.theme-btn:hover{color:var(--text);border-color:var(--accent);}
+.content-toc-wrap{display:flex;flex:1;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-panel{width:var(--toc-w);flex-shrink:0;padding:24px 16px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
+.toc-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text3);text-decoration:none;padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover{color:var(--text2);}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-panel a.toc-h3{padding-left:20px;font-size:11px;}
+h1{font-size:34px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+ul,ol{padding-left:24px;color:var(--text2);margin-bottom:14px;}
+li{margin-bottom:4px;font-size:14px;}
+.subtitle{font-size:16px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:12px 0 20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code,h3 code,h4 code{background:var(--bg3);padding:2px 5px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text3);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 12px;text-align:left;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);border-bottom:2px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:12px;}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:14px;}
+.callout-body p,.callout-body ul{font-size:13px;color:var(--text2);margin:0;}
+.callout-body ul{padding-left:18px;margin-top:4px;}
+.callout.info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.3);}
+.callout.warn{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);}
+.callout.danger{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);}
+.callout.success{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.3);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:16px 0 24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card h4{font-size:14px;font-weight:600;color:var(--text);margin:0 0 8px;}
+.card p,.card ul{font-size:13px;color:var(--text2);}
+.card ul{padding-left:16px;margin:0;}
+.card .tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;margin-bottom:6px;}
+.tag-ga{background:rgba(63,185,80,.15);color:var(--green);}
+.tag-beta{background:rgba(210,153,34,.15);color:var(--yellow);}
+.tag-alpha{background:rgba(248,81,73,.15);color:var(--red);}
+.logic-box{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 24px;}
+.logic-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.logic-card h4{font-size:13px;font-weight:600;margin-bottom:8px;}
+.logic-card.and{border-top:3px solid var(--green);}
+.logic-card.or{border-top:3px solid var(--accent);}
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:16px 0 24px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.6;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.back-top.visible{display:flex;}
+.nav-footer{display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;border-top:1px solid var(--border);}
+.nav-btn{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 20px;color:var(--text2);text-decoration:none;font-size:13px;transition:all .2s;}
+.nav-btn:hover{color:var(--accent);border-color:var(--accent);}
+.nav-btn small{display:block;font-size:11px;color:var(--text3);margin-bottom:2px;}
+@media(max-width:1200px){.toc-panel{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrap{margin-left:0;}
+  .hamburger{display:block;}
+  .main-content{padding:24px 20px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a class="sidebar-logo" href="../index.html">⎈ Kubernetes Docs</a>
+    <input class="sidebar-filter" id="nav-filter" placeholder="Filter..." type="text"/>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Foundations</div>
+    <a href="../00-foundations/00-introduction.html">Introduction</a>
+    <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../00-foundations/02-kubernetes-components.html">Components</a>
+    <a href="../00-foundations/03-control-loops.html">Control Loops</a>
+    <a href="../00-foundations/04-kubernetes-api-model.html">API Model</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">Overview</a>
+    <a href="../01-control-plane/01-api-server.html">API Server</a>
+    <a href="../01-control-plane/02-etcd.html">etcd</a>
+    <a href="../01-control-plane/03-scheduler.html">Scheduler</a>
+    <a href="../01-control-plane/04-controller-manager.html">Controller Manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">Cloud CCM</a>
+    <a href="../01-control-plane/06-ha-control-plane.html">HA Control Plane</a>
+    <a href="../01-control-plane/07-api-aggregation.html">API Aggregation</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">Overview</a>
+    <a href="../02-node-components/01-kubelet.html">kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime.html">Container Runtime</a>
+    <a href="../02-node-components/04-cri-interface.html">CRI Interface</a>
+    <a href="../02-node-components/05-node-lifecycle.html">Node Lifecycle</a>
+    <a href="../02-node-components/06-node-resource-management.html">Resource Management</a>
+    <a href="../02-node-components/07-windows-worker-nodes.html">Windows Nodes</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="00-networking-overview.html">Overview</a>
+    <a href="01-pod-networking.html">Pod Networking</a>
+    <a href="02-cni-plugins.html">CNI Plugins</a>
+    <a href="03-kube-proxy-internals.html">kube-proxy Internals</a>
+    <a href="04-dns.html">DNS &amp; Service Discovery</a>
+    <a href="05-ingress.html">Ingress</a>
+    <a href="06-gateway-api.html">Gateway API</a>
+    <a href="07-network-policies.html" class="active">Network Policies</a>
+    <a href="08-ipv4-ipv6-dual-stack.html">IPv4/IPv6 Dual-Stack</a>
+    <a href="09-load-balancing.html">Load Balancing</a>
+    <a href="10-service-mesh.html">Service Mesh</a>
+  </div>
+</nav>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger">☰</button>
+    <span class="topbar-title">03 — Networking / Network Policies</span>
+    <button class="theme-btn" id="theme-toggle">Light Mode</button>
+  </header>
+
+  <div class="content-toc-wrap">
+    <main class="main-content" id="main-content">
+
+      <h1>Network Policies</h1>
+      <p class="subtitle">Kubernetes-native L3/L4 firewall rules that control traffic flow between pods, namespaces, and external CIDRs. Network policies are declarative, namespace-scoped, and enforced by the CNI plugin — not by kube-proxy.</p>
+
+      <details class="coverage">
+        <summary>What This Page Covers</summary>
+        <ul class="coverage-body">
+          <li>NetworkPolicy resource model: podSelector, policyTypes, ingress, egress rules</li>
+          <li>Peer selectors: podSelector, namespaceSelector, ipBlock, and their combinations</li>
+          <li>AND vs OR logic within a single rule entry</li>
+          <li>Default-deny and default-allow patterns for ingress and egress</li>
+          <li>Ports: named ports, protocol (TCP/UDP/SCTP), endPort range</li>
+          <li>DNS egress: why CoreDNS must be explicitly allowed under default-deny egress</li>
+          <li>Full isolation pattern: default-deny + selective allow</li>
+          <li>Common policy patterns: namespace isolation, database tier, ingress-controller allow, monitoring allow</li>
+          <li>AdminNetworkPolicy and BaselineAdminNetworkPolicy (KEP-2091, GA 1.31)</li>
+          <li>CNI enforcement: which CNIs enforce NetworkPolicy; Flannel does not</li>
+          <li>Calico GlobalNetworkPolicy and NetworkPolicy extensions</li>
+          <li>CiliumNetworkPolicy: L7 HTTP rules, DNS FQDN egress, toFQDNs</li>
+          <li>Testing policies: netcat, kubectl exec, policy-tester tools</li>
+          <li>Visualizing policies: np-viewer, Cilium Hubble</li>
+          <li>Interaction with service mesh (Istio/Linkerd) mTLS</li>
+          <li>6 metrics + 4 alerting rules + 5 troubleshooting runbooks</li>
+          <li>9 best practices for production policy management</li>
+        </ul>
+      </details>
+
+      <!-- 1. HOW IT WORKS -->
+      <h2 id="how-it-works">How Network Policies Work</h2>
+
+      <p>By default, Kubernetes allows all pod-to-pod communication — any pod can reach any other pod on any port. NetworkPolicy objects change this by selecting pods and defining allowed traffic. Key behavioral rules:</p>
+
+      <ul>
+        <li><strong>Additive only</strong> — policies never block existing allowed traffic; they only add permissions. Multiple policies applying to the same pod are unioned.</li>
+        <li><strong>Pod selection activates enforcement</strong> — a pod only becomes subject to policy when <em>at least one NetworkPolicy selects it</em>. A pod with no matching policy has all traffic allowed.</li>
+        <li><strong>Separate ingress and egress</strong> — each is independently controlled. Selecting a pod in <code>policyTypes: [Ingress]</code> activates ingress enforcement only.</li>
+        <li><strong>Enforced by the CNI plugin</strong> — NetworkPolicy objects have no effect without a CNI that implements them (Calico, Cilium, Weave Net, Antrea). Flannel alone does not enforce policies.</li>
+        <li><strong>Stateful</strong> — reply packets for established connections are automatically allowed. You do not need a return-direction rule.</li>
+      </ul>
+
+      <div class="callout danger">
+        <span class="callout-icon">🚨</span>
+        <div class="callout-body">
+          <strong>Flannel does not enforce NetworkPolicy</strong>
+          <p>If your cluster uses Flannel as the CNI, NetworkPolicy objects are accepted by the API server but silently ignored. You must add Calico as a policy engine (Canal = Flannel + Calico policy) or switch to a policy-capable CNI. Always verify enforcement with a connectivity test.</p>
+        </div>
+      </div>
+
+      <!-- 2. ANATOMY -->
+      <h2 id="anatomy">NetworkPolicy Anatomy</h2>
+
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-policy
+  namespace: production              # policies are namespace-scoped
+spec:
+  podSelector:                       # which pods this policy applies to
+    matchLabels:
+      app: api                       # empty {} = all pods in namespace
+  policyTypes:
+    - Ingress                        # activates ingress enforcement
+    - Egress                         # activates egress enforcement
+  ingress:
+    - from:                          # list of allowed sources (OR between list items)
+        - podSelector:               # same-namespace pods with this label
+            matchLabels:
+              app: frontend
+        - namespaceSelector:         # pods in namespaces with this label
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+          endPort: 8090              # port range (GA 1.25)
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:                            # allow DNS (critical under default-deny egress)
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 3. SELECTOR LOGIC -->
+      <h2 id="selector-logic">Selector Logic: AND vs OR</h2>
+      <p>The most common source of NetworkPolicy bugs is misunderstanding when selectors are ANDed vs ORed. The rule is:</p>
+
+      <div class="logic-box">
+        <div class="logic-card or">
+          <h4>OR — separate list entries</h4>
+          <pre style="background:var(--bg3);font-size:12px;margin:8px 0 0;"><code>from:
+  - podSelector:         # entry 1
+      matchLabels:
+        app: frontend
+  - namespaceSelector:   # entry 2
+      matchLabels:
+        env: prod
+# Allows pods with app=frontend
+# OR pods in env=prod namespaces
+# (different list items = OR)</code></pre>
+        </div>
+        <div class="logic-card and">
+          <h4>AND — combined in one entry</h4>
+          <pre style="background:var(--bg3);font-size:12px;margin:8px 0 0;"><code>from:
+  - podSelector:         # combined
+      matchLabels:       # in one
+        app: frontend    # entry
+    namespaceSelector:
+      matchLabels:
+        env: prod
+# Allows pods with app=frontend
+# AND that are in env=prod namespaces
+# (same list item = AND)</code></pre>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>The most common NetworkPolicy mistake</strong>
+          <p>When you have <code>namespaceSelector</code> and <code>podSelector</code> as separate list items (OR), <code>namespaceSelector</code> alone allows <em>all pods in matching namespaces</em> regardless of their labels. This is often unintentionally permissive. Put both in the same entry (AND) to require both conditions simultaneously.</p>
+        </div>
+      </div>
+
+      <h3 id="ipblock">ipBlock — External CIDRs</h3>
+      <p><code>ipBlock</code> matches traffic from/to external IP ranges. It supports <code>except</code> to carve out sub-ranges:</p>
+
+      <pre><code>ingress:
+  - from:
+      - ipBlock:
+          cidr: 10.0.0.0/8          # allow entire RFC1918 /8
+          except:
+            - 10.42.0.0/16          # except the pod CIDR (avoid confusion)
+            - 10.96.0.0/12          # except the service CIDR
+      ports:
+        - protocol: TCP
+          port: 443
+
+egress:
+  - to:
+      - ipBlock:
+          cidr: 0.0.0.0/0           # allow all internet egress
+          except:
+            - 169.254.169.254/32    # block AWS IMDS from workloads
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>ipBlock and Pod IPs</strong>
+          <p><code>ipBlock</code> applies to the pod's source IP, not to Service ClusterIPs. ClusterIPs are virtual (see <a href="03-kube-proxy-internals.html">kube-proxy internals</a>) — DNAT happens <em>before</em> the NetworkPolicy is evaluated. You should use <code>podSelector/namespaceSelector</code> to match pod-to-pod traffic, not ipBlock with pod CIDRs.</p>
+        </div>
+      </div>
+
+      <!-- 4. NAMED PORTS -->
+      <h2 id="named-ports">Named Ports and Port Ranges</h2>
+      <pre><code># Named port — references the port name defined in the container spec
+# Useful when different pods use different port numbers for the same protocol
+
+# Pod spec:
+spec:
+  containers:
+    - name: api
+      ports:
+        - name: http-api
+          containerPort: 8080
+
+# NetworkPolicy references the name:
+ports:
+  - port: http-api      # resolved to containerPort 8080 on matching pods
+    protocol: TCP
+
+# Port range (GA since Kubernetes 1.25):
+ports:
+  - protocol: TCP
+    port: 10000
+    endPort: 11000      # allows ports 10000-11000 inclusive
+
+# SCTP support (GA 1.20):
+ports:
+  - protocol: SCTP
+    port: 9999
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 5. DEFAULT PATTERNS -->
+      <h2 id="default-patterns">Default-Deny and Default-Allow Patterns</h2>
+
+      <h3 id="default-deny-ingress">Default Deny Ingress</h3>
+      <p>Selects all pods in the namespace; specifies <code>Ingress</code> policyType with no rules — no ingress is allowed. Must be combined with specific allow policies.</p>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: production
+spec:
+  podSelector: {}        # matches ALL pods in this namespace
+  policyTypes:
+    - Ingress            # ingress enforcement active; empty rules = deny all
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="default-deny-egress">Default Deny Egress</h3>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: production
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress             # egress enforcement active; empty rules = deny all
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="default-deny-all">Default Deny All (Ingress + Egress)</h3>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: production
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="allow-all">Allow All (override deny for debugging)</h3>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-ingress
+  namespace: production
+spec:
+  podSelector: {}
+  ingress:
+    - {}                 # one empty rule = allow all ingress
+  policyTypes:
+    - Ingress
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>DNS must be explicitly allowed under default-deny egress</strong>
+          <p>When you apply default-deny egress to a namespace, pods lose DNS resolution because UDP/TCP port 53 to CoreDNS is blocked. You must add an explicit DNS egress rule or all service names stop resolving. This is the #1 cause of mysterious application failures after adding egress policies.</p>
+        </div>
+      </div>
+
+      <!-- 6. DNS EGRESS -->
+      <h2 id="dns-egress">DNS Egress Rule — Always Required</h2>
+      <p>Under default-deny egress, add this policy to every namespace that applies egress control. It allows DNS queries to CoreDNS in kube-system:</p>
+
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: production
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns        # CoreDNS pods
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53                     # DNS over TCP for large responses
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>NodeLocal DNSCache consideration</strong>
+          <p>If your cluster uses NodeLocal DNSCache (see <a href="04-dns.html">04-dns.html</a>), DNS queries go to <code>169.254.20.10</code> on the node — which is an <code>ipBlock</code> address, not a pod IP. Add an additional rule allowing UDP/TCP 53 to <code>169.254.20.10/32</code> when NodeLocal DNSCache is active.</p>
+        </div>
+      </div>
+
+      <!-- 7. COMMON PATTERNS -->
+      <h2 id="common-patterns">Common Policy Patterns</h2>
+
+      <h3 id="namespace-isolation">Namespace Isolation</h3>
+      <p>Prevent cross-namespace traffic while allowing intra-namespace communication:</p>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: namespace-isolation
+  namespace: team-a
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}            # allow from any pod in SAME namespace
+  egress:
+    - to:
+        - podSelector: {}            # allow to any pod in SAME namespace
+    - to:                            # allow DNS
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="database-tier">Database Tier Isolation</h3>
+      <p>Allow only the application tier to connect to the database; deny everything else including monitoring (add a separate monitoring policy if needed):</p>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-policy
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api           # only API pods can connect
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    - to:                        # postgres replication to standby
+        - podSelector:
+            matchLabels:
+              app: postgres
+              role: standby
+      ports:
+        - protocol: TCP
+          port: 5432
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="ingress-controller-allow">Allow Traffic from Ingress Controller</h3>
+      <p>Applications behind an Ingress need to allow traffic from the ingress controller pods. The controller runs in a separate namespace (typically <code>ingress-nginx</code>):</p>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-controller
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="monitoring-allow">Allow Prometheus Scraping</h3>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: production
+spec:
+  podSelector: {}                # all pods in namespace
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090             # adjust to actual metrics port
+        - protocol: TCP
+          port: 8080             # some apps expose /metrics here
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="external-egress">Allow Specific External Egress</h3>
+      <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-api
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: payment-processor
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 203.0.113.0/24   # payment gateway IP range
+      ports:
+        - protocol: TCP
+          port: 443
+    - to:                           # also allow DNS
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 8. FULL ISOLATION PATTERN -->
+      <h2 id="full-isolation">Production Full-Isolation Pattern</h2>
+      <p>The recommended layered approach for a production namespace — apply in this order:</p>
+
+      <div class="arch-diagram">Layer 1: default-deny-all         → blocks everything; activates enforcement
+Layer 2: allow-dns-egress          → restores DNS (UDP/TCP 53 to kube-dns)
+Layer 3: allow-intra-namespace     → pods can talk within the namespace
+Layer 4: allow-ingress-controller  → inbound from nginx/traefik namespace
+Layer 5: allow-prometheus-scrape   → monitoring can scrape /metrics
+Layer 6: app-specific policies     → per-app: postgres, redis, external APIs</div>
+
+      <pre><code># Apply all at once with a Kustomize overlay or Helm values:
+# namespace-policies/
+#   01-default-deny-all.yaml
+#   02-allow-dns-egress.yaml
+#   03-allow-intra-namespace.yaml
+#   04-allow-ingress-controller.yaml
+#   05-allow-prometheus-scrape.yaml
+kubectl apply -f namespace-policies/
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 9. ADMIN NETWORK POLICY -->
+      <h2 id="admin-network-policy">AdminNetworkPolicy &amp; BaselineAdminNetworkPolicy</h2>
+      <p>Standard NetworkPolicy has a critical limitation: cluster administrators cannot set policies that override or pre-empt namespace-scoped policies. The <strong>AdminNetworkPolicy</strong> API (KEP-2091, GA 1.31) solves this with cluster-scoped policy objects that take precedence over namespace policies.</p>
+
+      <div class="card-grid">
+        <div class="card">
+          <span class="tag tag-ga">GA 1.31</span>
+          <h4>AdminNetworkPolicy (ANP)</h4>
+          <ul>
+            <li>Cluster-scoped (not namespaced)</li>
+            <li>Priority field (0–1000, lower = higher priority)</li>
+            <li>Actions: <strong>Allow</strong>, <strong>Deny</strong>, <strong>Pass</strong></li>
+            <li>Pass = defer to namespace NetworkPolicy</li>
+            <li>Overrides namespace NetworkPolicy when action is Allow or Deny</li>
+            <li>Can select pods across namespaces</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag tag-ga">GA 1.31</span>
+          <h4>BaselineAdminNetworkPolicy (BANP)</h4>
+          <ul>
+            <li>Singleton (only one per cluster)</li>
+            <li>No priority (evaluated after all ANPs)</li>
+            <li>Only actions: Allow, Deny</li>
+            <li>Acts as cluster-wide default when no namespace policy matches</li>
+            <li>Lower precedence than ANP and namespace NetworkPolicy</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Precedence Order</h3>
+      <div class="arch-diagram">  Highest priority
+  ┌──────────────────────────────────────────────────────────┐
+  │  AdminNetworkPolicy (priority 0)                         │  Allow / Deny → final
+  │  AdminNetworkPolicy (priority 100)                       │  Pass → continue
+  │  AdminNetworkPolicy (priority 1000)                      │
+  ├──────────────────────────────────────────────────────────┤
+  │  Namespace NetworkPolicy                                  │  (standard rules)
+  ├──────────────────────────────────────────────────────────┤
+  │  BaselineAdminNetworkPolicy                               │  Allow / Deny → final
+  └──────────────────────────────────────────────────────────┘
+  Lowest priority</div>
+
+      <pre><code>apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: deny-to-kube-system
+spec:
+  priority: 10                          # evaluated first (lowest number = highest priority)
+  subject:
+    namespaces:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: [kube-system, monitoring]   # all namespaces except these
+  ingress:
+    - name: "deny-non-system-to-api-server"
+      action: Deny
+      from:
+        - namespaces:
+            namespaceSelector: {}       # from any namespace
+      ports:
+        - portNumber:
+            protocol: TCP
+            port: 443
+  egress:
+    - name: "pass-to-namespace-policy"
+      action: Pass                      # let namespace NetworkPolicy decide
+      to:
+        - namespaces:
+            namespaceSelector: {}
+---
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: BaselineAdminNetworkPolicy
+metadata:
+  name: default                         # must be named "default"
+spec:
+  subject:
+    namespaces: {}                      # all namespaces
+  ingress:
+    - name: "allow-same-namespace"
+      action: Allow
+      from:
+        - namespaces:
+            sameLabels: [kubernetes.io/metadata.name]
+    - name: "deny-all-else"
+      action: Deny
+      from:
+        - namespaces:
+            namespaceSelector: {}
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 10. CNI-SPECIFIC EXTENSIONS -->
+      <h2 id="cni-extensions">CNI-Specific Policy Extensions</h2>
+
+      <h3 id="calico-gnp">Calico GlobalNetworkPolicy</h3>
+      <p>Calico extends standard NetworkPolicy with cluster-scoped <code>GlobalNetworkPolicy</code> and richer matching capabilities. See <a href="02-cni-plugins.html">02-cni-plugins.html</a> for Calico architecture details.</p>
+
+      <pre><code>apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: deny-ssh-external
+spec:
+  selector: all()                         # all pods cluster-wide
+  order: 100                              # lower = evaluated first
+  types:
+    - Ingress
+  ingress:
+    - action: Deny
+      protocol: TCP
+      destination:
+        ports: [22]
+      source:
+        nets:
+          - "0.0.0.0/0"
+        notNets:
+          - "10.0.0.0/8"                  # except internal networks
+---
+apiVersion: projectcalico.org/v3
+kind: NetworkPolicy                       # Calico namespaced NetworkPolicy (richer than K8s)
+metadata:
+  name: api-policy
+  namespace: production
+spec:
+  selector: app == 'api'
+  types:
+    - Ingress
+    - Egress
+  ingress:
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: app == 'frontend'
+      destination:
+        ports: [8080]
+  egress:
+    - action: Allow
+      protocol: TCP
+      destination:
+        selector: app == 'postgres'
+        ports: [5432]
+    - action: Allow
+      protocol: UDP
+      destination:
+        selector: k8s-app == 'kube-dns'
+        namespaceSelector: kubernetes.io/metadata.name == 'kube-system'
+        ports: [53]
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="cilium-cnp">CiliumNetworkPolicy — L7 HTTP Rules</h3>
+      <p>Cilium's <code>CiliumNetworkPolicy</code> extends standard NetworkPolicy to L7 — it can enforce HTTP method, path, and headers, and allow DNS egress by FQDN rather than by IP. See <a href="02-cni-plugins.html">02-cni-plugins.html</a> for Cilium architecture.</p>
+
+      <pre><code>apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: api-l7-policy
+  namespace: production
+spec:
+  endpointSelector:
+    matchLabels:
+      app: api
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"            # only allow GET /v1/*
+                path: "^/v1/.*"
+              - method: "POST"
+                path: "^/v1/orders$"
+                headers:
+                  - "Content-Type: application/json"
+  egress:
+    # DNS egress by FQDN (resolves to IPs automatically)
+    - toFQDNs:
+        - matchName: "payments.stripe.com"
+        - matchPattern: "*.stripe.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    # Allow DNS queries themselves
+    - toEndpoints:
+        - matchLabels:
+            "k8s:k8s-app": kube-dns
+            "k8s:io.kubernetes.pod.namespace": kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"       # allow all DNS lookups
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div class="callout-body">
+          <strong>CiliumNetworkPolicy toFQDNs advantage</strong>
+          <p>Standard NetworkPolicy requires <code>ipBlock</code> rules with static IPs. For cloud services like Stripe or S3 that rotate IPs, this is unmanageable. Cilium's <code>toFQDNs</code> resolves hostnames and dynamically updates the allowed IP set — no manual CIDR maintenance needed.</p>
+        </div>
+      </div>
+
+      <!-- 11. SERVICE MESH INTERACTION -->
+      <h2 id="service-mesh">Interaction with Service Mesh (mTLS)</h2>
+      <p>When using Istio or Linkerd, all pod traffic is intercepted by a sidecar proxy. NetworkPolicy is evaluated against the pod IP <em>after</em> the sidecar receives and decrypts the mTLS connection from another sidecar.</p>
+
+      <p>This creates two enforcement layers:</p>
+      <table>
+        <thead><tr><th>Layer</th><th>What It Controls</th><th>Where Enforced</th></tr></thead>
+        <tbody>
+          <tr><td>NetworkPolicy (L3/L4)</td><td>IP + port access between pods; works on pod IP even with sidecars</td><td>CNI dataplane (iptables/eBPF)</td></tr>
+          <tr><td>Istio AuthorizationPolicy (L7)</td><td>Service identity (SPIFFE), HTTP method/path, JWT claims</td><td>Envoy sidecar</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>Port 15008 (Istio HBONE) and NetworkPolicy</strong>
+          <p>Istio ambient mode (no sidecar) uses port 15008 for intra-mesh traffic. If you have default-deny NetworkPolicy, you must explicitly allow TCP 15008 between workloads for ambient mesh traffic to flow. This does not apply to sidecar mode.</p>
+        </div>
+      </div>
+
+      <!-- 12. TESTING -->
+      <h2 id="testing">Testing Network Policies</h2>
+
+      <h3>Quick Connectivity Test with netshoot</h3>
+      <pre><code># Spin up a debug pod in the source namespace
+kubectl run netshoot --image=nicolaka/netshoot -n team-a --rm -it -- /bin/bash
+
+# From inside: test TCP connectivity
+nc -zv postgres.production.svc.cluster.local 5432   # should succeed
+nc -zv redis.production.svc.cluster.local 6379       # should fail if blocked
+
+# Test DNS resolution
+nslookup kubernetes.default.svc.cluster.local
+dig +short postgres.production.svc.cluster.local
+
+# Test HTTP
+curl -sv http://api.production.svc.cluster.local:8080/health
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Targeted Connectivity Test (kubectl exec)</h3>
+      <pre><code># Test from a specific pod
+kubectl exec -n production deploy/api -- nc -zv postgres 5432
+kubectl exec -n production deploy/api -- curl -s http://external-api.example.com
+
+# Test DNS from pod
+kubectl exec -n production deploy/api -- nslookup postgres
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Policy Verification with np-viewer</h3>
+      <pre><code># np-viewer: visualize which policies apply to a pod
+# https://github.com/runoncloud/np-viewer
+kubectl np-viewer pod -n production -l app=api
+
+# Cilium: check policy enforcement status
+cilium policy get
+cilium endpoint list
+cilium endpoint get <endpoint-id>
+
+# Calico: check which policies select a pod
+calicoctl get networkpolicy -n production -o wide
+kubectl exec -n kube-system deploy/calico-kube-controllers -- /bin/sh -c \
+  "calico-kube-controllers status"
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Hubble (Cilium) — Visualize Dropped Packets</h3>
+      <pre><code># Watch for dropped flows in real time
+hubble observe --verdict DROPPED -f
+
+# Filter to specific namespace
+hubble observe --namespace production --verdict DROPPED -f
+
+# Check why a specific flow was dropped (shows which policy)
+hubble observe --from-pod production/api --to-pod production/postgres
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 13. METRICS -->
+      <h2 id="metrics">Metrics, Alerting &amp; Troubleshooting</h2>
+
+      <h3>Key Metrics</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>Source</th><th>What It Tells You</th></tr></thead>
+        <tbody>
+          <tr><td><code>cilium_drop_count_total</code></td><td>Cilium</td><td>Packets dropped by NetworkPolicy; label reason=POLICY_DENIED</td></tr>
+          <tr><td><code>cilium_policy_count</code></td><td>Cilium</td><td>Total policies imported; drop after deployment = parse error</td></tr>
+          <tr><td><code>cilium_policy_endpoint_enforcement_status</code></td><td>Cilium</td><td>Endpoints with/without policy enforcement enabled</td></tr>
+          <tr><td><code>calico_iptables_rules_count</code></td><td>Calico Felix</td><td>Total iptables rules; very high values indicate scaling issue</td></tr>
+          <tr><td><code>felix_active_local_policies</code></td><td>Calico Felix</td><td>Policies active on the node</td></tr>
+          <tr><td><code>felix_int_dataplane_failures_total</code></td><td>Calico Felix</td><td>Dataplane programming failures; non-zero = policies not applied</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Alerting Rules</h3>
+      <pre><code># Alert: High policy drop rate (possible misconfiguration)
+- alert: NetworkPolicyHighDropRate
+  expr: |
+    rate(cilium_drop_count_total{reason="POLICY_DENIED"}[5m]) > 100
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "High NetworkPolicy drop rate on {{ $labels.node }}"
+    description: "Check if a new policy is blocking expected traffic"
+
+# Alert: Calico dataplane programming failures
+- alert: CalicoDataplaneFailure
+  expr: rate(felix_int_dataplane_failures_total[5m]) > 0
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Calico Felix dataplane programming failures"
+
+# Alert: DNS resolution failures (often caused by missing DNS egress rule)
+- alert: PodDNSResolutionFailures
+  expr: |
+    rate(coredns_dns_response_rcode_count_total{rcode="SERVFAIL"}[5m]) > 1
+  for: 5m
+  labels:
+    severity: warning
+
+# Alert: NetworkPolicy not enforced (no CNI policy support)
+- alert: NetworkPoliciesNotEnforced
+  expr: kube_networkpolicy_created > 0 unless cilium_policy_count > 0
+  for: 30m
+  labels:
+    severity: critical
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Troubleshooting Runbooks</h3>
+
+      <div class="card-grid" style="grid-template-columns:1fr;">
+        <div class="card">
+          <h4>Runbook 1: Pod Cannot Reach Another Pod (Connection Refused / Timeout)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Step 1: Identify which policies apply to source and destination pods
+kubectl get networkpolicy -n &lt;source-namespace&gt; -o yaml
+kubectl get networkpolicy -n &lt;dest-namespace&gt; -o yaml
+
+# Step 2: Check if destination pod is selected by any egress-blocking policy
+kubectl get networkpolicy -n &lt;dest-namespace&gt; -o json | \
+  jq '.items[] | select(.spec.policyTypes[] | contains("Ingress"))'
+
+# Step 3: Verify selector labels match
+kubectl get pod &lt;dest-pod&gt; -n &lt;dest-namespace&gt; --show-labels
+
+# Step 4: Use Cilium Hubble to see drop reason
+hubble observe --to-pod &lt;dest-namespace&gt;/&lt;dest-pod&gt; --verdict DROPPED -f
+
+# Step 5: Temporarily remove the blocking policy (test environment only)
+kubectl delete networkpolicy &lt;policy-name&gt; -n &lt;namespace&gt;</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 2: DNS Resolution Failures After Adding Egress Policy</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Symptom: pods get connection refused to service names but not to pod IPs
+# Cause: missing DNS egress rule under default-deny egress
+
+# Confirm DNS is blocked:
+kubectl exec -n production deploy/api -- nslookup kubernetes.default
+# Should return: SERVFAIL or timeout
+
+# Fix: apply DNS egress policy
+kubectl apply -f - &lt;&lt;'EOF'
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: production
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+EOF</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 3: Policy Applied But Traffic Still Blocked</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Possible causes:
+# 1. Policy in wrong namespace
+kubectl get networkpolicy --all-namespaces | grep &lt;policy-name&gt;
+
+# 2. podSelector labels don't match pod labels
+kubectl get pod &lt;pod&gt; -n &lt;ns&gt; --show-labels
+# Compare with NetworkPolicy podSelector/matchLabels
+
+# 3. AND vs OR selector mistake (see selector logic section)
+# 4. CNI not supporting NetworkPolicy (Flannel)
+kubectl get daemonset -n kube-system   # check for calico-node or cilium
+kubectl get pods -n kube-system -l k8s-app=calico-node
+
+# 5. Calico Felix not programmed on the node
+kubectl logs -n kube-system -l k8s-app=calico-node -c calico-node | grep -i error</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 4: Ingress Controller Cannot Reach Backend Pod</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># After adding default-deny-ingress, ingress controller gets 502
+# Cause: need to allow ingress from ingress-nginx namespace
+
+# Find ingress controller namespace and pod labels
+kubectl get pods -n ingress-nginx --show-labels
+
+# Apply allow rule (adjust labels to match your controller)
+kubectl apply -f - &lt;&lt;'EOF'
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-nginx
+  namespace: production
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 443
+EOF</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 5: NetworkPolicy Not Enforced (Flannel Cluster)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Verify your CNI
+kubectl get daemonset -n kube-system
+# If you see flannel but no calico-node or cilium: policies are NOT enforced
+
+# Option 1: Add Canal (Flannel + Calico policy engine)
+# https://docs.tigera.io/calico/latest/getting-started/kubernetes/flannel/flannel
+
+# Option 2: Replace Flannel with Calico or Cilium (requires re-provisioning)
+
+# Option 3: Quick smoke test to confirm enforcement:
+kubectl create ns netpol-test
+kubectl run server -n netpol-test --image=nginx --expose --port=80
+kubectl apply -f - &lt;&lt;'EOF'
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: netpol-test
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+EOF
+kubectl run client -n netpol-test --image=alpine --rm -it \
+  -- wget -T5 -O- http://server/  # should fail if enforced
+kubectl delete ns netpol-test</code></pre>
+        </div>
+      </div>
+
+      <!-- 14. BEST PRACTICES -->
+      <h2 id="best-practices">Best Practices</h2>
+      <ol style="padding-left:24px;color:var(--text2);font-size:14px;line-height:2;">
+        <li><strong>Start with default-deny-all per namespace, then add allows</strong> — never start permissive and try to harden later. It's much harder to audit.</li>
+        <li><strong>Always include a DNS egress allow rule with default-deny-egress</strong> — template it into your namespace provisioning automation so it's never missed.</li>
+        <li><strong>Use namespaceSelector with <code>kubernetes.io/metadata.name</code></strong> — this built-in label (auto-set since 1.21) gives stable, unique namespace identity without requiring custom labels.</li>
+        <li><strong>Verify AND vs OR semantics in every policy</strong> — use a connectivity test immediately after applying a policy to confirm it works as intended.</li>
+        <li><strong>Use AdminNetworkPolicy for cluster-wide baseline rules</strong> — don't replicate the same "deny external SSH" rule in 50 namespace policies. Write it once in ANP.</li>
+        <li><strong>Label namespaces consistently</strong> — agree on a label taxonomy (<code>env: prod/staging/dev</code>, <code>team: payments/catalog</code>) before writing policies. Retroactively labeling is painful.</li>
+        <li><strong>Never use ipBlock for pod-to-pod traffic</strong> — pod IPs are ephemeral. Use podSelector/namespaceSelector instead. ipBlock is only for traffic from/to outside the cluster.</li>
+        <li><strong>Store policies in Git alongside workload manifests</strong> — treating policies as code enables PR review, audit trail, and automated testing.</li>
+        <li><strong>Use Cilium CiliumNetworkPolicy or Calico GlobalNetworkPolicy for L7/FQDN rules</strong> — standard NetworkPolicy cannot handle HTTP path enforcement or dynamic IP egress. Use CNI extensions for these requirements.</li>
+      </ol>
+
+      <div class="nav-footer">
+        <a class="nav-btn" href="06-gateway-api.html"><small>← Previous</small>Gateway API</a>
+        <a class="nav-btn" href="08-ipv4-ipv6-dual-stack.html"><small>Next →</small>IPv4/IPv6 Dual-Stack</a>
+      </div>
+
+    </main>
+
+    <aside class="toc-panel">
+      <div class="toc-title">On This Page</div>
+      <a href="#how-it-works">How Network Policies Work</a>
+      <a href="#anatomy">NetworkPolicy Anatomy</a>
+      <a href="#selector-logic">Selector Logic: AND vs OR</a>
+      <a href="#ipblock" class="toc-h3">ipBlock</a>
+      <a href="#named-ports">Named Ports &amp; Port Ranges</a>
+      <a href="#default-patterns">Default-Deny Patterns</a>
+      <a href="#default-deny-ingress" class="toc-h3">Default Deny Ingress</a>
+      <a href="#default-deny-egress" class="toc-h3">Default Deny Egress</a>
+      <a href="#default-deny-all" class="toc-h3">Default Deny All</a>
+      <a href="#dns-egress">DNS Egress Rule</a>
+      <a href="#common-patterns">Common Patterns</a>
+      <a href="#namespace-isolation" class="toc-h3">Namespace Isolation</a>
+      <a href="#database-tier" class="toc-h3">Database Tier</a>
+      <a href="#ingress-controller-allow" class="toc-h3">Ingress Controller Allow</a>
+      <a href="#monitoring-allow" class="toc-h3">Prometheus Scraping</a>
+      <a href="#external-egress" class="toc-h3">External Egress</a>
+      <a href="#full-isolation">Full-Isolation Pattern</a>
+      <a href="#admin-network-policy">AdminNetworkPolicy</a>
+      <a href="#cni-extensions">CNI Extensions</a>
+      <a href="#calico-gnp" class="toc-h3">Calico GlobalNetworkPolicy</a>
+      <a href="#cilium-cnp" class="toc-h3">CiliumNetworkPolicy L7</a>
+      <a href="#service-mesh">Service Mesh Interaction</a>
+      <a href="#testing">Testing Policies</a>
+      <a href="#metrics">Metrics &amp; Troubleshooting</a>
+      <a href="#best-practices">Best Practices</a>
+    </aside>
+  </div>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+const themeBtn=document.getElementById('theme-toggle');
+themeBtn.textContent=saved==='dark'?'Light Mode':'Dark Mode';
+themeBtn.addEventListener('click',()=>{
+  const t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'Light Mode':'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>backTop.classList.toggle('visible',main.scrollTop>400));
+backTop.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    const code=pre.querySelector('code');
+    navigator.clipboard.writeText(code?code.innerText:pre.innerText).then(()=>{
+      btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+    });
+  });
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const a=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

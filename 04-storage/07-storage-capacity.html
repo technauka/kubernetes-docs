@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storage Capacity — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sidebar-logo{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;}
+.sidebar-search{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;margin-top:10px;}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);text-decoration:none;transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);}
+.nav-section a.active{color:var(--accent);background:var(--bg3);border-left:2px solid var(--accent);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:900px;}
+.toc-wrap{width:var(--toc-w);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);}
+.page-header{margin-bottom:32px;}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.breadcrumb a{color:var(--text3);text-decoration:none;}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:12px;}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;font-family:'SFMono-Regular',Consolas,monospace;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;padding:3px 8px;cursor:pointer;}
+.copy-btn:hover{background:var(--bg4);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-weight:700;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.callout-info .callout-title{color:var(--accent);}
+.callout-warn .callout-title{color:var(--yellow);}
+.callout-danger .callout-title{color:var(--red);}
+.callout-success .callout-title{color:var(--green);}
+.callout p{margin:0;font-size:14px;}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin:16px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card-title{font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;}
+.card p{font-size:13px;margin:0;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px;}
+.toc-list{list-style:none;margin:0;padding:0;}
+.toc-list li{margin-bottom:2px;}
+.toc-list a{font-size:12px;color:var(--text2);text-decoration:none;display:block;padding:3px 0;border-left:2px solid transparent;padding-left:8px;}
+.toc-list a:hover{color:var(--text);}
+.toc-list a.active{color:var(--accent);border-left-color:var(--accent);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--text2);overflow-x:auto;white-space:pre;}
+.page-nav{display:flex;justify-content:space-between;margin-top:56px;padding-top:20px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;flex-direction:column;gap:4px;color:var(--text2);text-decoration:none;max-width:45%;}
+.page-nav a:hover{color:var(--accent);}
+.page-nav .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.page-nav .nav-title{font-size:14px;font-weight:600;}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;position:sticky;top:0;z-index:99;align-items:center;justify-content:space-between;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:14px;font-weight:600;}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:12px;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.back-top.visible{opacity:1;}
+@media(max-width:1200px){.toc-wrap{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrap{margin-left:0;}.topbar{display:flex;}.main-content{padding:20px 16px;}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="../index.html" class="sidebar-logo">⎈ Kubernetes Docs</a>
+  </div>
+  <input type="text" class="sidebar-search" placeholder="Filter navigation…" id="nav-search">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-overview.html">Overview</a>
+    <a href="../01-getting-started/01-architecture.html">Architecture</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../02-workloads/00-pods.html">Pods</a>
+    <a href="../02-workloads/01-deployments.html">Deployments</a>
+    <a href="../02-workloads/02-statefulsets.html">StatefulSets</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="00-storage-overview.html">Storage Overview</a>
+    <a href="01-volumes.html">Volumes</a>
+    <a href="02-persistent-volumes.html">Persistent Volumes</a>
+    <a href="03-storage-classes.html">Storage Classes</a>
+    <a href="04-csi-drivers.html">CSI Drivers</a>
+    <a href="05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="06-stateful-sets-storage.html">Stateful Storage Patterns</a>
+    <a href="07-storage-capacity.html" class="active">Storage Capacity</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">☰</button>
+  <span class="topbar-title">Storage Capacity</span>
+  <button class="theme-btn" id="theme-btn-top">☀</button>
+</div>
+
+<div class="main-wrap">
+<main class="main-content" id="main-content">
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="../index.html">Home</a> › <a href="00-storage-overview.html">Storage</a> › Storage Capacity
+    </div>
+    <h1>Storage Capacity</h1>
+    <div class="page-meta">
+      <span>Section 4.7</span>
+      <span>CSIStorageCapacity · Capacity-Aware Scheduling · Node Volume Limits</span>
+      <span>Platform-engineer level</span>
+    </div>
+  </div>
+
+  <details class="coverage">
+    <summary>▶ What This Page Covers</summary>
+    <div class="coverage-body">
+      <li>The pre-GA capacity problem: scheduler blindness and ProvisioningFailed pods</li>
+      <li>CSIStorageCapacity API (GA 1.24) — object model, fields, owner references</li>
+      <li>How external-provisioner publishes CSIStorageCapacity objects</li>
+      <li>Capacity-aware scheduling flow — scheduler plugin StorageCapacityFilter</li>
+      <li>storageCapacity: true on StorageClass — the required opt-in gate</li>
+      <li>WaitForFirstConsumer interaction — why Immediate mode defeats capacity tracking</li>
+      <li>Topology segments and how they map to CSIStorageCapacity objects</li>
+      <li>Multi-zone capacity planning: zone-scoped vs node-scoped capacity</li>
+      <li>Node volume attachment limits per cloud provider (AWS/GCE/Azure)</li>
+      <li>CSINode object — allocatable volume count, driver topology keys</li>
+      <li>kube-scheduler VolumeBinding plugin internals</li>
+      <li>Capacity staleness: resync period, cache TTL, worst-case scheduling race</li>
+      <li>Local storage capacity with TopoLVM operator</li>
+      <li>ResourceQuota for storage: PVC count, storage size per StorageClass</li>
+      <li>LimitRange for PVC minimum/maximum sizes</li>
+      <li>StorageClass ResourceQuota scoping</li>
+      <li>Capacity monitoring: available vs allocated vs used</li>
+      <li>5 metrics + 4 alerting rules + 5 runbooks</li>
+      <li>8 best practices for capacity planning at scale</li>
+    </div>
+  </details>
+
+  <!-- ============================================================ -->
+  <h2 id="problem">The Pre-GA Capacity Problem</h2>
+
+  <p>Before Kubernetes 1.24, the scheduler had no knowledge of how much storage capacity was available in any given topology zone. When a pod with a <code>WaitForFirstConsumer</code> PVC was scheduled to a node in zone <code>us-east-1a</code>, the scheduler committed the pod to that zone <em>before</em> the CSI driver attempted to provision the volume. If the provisioner then discovered that zone <code>us-east-1a</code> had no capacity — quota exhausted, regional limits hit, pool full — the PVC remained <code>Pending</code> with event <code>ProvisioningFailed</code>, and the pod was stuck forever.</p>
+
+  <div class="diagram">Without capacity tracking (pre-1.24):
+
+  Scheduler                Pod             PVC              CSI Provisioner
+      │                     │               │                     │
+      │  Schedule pod to    │               │                     │
+      │  zone us-east-1a ──►│               │                     │
+      │  (no capacity info) │               │                     │
+      │                     │ Triggers PVC  │                     │
+      │                     │ binding ─────►│                     │
+      │                     │               │ CreateVolume RPC ──►│
+      │                     │               │                     │ RESOURCE_EXHAUSTED
+      │                     │               │◄── ProvisioningFailed│
+      │                     │               │    (zone full)       │
+      │                     │◄── Pod stuck Pending ──────────────  │
+      │                     │    (no retry to other zone)          │
+
+With capacity tracking (1.24+ GA):
+
+  Scheduler reads CSIStorageCapacity objects BEFORE scheduling:
+  us-east-1a: 0 Gi available  ← skip this zone
+  us-east-1b: 500 Gi available ← schedule here
+  us-east-1c: 1200 Gi available
+
+  → Pod scheduled to us-east-1b or us-east-1c immediately</div>
+
+  <!-- ============================================================ -->
+  <h2 id="csistoragecapacity">CSIStorageCapacity Object</h2>
+
+  <p><code>CSIStorageCapacity</code> is a namespace-scoped API object (in the same namespace as the CSI controller pod) that represents the available storage capacity for a specific StorageClass within a specific topology segment (zone, rack, node). The external-provisioner sidecar creates and updates these objects periodically.</p>
+
+  <h3>Object Structure</h3>
+
+  <pre><code>apiVersion: storage.k8s.io/v1
+kind: CSIStorageCapacity
+metadata:
+  name: csi-sc-ebs-gp3-us-east-1b-a1b2c3   # auto-generated name
+  namespace: kube-system                      # same ns as CSI controller
+  ownerReferences:                            # garbage-collected when provisioner pod is deleted
+  - apiVersion: apps/v1
+    kind: ReplicaSet
+    name: ebs-csi-controller-7d9f8b
+    uid: a1b2c3d4-...
+    controller: true
+    blockOwnerDeletion: true
+storageClassName: ebs-gp3                    # the StorageClass this applies to
+nodeTopology:                                # which topology segment
+  matchLabels:
+    topology.kubernetes.io/zone: us-east-1b
+capacity: "2Ti"                              # available capacity in this segment
+maximumVolumeSize: "16Ti"                    # maximum single-volume size allowed</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>storageClassName</code></td><td>string (required)</td><td>References the StorageClass; must match a SC with <code>storageCapacity: true</code></td></tr>
+        <tr><td><code>nodeTopology</code></td><td>LabelSelector (optional)</td><td>Topology segment this capacity applies to. Nil means cluster-wide (e.g., NFS). Typically <code>matchLabels</code> with zone key.</td></tr>
+        <tr><td><code>capacity</code></td><td>Quantity (optional)</td><td>Available storage. Nil means unknown. The scheduler treats nil as sufficient (optimistic).</td></tr>
+        <tr><td><code>maximumVolumeSize</code></td><td>Quantity (optional)</td><td>Largest single volume this driver can create in this segment. A PVC requesting more will fail scheduling.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Listing CSIStorageCapacity Objects</h3>
+
+  <pre><code># List all capacity objects across all namespaces
+kubectl get csistoragecapacity -A
+
+# Show capacity per zone for a specific storage class
+kubectl get csistoragecapacity -A \
+  -o custom-columns='NAMESPACE:.metadata.namespace,SC:.storageClassName,TOPOLOGY:.nodeTopology,CAPACITY:.capacity' \
+  --sort-by='.storageClassName'
+
+# Example output:
+# NAMESPACE     SC          TOPOLOGY                                    CAPACITY
+# kube-system   ebs-gp3     map[topology.kubernetes.io/zone:us-east-1a] 5497558138880
+# kube-system   ebs-gp3     map[topology.kubernetes.io/zone:us-east-1b] 2199023255552
+# kube-system   ebs-gp3     map[topology.kubernetes.io/zone:us-east-1c] 10995116277760
+
+# Watch for capacity updates in real time
+kubectl get csistoragecapacity -A -w</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="how-published">How external-provisioner Publishes Capacity</h2>
+
+  <p>The <code>external-provisioner</code> sidecar is responsible for creating and refreshing <code>CSIStorageCapacity</code> objects. It does this by calling the CSI <code>GetCapacity</code> RPC on the controller plugin for each topology segment it knows about, then writing or updating the corresponding object.</p>
+
+  <div class="diagram">external-provisioner capacity publication loop:
+
+  external-provisioner (in CSI controller pod)
+        │
+        │  1. List topology segments from CSINode objects
+        │     (each node's accessible topologies from NodeGetInfo)
+        │
+        │  2. For each (StorageClass, topology segment) pair:
+        │     Call GetCapacity(parameters, topology)
+        │     ┌─────────────────────────────────────────────┐
+        │     │  CSI Controller Plugin (driver process)      │
+        │     │  GetCapacity RPC                             │
+        │     │  → queries cloud API (e.g., EC2 DescribeVolumes) │
+        │     │  → returns available_capacity, maximum_volume_size │
+        │     └─────────────────────────────────────────────┘
+        │
+        │  3. Create/Update CSIStorageCapacity objects
+        │     in the controller pod's namespace
+        │
+        │  Repeat every --capacity-poll-interval (default: 1m)
+        │
+        └── Owner reference on ReplicaSet ensures GC on provisioner restart</div>
+
+  <h3>Enabling Capacity Tracking on the Provisioner</h3>
+
+  <pre><code># In the CSI controller Deployment, external-provisioner container:
+containers:
+- name: external-provisioner
+  image: registry.k8s.io/sig-storage/csi-provisioner:v4.0.0
+  args:
+  - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
+  - --leader-election
+  - --feature-gates=Topology=true
+  - --enable-capacity                    # enable CSIStorageCapacity publishing
+  - --capacity-ownerref-level=2          # 0=pod,1=replicaset,2=deployment owner ref level
+  - --capacity-poll-interval=1m          # how often to refresh capacity (default 1m)
+  # RBAC needed: create/update/delete csistoragecapacities in controller namespace</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">GetCapacity RPC is Optional</div>
+    <p>Not all CSI drivers implement <code>GetCapacity</code>. If the driver returns <code>UNIMPLEMENTED</code>, the external-provisioner silently skips capacity publication for that driver — no objects are created and the scheduler falls back to the pre-1.24 optimistic behavior. Check driver release notes for <code>GET_CAPACITY</code> support in <code>ControllerGetCapabilities</code>.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="storageclass-gate">StorageClass storageCapacity Gate</h2>
+
+  <p>Capacity-aware scheduling is opt-in per StorageClass via the <code>storageCapacity</code> field. Without it, the scheduler ignores CSIStorageCapacity objects entirely even if they exist.</p>
+
+  <pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-gp3
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer   # REQUIRED for capacity tracking to be useful
+storageCapacity: true                     # enable capacity-aware scheduling
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"</code></pre>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">Immediate Binding Mode Defeats Capacity Tracking</div>
+    <p>With <code>volumeBindingMode: Immediate</code>, PVCs are bound before any pod is scheduled — the scheduler never has the chance to filter nodes based on capacity. The CSIStorageCapacity objects are published but ignored by the scheduling pipeline. Always use <code>WaitForFirstConsumer</code> for topology-aware drivers when capacity tracking matters.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="scheduling-flow">Capacity-Aware Scheduling Flow</h2>
+
+  <p>When a pod with an unbound <code>WaitForFirstConsumer</code> PVC is scheduled, the <strong>VolumeBinding plugin</strong> in kube-scheduler filters and scores nodes using CSIStorageCapacity data.</p>
+
+  <div class="diagram">Capacity-aware scheduling (1.24+):
+
+  kube-scheduler (VolumeBinding plugin)
+        │
+        │  Pod created with unbound PVC requesting 200Gi on SC "ebs-gp3"
+        │
+        │  Filter phase:
+        │  ┌────────────────────────────────────────────────────────────┐
+        │  │ For each candidate node:                                    │
+        │  │   1. Determine node's topology: zone=us-east-1b             │
+        │  │   2. Find CSIStorageCapacity where:                         │
+        │  │        storageClassName = "ebs-gp3"                         │
+        │  │        nodeTopology matches node's zone label               │
+        │  │   3. Filter: capacity.capacity >= PVC.requests.storage      │
+        │  │              AND capacity.maximumVolumeSize >= PVC request   │
+        │  │   4. If no matching CSIStorageCapacity → node passes        │
+        │  │      (optimistic: nil capacity = unknown = assume sufficient)│
+        │  └────────────────────────────────────────────────────────────┘
+        │
+        │  Nodes in us-east-1a (0 Gi) → filtered out
+        │  Nodes in us-east-1b (2 Ti) → pass (200Gi fits)
+        │  Nodes in us-east-1c (10 Ti) → pass
+        │
+        │  Score phase: higher capacity zones score higher
+        │  (scheduler prefers zones with more headroom)
+        │
+        │  Pod scheduled to node in us-east-1c
+        │  VolumeBinding plugin annotates PVC with selected node
+        │  external-provisioner calls CreateVolume in us-east-1c</div>
+
+  <h3>VolumeBinding Plugin Behavior with Nil Capacity</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>CSIStorageCapacity State</th><th>Scheduler Behavior</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td>Object exists, capacity &gt;= PVC size</td><td>Node passes filter</td><td>Low — capacity confirmed</td></tr>
+        <tr><td>Object exists, capacity &lt; PVC size</td><td>Node filtered out</td><td>None — avoided bad zone</td></tr>
+        <tr><td>Object exists, capacity = nil</td><td>Node passes (optimistic)</td><td>May fail at provision time</td></tr>
+        <tr><td>No object for this (SC, topology)</td><td>Node passes (optimistic)</td><td>May fail at provision time</td></tr>
+        <tr><td>maximumVolumeSize &lt; PVC size</td><td>Node filtered out</td><td>None — volume would never fit</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="topology-segments">Topology Segments</h2>
+
+  <p>A topology segment is a set of node labels that define a storage domain. For zone-scoped drivers (AWS EBS, GCE PD, Azure Disk), each availability zone is one segment. For node-scoped drivers (local volumes, TopoLVM), each node is one segment.</p>
+
+  <pre><code># Zone-scoped: one CSIStorageCapacity per zone per StorageClass
+nodeTopology:
+  matchLabels:
+    topology.kubernetes.io/zone: us-east-1a
+
+# Node-scoped: one CSIStorageCapacity per node per StorageClass (e.g., TopoLVM)
+nodeTopology:
+  matchLabels:
+    kubernetes.io/hostname: node1
+
+# Multi-label (rack-aware Ceph):
+nodeTopology:
+  matchLabels:
+    topology.kubernetes.io/zone: us-east-1a
+    topology.rook.io/rack: rack2
+
+# Cluster-wide (NFS, CephFS with global pool):
+# nodeTopology: null (omitted)
+# capacity: "50Ti"</code></pre>
+
+  <h3>How Topology Keys Are Discovered</h3>
+
+  <p>The external-provisioner discovers topology keys from <code>CSINode</code> objects. Each node running the CSI node plugin has a <code>CSINode</code> object updated by the node-driver-registrar sidecar after <code>NodeGetInfo</code> is called.</p>
+
+  <pre><code># Inspect CSINode for topology keys a driver exposes
+kubectl get csinode node1 -o yaml
+
+# Relevant section:
+spec:
+  drivers:
+  - name: ebs.csi.aws.com
+    nodeID: i-0abc123def456789
+    topologyKeys:
+    - topology.kubernetes.io/zone      # driver announces this key
+    allocatable:
+      count: 25                        # max volumes this node can attach</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="node-volume-limits">Node Volume Attachment Limits</h2>
+
+  <p>Every cloud provider imposes a hard limit on how many block volumes can be attached to a single VM instance. Kubernetes enforces these limits via the <code>CSINode.spec.drivers[*].allocatable.count</code> field and the <code>MaxVolumesPerNode</code> VolumeBinding scheduler predicate.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Cloud Provider</th><th>Default Limit</th><th>Instance-Specific Limits</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>AWS EBS</td><td>25 volumes</td><td>Nitro-based: up to 28 (NVMe + EBS); older: 39 incl. root</td><td>CSI driver enforces per-node; <code>VOLUMES_LIMIT</code> env or auto-detect</td></tr>
+        <tr><td>GCE PD</td><td>16 volumes</td><td>N2/C2/M2: up to 128 (NVMe local + PD)</td><td>Shared-core (f1/g1): max 16 always</td></tr>
+        <tr><td>Azure Disk</td><td>16 volumes</td><td>DS-series: up to 64; LS-series: up to 64</td><td>Ultra Disk counts separately from Standard/Premium</td></tr>
+        <tr><td>vSphere</td><td>59 volumes</td><td>Configurable via vCenter</td><td>Includes SCSI controller limit (4 controllers × 15 devices)</td></tr>
+        <tr><td>Local (hostPath/local)</td><td>Unlimited (disk-based)</td><td>Constrained by physical disks</td><td>No attachment limit; capacity is the constraint</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Checking Node Volume Limits in the Cluster</h3>
+
+  <pre><code># Check allocatable volume count per node per driver
+kubectl get csinode -o json | jq -r '
+  .items[] |
+  .metadata.name as $node |
+  .spec.drivers[]? |
+  select(.allocatable != null) |
+  "\($node)\t\(.name)\t\(.allocatable.count // "unlimited")"
+' | column -t
+
+# Expected output:
+# node1   ebs.csi.aws.com   25
+# node2   ebs.csi.aws.com   25
+# node3   ebs.csi.aws.com   25
+
+# Find nodes approaching volume limit
+kubectl get csinode -o json | jq -r '
+  .items[] | .metadata.name as $node |
+  .spec.drivers[]? | select(.name=="ebs.csi.aws.com") |
+  "\($node) max=\(.allocatable.count)"
+'
+
+# Count currently attached volumes per node
+kubectl get volumeattachments -o json | jq -r '
+  [.items[] | select(.status.attached==true) | .spec.nodeName] |
+  group_by(.) | map({node: .[0], count: length}) | .[]
+  | "\(.node): \(.count) attached"
+'</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Volume Limit Exhaustion Causes Pending Pods</div>
+    <p>When a node's volume attachment limit is reached, any pod requiring a new EBS/PD/Azure Disk volume cannot be scheduled to that node. The scheduler event reads: <code>0/10 nodes are available: 10 node(s) exceed max volume count</code>. Mitigate by right-sizing instances, using NVMe local storage for scratch, or horizontally distributing volumes across more nodes.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="csinode">CSINode Object Deep Dive</h2>
+
+  <pre><code>apiVersion: storage.k8s.io/v1
+kind: CSINode
+metadata:
+  name: ip-10-0-1-100.ec2.internal
+  ownerReferences:
+  - apiVersion: v1
+    kind: Node
+    name: ip-10-0-1-100.ec2.internal
+    uid: abc123...
+spec:
+  drivers:
+  - name: ebs.csi.aws.com
+    nodeID: i-0abc123def456789   # driver's internal ID for this node (EC2 instance ID)
+    topologyKeys:
+    - topology.kubernetes.io/zone
+    allocatable:
+      count: 25                  # max EBS volumes attachable; set by NodeGetInfo MaxVolumesPerNode
+  - name: efs.csi.aws.com
+    nodeID: i-0abc123def456789
+    topologyKeys: []             # EFS is regional, no topology key
+    # allocatable: not set for NFS-based drivers (no per-node attachment limit)</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="capacity-staleness">Capacity Staleness and Race Conditions</h2>
+
+  <p>CSIStorageCapacity objects are snapshots of available capacity at the time the external-provisioner last polled the driver. Between poll cycles, actual capacity can decrease (other PVCs provisioned outside this cluster, quota changes) or increase (volumes deleted). This means the scheduler may make decisions based on stale data.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Scenario</th><th>Effect</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>Capacity decreases between poll cycles</td><td>Scheduler sends pod to zone, provisioner fails — PVC stuck Pending with ProvisioningFailed</td><td>Reduce <code>--capacity-poll-interval</code>; provisioner retries with exponential backoff</td></tr>
+        <tr><td>Capacity increases between poll cycles</td><td>Pod not scheduled to zone that now has capacity</td><td>Wait for next poll cycle; or manually trigger provisioner resync</td></tr>
+        <tr><td>Two clusters sharing same storage backend</td><td>Cluster A schedules based on capacity Cluster B is about to consume</td><td>Reserve capacity quotas per cluster at storage layer</td></tr>
+        <tr><td>Provisioner pod restarts</td><td>All CSIStorageCapacity objects GC'd (owner ref); scheduler reverts to optimistic until republished</td><td>Fast provisioner restart; owner ref at Deployment level (<code>--capacity-ownerref-level=2</code>)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <pre><code># Reduce poll interval for environments with rapid capacity changes
+args:
+- --capacity-poll-interval=30s   # more aggressive polling (increases driver API calls)
+
+# Check when capacity was last updated
+kubectl get csistoragecapacity -A \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.creationTimestamp}{"\n"}{end}'</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="topolvm">Local Storage Capacity with TopoLVM</h2>
+
+  <p>TopoLVM is a CSI driver that provisions LVM logical volumes from local NVMe disks on each node. It publishes per-node CSIStorageCapacity objects, enabling the scheduler to choose nodes with sufficient local disk space before committing a pod.</p>
+
+  <div class="diagram">TopoLVM capacity flow:
+
+  Node 1: 800 Gi available LVM VG
+  Node 2: 200 Gi available LVM VG
+  Node 3: 1.5 Ti available LVM VG
+
+  CSIStorageCapacity objects (node-scoped):
+  ┌─────────────────────────────────────────────────────┐
+  │ storageClassName: topolvm-provisioner               │
+  │ nodeTopology: {kubernetes.io/hostname: node1}       │
+  │ capacity: 800Gi                                     │
+  ├─────────────────────────────────────────────────────┤
+  │ storageClassName: topolvm-provisioner               │
+  │ nodeTopology: {kubernetes.io/hostname: node2}       │
+  │ capacity: 200Gi                                     │
+  ├─────────────────────────────────────────────────────┤
+  │ storageClassName: topolvm-provisioner               │
+  │ nodeTopology: {kubernetes.io/hostname: node3}       │
+  │ capacity: 1.5Ti                                     │
+  └─────────────────────────────────────────────────────┘
+
+  Pod requesting 400Gi PVC on topolvm-provisioner:
+  → Node 2 filtered (200Gi < 400Gi)
+  → Node 1 passes (800Gi >= 400Gi)
+  → Node 3 passes and scores higher (more headroom)
+  → Pod scheduled to node3</div>
+
+  <pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: topolvm-provisioner
+provisioner: topolvm.io
+volumeBindingMode: WaitForFirstConsumer
+storageCapacity: true    # enables per-node capacity filter
+parameters:
+  "csi.storage.k8s.io/fstype": xfs
+  # device-class: ssd   # target a specific LVM VG group on the node</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="resource-quota">ResourceQuota for Storage</h2>
+
+  <p>Kubernetes ResourceQuota can limit the total storage consumed by PVCs in a namespace, both in aggregate and per StorageClass. This is the primary capacity governance mechanism for multi-tenant clusters.</p>
+
+  <h3>Basic Storage Quota</h3>
+
+  <pre><code>apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: storage-quota
+  namespace: team-alpha
+spec:
+  hard:
+    # Total PVC count across all storage classes
+    persistentvolumeclaims: "50"
+
+    # Total storage across all storage classes
+    requests.storage: "10Ti"
+
+    # Per-StorageClass limits (format: {storageclass}.storageclass.storage.k8s.io/{resource})
+    ebs-gp3.storageclass.storage.k8s.io/persistentvolumeclaims: "20"
+    ebs-gp3.storageclass.storage.k8s.io/requests.storage: "5Ti"
+
+    ebs-io2.storageclass.storage.k8s.io/persistentvolumeclaims: "5"
+    ebs-io2.storageclass.storage.k8s.io/requests.storage: "500Gi"
+
+    # Ephemeral storage (requests only, not limits)
+    requests.ephemeral-storage: "100Gi"
+    limits.ephemeral-storage: "200Gi"</code></pre>
+
+  <h3>LimitRange for PVC Sizes</h3>
+
+  <pre><code>apiVersion: v1
+kind: LimitRange
+metadata:
+  name: storage-limits
+  namespace: team-alpha
+spec:
+  limits:
+  - type: PersistentVolumeClaim
+    max:
+      storage: 1Ti    # no single PVC can request more than 1Ti
+    min:
+      storage: 1Gi    # no PVC smaller than 1Gi (prevents waste from tiny claims)</code></pre>
+
+  <h3>Checking Quota Consumption</h3>
+
+  <pre><code># See current storage quota usage in a namespace
+kubectl describe resourcequota storage-quota -n team-alpha
+
+# Example output:
+# Resource                                               Used   Hard
+# --------                                               ----   ----
+# ebs-gp3.storageclass.storage.k8s.io/requests.storage  3Ti    5Ti
+# persistentvolumeclaims                                 18     50
+# requests.storage                                       3.2Ti  10Ti
+
+# Across all namespaces: find namespaces near storage quota
+kubectl get resourcequota -A -o json | jq -r '
+  .items[] |
+  .metadata.namespace as $ns |
+  .status.hard | to_entries[] |
+  select(.key | contains("storage")) |
+  "\($ns)\t\(.key)\t\(.value)"
+' | column -t</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="multi-zone-planning">Multi-Zone Capacity Planning</h2>
+
+  <p>For clusters spanning multiple availability zones with zone-scoped storage (EBS, GCE PD, Azure Disk), each zone has independent storage capacity. Imbalanced workloads or a zone outage can leave remaining zones over-provisioned relative to their storage quotas.</p>
+
+  <h3>Zone Capacity Health Check Script</h3>
+
+  <pre><code>#!/bin/bash
+# Print available capacity per zone per StorageClass
+echo "StorageClass | Zone | Available Capacity"
+echo "-------------|------|-------------------"
+kubectl get csistoragecapacity -A -o json | jq -r '
+  .items[] |
+  [
+    .storageClassName,
+    (.nodeTopology.matchLabels // {} | to_entries | map("\(.key)=\(.value)") | join(",")),
+    (.capacity // "unknown")
+  ] | @tsv
+' | sort | column -t -s $'\t'</code></pre>
+
+  <h3>Topology-Aware PVC Placement</h3>
+
+  <pre><code># Force a PVC to a specific zone using allowedTopologies on StorageClass
+# (Useful for StatefulSets with zone-pinned nodes)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-gp3-us-east-1a
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+storageCapacity: true
+parameters:
+  type: gp3
+allowedTopologies:
+- matchLabelExpressions:
+  - key: topology.kubernetes.io/zone
+    values:
+    - us-east-1a    # constrain to single zone for data locality</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Zone-Pinned StorageClasses Reduce Availability</div>
+    <p>Constraining a StorageClass to a single zone means if that zone runs out of capacity or goes down, provisioning will fail. Use zone-specific StorageClasses only for workloads with strict data locality requirements (e.g., a database replica that must co-locate with a specific Kafka broker). For general workloads, let the scheduler distribute across zones.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="monitoring">Capacity Monitoring</h2>
+
+  <h3>Key Metrics</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Source</th><th>What to Watch</th></tr></thead>
+      <tbody>
+        <tr><td><code>kubelet_volume_stats_capacity_bytes</code></td><td>kubelet</td><td>Total filesystem capacity of each mounted PVC (from NodeGetVolumeStats)</td></tr>
+        <tr><td><code>kubelet_volume_stats_used_bytes</code></td><td>kubelet</td><td>Used bytes; ratio used/capacity alerts at 80% and 90%</td></tr>
+        <tr><td><code>kubelet_volume_stats_available_bytes</code></td><td>kubelet</td><td>Remaining bytes; complements used_bytes</td></tr>
+        <tr><td><code>kubelet_volume_stats_inodes_used</code></td><td>kubelet</td><td>Inode exhaustion is independent of byte usage; many small files can exhaust inodes</td></tr>
+        <tr><td><code>kube_persistentvolumeclaim_resource_requests_storage_bytes</code></td><td>kube-state-metrics</td><td>Requested storage per PVC; sum by namespace for allocation accounting</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Alerting Rules</h3>
+
+  <pre><code>groups:
+- name: storage-capacity
+  rules:
+  - alert: PVCDiskUsageWarning
+    expr: |
+      (
+        kubelet_volume_stats_used_bytes
+        / kubelet_volume_stats_capacity_bytes
+      ) > 0.80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "PVC {{ $labels.persistentvolumeclaim }} in {{ $labels.namespace }} is >80% full"
+      description: "{{ $value | humanizePercentage }} used. Expand PVC or clean up data."
+
+  - alert: PVCDiskUsageCritical
+    expr: |
+      (
+        kubelet_volume_stats_used_bytes
+        / kubelet_volume_stats_capacity_bytes
+      ) > 0.90
+    for: 2m
+    labels:
+      severity: critical
+
+  - alert: PVCInodeExhaustion
+    expr: |
+      (
+        kubelet_volume_stats_inodes_used
+        / kubelet_volume_stats_inodes
+      ) > 0.90
+    for: 5m
+    annotations:
+      summary: "PVC {{ $labels.persistentvolumeclaim }} inode usage >90%"
+      description: "Inode exhaustion causes 'no space left on device' even with bytes available."
+
+  - alert: NodeVolumeAttachmentLimit
+    expr: |
+      # Custom metric requiring VolumeAttachment count vs CSINode allocatable
+      # Proxy: alert when a node has >20 VolumeAttachments (adjust per instance type)
+      count by (nodeName) (
+        kube_volumeattachment_info{attacher="ebs.csi.aws.com"}
+      ) > 20
+    for: 1m
+    annotations:
+      summary: "Node {{ $labels.nodeName }} has >20 EBS volumes attached"</code></pre>
+
+  <h3>Grafana Dashboard Queries</h3>
+
+  <pre><code># Top 10 largest PVCs by requested storage
+topk(10,
+  kube_persistentvolumeclaim_resource_requests_storage_bytes
+)
+
+# PVC fill rate — estimated time to full (hours)
+(
+  kubelet_volume_stats_available_bytes
+  / deriv(kubelet_volume_stats_used_bytes[1h])
+) / 3600
+
+# Total provisioned storage per StorageClass across cluster
+sum by (storageclass) (
+  kube_persistentvolumeclaim_resource_requests_storage_bytes
+  * on(persistentvolumeclaim, namespace)
+  group_left(storageclass) kube_persistentvolumeclaim_info
+)</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="runbooks">Runbooks</h2>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">Pod Stuck: "exceed max volume count"</div>
+      <p>Check node VolumeAttachment count vs <code>CSINode.spec.drivers[*].allocatable.count</code>. If at limit: cordon the node and reschedule pods to free attachments, or use a larger instance type with higher volume limit. For AWS: Nitro-based instances allow more NVMe EBS volumes.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">PVC Stuck Pending: ProvisioningFailed</div>
+      <p>Describe PVC for events: <code>kubectl describe pvc NAME</code>. If <code>ProvisioningFailed: no capacity in zone X</code>: check <code>kubectl get csistoragecapacity -A</code> for zone capacity. If zone is full: expand quota at storage layer, delete unused PVs, or use a different zone via allowedTopologies.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">PVC >80% Full — Online Expansion</div>
+      <p>Edit PVC: <code>kubectl edit pvc NAME</code>, increase <code>spec.resources.requests.storage</code>. StorageClass needs <code>allowVolumeExpansion: true</code>. Watch for condition <code>FileSystemResizePending</code> — cleared after pod restart triggers filesystem resize. Monitor <code>kubelet_volume_stats_capacity_bytes</code> to confirm expansion.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Inode Exhaustion</div>
+      <p>Confirm: <code>kubectl exec POD -- df -i /mount/path</code>. If inodes full but bytes free: many small files (logs, cache). Fix: delete small files, or for ext4 volumes resize to get more inodes — but inode count is set at <code>mkfs</code> time, requiring volume replacement for ext4. xfs automatically scales inodes with capacity.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">CSIStorageCapacity Objects Stale / Missing</div>
+      <p>Check provisioner pod: <code>kubectl logs -n kube-system deploy/ebs-csi-controller -c csi-provisioner | grep capacity</code>. If <code>GetCapacity: Unimplemented</code>: driver doesn't support it — capacity tracking unavailable. If objects missing after provisioner restart: wait for next poll cycle or reduce <code>--capacity-poll-interval</code>.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <ol>
+    <li><strong>Enable <code>storageCapacity: true</code> on all zone-scoped StorageClasses</strong> — pair it with <code>volumeBindingMode: WaitForFirstConsumer</code>. This prevents the most common cause of <code>ProvisioningFailed</code> in multi-zone clusters: scheduler committing to a full zone before the provisioner discovers there's no space.</li>
+    <li><strong>Verify your CSI driver implements <code>GetCapacity</code></strong> — check <code>ControllerGetCapabilities</code> response or driver release notes. AWS EBS CSI (≥1.13), GCE PD CSI (≥1.7), and TopoLVM support it; many in-tree-replaced drivers do not.</li>
+    <li><strong>Set ResourceQuota per namespace per StorageClass</strong> — prevent single teams from exhausting shared storage pools. Use both <code>requests.storage</code> (bytes) and <code>persistentvolumeclaims</code> (count) limits. Enforce a LimitRange minimum (e.g., 1Gi) to prevent dozens of trivially small PVCs that waste API objects.</li>
+    <li><strong>Monitor inode usage alongside byte usage</strong> — <code>kubelet_volume_stats_inodes_used / kubelet_volume_stats_inodes</code>. Inode exhaustion produces the same error as byte exhaustion but is invisible to byte-only monitoring. Especially relevant for log directories and package caches.</li>
+    <li><strong>Use xfs instead of ext4 for large volumes where inode density matters</strong> — xfs dynamically allocates inodes from free space; ext4 fixes inode count at <code>mkfs</code> time. For volumes holding many small files (log aggregators, CI artifact stores), xfs avoids inode exhaustion surprises.</li>
+    <li><strong>Plan for node volume attachment headroom</strong> — for AWS, budget 20 EBS volumes per node as a safe limit (leaving headroom for OS volumes, instance store NVMe). Use larger instance types (m5.4xlarge vs m5.large) or NVMe local storage for scratch to free attachment slots for persistent data.</li>
+    <li><strong>Reduce <code>--capacity-poll-interval</code> in rapidly-changing environments</strong> — default 1 minute is acceptable for most clusters. In high-churn test environments where PVCs are created and deleted constantly, shorten to 30 seconds to keep capacity data fresh. Weigh against increased driver API calls (AWS EC2 DescribeVolumes rate limits).</li>
+    <li><strong>Alert on fill rate, not just utilization</strong> — a volume going from 50% to 90% in one hour is more urgent than a volume at 85% stable. Use <code>deriv(kubelet_volume_stats_used_bytes[1h])</code> to estimate time-to-full and page on &lt;4 hours remaining regardless of current percentage.</li>
+  </ol>
+
+  <div class="page-nav">
+    <a href="06-stateful-sets-storage.html">
+      <span class="nav-label">← Previous</span>
+      <span class="nav-title">Stateful Storage Patterns</span>
+    </a>
+    <a href="../05-workloads/00-workloads-overview.html" style="text-align:right">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">Workloads Overview</span>
+    </a>
+  </div>
+
+</main>
+
+<aside class="toc-wrap">
+  <div class="toc-title">On This Page</div>
+  <ul class="toc-list" id="toc-list">
+    <li><a href="#problem">The Pre-GA Capacity Problem</a></li>
+    <li><a href="#csistoragecapacity">CSIStorageCapacity Object</a></li>
+    <li><a href="#how-published">How Capacity Is Published</a></li>
+    <li><a href="#storageclass-gate">StorageClass storageCapacity Gate</a></li>
+    <li><a href="#scheduling-flow">Capacity-Aware Scheduling Flow</a></li>
+    <li><a href="#topology-segments">Topology Segments</a></li>
+    <li><a href="#node-volume-limits">Node Volume Limits</a></li>
+    <li><a href="#csinode">CSINode Object</a></li>
+    <li><a href="#capacity-staleness">Capacity Staleness</a></li>
+    <li><a href="#topolvm">TopoLVM Local Storage</a></li>
+    <li><a href="#resource-quota">ResourceQuota for Storage</a></li>
+    <li><a href="#multi-zone-planning">Multi-Zone Planning</a></li>
+    <li><a href="#monitoring">Capacity Monitoring</a></li>
+    <li><a href="#runbooks">Runbooks</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ul>
+</aside>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+function toggleTheme(){const t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);localStorage.setItem('k8s-theme',t);}
+document.getElementById('theme-btn-top').addEventListener('click',toggleTheme);
+document.getElementById('hamburger').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{backTop.classList.toggle('visible',main.scrollTop>400);});
+backTop.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code').innerText);
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc-list a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-search').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

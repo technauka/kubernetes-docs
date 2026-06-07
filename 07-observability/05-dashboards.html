@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboards — Kubernetes Observability</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#1f2328;--text2:#656d76;--text3:#9198a1;--code-bg:#f6f8fa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;font-size:14px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:272px;min-width:272px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:transform .25s}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo{font-size:20px}.sidebar-title{font-size:14px;font-weight:600}
+.sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.sidebar-nav{overflow-y:auto;flex:1;padding:8px 0}
+.nav-section{margin-bottom:4px}
+.nav-section-header{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.nav-section a{display:block;padding:5px 16px 5px 28px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3)}
+.main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.hamburger{background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px;display:none}
+.topbar-title{font-size:14px;font-weight:600;flex:1}
+.topbar-actions{display:flex;gap:8px}
+.btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 12px;font-size:12px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--bg4)}
+main{flex:1;overflow-y:auto;padding:32px 40px;scroll-behavior:smooth}
+h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.subtitle{color:var(--text2);font-size:15px;margin-bottom:24px}
+h2{font-size:20px;font-weight:600;margin:40px 0 16px;padding-top:8px;border-top:1px solid var(--border)}
+h2:first-of-type{margin-top:24px;border-top:none}
+h3{font-size:16px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:18px 0 8px;color:var(--text2)}
+p{color:var(--text2);line-height:1.65;margin-bottom:12px}
+ul,ol{color:var(--text2);padding-left:20px;margin-bottom:12px}
+li{margin-bottom:4px;line-height:1.55}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'SF Mono',Consolas,monospace;font-size:12px;color:var(--text)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin-bottom:16px;position:relative}
+pre code{background:none;border:none;padding:0;font-size:12px;line-height:1.55}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);padding:3px 8px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}.copy-btn:hover{background:var(--bg4)}
+.table-wrap{overflow-x:auto;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text)}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg2)}
+.callout{border-left:3px solid;padding:12px 16px;margin-bottom:16px;border-radius:0 6px 6px 0}
+.callout-info{border-color:var(--accent);background:rgba(88,166,255,.08)}
+.callout-warn{border-color:var(--yellow);background:rgba(210,153,34,.08)}
+.callout-danger{border-color:var(--red);background:rgba(248,81,73,.08)}
+.callout-success{border-color:var(--green);background:rgba(63,185,80,.08)}
+.callout-title{font-weight:600;font-size:13px;margin-bottom:4px}
+.callout p{margin-bottom:0;font-size:13px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin-top:0;margin-bottom:8px;font-size:14px}
+.card p{font-size:13px;margin-bottom:0}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;font-family:'SF Mono',Consolas,monospace;font-size:12px;line-height:1.7;overflow-x:auto;white-space:pre;color:var(--text2)}
+.badge{display:inline-block;padding:1px 7px;border-radius:12px;font-size:11px;font-weight:500}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px}
+.toc-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.toc ol{margin-bottom:0;padding-left:16px}
+.toc li{font-size:12px;margin-bottom:3px}
+.toc a{color:var(--text2)}.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.section-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2)}
+.section-nav a:hover{color:var(--accent);text-decoration:none;border-color:var(--accent)}
+.step-list{counter-reset:step;list-style:none;padding:0;margin-bottom:16px}
+.step-list li{counter-increment:step;padding:10px 12px 10px 44px;position:relative;border-left:2px solid var(--border);margin-bottom:6px;color:var(--text2);font-size:13px}
+.step-list li::before{content:counter(step);position:absolute;left:-14px;top:8px;background:var(--accent2);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+/* mock dashboard grid */
+.dash-mockup{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.dash-row{display:grid;gap:8px;margin-bottom:8px}
+.dash-row-4{grid-template-columns:repeat(4,1fr)}
+.dash-row-3{grid-template-columns:repeat(3,1fr)}
+.dash-row-2{grid-template-columns:repeat(2,1fr)}
+.dash-panel{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;min-height:60px}
+.dash-panel-title{font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.dash-panel-val{font-size:20px;font-weight:700;color:var(--text)}
+.dash-panel-val.green{color:var(--green)}
+.dash-panel-val.yellow{color:var(--yellow)}
+.dash-panel-val.red{color:var(--red)}
+.dash-panel-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.dash-panel-graph{height:32px;margin-top:6px;background:linear-gradient(90deg,transparent 0%,var(--accent2) 100%);border-radius:3px;opacity:.4}
+.dash-label{font-size:11px;color:var(--text3);margin-bottom:6px;font-style:italic}
+#back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:100}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:40px}
+details.coverage summary{padding:14px 16px;cursor:pointer;font-size:13px;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;color:var(--text3)}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2)}
+@media(max-width:768px){.sidebar{position:fixed;left:0;top:0;height:100%;z-index:200;transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{padding:20px 16px}.two-col,.dash-row-4,.dash-row-3,.dash-row-2{grid-template-columns:1fr}.coverage-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-logo">☸</span>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="nav-filter" placeholder="Filter navigation…" aria-label="Filter navigation"/>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-header">Getting Started</div>
+      <a href="../00-introduction/00-overview.html">Overview</a>
+      <a href="../00-introduction/01-architecture.html">Architecture</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Workloads</div>
+      <a href="../01-workloads/00-pods.html">Pods</a>
+      <a href="../01-workloads/01-deployments.html">Deployments</a>
+      <a href="../01-workloads/02-statefulsets.html">StatefulSets</a>
+      <a href="../01-workloads/03-daemonsets.html">DaemonSets</a>
+      <a href="../01-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Networking</div>
+      <a href="../02-networking/00-services.html">Services</a>
+      <a href="../02-networking/01-ingress.html">Ingress</a>
+      <a href="../02-networking/02-network-policies.html">Network Policies</a>
+      <a href="../02-networking/03-dns.html">DNS</a>
+      <a href="../02-networking/04-cni.html">CNI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Storage</div>
+      <a href="../03-storage/00-volumes.html">Volumes</a>
+      <a href="../03-storage/01-persistent-volumes.html">Persistent Volumes</a>
+      <a href="../03-storage/02-storage-classes.html">Storage Classes</a>
+      <a href="../03-storage/03-csi.html">CSI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Configuration</div>
+      <a href="../04-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../04-configuration/01-secrets.html">Secrets</a>
+      <a href="../04-configuration/02-resource-management.html">Resource Management</a>
+      <a href="../04-configuration/03-hpa-vpa.html">HPA &amp; VPA</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Scheduling</div>
+      <a href="../05-scheduling/00-node-selection.html">Node Selection</a>
+      <a href="../05-scheduling/01-taints-tolerations.html">Taints &amp; Tolerations</a>
+      <a href="../05-scheduling/02-priority-preemption.html">Priority &amp; Preemption</a>
+      <a href="../05-scheduling/03-scheduler-internals.html">Scheduler Internals</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Security</div>
+      <a href="../06-security/00-rbac.html">RBAC</a>
+      <a href="../06-security/01-service-accounts.html">Service Accounts</a>
+      <a href="../06-security/02-pod-security.html">Pod Security</a>
+      <a href="../06-security/03-network-policies.html">Network Policies (Security)</a>
+      <a href="../06-security/04-secrets-management.html">Secrets Management</a>
+      <a href="../06-security/05-opa-gatekeeper.html">OPA Gatekeeper</a>
+      <a href="../06-security/06-admission-controllers.html">Admission Controllers</a>
+      <a href="../06-security/07-image-security.html">Image Security</a>
+      <a href="../06-security/08-audit-logging.html">Audit Logging</a>
+      <a href="../06-security/09-encryption-at-rest.html">Encryption at Rest</a>
+      <a href="../06-security/10-supply-chain-security.html">Supply Chain Security</a>
+      <a href="../06-security/11-compliance.html">Compliance</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Observability</div>
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics &amp; Prometheus</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html">Distributed Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html" class="active">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-overview.html">Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Production Operations</div>
+      <a href="../09-production-operations/00-overview.html">Overview</a>
+    </div>
+  </nav>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+    <span class="topbar-title">Dashboards — Kubernetes Observability</span>
+    <div class="topbar-actions">
+      <button class="btn" id="theme-toggle">Light Mode</button>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <h1>Grafana Dashboards for Kubernetes</h1>
+    <p class="subtitle">Complete guide to Grafana architecture, dashboard provisioning as code, essential Kubernetes dashboard designs, variable templating, SLO panels, cross-signal navigation, and production dashboard governance.</p>
+
+    <nav class="section-nav" aria-label="Section navigation">
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html">Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </nav>
+
+    <nav class="toc" aria-label="Table of contents">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#grafana-architecture">Grafana Architecture</a></li>
+        <li><a href="#provisioning">Dashboard Provisioning as Code</a></li>
+        <li><a href="#grafonnet">Grafonnet &amp; Dashboard as Code</a></li>
+        <li><a href="#variables">Template Variables</a></li>
+        <li><a href="#essential-dashboards">Essential Kubernetes Dashboards</a></li>
+        <li><a href="#slo-panels">SLO / Error Budget Panels</a></li>
+        <li><a href="#cross-signal">Cross-Signal Navigation</a></li>
+        <li><a href="#community">Community Dashboards</a></li>
+        <li><a href="#governance">Dashboard Governance</a></li>
+        <li><a href="#operations">Metrics, Alerts &amp; Runbooks</a></li>
+      </ol>
+    </nav>
+
+    <!-- =================== GRAFANA ARCHITECTURE =================== -->
+    <h2 id="grafana-architecture">Grafana Architecture</h2>
+
+    <p>Grafana is the standard visualization layer for the Kubernetes observability stack. It connects to multiple data sources simultaneously and correlates signals across metrics (Prometheus/Thanos/Mimir), logs (Loki), traces (Tempo/Jaeger), and events — all in a unified interface.</p>
+
+    <h3>Grafana in the Kubernetes Stack</h3>
+    <div class="diagram">┌──────────────────────────────────────────────────────────────────┐
+│                         Grafana                                  │
+│                                                                  │
+│  Data Sources:                                                   │
+│  ┌──────────┐  ┌──────┐  ┌───────┐  ┌─────────┐  ┌──────────┐ │
+│  │Prometheus│  │ Loki │  │ Tempo │  │  Jaeger │  │CloudWatch│ │
+│  │ /Thanos  │  │      │  │       │  │         │  │ /Datadog │ │
+│  └──────────┘  └──────┘  └───────┘  └─────────┘  └──────────┘ │
+│                                                                  │
+│  Features:                                                       │
+│  • Dashboards (panels + variables + annotations)                 │
+│  • Alerting (unified alert rules + contact points)               │
+│  • Explore (ad-hoc query across any data source)                 │
+│  • Correlations (link metric → trace → log)                      │
+│  • Playlists, Snapshots, Reporting                               │
+└──────────────────────────────────────────────────────────────────┘</div>
+
+    <h3>Grafana Helm Install</h3>
+    <pre><code class="language-bash">helm repo add grafana https://grafana.github.io/helm-charts
+helm upgrade --install grafana grafana/grafana \
+  --namespace monitoring \
+  --values grafana-values.yaml</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Production grafana-values.yaml</h3>
+    <pre><code class="language-yaml"># grafana-values.yaml
+replicas: 2
+
+persistence:
+  enabled: true
+  storageClassName: gp3
+  size: 10Gi
+
+# Admin credentials from secret (not plain text)
+admin:
+  existingSecret: grafana-admin-secret
+  userKey: admin-user
+  passwordKey: admin-password
+
+# Grafana config overrides
+grafana.ini:
+  server:
+    root_url: https://grafana.company.com
+    domain: grafana.company.com
+  auth.generic_oauth:
+    enabled: true
+    name: SSO
+    allow_sign_up: true
+    client_id: grafana-client
+    client_secret: $__env{OAUTH_CLIENT_SECRET}
+    scopes: openid profile email groups
+    auth_url: https://sso.company.com/oauth2/auth
+    token_url: https://sso.company.com/oauth2/token
+    api_url: https://sso.company.com/oauth2/userinfo
+    role_attribute_path: "contains(groups[*], 'grafana-admin') && 'Admin' || contains(groups[*], 'grafana-editor') && 'Editor' || 'Viewer'"
+  users:
+    auto_assign_org_role: Viewer
+    allow_sign_up: false
+  feature_toggles:
+    enable: correlations    # enable cross-signal correlations
+  analytics:
+    reporting_enabled: false
+  security:
+    disable_gravatar: true
+    cookie_secure: true
+    cookie_samesite: strict
+
+# Data source provisioning (auto-configured on startup)
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: prometheus-uid
+        url: http://prometheus-operated.monitoring.svc:9090
+        isDefault: true
+        jsonData:
+          timeInterval: 30s
+          queryTimeout: 60s
+          exemplarTraceIdDestinations:
+            - name: traceID
+              datasourceUid: tempo-uid
+              urlDisplayLabel: "View trace in Tempo"
+
+      - name: Loki
+        type: loki
+        uid: loki-uid
+        url: http://loki-gateway.monitoring.svc
+        jsonData:
+          maxLines: 1000
+          derivedFields:
+            - name: TraceID
+              matcherRegex: '"trace_id":"(\w+)"'
+              url: "${__value.raw}"
+              datasourceUid: tempo-uid
+              urlDisplayLabel: "View trace"
+
+      - name: Tempo
+        type: tempo
+        uid: tempo-uid
+        url: http://tempo-query-frontend.monitoring.svc:3100
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: loki-uid
+            spanStartTimeShift: "-1m"
+            spanEndTimeShift: "1m"
+            filterByTraceID: true
+            customQuery: true
+            query: '{cluster="prod", pod="${__span.tags["k8s.pod.name"]}"} | json | trace_id = "${__trace.traceId}"'
+          tracesToMetrics:
+            datasourceUid: prometheus-uid
+            queries:
+              - name: "Request Rate"
+                query: 'rate(traces_spanmetrics_calls_total{service_name="${__span.tags["service.name"]}"}[5m])'
+          serviceMap:
+            datasourceUid: prometheus-uid
+          nodeGraph:
+            enabled: true
+
+# Dashboard provisioning (auto-load from ConfigMaps / filesystem)
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: Kubernetes
+        type: file
+        disableDeletion: true      # prevent UI edits from being lost on restart
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards/default
+      - name: slo
+        orgId: 1
+        folder: SLOs
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards/slo
+
+# Pre-built dashboards from ConfigMaps (loaded by provider above)
+dashboardsConfigMaps:
+  default: grafana-dashboards-kubernetes
+  slo: grafana-dashboards-slo
+
+resources:
+  requests: {cpu: 200m, memory: 256Mi}
+  limits: {cpu: 1, memory: 512Mi}
+
+serviceMonitor:
+  enabled: true   # expose /metrics for Prometheus scraping</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== PROVISIONING =================== -->
+    <h2 id="provisioning">Dashboard Provisioning as Code</h2>
+
+    <p>Never create dashboards only through the Grafana UI. UI-created dashboards are not version-controlled, will be lost if Grafana's PVC is accidentally deleted, and cannot be reviewed or rolled back. The correct approach is to store dashboard JSON in Git and provision via ConfigMaps or Grafana Operator.</p>
+
+    <h3>Three Approaches to Dashboard as Code</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Approach</th><th>Mechanism</th><th>Pros</th><th>Cons</th></tr></thead>
+        <tbody>
+          <tr><td>ConfigMap + file provisioner</td><td>Dashboard JSON in ConfigMap, Grafana sidecar watches for changes</td><td>Simple, no CRDs needed</td><td>Raw JSON is hard to read/diff; no templating</td></tr>
+          <tr><td>GrafanaDashboard CRD (Grafana Operator)</td><td>Custom resource contains dashboard JSON; operator syncs to Grafana API</td><td>Kubernetes-native; supports namespaced ownership</td><td>Requires Grafana Operator installation</td></tr>
+          <tr><td>Grafonnet / dashboard-as-code libraries</td><td>Jsonnet/CUE/Python generates dashboard JSON; committed to Git</td><td>Full abstraction; reusable panels; type-safe</td><td>Learning curve; Jsonnet toolchain required</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>ConfigMap Dashboard Provisioning</h3>
+    <pre><code class="language-yaml"># Store dashboard JSON in a ConfigMap
+# The Grafana sidecar (grafana/grafana-sc-dashboard) watches for labeled ConfigMaps
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-k8s-workloads
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"   # label that the sidecar watches for
+data:
+  k8s-workloads.json: |
+    {
+      "title": "Kubernetes / Workloads",
+      "uid": "k8s-workloads",
+      "tags": ["kubernetes", "workloads"],
+      ...dashboard JSON...
+    }</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml"># Enable sidecar in grafana Helm values
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+    folder: /var/lib/grafana/dashboards
+    searchNamespace: ALL   # watch all namespaces for labeled ConfigMaps
+    provider:
+      disableDeletion: true
+      allowUiUpdates: false   # prevent dashboard drift</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Grafana Operator (CRD-based)</h3>
+    <pre><code class="language-bash"># Install Grafana Operator
+helm repo add grafana-operator https://grafana.github.io/helm-charts
+helm upgrade --install grafana-operator grafana-operator/grafana-operator \
+  --namespace monitoring</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml">apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: k8s-namespace-overview
+  namespace: payments    # team-owned dashboard in their namespace
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana    # which Grafana instance to target
+  folder: "Kubernetes"
+  json: |
+    {
+      "title": "Namespace Overview — payments",
+      "uid": "ns-payments",
+      "tags": ["kubernetes", "namespace", "payments"],
+      ...
+    }</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Export Dashboard from UI to JSON</h3>
+    <pre><code class="language-bash"># Export via Grafana HTTP API (use to bootstrap from existing dashboards)
+curl -s http://admin:password@grafana.monitoring.svc:3000/api/dashboards/uid/k8s-workloads \
+  | jq '.dashboard' > k8s-workloads.json
+
+# Export all dashboards
+curl -s http://admin:password@grafana/api/search?type=dash-db \
+  | jq -r '.[].uid' \
+  | xargs -I{} curl -s http://admin:password@grafana/api/dashboards/uid/{} \
+  | jq '.dashboard' > all-dashboards.json</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== GRAFONNET =================== -->
+    <h2 id="grafonnet">Grafonnet &amp; Dashboard as Code</h2>
+
+    <p>Grafonnet is a Jsonnet library for generating Grafana dashboards programmatically. It eliminates copy-paste panel duplication, enforces consistent layouts, and enables dashboard templating with real programming constructs (functions, loops, conditionals).</p>
+
+    <h3>Grafonnet Quickstart</h3>
+    <pre><code class="language-bash"># Install jsonnet and jsonnet-bundler
+go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
+
+# Initialize a dashboard project
+mkdir dashboards && cd dashboards
+jb init
+jb install github.com/grafana/grafonnet/gen/grafonnet-latest@main
+
+# Generate dashboard JSON
+jsonnet -J vendor my-dashboard.jsonnet > my-dashboard.json</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Grafonnet Dashboard Example</h3>
+    <pre><code class="language-jsonnet">// k8s-service-dashboard.jsonnet
+local g = import 'github.com/grafana/grafonnet/gen/grafonnet-latest/main.libsonnet';
+
+local prometheusQuery(expr, legendFormat) =
+  g.query.prometheus.new('Prometheus', expr)
+  + g.query.prometheus.withLegendFormat(legendFormat);
+
+local requestRatePanel(service) =
+  g.panel.timeSeries.new('Request Rate')
+  + g.panel.timeSeries.queryOptions.withTargets([
+      prometheusQuery(
+        'sum by (status_code) (rate(http_requests_total{service="%s"}[5m]))' % service,
+        '{{status_code}}'
+      ),
+    ])
+  + g.panel.timeSeries.standardOptions.withUnit('reqps')
+  + g.panel.timeSeries.options.withLegend({ displayMode: 'table', placement: 'bottom' })
+  + g.panel.timeSeries.gridPos.withW(12)
+  + g.panel.timeSeries.gridPos.withH(8);
+
+local errorRatePanel(service) =
+  g.panel.timeSeries.new('Error Rate')
+  + g.panel.timeSeries.queryOptions.withTargets([
+      prometheusQuery(
+        'sum(rate(http_requests_total{service="%s",status_code=~"5.."}[5m])) / sum(rate(http_requests_total{service="%s"}[5m]))' % [service, service],
+        'Error Rate'
+      ),
+    ])
+  + g.panel.timeSeries.standardOptions.withUnit('percentunit')
+  + g.panel.timeSeries.standardOptions.thresholds.withSteps([
+      g.panel.timeSeries.standardOptions.threshold.step.withColor('green').withValue(null),
+      g.panel.timeSeries.standardOptions.threshold.step.withColor('yellow').withValue(0.01),
+      g.panel.timeSeries.standardOptions.threshold.step.withColor('red').withValue(0.05),
+    ])
+  + g.panel.timeSeries.gridPos.withW(12)
+  + g.panel.timeSeries.gridPos.withH(8);
+
+g.dashboard.new('Service Overview')
++ g.dashboard.withUid('service-overview')
++ g.dashboard.withTags(['kubernetes', 'service'])
++ g.dashboard.withRefresh('30s')
++ g.dashboard.time.withFrom('now-1h')
++ g.dashboard.withVariables([
+    g.dashboard.variable.query.new('namespace')
+    + g.dashboard.variable.query.withDatasource('Prometheus')
+    + g.dashboard.variable.query.queryTypes.withLabelValues('namespace', 'kube_namespace_labels')
+    + g.dashboard.variable.query.selectionOptions.withMulti(true)
+    + g.dashboard.variable.query.selectionOptions.withIncludeAll(true),
+    g.dashboard.variable.query.new('service')
+    + g.dashboard.variable.query.withDatasource('Prometheus')
+    + g.dashboard.variable.query.queryTypes.withLabelValues('service', 'kube_service_labels{namespace="$namespace"}')
+    + g.dashboard.variable.query.selectionOptions.withMulti(false),
+  ])
++ g.dashboard.withPanels([
+    requestRatePanel('$service'),
+    errorRatePanel('$service'),
+  ])</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== VARIABLES =================== -->
+    <h2 id="variables">Template Variables</h2>
+
+    <p>Template variables make dashboards reusable across namespaces, clusters, services, and time ranges without duplicating dashboard JSON. They appear as dropdowns at the top of the dashboard and are interpolated into panel queries as <code>$variable_name</code> or <code>${variable_name}</code>.</p>
+
+    <h3>Variable Types</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Type</th><th>Source</th><th>Use Case</th></tr></thead>
+        <tbody>
+          <tr><td>Query</td><td>Label values from data source (Prometheus, Loki)</td><td>cluster, namespace, pod, service — dynamic from live data</td></tr>
+          <tr><td>Custom</td><td>Static comma-separated list</td><td>env (prod,staging,dev), region (us-east-1,eu-west-1)</td></tr>
+          <tr><td>Constant</td><td>Fixed string</td><td>Cluster name, base URL — inject into all panel queries</td></tr>
+          <tr><td>Interval</td><td>Duration options</td><td>Resolution for <code>$__rate_interval</code> — user-selectable</td></tr>
+          <tr><td>Data source</td><td>List of data source instances</td><td>Multi-cluster Prometheus federation</td></tr>
+          <tr><td>Text box</td><td>Free-text user input</td><td>Pod name filter, trace ID search</td></tr>
+          <tr><td>Ad hoc filter</td><td>Label key=value pairs</td><td>Add arbitrary label filters to all queries on a dashboard</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Standard Variable Hierarchy for Kubernetes Dashboards</h3>
+    <pre><code class="language-yaml"># Variable chain: datasource → cluster → namespace → workload → pod
+# Each variable depends on the previous for correct scoping
+
+# 1. datasource (for multi-cluster Prometheus)
+type: datasource
+query: prometheus
+
+# 2. cluster
+type: query
+datasource: $datasource
+query: label_values(kube_node_info, cluster)
+multi: false
+includeAll: false
+
+# 3. namespace
+type: query
+datasource: $datasource
+query: label_values(kube_namespace_labels{cluster="$cluster"}, namespace)
+multi: true
+includeAll: true
+
+# 4. workload (deployment/statefulset)
+type: query
+datasource: $datasource
+query: label_values(kube_deployment_labels{cluster="$cluster",namespace=~"$namespace"}, deployment)
+multi: false
+includeAll: true
+
+# 5. pod (scoped to workload)
+type: query
+datasource: $datasource
+query: label_values(kube_pod_info{cluster="$cluster",namespace=~"$namespace",created_by_name=~"$workload.*"}, pod)
+multi: true
+includeAll: true</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>$__rate_interval vs $__interval</h3>
+    <div class="callout callout-info">
+      <div class="callout-title">Always Use $__rate_interval for rate() and increase()</div>
+      <p><code>$__interval</code> is the panel's resolution interval but can be smaller than Prometheus's <code>scrape_interval</code>, causing incorrect rate calculations. <code>$__rate_interval</code> is automatically clamped to at least 4× the scrape interval, ensuring at least 4 data points per window. Use <code>rate(metric[$__rate_interval])</code> in all time series panels instead of hardcoded intervals like <code>rate(metric[5m])</code>.</p>
+    </div>
+
+    <pre><code class="language-promql"># CORRECT — adapts to selected time range and scrape interval
+rate(http_requests_total{namespace="$namespace",service="$service"}[$__rate_interval])
+
+# INCORRECT — hardcoded interval may be wrong for zoomed-out time ranges
+rate(http_requests_total{namespace="$namespace",service="$service"}[5m])
+
+# For Loki queries, use $__range for metric queries:
+rate({namespace="$namespace"} | json | level="error" [$__range])</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== ESSENTIAL DASHBOARDS =================== -->
+    <h2 id="essential-dashboards">Essential Kubernetes Dashboards</h2>
+
+    <p>The following is the minimum set of dashboards every production Kubernetes cluster should have. For each, the key panels and PromQL queries are specified so you can build them or verify imported ones are complete.</p>
+
+    <h3>1. Cluster Overview Dashboard</h3>
+    <p class="dash-label">Stat panels + time series. Primary audience: on-call engineers, SRE leads.</p>
+    <div class="dash-mockup">
+      <div class="dash-row dash-row-4">
+        <div class="dash-panel"><div class="dash-panel-title">Cluster CPU Usage</div><div class="dash-panel-val">67%</div><div class="dash-panel-sub">34 / 50 cores allocated</div></div>
+        <div class="dash-panel"><div class="dash-panel-title">Cluster Memory Usage</div><div class="dash-panel-val yellow">81%</div><div class="dash-panel-sub">198 / 244 GiB allocated</div></div>
+        <div class="dash-panel"><div class="dash-panel-title">Pod Count</div><div class="dash-panel-val">847</div><div class="dash-panel-sub">Running / Total</div></div>
+        <div class="dash-panel"><div class="dash-panel-title">Non-Running Pods</div><div class="dash-panel-val red">12</div><div class="dash-panel-sub">Pending / Failed / Unknown</div></div>
+      </div>
+      <div class="dash-row dash-row-2">
+        <div class="dash-panel" style="min-height:80px"><div class="dash-panel-title">CPU Usage by Namespace</div><div class="dash-panel-graph"></div></div>
+        <div class="dash-panel" style="min-height:80px"><div class="dash-panel-title">Memory Usage by Namespace</div><div class="dash-panel-graph"></div></div>
+      </div>
+    </div>
+
+    <pre><code class="language-promql"># Cluster CPU utilization %
+sum(rate(node_cpu_seconds_total{mode!="idle",cluster="$cluster"}[$__rate_interval]))
+  / sum(machine_cpu_cores{cluster="$cluster"}) * 100
+
+# Cluster memory utilization %
+1 - sum(node_memory_MemAvailable_bytes{cluster="$cluster"})
+    / sum(node_memory_MemTotal_bytes{cluster="$cluster"})
+
+# Total pods by phase
+sum by (phase) (kube_pod_status_phase{cluster="$cluster"})
+
+# Non-running pods (Pending + Failed + Unknown)
+sum(kube_pod_status_phase{cluster="$cluster", phase!~"Running|Succeeded"})
+
+# CPU usage per namespace (top 10)
+topk(10, sum by (namespace) (
+  rate(container_cpu_usage_seconds_total{cluster="$cluster",container!=""}[$__rate_interval])
+))
+
+# Memory usage per namespace (working set)
+sum by (namespace) (
+  container_memory_working_set_bytes{cluster="$cluster",container!=""}
+)</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>2. Namespace / Workload Overview Dashboard</h3>
+    <p class="dash-label">Variables: cluster, namespace, workload. Shows RED metrics for selected workload.</p>
+    <pre><code class="language-promql"># Deployment available vs desired replicas
+kube_deployment_status_replicas_available{namespace="$namespace",deployment="$workload"}
+kube_deployment_spec_replicas{namespace="$namespace",deployment="$workload"}
+
+# Pod restart count (sorted by most restarts)
+topk(10, sum by (pod, container) (
+  increase(kube_pod_container_status_restarts_total{namespace="$namespace"}[1h])
+))
+
+# CPU throttling % for workload pods
+sum by (pod) (
+  rate(container_cpu_throttled_seconds_total{namespace="$namespace",pod=~"$workload.*"}[$__rate_interval])
+) / sum by (pod) (
+  rate(container_cpu_usage_seconds_total{namespace="$namespace",pod=~"$workload.*"}[$__rate_interval])
+  + rate(container_cpu_throttled_seconds_total{namespace="$namespace",pod=~"$workload.*"}[$__rate_interval])
+) * 100
+
+# Memory usage vs limit
+container_memory_working_set_bytes{namespace="$namespace",pod=~"$workload.*"}
+  / on (pod, container)
+kube_pod_container_resource_limits{namespace="$namespace",resource="memory",pod=~"$workload.*"}
+
+# OOM kill count
+increase(kube_pod_container_status_last_terminated_reason{namespace="$namespace",reason="OOMKilled"}[1h])</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>3. Node Dashboard</h3>
+    <pre><code class="language-promql"># Node CPU utilization
+1 - avg by (node) (rate(node_cpu_seconds_total{mode="idle",cluster="$cluster"}[$__rate_interval]))
+
+# Node memory pressure
+1 - node_memory_MemAvailable_bytes{cluster="$cluster"}
+    / node_memory_MemTotal_bytes{cluster="$cluster"}
+
+# Node disk I/O (read + write throughput)
+rate(node_disk_read_bytes_total{cluster="$cluster",device=~"nvme.*|sd.*"}[$__rate_interval])
+rate(node_disk_written_bytes_total{cluster="$cluster",device=~"nvme.*|sd.*"}[$__rate_interval])
+
+# Node network throughput
+rate(node_network_receive_bytes_total{cluster="$cluster",device!~"lo|veth.*|docker.*|flannel.*|cali.*|cbr.*"}[$__rate_interval])
+rate(node_network_transmit_bytes_total{cluster="$cluster",device!~"lo|veth.*|docker.*|flannel.*|cali.*|cbr.*"}[$__rate_interval])
+
+# Allocatable vs requested (resource headroom)
+kube_node_status_allocatable{cluster="$cluster",resource="cpu"}
+  - on (node)
+sum by (node) (kube_pod_container_resource_requests{cluster="$cluster",resource="cpu",node=~".*"})
+
+# Node conditions (Ready, DiskPressure, MemoryPressure, PIDPressure)
+kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure",status="true"}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>4. Service RED Metrics Dashboard</h3>
+    <p class="dash-label">Variables: namespace, service. Shows Rate, Errors, Duration for HTTP/gRPC services.</p>
+    <pre><code class="language-promql"># Request rate (RPS)
+sum by (method, route) (
+  rate(http_requests_total{namespace="$namespace",service="$service"}[$__rate_interval])
+)
+
+# Error rate (5xx / total)
+sum(rate(http_requests_total{namespace="$namespace",service="$service",status_code=~"5.."}[$__rate_interval]))
+  /
+sum(rate(http_requests_total{namespace="$namespace",service="$service"}[$__rate_interval]))
+
+# p50/p95/p99 latency (histogram)
+histogram_quantile(0.99,
+  sum by (le, method, route) (
+    rate(http_request_duration_seconds_bucket{namespace="$namespace",service="$service"}[$__rate_interval])
+  )
+)
+
+# Derived from Tempo traces (if metrics generator enabled):
+# RED metrics from traces — no application instrumentation needed
+sum by (span_name) (rate(traces_spanmetrics_calls_total{service_name="$service"}[$__rate_interval]))
+histogram_quantile(0.99, sum by (le, span_name) (rate(traces_spanmetrics_duration_milliseconds_bucket{service_name="$service"}[$__rate_interval])))</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>5. Kubernetes Control Plane Dashboard</h3>
+    <pre><code class="language-promql"># API server request rate by verb
+sum by (verb, resource) (rate(apiserver_request_total{cluster="$cluster"}[$__rate_interval]))
+
+# API server error rate (4xx + 5xx)
+sum(rate(apiserver_request_total{cluster="$cluster",code=~"4..|5.."}[$__rate_interval]))
+  / sum(rate(apiserver_request_total{cluster="$cluster"}[$__rate_interval]))
+
+# API server latency p99 by resource/verb
+histogram_quantile(0.99, sum by (le, verb, resource) (
+  rate(apiserver_request_duration_seconds_bucket{cluster="$cluster",subresource!="log"}[$__rate_interval])
+))
+
+# etcd request duration p99
+histogram_quantile(0.99, sum by (le, operation) (
+  rate(etcd_request_duration_seconds_bucket{cluster="$cluster"}[$__rate_interval])
+))
+
+# Scheduler queue depth (pending pods)
+scheduler_pending_pods{cluster="$cluster"}
+
+# Controller manager work queue depth
+workqueue_depth{cluster="$cluster",name=~"deployment|replicaset|statefulset"}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>6. Persistent Volume Dashboard</h3>
+    <pre><code class="language-promql"># PV capacity utilization
+(kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * 100
+
+# PVCs near full (> 80%)
+(kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.80
+
+# PVC inode usage
+(kubelet_volume_stats_inodes_used / kubelet_volume_stats_inodes) * 100
+
+# PVC by StorageClass
+sum by (storageclass) (kube_persistentvolume_capacity_bytes)
+
+# Unbound PVCs
+kube_persistentvolumeclaim_status_phase{phase!="Bound"}</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== SLO PANELS =================== -->
+    <h2 id="slo-panels">SLO / Error Budget Panels</h2>
+
+    <p>SLO dashboards are the single most important dashboard type for production teams. They answer: "Are we within budget?", "How fast are we burning?", and "How many good minutes do we have left this month?"</p>
+
+    <h3>SLO Dashboard Structure</h3>
+    <div class="dash-mockup">
+      <div class="dash-row dash-row-4">
+        <div class="dash-panel"><div class="dash-panel-title">Current SLI (30d)</div><div class="dash-panel-val green">99.87%</div><div class="dash-panel-sub">Target: 99.9%</div></div>
+        <div class="dash-panel"><div class="dash-panel-title">Error Budget Remaining</div><div class="dash-panel-val yellow">42%</div><div class="dash-panel-sub">18.7 min of 43.8 min/30d</div></div>
+        <div class="dash-panel"><div class="dash-panel-title">Burn Rate (1h)</div><div class="dash-panel-val red">3.2×</div><div class="dash-panel-sub">Target: ≤ 1×</div></div>
+        <div class="dash-panel"><div class="dash-panel-title">Time to Exhaustion</div><div class="dash-panel-val yellow">9.3 days</div><div class="dash-panel-sub">At current burn rate</div></div>
+      </div>
+      <div class="dash-row dash-row-2">
+        <div class="dash-panel" style="min-height:80px"><div class="dash-panel-title">Error Budget Burn (30d window)</div><div class="dash-panel-graph"></div></div>
+        <div class="dash-panel" style="min-height:80px"><div class="dash-panel-title">SLI Over Time</div><div class="dash-panel-graph"></div></div>
+      </div>
+    </div>
+
+    <h3>SLO Panel PromQL Queries</h3>
+    <pre><code class="language-promql"># --- SLI: availability (successful requests / total requests) ---
+# Using recording rule (recommended for performance):
+# namespace_service:sli_requests:ratio_rate5m
+# namespace_service:sli_requests:ratio_rate30m
+# namespace_service:sli_requests:ratio_rate1h
+# namespace_service:sli_requests:ratio_rate6h
+
+# Raw SLI (30-day rolling window)
+sum(rate(http_requests_total{namespace="$namespace",service="$service",code!~"5.."}[30d]))
+  /
+sum(rate(http_requests_total{namespace="$namespace",service="$service"}[30d]))
+
+# --- Error budget remaining (%) ---
+# Budget = 1 - SLO objective (e.g., 1 - 0.999 = 0.001 = 0.1%)
+# Consumed = 1 - current_SLI
+# Remaining = 1 - (consumed / budget)
+(
+  1 - (
+    (1 - (
+      sum(rate(http_requests_total{namespace="$namespace",service="$service",code!~"5.."}[30d]))
+      / sum(rate(http_requests_total{namespace="$namespace",service="$service"}[30d]))
+    )) / (1 - 0.999)   # 0.999 = SLO objective
+  )
+) * 100
+
+# --- Burn rate (1h / 5h multi-window) ---
+# Burn rate = error rate / (1 - SLO)
+# Alert thresholds: 14.4× (1h), 6× (6h), 3× (1d), 1× (3d)
+(
+  1 - (
+    sum(rate(http_requests_total{service="$service",code!~"5.."}[1h]))
+    / sum(rate(http_requests_total{service="$service"}[1h]))
+  )
+) / (1 - 0.999)
+
+# --- Time to exhaustion (hours) ---
+(
+  # remaining error budget in absolute terms
+  (1 - 0.999) * (30 * 24 * 3600)   # 30d in seconds
+  * (
+      sum(rate(http_requests_total{service="$service",code!~"5.."}[1h]))
+      / sum(rate(http_requests_total{service="$service"}[1h]))
+    )   # current error rate (errors/sec)
+  / scalar(sum(rate(http_requests_total{service="$service"}[1h])))
+) / 3600  # convert to hours
+
+# --- SLO compliance status (green/red) ---
+# Uses stat panel with threshold: green if > SLO, red if below
+sum(rate(http_requests_total{service="$service",code!~"5.."}[30d]))
+  / sum(rate(http_requests_total{service="$service"}[30d]))</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Grafana Stat Panel Thresholds for SLO</h3>
+    <pre><code class="language-json">{
+  "thresholds": {
+    "mode": "absolute",
+    "steps": [
+      {"color": "red",    "value": null},
+      {"color": "yellow", "value": 0.99},
+      {"color": "green",  "value": 0.999}
+    ]
+  },
+  "mappings": [],
+  "unit": "percentunit",
+  "decimals": 4
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== CROSS-SIGNAL =================== -->
+    <h2 id="cross-signal">Cross-Signal Navigation</h2>
+
+    <p>The highest-value Grafana feature for production operations is navigating from a dashboard panel directly to the relevant logs, traces, or related dashboards — without manually copying query parameters. This is achieved through data links, panel links, and Grafana correlations.</p>
+
+    <h3>Data Links (Panel-Level)</h3>
+    <pre><code class="language-json">// In a time series panel showing error rate per pod:
+// Clicking a data point opens Loki Explore for that pod's logs
+{
+  "dataLinks": [
+    {
+      "title": "Logs for ${__series.name}",
+      "url": "/explore?orgId=1&left={\"datasource\":\"loki-uid\",\"queries\":[{\"expr\":\"{namespace=\\\"${namespace}\\\",pod=\\\"${__series.name}\\\"} | json | level=\\\"error\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
+      "targetBlank": true
+    },
+    {
+      "title": "Traces for ${__series.name}",
+      "url": "/explore?orgId=1&left={\"datasource\":\"tempo-uid\",\"queries\":[{\"query\":\"{resource.service.name=\\\"${service}\\\"}&& status = error\",\"refId\":\"A\"}]}",
+      "targetBlank": true
+    }
+  ]
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Panel Links (Dashboard Navigation)</h3>
+    <pre><code class="language-json">// Link from cluster overview → namespace detail dashboard
+{
+  "links": [
+    {
+      "title": "Namespace Details",
+      "url": "/d/ns-detail?var-cluster=${cluster}&var-namespace=${__data.fields.namespace}",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ]
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Grafana Correlations (Global)</h3>
+    <pre><code class="language-json">// Defined at the data source level — applies across all dashboards
+// Maps a field in query results to a target exploration
+{
+  "label": "View logs for this service",
+  "description": "Navigate to Loki logs filtered by service name",
+  "sourceUID": "prometheus-uid",
+  "targetUID": "loki-uid",
+  "config": {
+    "type": "query",
+    "field": "service",
+    "target": {
+      "expr": "{namespace=\"${__data.fields.namespace}\", app=\"${__data.fields.service}\"} | json | level=\"error\""
+    },
+    "transformations": [
+      {
+        "type": "regex",
+        "field": "service",
+        "expression": "(.*)",
+        "mapValue": "$1"
+      }
+    ]
+  }
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Exemplar Drill-Down (Metric → Trace)</h3>
+    <pre><code class="language-yaml"># In Prometheus data source config (grafana-values.yaml):
+# exemplarTraceIdDestinations maps trace ID exemplars to Tempo
+datasources:
+  datasources.yaml:
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        jsonData:
+          exemplarTraceIdDestinations:
+            - name: traceID           # label name on the exemplar
+              datasourceUid: tempo-uid
+              urlDisplayLabel: "View in Tempo"
+            - name: TraceID           # some apps use different casing
+              datasourceUid: tempo-uid
+
+# In Grafana: enable exemplars on the time series panel:
+# Panel options → Data source → Enable exemplars (toggle)
+# Exemplar dots appear on the graph — click → opens Tempo trace</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== COMMUNITY DASHBOARDS =================== -->
+    <h2 id="community">Community Dashboards</h2>
+
+    <p>Grafana has a public dashboard library at <strong>grafana.com/grafana/dashboards</strong>. The following are the canonical production-ready dashboards included with kube-prometheus-stack. Import by UID or use the Helm chart's built-in provisioning.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Dashboard</th><th>Grafana ID</th><th>Description</th><th>Included in kps</th></tr></thead>
+        <tbody>
+          <tr><td>Kubernetes / Cluster</td><td>7249</td><td>Cluster-wide CPU/memory/pods overview</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Kubernetes / Nodes</td><td>11074</td><td>Node CPU, memory, disk, network per node</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Kubernetes / Workloads</td><td>12122</td><td>Deployment/StatefulSet RED metrics</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Kubernetes / Pods</td><td>6417</td><td>Per-pod CPU, memory, restarts</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Kubernetes / Namespaces</td><td>7249</td><td>Namespace resource usage</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Kubernetes / API Server</td><td>12006</td><td>kube-apiserver request rate, latency, errors</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Kubernetes / PVs</td><td>13646</td><td>Persistent volume utilization and inode usage</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Node Exporter Full</td><td>1860</td><td>Comprehensive node metrics (system, disk, network)</td><td><span class="badge badge-blue">Import</span></td></tr>
+          <tr><td>Alertmanager</td><td>9578</td><td>Alert routing, inhibition, silence status</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Prometheus / Overview</td><td>3662</td><td>Prometheus self-metrics (scrape, TSDB, rules)</td><td><span class="badge badge-green">Yes</span></td></tr>
+          <tr><td>Loki / Chunks</td><td>14055</td><td>Loki ingestion and storage metrics</td><td><span class="badge badge-blue">Import</span></td></tr>
+          <tr><td>Tempo / Overview</td><td>16698</td><td>Tempo ingestion, query, storage</td><td><span class="badge badge-blue">Import</span></td></tr>
+          <tr><td>Fluent Bit</td><td>7752</td><td>Fluent Bit input/output/filter metrics</td><td><span class="badge badge-blue">Import</span></td></tr>
+          <tr><td>Cert-Manager</td><td>11001</td><td>Certificate expiry and renewal status</td><td><span class="badge badge-blue">Import</span></td></tr>
+          <tr><td>NGINX Ingress</td><td>9614</td><td>Ingress controller request rate, latency, errors</td><td><span class="badge badge-blue">Import</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Importing via Helm (kube-prometheus-stack)</h3>
+    <pre><code class="language-bash"># kube-prometheus-stack already includes most of the above
+helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --set grafana.defaultDashboardsEnabled=true \
+  --set grafana.defaultDashboardsTimezone=UTC \
+  --namespace monitoring
+
+# Import community dashboards not in kps:
+kubectl create configmap grafana-dashboard-node-exporter \
+  --from-file=node-exporter-full.json=./1860_rev37.json \
+  -n monitoring
+kubectl label configmap grafana-dashboard-node-exporter grafana_dashboard=1 -n monitoring</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== GOVERNANCE =================== -->
+    <h2 id="governance">Dashboard Governance</h2>
+
+    <h3>Dashboard Organization</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Folder Structure</h4>
+        <p>Organize dashboards by audience and scope: <strong>Kubernetes</strong> (cluster-level infra), <strong>Platform</strong> (shared platform services), <strong>Services</strong> (per-team application dashboards), <strong>SLOs</strong> (error budgets), <strong>Oncall</strong> (triage dashboards for on-call).</p>
+      </div>
+      <div class="card">
+        <h4>Naming Conventions</h4>
+        <p>Use consistent naming: <code>[Scope] / [Subject]</code> — e.g., <code>Kubernetes / Nodes</code>, <code>Payments / Order Service</code>, <code>SLO / Checkout API</code>. Use stable UIDs (e.g., <code>k8s-nodes</code>, <code>svc-order-api</code>) for reliable linking.</p>
+      </div>
+      <div class="card">
+        <h4>Version Control</h4>
+        <p>All dashboard JSON stored in Git. No manual UI edits in production — use a review process for all dashboard changes. CI validates JSON syntax. Deployed via GitOps (ArgoCD/Flux) using ConfigMap or GrafanaDashboard CRD.</p>
+      </div>
+      <div class="card">
+        <h4>Access Control</h4>
+        <p>Use Grafana Teams + RBAC: Viewer role for most engineers (read/explore only), Editor for platform team (can modify dashboards), Admin for Grafana operators only. SSO via OIDC/SAML maps group membership to Grafana roles automatically.</p>
+      </div>
+    </div>
+
+    <h3>Dashboard Review Checklist</h3>
+    <ol class="step-list">
+      <li><strong>Variables defined.</strong> Every dashboard has at minimum: cluster, namespace. All panel queries use <code>$cluster</code> and <code>$namespace</code> variables to avoid hardcoding.</li>
+      <li><strong>$__rate_interval used.</strong> All <code>rate()</code>, <code>irate()</code>, and <code>increase()</code> calls use <code>[$__rate_interval]</code> not hardcoded windows.</li>
+      <li><strong>Units configured.</strong> Every panel has the correct unit set: bytes for memory (not "short"), reqps for request rate, seconds or milliseconds for latency, percentunit for ratios.</li>
+      <li><strong>Thresholds set.</strong> Stat and gauge panels have color thresholds aligned with SLOs or alert thresholds (green/yellow/red at the same boundaries as PrometheusRule alerts).</li>
+      <li><strong>Dashboard UID set.</strong> Custom UIDs prevent collisions and make cross-dashboard linking reliable. Auto-generated UIDs are not stable across imports.</li>
+      <li><strong>No hardcoded namespace/cluster.</strong> Dashboards should be reusable across all namespaces and clusters via variables, not tied to one environment.</li>
+      <li><strong>Data links configured.</strong> Error rate / latency panels should link to Loki logs and Tempo traces for the selected service/pod.</li>
+      <li><strong>Refresh interval appropriate.</strong> Operational dashboards: 30s or 1m. Historical analysis dashboards: off (manual refresh). SLO dashboards: 5m.</li>
+    </ol>
+
+    <h3>Detecting Dashboard Drift</h3>
+    <pre><code class="language-bash"># Detect dashboards modified in UI but not in Git (drift detection)
+# Export current state from Grafana API
+curl -s "http://grafana.monitoring.svc:3000/api/search?type=dash-db&limit=500" \
+  | jq -r '.[].uid' | while read uid; do
+  curl -s "http://grafana.monitoring.svc:3000/api/dashboards/uid/$uid" \
+    | jq '{uid: .dashboard.uid, version: .dashboard.version, title: .dashboard.title}'
+done > current-state.json
+
+# Compare against Git-tracked versions (CI check)
+# Any dashboard with version > what was last provisioned has been modified in UI</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== OPERATIONS =================== -->
+    <h2 id="operations">Metrics, Alerts &amp; Runbooks</h2>
+
+    <h3>Grafana Self-Metrics</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Metric</th><th>Alert Threshold</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>grafana_http_request_duration_seconds</code></td><td>p99 &gt; 5s</td><td>Grafana API latency — slow dashboards</td></tr>
+          <tr><td><code>grafana_datasource_request_duration_seconds</code></td><td>p99 &gt; 30s</td><td>Data source query latency (Prometheus/Loki)</td></tr>
+          <tr><td><code>grafana_datasource_request_total{status_code=~"5.."}</code></td><td>&gt;0</td><td>Data source query errors</td></tr>
+          <tr><td><code>grafana_stat_totals_dashboard</code></td><td>Unexpected decrease</td><td>Dashboard count — detects accidental deletion</td></tr>
+          <tr><td><code>grafana_alerting_result_total</code></td><td>—</td><td>Alert evaluation results (active/normal/error)</td></tr>
+          <tr><td><code>up{job="grafana"}</code></td><td>== 0</td><td>Grafana process down</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Alert Rules</h3>
+    <pre><code class="language-yaml">groups:
+  - name: grafana-health
+    rules:
+      - alert: GrafanaDown
+        expr: absent(up{job="grafana"}) or up{job="grafana"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "Grafana is down — dashboards and alerts unavailable"
+
+      - alert: GrafanaDatasourceErrors
+        expr: rate(grafana_datasource_request_total{status_code=~"5.."}[5m]) > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Grafana data source {{ $labels.datasource }} returning errors"
+          description: "Dashboard queries to {{ $labels.datasource }} are failing. Check data source connectivity."
+
+      - alert: GrafanaDashboardDeleted
+        expr: grafana_stat_totals_dashboard < (grafana_stat_totals_dashboard offset 1h) * 0.9
+        labels: {severity: warning}
+        annotations:
+          summary: "Grafana dashboard count dropped by >10% — possible accidental deletion"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Runbooks</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Dashboard Shows "No Data"</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Check time range — may be zoomed into a period with no data</li>
+          <li>Verify data source connection: Data Sources → Test</li>
+          <li>Open Explore and run the panel query manually</li>
+          <li>Check variable values — empty variable drops all data if query uses <code>{namespace="$namespace"}</code></li>
+          <li>Verify metric name exists: <code>curl prometheus:9090/api/v1/label/__name__/values | grep metric_name</code></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Dashboard Loading Slowly</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Reduce time range (shorter ranges = less data to scan)</li>
+          <li>Check panel count — reduce to &lt;20 panels per dashboard</li>
+          <li>Check Prometheus query duration: Explore → run panel query → check execution time</li>
+          <li>Add recording rules for expensive PromQL expressions</li>
+          <li>Enable query caching in Grafana (requires Grafana Enterprise or Mimir)</li>
+          <li>Check if Prometheus is overloaded: <code>prometheus_engine_query_duration_seconds p99</code></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Dashboard Drift (UI vs Git)</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Set <code>disableDeletion: true</code> and <code>allowUiUpdates: false</code> in provisioner config</li>
+          <li>Export current dashboard JSON via API and diff against Git</li>
+          <li>Revert to Git version by re-applying ConfigMap / triggering GitOps sync</li>
+          <li>Add CI drift check job to detect version discrepancies</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Data Source Authentication Failure</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Grafana → Configuration → Data Sources → select source → Test</li>
+          <li>Check if ServiceAccount token is expired (rotate if using static tokens)</li>
+          <li>For Prometheus: verify NetworkPolicy allows grafana → prometheus port 9090</li>
+          <li>For Loki: check Loki gateway auth configuration</li>
+          <li>Restart Grafana pod after updating secrets: <code>kubectl rollout restart deploy/grafana -n monitoring</code></li>
+        </ol>
+      </div>
+    </div>
+
+    <h3>Best Practices</h3>
+    <ol class="step-list">
+      <li><strong>All dashboards in Git, zero manual UI edits in production.</strong> Enable <code>disableDeletion: true</code> and <code>allowUiUpdates: false</code> on the provisioner. Use a staging Grafana instance for dashboard development before promoting to production.</li>
+      <li><strong>Use $__rate_interval for all rate-based queries.</strong> Hardcoded intervals produce incorrect values when the user zooms out to a multi-day time range, because rate windows smaller than the scrape interval return undefined.</li>
+      <li><strong>Build a hierarchy: cluster → namespace → workload → pod.</strong> Navigation between dashboard levels via data links reduces mean time to investigate by eliminating manual query reconstruction. A team-level dashboard should always link to the cluster overview and the pod-level details.</li>
+      <li><strong>Align dashboard thresholds with alert thresholds.</strong> If your alert fires at error rate &gt; 1%, the stat panel on the dashboard should turn yellow at 0.5% and red at 1%. Misaligned thresholds confuse on-call engineers who see green dashboards while alerts are firing.</li>
+      <li><strong>Include an SLO/error budget panel on every service dashboard.</strong> Application RED metrics (rate, error, duration) are necessary but not sufficient. Teams need to see whether they are within their error budget to make correct prioritization decisions.</li>
+      <li><strong>Configure exemplar drill-down on latency histograms.</strong> A p99 latency spike is much faster to investigate if you can click the spike and jump directly to a representative slow trace in Tempo without switching tools and manually searching.</li>
+      <li><strong>Avoid dashboards wider than the screen.</strong> Panels that require horizontal scrolling are never read. Prefer 24-column grid layouts (Grafana default) with panels spanning 6–12 columns.</li>
+      <li><strong>Provision one "golden signals" dashboard per team.</strong> Teams should own and maintain a single dashboard showing their service's four golden signals (latency, traffic, errors, saturation) plus SLO status. This becomes the starting point for all incident investigations.</li>
+    </ol>
+
+    <details class="coverage">
+      <summary>Coverage Details</summary>
+      <ul class="coverage-body">
+        <li>Grafana architecture: data sources (Prometheus/Loki/Tempo/Jaeger/CloudWatch), features (dashboards/alerting/explore/correlations)</li>
+        <li>Grafana Helm install with production grafana-values.yaml</li>
+        <li>Production grafana.ini config: root_url, OAuth/OIDC SSO with role mapping from groups, feature_toggles correlations, security (cookie_secure/samesite)</li>
+        <li>Data source provisioning in YAML: Prometheus (exemplarTraceIdDestinations→Tempo), Loki (derivedFields regex→Tempo), Tempo (tracesToLogsV2/tracesToMetrics/serviceMap/nodeGraph)</li>
+        <li>Dashboard provider config: file provider, disableDeletion, allowUiUpdates, folder, updateIntervalSeconds</li>
+        <li>dashboardsConfigMaps mapping to provisioner folders</li>
+        <li>Three dashboard-as-code approaches: ConfigMap+file provisioner, GrafanaDashboard CRD (Grafana Operator), Grafonnet/Jsonnet</li>
+        <li>ConfigMap provisioning: grafana_dashboard: "1" label, sidecar config (searchNamespace: ALL)</li>
+        <li>Grafana Operator: GrafanaDashboard CRD with instanceSelector and folder</li>
+        <li>Export dashboard JSON via Grafana HTTP API (single UID + bulk all dashboards)</li>
+        <li>Grafonnet install: go-jsonnet + jb + jsonnet-bundler initialization</li>
+        <li>Grafonnet dashboard example: prometheusQuery function, requestRatePanel + errorRatePanel functions, dashboard with query variables (namespace/service chained), panels array</li>
+        <li>Template variable types: Query / Custom / Constant / Interval / Data source / Text box / Ad hoc filter</li>
+        <li>Standard variable hierarchy: datasource → cluster → namespace → workload → pod with scoped label_values() queries</li>
+        <li>$__rate_interval vs $__interval explanation and callout; Loki $__range equivalent</li>
+        <li>Cluster Overview dashboard: stat panels (CPU%, memory%, pod count, non-running) + namespace time series</li>
+        <li>Cluster overview PromQL: node CPU/memory utilization, pod phase sum, non-running pods, namespace topk</li>
+        <li>Namespace/Workload dashboard: deployment replicas available/desired, pod restart topk, CPU throttling %, memory vs limit ratio, OOM kill count</li>
+        <li>Node dashboard: CPU/memory per node, disk I/O (read+write), network throughput, allocatable vs requested headroom, node condition checks</li>
+        <li>Service RED dashboard: request rate by method/route, error rate 5xx/total, p99 latency histogram_quantile, derived from Tempo metrics generator</li>
+        <li>Control plane dashboard: API server request rate by verb/resource, error rate, p99 latency by resource/verb, etcd request duration, scheduler queue, controller workqueue depth</li>
+        <li>PV dashboard: capacity utilization (used/capacity), near-full alert (>80%), inode usage, by StorageClass, unbound PVCs</li>
+        <li>SLO dashboard mockup: current SLI, error budget remaining %, burn rate ×, time to exhaustion</li>
+        <li>SLO PromQL: 30d rolling SLI, error budget remaining formula, burn rate (1h window / 1-SLO), time to exhaustion in hours</li>
+        <li>Stat panel threshold JSON for SLO compliance (red/yellow/green at objective boundary)</li>
+        <li>Data links JSON: click series → Loki Explore with time range; click → Tempo trace search</li>
+        <li>Panel links JSON: cluster overview → namespace detail with var interpolation + keepTime</li>
+        <li>Grafana correlations JSON config: field mapping, target query template, transformations</li>
+        <li>Exemplar drill-down: Prometheus datasource exemplarTraceIdDestinations config, panel exemplars toggle</li>
+        <li>Community dashboard table: 15 dashboards with IDs, descriptions, kps inclusion status</li>
+        <li>Importing non-kps dashboards via labeled ConfigMap</li>
+        <li>Dashboard governance: folder structure (Kubernetes/Platform/Services/SLOs/Oncall)</li>
+        <li>Naming conventions: [Scope] / [Subject] pattern, stable UIDs</li>
+        <li>Version control: no UI edits in production, CI JSON validation, GitOps deployment</li>
+        <li>Access control: Grafana Teams + Viewer/Editor/Admin roles, SSO group→role mapping</li>
+        <li>8-point dashboard review checklist: variables, $__rate_interval, units, thresholds, UID, no hardcoding, data links, refresh interval</li>
+        <li>Dashboard drift detection via Grafana API version comparison script</li>
+        <li>6 Grafana self-metrics with thresholds</li>
+        <li>3 PrometheusRule alerts: GrafanaDown, DatasourceErrors, DashboardDeleted</li>
+        <li>4 runbooks: No Data, slow loading, drift, auth failure</li>
+        <li>8 best practices: Git-only, $__rate_interval, hierarchy with data links, aligned thresholds, SLO panel, exemplar drill-down, panel width discipline, golden signals dashboard per team</li>
+      </ul>
+    </details>
+
+  </main>
+</div>
+
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-toggle');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => { btt.style.display = main.scrollTop > 400 ? 'flex' : 'none'; });
+btt.addEventListener('click', () => main.scrollTo({ top: 0, behavior: 'smooth' }));
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = pre.querySelector('.copy-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const code = pre.querySelector('code');
+    navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  });
+});
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const tocLinks = document.querySelectorAll('.toc a');
+if (headings.length && tocLinks.length) {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove('toc-active'));
+        const active = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('toc-active');
+      }
+    });
+  }, { root: main, rootMargin: '0px 0px -70% 0px' });
+  headings.forEach(h => obs.observe(h));
+}
+document.getElementById('nav-filter').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

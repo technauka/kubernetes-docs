@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deployments — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sidebar-logo{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;}
+.sidebar-search{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;margin-top:10px;}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);text-decoration:none;transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);}
+.nav-section a.active{color:var(--accent);background:var(--bg3);border-left:2px solid var(--accent);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-wrap{width:var(--toc-w);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);}
+.page-header{margin-bottom:32px;}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.breadcrumb a{color:var(--text3);text-decoration:none;}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:12px;}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;font-family:'SFMono-Regular',Consolas,monospace;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;padding:3px 8px;cursor:pointer;}
+.copy-btn:hover{background:var(--bg4);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-weight:700;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.callout-info .callout-title{color:var(--accent);}
+.callout-warn .callout-title{color:var(--yellow);}
+.callout-danger .callout-title{color:var(--red);}
+.callout-success .callout-title{color:var(--green);}
+.callout p{margin:0;font-size:14px;}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin:16px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card-title{font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;}
+.card p{font-size:13px;margin:0;color:var(--text2);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--text2);overflow-x:auto;white-space:pre;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px;}
+.toc-list{list-style:none;margin:0;padding:0;}
+.toc-list li{margin-bottom:2px;}
+.toc-list a{font-size:12px;color:var(--text2);text-decoration:none;display:block;padding:3px 0;border-left:2px solid transparent;padding-left:8px;}
+.toc-list a:hover{color:var(--text);}
+.toc-list a.active{color:var(--accent);border-left-color:var(--accent);}
+.page-nav{display:flex;justify-content:space-between;margin-top:56px;padding-top:20px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;flex-direction:column;gap:4px;color:var(--text2);text-decoration:none;max-width:45%;}
+.page-nav a:hover{color:var(--accent);}
+.page-nav .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.page-nav .nav-title{font-size:14px;font-weight:600;}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;position:sticky;top:0;z-index:99;align-items:center;justify-content:space-between;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:14px;font-weight:600;}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:12px;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.back-top.visible{opacity:1;}
+@media(max-width:1200px){.toc-wrap{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrap{margin-left:0;}.topbar{display:flex;}.main-content{padding:20px 16px;}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="../index.html" class="sidebar-logo">⎈ Kubernetes Docs</a>
+  </div>
+  <input type="text" class="sidebar-search" placeholder="Filter navigation…" id="nav-search">
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html" class="active">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">☰</button>
+  <span class="topbar-title">Deployments</span>
+  <button class="theme-btn" id="theme-btn-top">☀</button>
+</div>
+
+<div class="main-wrap">
+<main class="main-content" id="main-content">
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="../index.html">Home</a> › <a href="00-workloads-overview.html">Workloads</a> › Deployments
+    </div>
+    <h1>Deployments</h1>
+    <div class="page-meta">
+      <span>Section 5.2</span>
+      <span>RollingUpdate · Revision History · Rollback · Zero-Downtime</span>
+      <span>All levels</span>
+    </div>
+  </div>
+
+  <details class="coverage">
+    <summary>▶ What This Page Covers</summary>
+    <div class="coverage-body">
+      <li>Deployment → ReplicaSet → Pod ownership chain</li>
+      <li>Full Deployment spec anatomy with all fields</li>
+      <li>RollingUpdate strategy: maxSurge and maxUnavailable mechanics</li>
+      <li>Recreate strategy: full downtime, use cases</li>
+      <li>RollingUpdate step-by-step sequence diagram</li>
+      <li>maxSurge/maxUnavailable: absolute vs percentage values, edge cases</li>
+      <li>Revision history: revisionHistoryLimit, how old ReplicaSets are retained</li>
+      <li>Rollback mechanics: kubectl rollout undo, --to-revision, history inspection</li>
+      <li>Pausing and resuming a rollout</li>
+      <li>Zero-downtime deployment checklist: readiness probe, PDB, preStop, minReadySeconds</li>
+      <li>minReadySeconds — soak time before pod counts as available</li>
+      <li>progressDeadlineSeconds — stalled rollout detection</li>
+      <li>Deployment conditions: Available, Progressing, ReplicaFailure</li>
+      <li>Blue/green deployment pattern with Services</li>
+      <li>Canary deployment pattern with weighted Services or Ingress</li>
+      <li>HPA interaction with Deployments: who wins on replicas</li>
+      <li>ConfigMap/Secret updates and how to force pod rollout</li>
+      <li>Image digest pinning for reproducible deployments</li>
+      <li>Deployment anti-patterns: missing readiness probe, no PDB, :latest image</li>
+      <li>5 metrics + 4 alerts + 5 runbooks + 8 best practices</li>
+    </div>
+  </details>
+
+  <!-- ============================================================ -->
+  <h2 id="ownership-chain">Deployment → ReplicaSet → Pod Ownership Chain</h2>
+
+  <p>A Deployment never creates pods directly. Instead, the Deployment controller creates and manages <strong>ReplicaSets</strong>. Each distinct pod template version gets its own ReplicaSet. During a rolling update, the Deployment controller scales up the new ReplicaSet and scales down the old one simultaneously — the old ReplicaSet is retained (scaled to zero) for rollback purposes.</p>
+
+  <div class="diagram">Deployment object model:
+
+  Deployment: nginx-deploy (desired: 4 replicas, image: nginx:1.25)
+    │
+    ├── ReplicaSet: nginx-deploy-7d9f8b6c4  (current, 4/4 pods)  ← pod-template-hash=7d9f8b6c4
+    │     ├── Pod: nginx-deploy-7d9f8b6c4-xk9p2
+    │     ├── Pod: nginx-deploy-7d9f8b6c4-mn7q1
+    │     ├── Pod: nginx-deploy-7d9f8b6c4-r4t8w
+    │     └── Pod: nginx-deploy-7d9f8b6c4-vb3s6
+    │
+    └── ReplicaSet: nginx-deploy-5c8f9d2a1  (previous, 0/0 pods) ← retained for rollback
+          (scaled to zero after successful rollout)
+
+  After update to nginx:1.26:
+  Deployment: nginx-deploy (desired: 4 replicas, image: nginx:1.26)
+    │
+    ├── ReplicaSet: nginx-deploy-9a2b7c5e8  (new, scaling up)
+    └── ReplicaSet: nginx-deploy-7d9f8b6c4  (old, scaling down)
+
+  pod-template-hash label: auto-injected by Deployment controller to distinguish RS pods
+  Each RS owns its pods via ownerReferences + pod-template-hash label selector</div>
+
+  <!-- ============================================================ -->
+  <h2 id="full-spec">Full Deployment Spec</h2>
+
+  <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: production
+  labels:
+    app: web-app
+  annotations:
+    deployment.kubernetes.io/revision: "7"   # auto-managed; do not set manually
+spec:
+  replicas: 4
+
+  # Selector is IMMUTABLE after creation
+  selector:
+    matchLabels:
+      app: web-app       # must be a subset of template.metadata.labels
+
+  # Revision history: number of old ReplicaSets to retain (default 10)
+  revisionHistoryLimit: 5
+
+  # Rollout is marked failed if not complete within this many seconds (default 600)
+  progressDeadlineSeconds: 300
+
+  # Minimum seconds a new pod must be ready (all probes passing) before
+  # it counts as "available" — soak time (default 0)
+  minReadySeconds: 10
+
+  strategy:
+    type: RollingUpdate     # RollingUpdate (default) | Recreate
+    rollingUpdate:
+      maxSurge: 1           # max pods ABOVE desired during update (absolute or %)
+      maxUnavailable: 0     # max pods BELOW desired during update (absolute or %)
+      # maxSurge: 25%       # percentage form: ceil(replicas * 0.25)
+      # maxUnavailable: 25% # percentage form: floor(replicas * 0.25)
+      # Both cannot be 0 simultaneously
+
+  template:
+    metadata:
+      labels:
+        app: web-app        # must satisfy selector.matchLabels
+        version: v2.1.0     # informational; changing this triggers rollout
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: web-app
+        image: myregistry/web-app:v2.1.0@sha256:abc123...  # digest pin
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            memory: "512Mi"
+        readinessProbe:            # REQUIRED for zero-downtime rolling updates
+          httpGet:
+            path: /ready
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "sleep 5"]  # drain race prevention</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="rolling-update">RollingUpdate Strategy</h2>
+
+  <p>RollingUpdate replaces pods incrementally so that the application remains available throughout the update. The speed and safety of the rollout is controlled by two parameters that work in opposite directions:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Parameter</th><th>Controls</th><th>Default</th><th>Effect of Higher Value</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>maxSurge</code></td>
+          <td>Max pods <em>above</em> desired during update</td>
+          <td>25%</td>
+          <td>Faster rollout (more new pods at once), higher temporary resource usage</td>
+        </tr>
+        <tr>
+          <td><code>maxUnavailable</code></td>
+          <td>Max pods <em>below</em> desired that can be unavailable</td>
+          <td>25%</td>
+          <td>Faster rollout (removes old pods faster), lower availability during update</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Step-by-Step Sequence (replicas=4, maxSurge=1, maxUnavailable=0)</h3>
+
+  <div class="diagram">Initial state: 4 old pods running (v1)
+  [v1] [v1] [v1] [v1]   running=4, desired=4
+
+  Step 1: Create 1 new pod (surge to 5 total = desired+maxSurge)
+  [v1] [v1] [v1] [v1] [v2-pending]
+
+  Step 2: New pod becomes Ready
+  [v1] [v1] [v1] [v1] [v2]  ← v2 ready; now 5 available ≥ desired-maxUnavailable (4)
+
+  Step 3: Delete 1 old pod (back to desired count=4)
+  [v1] [v1] [v1] [v2]  ← 4 available; at minimum
+
+  Step 4: Create another new pod
+  [v1] [v1] [v1] [v2] [v2-pending]
+
+  Step 5: New pod Ready, delete old
+  [v1] [v1] [v2] [v2]
+
+  ... repeat until all 4 are v2 ...
+
+  Final state: 4 new pods (v2)
+  [v2] [v2] [v2] [v2]
+
+  Total pods alive at any time: 4–5 (never below 4, never above 5)
+  Total time ≈ 4 × (pod-start-time + minReadySeconds)</div>
+
+  <h3>maxSurge=25% and maxUnavailable=25% (defaults, replicas=8)</h3>
+
+  <div class="diagram">replicas=8, maxSurge=25%→ceil(8×0.25)=2, maxUnavailable=25%→floor(8×0.25)=2
+
+  Pods alive range: [desired - maxUnavailable, desired + maxSurge] = [6, 10]
+  Rollout can proceed 2 pods at a time (faster but briefly less available)
+
+  Step 1: Create 2 new pods + mark 2 old as terminating simultaneously
+  New: [v2][v2] pending
+  Old: 8 → 6 available (2 terminating = maxUnavailable)
+  Total: up to 10 (= 8 + maxSurge)</div>
+
+  <h3>Special Cases and Edge Cases</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Configuration</th><th>Behavior</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><code>maxSurge=1, maxUnavailable=0</code></td><td>Always at full capacity; one-at-a-time replacement; slowest but safest</td><td>Production APIs where capacity must never drop</td></tr>
+        <tr><td><code>maxSurge=0, maxUnavailable=1</code></td><td>No extra capacity needed (good for resource-constrained clusters); one pod terminated before new one starts</td><td>Resource-constrained environments; acceptable brief capacity reduction</td></tr>
+        <tr><td><code>maxSurge=100%, maxUnavailable=0</code></td><td>Doubles pod count temporarily; all new pods created before any old ones deleted</td><td>Maximum speed with guaranteed capacity; needs 2× resources</td></tr>
+        <tr><td><code>maxSurge=0, maxUnavailable=100%</code></td><td>Effectively Recreate — all old pods deleted before new ones start</td><td>Don't use — same as Recreate but less explicit</td></tr>
+        <tr><td>replicas=1, maxSurge=0, maxUnavailable=1</td><td>Brief downtime (old pod terminated, new started); effectively Recreate for single replicas</td><td>Dev environments; single-replica workloads that can afford brief downtime</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Percentage Rounding Rules</div>
+    <p><code>maxSurge</code> percentages are rounded <strong>up</strong> (ceiling). <code>maxUnavailable</code> percentages are rounded <strong>down</strong> (floor). For <code>replicas=3, maxSurge=33%</code>: ceil(3×0.33)=1. For <code>replicas=3, maxUnavailable=33%</code>: floor(3×0.33)=0. This means with 3 replicas and 33%/33% defaults, you effectively get maxSurge=1, maxUnavailable=0 — the safe profile.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="recreate">Recreate Strategy</h2>
+
+  <p>Recreate terminates all existing pods before creating new ones. There is a period of zero availability between the old pods terminating and the new pods becoming ready. Use it only when two versions of the app cannot run simultaneously — exclusive database schema migrations, singleton processes, apps that conflict on shared resources.</p>
+
+  <pre><code>strategy:
+  type: Recreate
+  # No rollingUpdate block — Recreate has no parameters
+
+# Timeline:
+# 1. All old pods receive SIGTERM simultaneously
+# 2. Wait for all old pods to terminate (terminationGracePeriodSeconds)
+# 3. All new pods created simultaneously
+# 4. Wait for all new pods to become Ready
+# Downtime = termination time + new pod startup time</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="minreadyseconds">minReadySeconds and progressDeadlineSeconds</h2>
+
+  <h3>minReadySeconds — Soak Time</h3>
+
+  <p><code>minReadySeconds</code> specifies the minimum number of seconds a newly created pod must be continuously Ready (all readiness probes passing) before it counts as <strong>available</strong>. The Deployment controller waits this duration before considering the pod stable and proceeding to the next step of the rollout.</p>
+
+  <pre><code>spec:
+  minReadySeconds: 30   # pod must stay Ready for 30s before it's "available"
+  # Without this (default 0): a pod that passes readiness probe once then immediately
+  # crashes might appear available, allowing the rollout to proceed before the issue
+  # is caught. 30s soak catches flapping pods.
+
+# Effective max rollout time with minReadySeconds:
+# replicas × (pod-start-time + minReadySeconds + periodSeconds) / parallelism</code></pre>
+
+  <h3>progressDeadlineSeconds — Stalled Rollout Detection</h3>
+
+  <p>If a rollout makes no progress for <code>progressDeadlineSeconds</code> (default 600s), the Deployment is marked with condition <code>Progressing=False, reason=ProgressDeadlineExceeded</code>. The rollout is NOT automatically rolled back — it stalls and waits for operator intervention.</p>
+
+  <pre><code>spec:
+  progressDeadlineSeconds: 300   # fail with DeadlineExceeded after 5 min of no progress
+
+# Check deployment conditions:
+kubectl rollout status deployment/web-app
+# Waiting for deployment "web-app" rollout to finish: 1 out of 4 new replicas have been updated...
+# error: deployment "web-app" exceeded its progress deadline
+
+kubectl get deployment web-app -o jsonpath='{.status.conditions}' | jq .
+# [
+#   {"type":"Available","status":"True",...},
+#   {"type":"Progressing","status":"False","reason":"ProgressDeadlineExceeded",...}
+# ]</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Condition Type</th><th>Status</th><th>Reason</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>Available</td><td>True</td><td>MinimumReplicasAvailable</td><td>≥ desired−maxUnavailable pods available</td></tr>
+        <tr><td>Available</td><td>False</td><td>MinimumReplicasUnavailable</td><td>Fewer than minimum required pods available</td></tr>
+        <tr><td>Progressing</td><td>True</td><td>NewReplicaSetAvailable</td><td>Rollout completed successfully</td></tr>
+        <tr><td>Progressing</td><td>True</td><td>ReplicaSetUpdated</td><td>Rollout in progress</td></tr>
+        <tr><td>Progressing</td><td>False</td><td>ProgressDeadlineExceeded</td><td>Rollout stalled; deadline hit</td></tr>
+        <tr><td>ReplicaFailure</td><td>True</td><td>FailedCreate</td><td>ReplicaSet cannot create pods (quota, RBAC, admission)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="revision-history">Revision History and Rollback</h2>
+
+  <h3>How Revisions Work</h3>
+
+  <p>Each time the pod template changes, a new revision is created. The Deployment controller assigns increasing revision numbers by annotating the ReplicaSet with <code>deployment.kubernetes.io/revision</code>. Old ReplicaSets (scaled to zero) are kept up to <code>revisionHistoryLimit</code> (default 10). Keeping these is what makes rollback possible.</p>
+
+  <pre><code># Inspect rollout history
+kubectl rollout history deployment/web-app
+# REVISION  CHANGE-CAUSE
+# 1         Initial deployment
+# 2         Update to v1.1.0
+# 3         Update to v1.2.0
+# 4         Update to v2.0.0 (current)
+
+# Record change cause (annotate template — add to CI pipeline)
+kubectl annotate deployment/web-app kubernetes.io/change-cause="Deploy v2.0.0: adds OAuth2 login"
+# OR set in manifest:
+metadata:
+  annotations:
+    kubernetes.io/change-cause: "Deploy v2.0.0: adds OAuth2 login"
+
+# Inspect a specific revision
+kubectl rollout history deployment/web-app --revision=3
+# Shows the full pod template at that revision
+
+# See the underlying ReplicaSets with their revision annotations
+kubectl get rs -l app=web-app \
+  -o custom-columns='NAME:.metadata.name,REVISION:.metadata.annotations.deployment\.kubernetes\.io/revision,REPLICAS:.status.replicas'</code></pre>
+
+  <h3>Rollback Commands</h3>
+
+  <pre><code># Roll back to the previous revision (most common)
+kubectl rollout undo deployment/web-app
+
+# Roll back to a specific revision
+kubectl rollout undo deployment/web-app --to-revision=2
+
+# Rollback is just a new rollout using the old ReplicaSet's pod template
+# It increments the revision number (rollback to rev 2 creates rev 5, not rev 2)
+# The rolled-back ReplicaSet is promoted (scaled up), not recreated
+
+# Verify rollback completed
+kubectl rollout status deployment/web-app
+kubectl get deployment web-app -o jsonpath='{.spec.template.spec.containers[0].image}'</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Rollback Does Not Restore ConfigMaps or Secrets</div>
+    <p>Rolling back a Deployment restores the pod template (image, env vars, resource limits) to a previous state. It does NOT restore ConfigMap or Secret contents that the pods reference. If a bad ConfigMap was deployed alongside the image update, rolling back the Deployment while the bad ConfigMap remains will still result in broken pods. Always version ConfigMaps alongside Deployments for config-driven rollbacks.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="pause-resume">Pausing and Resuming Rollouts</h2>
+
+  <p>Pausing a Deployment freezes the rollout at its current state — new pods matching the new template are still created (up to <code>maxSurge</code>), but the Deployment controller stops scaling down old pods until resumed. Useful for manual canary validation.</p>
+
+  <pre><code># Update image (triggers rollout)
+kubectl set image deployment/web-app web-app=myapp:v2.1.0
+
+# Immediately pause the rollout (freeze mid-flight)
+kubectl rollout pause deployment/web-app
+
+# At this point: some pods run new version, some run old
+# Manually inspect the new pods:
+kubectl get pods -l app=web-app -o wide
+kubectl exec -it POD_NAME -- curl localhost:8080/version
+
+# If new pods look good, resume the rollout
+kubectl rollout resume deployment/web-app
+
+# If new pods have issues, roll back while paused
+kubectl rollout undo deployment/web-app    # works even while paused
+kubectl rollout resume deployment/web-app  # must resume after undo to unstick</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="zero-downtime">Zero-Downtime Deployment Checklist</h2>
+
+  <p>A Deployment by itself does not guarantee zero downtime. Zero-downtime requires a combination of several mechanisms working together:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Requirement</th><th>Why It Matters</th><th>Configuration</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>readinessProbe defined</strong></td>
+          <td>Without it, pods are added to Endpoints immediately after starting — before the app is ready to serve traffic</td>
+          <td><code>readinessProbe: httpGet: path: /ready</code></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong>maxUnavailable: 0</strong></td>
+          <td>Ensures capacity never drops below desired during rollout</td>
+          <td><code>strategy.rollingUpdate.maxUnavailable: 0</code></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><strong>preStop sleep</strong></td>
+          <td>Prevents kube-proxy/Endpoints propagation race: new requests routed to terminating pods</td>
+          <td><code>lifecycle.preStop.exec: ["sleep","5"]</code></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>terminationGracePeriodSeconds sufficient</strong></td>
+          <td>App needs time to finish in-flight requests after SIGTERM</td>
+          <td>≥ preStop duration + max request duration + buffer</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><strong>PodDisruptionBudget</strong></td>
+          <td>Protects against node drain and cluster operations removing too many pods at once</td>
+          <td><code>minAvailable: N-1</code> or <code>maxUnavailable: 1</code></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><strong>minReadySeconds</strong></td>
+          <td>Catches flapping pods that pass readiness probe briefly then crash</td>
+          <td><code>minReadySeconds: 10</code> (tune per app stability)</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td><strong>replicas ≥ 2</strong></td>
+          <td>Single-replica Deployments always have brief downtime even with maxUnavailable:0 (can't create surge if not enough capacity in cluster)</td>
+          <td>At least 2 replicas in production</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><strong>Pod anti-affinity</strong></td>
+          <td>Without it, all replicas may land on one node — node failure = full outage</td>
+          <td><code>podAntiAffinity: topologyKey: kubernetes.io/hostname</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="blue-green">Blue/Green Deployment Pattern</h2>
+
+  <p>Blue/green runs both the old (blue) and new (green) versions simultaneously. Traffic is switched atomically by updating the Service selector. Rollback is instant — switch the selector back.</p>
+
+  <pre><code># Blue Deployment (current live)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app-blue
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: web-app
+      slot: blue
+  template:
+    metadata:
+      labels:
+        app: web-app
+        slot: blue
+    spec:
+      containers:
+      - name: web-app
+        image: myapp:v1.0.0
+---
+# Green Deployment (new version, deployed alongside blue)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app-green
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: web-app
+      slot: green
+  template:
+    metadata:
+      labels:
+        app: web-app
+        slot: green
+    spec:
+      containers:
+      - name: web-app
+        image: myapp:v2.0.0
+---
+# Service — points at blue initially
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app
+spec:
+  selector:
+    app: web-app
+    slot: blue      # ← change to "green" to cut over; change back to rollback
+  ports:
+  - port: 80
+    targetPort: 8080</code></pre>
+
+  <pre><code># Cut over to green (atomic — no rolling; zero downtime if green is healthy)
+kubectl patch service web-app -p '{"spec":{"selector":{"slot":"green"}}}'
+
+# Rollback: switch back to blue (instant)
+kubectl patch service web-app -p '{"spec":{"selector":{"slot":"blue"}}}'
+
+# After successful validation, scale down blue to free resources
+kubectl scale deployment web-app-blue --replicas=0</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Blue/Green Resource Cost</div>
+    <p>Blue/green requires 2× the normal pod count during the switchover window. Ensure the cluster has sufficient headroom before deploying the green version. For cost optimization, scale the standby (blue after cutover) to zero rather than deleting it — keeping it at zero allows instant rollback by scaling up and switching the Service selector.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="canary">Canary Deployment Pattern</h2>
+
+  <p>A canary release routes a small percentage of traffic to the new version to validate it under real load before full rollout. Two main approaches: replica-ratio (built-in) or Ingress-based weighted routing (more precise).</p>
+
+  <h3>Replica-Ratio Canary (Simple)</h3>
+
+  <pre><code># Stable deployment: 9 replicas
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app-stable
+spec:
+  replicas: 9
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: web-app
+        image: myapp:v1.0.0
+---
+# Canary deployment: 1 replica (≈10% of traffic if Service uses both)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-app       # same label → same Service selector
+  template:
+    metadata:
+      labels:
+        app: web-app
+        track: canary    # extra label for monitoring differentiation
+    spec:
+      containers:
+      - name: web-app
+        image: myapp:v2.0.0
+---
+# Single Service — load-balances across ALL 10 pods (9 stable + 1 canary = 10% canary)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app
+spec:
+  selector:
+    app: web-app    # matches both stable and canary pods</code></pre>
+
+  <h3>Ingress-Based Weighted Canary (Precise)</h3>
+
+  <pre><code># NGINX Ingress Controller canary annotations:
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-app-canary
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "10"  # exactly 10% of requests
+    # Header-based canary (bypass weight for internal testing):
+    # nginx.ingress.kubernetes.io/canary-by-header: "X-Canary"
+    # nginx.ingress.kubernetes.io/canary-by-header-value: "always"
+spec:
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-app-canary-svc
+            port:
+              number: 80</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="hpa-interaction">HPA Interaction</h2>
+
+  <p>When an HPA targets a Deployment, the HPA controller writes to <code>spec.replicas</code>. This creates a potential conflict: if you also set <code>spec.replicas</code> in your manifest and apply it, you will override the HPA's current scale. The conventional solution is to omit <code>spec.replicas</code> from the manifest (or set it only on initial creation) and let the HPA own it thereafter.</p>
+
+  <pre><code># WRONG: applying this manifest will reset replicas to 3, overriding HPA
+spec:
+  replicas: 3    # ← this will stomp the HPA's current value every kubectl apply
+
+# RIGHT: omit replicas from the manifest when HPA is managing it
+spec:
+  # replicas: field absent — HPA manages this field
+  selector:
+    matchLabels:
+      app: web-app
+  template: ...
+
+# OR: use server-side apply with field ownership
+# The HPA will own the replicas field; kubectl apply will not overwrite it
+kubectl apply --server-side deployment.yaml</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">HPA minReplicas Protects Against Scale-to-Zero</div>
+    <p>An HPA with <code>minReplicas: 2</code> prevents the Deployment from being scaled below 2, even if the metric drops to zero. Always set <code>minReplicas ≥ 2</code> in production to maintain availability. Without it, a metric dip (e.g., no traffic at 3am) scales the Deployment to <code>minReplicas: 1</code> by default, leaving a single replica exposed to node failures.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="configmap-rollout">Forcing Rollout on ConfigMap/Secret Changes</h2>
+
+  <p>Kubernetes does not automatically roll out a Deployment when a referenced ConfigMap or Secret changes. Pods continue running with the old config until manually triggered.</p>
+
+  <pre><code># Option 1: kubectl rollout restart (adds restartedAt annotation to pod template)
+kubectl rollout restart deployment/web-app
+
+# Option 2: checksum annotation in pod template (GitOps-friendly)
+# In your deployment manifest, compute a checksum of the ConfigMap content:
+template:
+  metadata:
+    annotations:
+      checksum/config: "sha256:abc123..."   # update this when ConfigMap changes
+
+# With Helm: use the built-in template function:
+# checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+
+# Option 3: immutable ConfigMaps with versioned names
+# ConfigMap: app-config-v7 → new ConfigMap: app-config-v8
+# Update envFrom.configMapRef.name to app-config-v8 in deployment → triggers rollout
+# Best for GitOps: the manifest change itself IS the trigger</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="image-digest">Image Digest Pinning</h2>
+
+  <pre><code># Mutable tag (DANGEROUS): same tag can point to different images on different nodes
+image: myapp:v2.1.0
+
+# Immutable digest (SAFE): always the exact same image bytes
+image: myapp:v2.1.0@sha256:a3b4c5d6e7f8...
+
+# Get the digest for a tag:
+docker manifest inspect myapp:v2.1.0 | jq -r '.config.digest'
+crane digest myapp:v2.1.0   # github.com/google/go-containerregistry
+
+# Cosign for supply-chain verification:
+cosign verify --key cosign.pub myapp:v2.1.0@sha256:a3b4c5d6...
+
+# In CI: resolve tag to digest at build time, pin digest in manifest
+# Keel, Renovate, or Flux image automation can manage digest updates</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="useful-commands">Useful Operational Commands</h2>
+
+  <pre><code># Watch rollout progress in real time
+kubectl rollout status deployment/web-app --watch
+
+# Force restart without template change
+kubectl rollout restart deployment/web-app
+
+# Scale immediately (bypasses HPA until HPA next reconciles)
+kubectl scale deployment/web-app --replicas=8
+
+# Update image
+kubectl set image deployment/web-app web-app=myapp:v2.2.0
+
+# Set resource requests/limits
+kubectl set resources deployment/web-app --containers=web-app \
+  --requests=cpu=500m,memory=512Mi --limits=memory=1Gi
+
+# Show all ReplicaSets for a Deployment (to see revision history)
+kubectl get rs -l app=web-app --show-labels
+
+# Annotate a revision for change-cause tracking
+kubectl annotate deployment/web-app kubernetes.io/change-cause="v2.1.0: fix memory leak"
+
+# Describe to see events and conditions
+kubectl describe deployment/web-app</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="metrics">Metrics, Alerts, and Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Source</th><th>Alert Condition</th></tr></thead>
+      <tbody>
+        <tr><td><code>kube_deployment_status_replicas_available</code></td><td>kube-state-metrics</td><td>&lt; <code>kube_deployment_spec_replicas</code> for &gt; 5 min</td></tr>
+        <tr><td><code>kube_deployment_status_replicas_updated</code></td><td>kube-state-metrics</td><td>&lt; <code>kube_deployment_spec_replicas</code> for &gt; 15 min → rollout stalled</td></tr>
+        <tr><td><code>kube_deployment_status_observed_generation != kube_deployment_metadata_generation</code></td><td>kube-state-metrics</td><td>Controller hasn't processed latest spec update</td></tr>
+        <tr><td><code>kube_deployment_spec_paused</code></td><td>kube-state-metrics</td><td>Deployment paused &gt; 1h (forgotten pause)</td></tr>
+        <tr><td><code>kube_replicaset_status_ready_replicas</code></td><td>kube-state-metrics</td><td>Multiple non-zero RSes (old RS not scaling down = stalled)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Alerting Rules</h3>
+  <pre><code>groups:
+- name: deployment-health
+  rules:
+  - alert: DeploymentReplicasMismatch
+    expr: |
+      kube_deployment_spec_replicas
+        != kube_deployment_status_replicas_available
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has fewer available replicas than desired"
+
+  - alert: DeploymentRolloutStuck
+    expr: |
+      kube_deployment_status_replicas_updated
+        != kube_deployment_spec_replicas
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} rollout stuck for 15 minutes"
+
+  - alert: DeploymentProgressDeadlineExceeded
+    expr: |
+      kube_deployment_status_condition{condition="Progressing",status="false"} == 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} progress deadline exceeded"
+
+  - alert: DeploymentPausedTooLong
+    expr: |
+      kube_deployment_spec_paused == 1
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has been paused for over 1 hour"</code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">Rollout Stuck / ProgressDeadlineExceeded</div>
+      <p>Check new RS pods: <code>kubectl describe rs NEW_RS_NAME</code> for events. Common causes: image pull error (wrong tag, missing pull secret), readiness probe never passing (app bug, wrong port), resource quota exceeded, admission webhook rejection. Fix the underlying cause; rollout continues automatically or roll back with <code>kubectl rollout undo</code>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Deployment Available &lt; Desired</div>
+      <p>Check pod status: <code>kubectl get pods -l app=NAME</code>. If pods are Pending: node capacity, affinity, PVC issues. If CrashLoopBackOff: <code>kubectl logs POD --previous</code> for exit reason. If ImagePullBackOff: verify image tag and pull secrets. Check <code>kubectl describe deployment NAME</code> for ReplicaFailure condition.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Bad Deploy — Emergency Rollback</div>
+      <p>Immediate rollback: <code>kubectl rollout undo deployment/NAME</code>. If rollout not yet complete (old RS still exists): rollback re-scales old RS up, new RS down — faster than new rollout. Verify: <code>kubectl rollout status deployment/NAME</code>. If rollback itself stalls: check if old RS pods also fail (bad ConfigMap still present).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">HPA Fighting Deployment replicas</div>
+      <p>Symptom: desired replicas keep resetting. Check if HPA exists: <code>kubectl get hpa</code>. If HPA manages the Deployment, remove <code>spec.replicas</code> from your manifest or use server-side apply. If both kubectl and HPA are writing replicas, the last writer wins — use field ownership via SSA to resolve permanently.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">ConfigMap Change Not Taking Effect</div>
+      <p>Pods reference old config. Trigger restart: <code>kubectl rollout restart deployment/NAME</code>. Verify pods restarted: <code>kubectl get pods -l app=NAME -w</code>. For future: adopt versioned ConfigMap names or checksum annotations in pod template. Verify new pods have updated config: <code>kubectl exec POD -- env | grep KEY</code>.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <ol>
+    <li><strong>Always define a readinessProbe</strong> — a Deployment without a readiness probe marks pods Available immediately after the container starts, before the application is ready. This causes traffic to hit unready pods during rollouts. The readiness probe is the single most impactful zero-downtime configuration.</li>
+    <li><strong>Use <code>maxUnavailable: 0</code> for production APIs</strong> — this guarantees full capacity throughout the rollout at the cost of needing <code>maxSurge ≥ 1</code> (temporary extra capacity). For resource-constrained environments, <code>maxSurge: 0, maxUnavailable: 1</code> accepts brief partial capacity reduction.</li>
+    <li><strong>Set <code>revisionHistoryLimit: 5</code> not 0</strong> — keeping zero history prevents rollbacks. 5 revisions is a reasonable balance between rollback capability and etcd storage. Never set to 0 in production.</li>
+    <li><strong>Record change causes with <code>kubernetes.io/change-cause</code> annotations</strong> — <code>kubectl rollout history</code> is meaningless without this. Automate it in your CI pipeline: annotate every deployment with the git commit SHA and PR title.</li>
+    <li><strong>Pin image digests, not tags</strong> — a mutable tag can silently point to a different image digest if re-pushed. Digest-pinned images are fully reproducible and support supply-chain verification with Cosign. Automate digest resolution in CI.</li>
+    <li><strong>Set <code>minReadySeconds: 10–30</code></strong> — without a soak time, a pod that passes readiness probe once and immediately crashes is counted as available, causing the rollout to proceed. Even a 10-second soak catches most flapping pod patterns.</li>
+    <li><strong>Create a PodDisruptionBudget alongside every Deployment</strong> — rolling updates respect PDBs. Without one, a node drain during a rolling update can simultaneously remove more pods than <code>maxUnavailable</code> allows, causing an outage. See <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>.</li>
+    <li><strong>Omit <code>spec.replicas</code> from manifests managed by HPA</strong> — applying a manifest with a hard-coded replicas value will override the HPA's current scale on every <code>kubectl apply</code>. Use server-side apply with field ownership, or simply omit the field after initial creation.</li>
+  </ol>
+
+  <div class="page-nav">
+    <a href="01-pods.html">
+      <span class="nav-label">← Previous</span>
+      <span class="nav-title">Pods</span>
+    </a>
+    <a href="03-statefulsets.html" style="text-align:right">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">StatefulSets</span>
+    </a>
+  </div>
+
+</main>
+
+<aside class="toc-wrap">
+  <div class="toc-title">On This Page</div>
+  <ul class="toc-list" id="toc-list">
+    <li><a href="#ownership-chain">Ownership Chain</a></li>
+    <li><a href="#full-spec">Full Deployment Spec</a></li>
+    <li><a href="#rolling-update">RollingUpdate Strategy</a></li>
+    <li><a href="#recreate">Recreate Strategy</a></li>
+    <li><a href="#minreadyseconds">minReadySeconds &amp; Deadline</a></li>
+    <li><a href="#revision-history">Revision History &amp; Rollback</a></li>
+    <li><a href="#pause-resume">Pause &amp; Resume</a></li>
+    <li><a href="#zero-downtime">Zero-Downtime Checklist</a></li>
+    <li><a href="#blue-green">Blue/Green Pattern</a></li>
+    <li><a href="#canary">Canary Pattern</a></li>
+    <li><a href="#hpa-interaction">HPA Interaction</a></li>
+    <li><a href="#configmap-rollout">ConfigMap Rollout</a></li>
+    <li><a href="#image-digest">Image Digest Pinning</a></li>
+    <li><a href="#useful-commands">Operational Commands</a></li>
+    <li><a href="#metrics">Metrics &amp; Alerts</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ul>
+</aside>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+function toggleTheme(){const t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);localStorage.setItem('k8s-theme',t);}
+document.getElementById('theme-btn-top').addEventListener('click',toggleTheme);
+document.getElementById('hamburger').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{backTop.classList.toggle('visible',main.scrollTop>400);});
+backTop.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code').innerText);
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc-list a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-search').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

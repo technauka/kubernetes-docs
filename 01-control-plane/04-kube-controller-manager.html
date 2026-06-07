@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>kube-controller-manager | K8s Internals</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;
+  --red:#f85149;--purple:#bc8cff;--orange:#d18616;
+  --code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;
+}
+:root[data-theme="light"]{
+  --bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;
+  --border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;
+  --accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;
+  --red:#d1242f;--purple:#8250df;--orange:#953800;
+  --code-bg:#f6f8fa;--sidebar-w:280px;--toc-w:240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow:hidden;height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:.85em;background:var(--code-bg);padding:2px 6px;border-radius:4px;color:var(--purple)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;position:relative;margin:.75rem 0}
+pre code{background:none;padding:0;color:var(--text);font-size:.82rem}
+h1{font-size:2rem;font-weight:700;line-height:1.25}
+h2{font-size:1.4rem;font-weight:600;margin:2rem 0 .75rem;padding-top:.5rem}
+h3{font-size:1.1rem;font-weight:600;margin:1.5rem 0 .5rem;color:var(--text)}
+h4{font-size:.95rem;font-weight:600;margin:1rem 0 .4rem;color:var(--text2)}
+p{margin:.6rem 0}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}
+li{margin:.2rem 0}
+table{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.85rem}
+th{background:var(--bg3);text-align:left;padding:.5rem .75rem;border:1px solid var(--border);font-weight:600}
+td{padding:.45rem .75rem;border:1px solid var(--border);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg2)}
+.topbar{position:sticky;top:0;z-index:200;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1rem;gap:.75rem}
+.topbar-left{display:flex;align-items:center;gap:.75rem;min-width:0}
+.topbar-right{display:flex;align-items:center;gap:.75rem;flex-shrink:0}
+.hamburger{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:4px 6px;border-radius:4px}
+.hamburger:hover{background:var(--bg3)}
+.topbar-logo{font-weight:700;font-size:1rem;white-space:nowrap}
+.topbar-logo span{color:var(--accent)}
+.breadcrumb{display:flex;align-items:center;gap:.35rem;font-size:.8rem;color:var(--text2);white-space:nowrap}
+.breadcrumb span{color:var(--text3)}
+.search-wrap input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.3rem .6rem;border-radius:6px;font-size:.82rem;width:180px}
+.search-wrap input:focus{outline:none;border-color:var(--accent)}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.3rem .7rem;border-radius:6px;cursor:pointer;font-size:.8rem;white-space:nowrap}
+.theme-btn:hover{background:var(--bg4)}
+.layout{display:flex;height:calc(100vh - 52px)}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;height:calc(100vh - 52px);position:sticky;top:52px}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--bg4)}
+.sidebar-search{padding:.6rem .75rem;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.35rem .6rem;border-radius:6px;font-size:.8rem}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+nav{padding:.5rem 0}
+.nav-section{margin-bottom:.25rem}
+.nav-section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:.4rem .75rem .2rem}
+.nav-section a{display:flex;align-items:center;gap:.5rem;padding:.28rem .75rem;font-size:.82rem;color:var(--text2);transition:background .15s,color .15s}
+.nav-section a:hover{background:var(--bg3);color:var(--text);text-decoration:none}
+.nav-section a.active{background:var(--accent2);color:#fff;border-radius:4px;margin:0 .4rem;padding:.28rem .4rem}
+.nav-section a .num{font-size:.7rem;color:var(--text3);min-width:22px}
+.nav-section a.active .num{color:#cde}
+.main-content{flex:1;overflow-y:auto;height:calc(100vh - 52px);padding:0}
+.main-content::-webkit-scrollbar{width:6px}
+.main-content::-webkit-scrollbar-thumb{background:var(--bg4)}
+.content-wrap{max-width:900px;margin:0 auto;padding:2rem 2rem 4rem}
+.toc-panel{width:var(--toc-w);flex-shrink:0;height:calc(100vh - 52px);overflow-y:auto;position:sticky;top:52px;padding:1rem .75rem;border-left:1px solid var(--border)}
+.toc-panel::-webkit-scrollbar{width:3px}
+.toc-panel h4{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:.5rem}
+.toc-panel a{display:block;font-size:.78rem;color:var(--text2);padding:.2rem .4rem;border-radius:4px;line-height:1.4;transition:color .15s}
+.toc-panel a:hover{color:var(--text);text-decoration:none;background:var(--bg3)}
+.toc-panel a.toc-active{color:var(--accent);font-weight:600}
+.toc-panel a.toc-h3{padding-left:1rem;font-size:.74rem}
+.page-header{padding:2rem 0 1.5rem;border-bottom:1px solid var(--border);margin-bottom:2rem}
+.file-meta{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:.72rem;color:var(--text2)}
+.callout{border-radius:8px;padding:.75rem 1rem;margin:.75rem 0;border-left:3px solid}
+.callout.note{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout.warn{background:rgba(210,153,34,.1);border-color:var(--yellow)}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout-title{font-weight:700;font-size:.82rem;margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem}
+.callout.note .callout-title{color:var(--accent)}
+.callout.warn .callout-title{color:var(--yellow)}
+.callout.danger .callout-title{color:var(--red)}
+.callout.success .callout-title{color:var(--green)}
+details{border:1px solid var(--border);border-radius:8px;margin:.6rem 0}
+details summary{padding:.6rem 1rem;cursor:pointer;font-weight:600;font-size:.9rem;list-style:none;display:flex;align-items:center;gap:.5rem}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'▶';font-size:.7rem;color:var(--text3);transition:transform .2s}
+details[open] summary::before{transform:rotate(90deg)}
+details .details-body{padding:.75rem 1rem 1rem;border-top:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin:.75rem 0}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:.75rem 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.card h4{margin-top:0}
+.component-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.75rem;margin:.75rem 0}
+.component-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem}
+.component-card h4{margin-top:0;font-size:.85rem;color:var(--accent)}
+.flow-row{display:flex;align-items:center;gap:.5rem;margin:.4rem 0;flex-wrap:wrap}
+.flow-box{padding:.35rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid;white-space:nowrap}
+.flow-box.cp{background:rgba(88,166,255,.12);border-color:var(--accent);color:var(--accent)}
+.flow-box.etcd{background:rgba(188,140,255,.12);border-color:var(--purple);color:var(--purple)}
+.flow-box.ok{background:rgba(63,185,80,.1);border-color:var(--green);color:var(--green)}
+.flow-box.warn{background:rgba(210,153,34,.1);border-color:var(--yellow);color:var(--yellow)}
+.flow-box.node{background:rgba(248,81,73,.1);border-color:var(--red);color:var(--red)}
+.flow-box.neutral{background:var(--bg3);border-color:var(--border);color:var(--text)}
+.flow-arrow{color:var(--text3);font-size:1.1rem}
+.nav-footer{display:flex;justify-content:space-between;gap:1rem;padding:2rem 0;margin-top:2rem;border-top:1px solid var(--border)}
+.nav-btn{display:inline-flex;flex-direction:column;padding:.6rem 1rem;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:.82rem;transition:border-color .2s,color .2s;max-width:220px}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.nav-btn span{font-size:.7rem;color:var(--text3)}
+.nav-btn.next{text-align:right}
+.copy-btn{position:absolute;top:.4rem;right:.4rem;background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;font-size:.72rem;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.back-to-top{position:fixed;bottom:2rem;right:2rem;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .3s;z-index:100}
+.back-to-top.visible{opacity:1;pointer-events:auto}
+mark.search-hl{background:rgba(210,153,34,.45);border-radius:2px;padding:0 1px}
+svg text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+@media(max-width:1100px){.toc-panel{display:none}}
+@media(max-width:768px){.sidebar{position:fixed;left:-300px;top:52px;z-index:150;transition:left .25s}.sidebar.open{left:0}.grid-2,.grid-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger">&#9776;</button>
+    <span class="topbar-logo"><span>K8s</span> Internals</span>
+    <nav class="breadcrumb">
+      <a href="../00-foundations/00-introduction.html">Home</a><span>›</span>
+      <a href="00-control-plane-overview.html">Control Plane</a><span>›</span>
+      <span>kube-controller-manager</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap"><input id="search-input" type="search" placeholder="Search…" autocomplete="off"/></div>
+    <button class="theme-btn" id="theme-btn">☀ Light</button>
+  </div>
+</div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="02-etcd.html"><span class="num">02</span>etcd</a>
+      <a href="03-kube-scheduler.html"><span class="num">03</span>kube-scheduler</a>
+      <a href="04-kube-controller-manager.html" class="active"><span class="num">04</span>kube-controller-manager</a>
+      <a href="05-cloud-controller-manager.html"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html"><span class="num">02</span>kube-proxy</a>
+      <a href="../02-node-components/03-container-runtime-interface.html"><span class="num">03</span>CRI</a>
+      <a href="../02-node-components/04-cni-plugins.html"><span class="num">04</span>CNI Plugins</a>
+      <a href="../02-node-components/05-csi-plugins.html"><span class="num">05</span>CSI Plugins</a>
+      <a href="../02-node-components/06-node-lifecycle.html"><span class="num">06</span>Node Lifecycle</a>
+      <a href="../02-node-components/07-windows-worker-nodes.html"><span class="num">07</span>Windows Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="../03-networking/00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="../03-networking/01-pod-networking.html"><span class="num">01</span>Pod Networking</a>
+      <a href="../03-networking/02-services.html"><span class="num">02</span>Services</a>
+      <a href="../03-networking/03-ingress.html"><span class="num">03</span>Ingress</a>
+      <a href="../03-networking/04-gateway-api.html"><span class="num">04</span>Gateway API</a>
+      <a href="../03-networking/05-dns.html"><span class="num">05</span>DNS</a>
+      <a href="../03-networking/06-network-policies.html"><span class="num">06</span>Network Policies</a>
+      <a href="../03-networking/07-load-balancing.html"><span class="num">07</span>Load Balancing</a>
+      <a href="../03-networking/08-ebpf-networking.html"><span class="num">08</span>eBPF Networking</a>
+      <a href="../03-networking/09-ipv4-ipv6-dual-stack.html"><span class="num">09</span>Dual Stack</a>
+      <a href="../03-networking/10-multicluster-networking.html"><span class="num">10</span>Multi-Cluster</a>
+      <a href="../03-networking/11-istio-linkerd-service-mesh.html"><span class="num">11</span>Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-statefulsets-storage.html"><span class="num">04</span>StatefulSets &amp; Storage</a>
+      <a href="../04-storage/05-csi-deep-dive.html"><span class="num">05</span>CSI Deep Dive</a>
+      <a href="../04-storage/06-volume-snapshots.html"><span class="num">06</span>Volume Snapshots</a>
+      <a href="../04-storage/07-backup-disaster-recovery.html"><span class="num">07</span>Backup &amp; DR</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html"><span class="num">01</span>Pods</a>
+      <a href="../05-workloads/02-replicasets.html"><span class="num">02</span>ReplicaSets</a>
+      <a href="../05-workloads/03-deployments.html"><span class="num">03</span>Deployments</a>
+      <a href="../05-workloads/04-statefulsets.html"><span class="num">04</span>StatefulSets</a>
+      <a href="../05-workloads/05-daemonsets.html"><span class="num">05</span>DaemonSets</a>
+      <a href="../05-workloads/06-jobs-cronjobs.html"><span class="num">06</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/07-init-containers.html"><span class="num">07</span>Init Containers</a>
+      <a href="../05-workloads/08-sidecar-containers.html"><span class="num">08</span>Sidecar Containers</a>
+      <a href="../05-workloads/09-resource-management.html"><span class="num">09</span>Resource Management</a>
+      <a href="../05-workloads/10-pod-disruption-budgets.html"><span class="num">10</span>PodDisruptionBudgets</a>
+      <a href="../05-workloads/11-autoscaling.html"><span class="num">11</span>Autoscaling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-rbac.html"><span class="num">01</span>RBAC</a>
+      <a href="../06-security/02-pod-security.html"><span class="num">02</span>Pod Security</a>
+      <a href="../06-security/03-network-policies-security.html"><span class="num">03</span>Network Policy Security</a>
+      <a href="../06-security/04-secrets-management.html"><span class="num">04</span>Secrets Management</a>
+      <a href="../06-security/05-image-security.html"><span class="num">05</span>Image Security</a>
+      <a href="../06-security/06-audit-logging.html"><span class="num">06</span>Audit Logging</a>
+      <a href="../06-security/07-certificate-management.html"><span class="num">07</span>Certificate Management</a>
+      <a href="../06-security/08-oidc-authentication.html"><span class="num">08</span>OIDC Authentication</a>
+      <a href="../06-security/09-admission-security.html"><span class="num">09</span>Admission Security</a>
+      <a href="../06-security/10-runtime-security.html"><span class="num">10</span>Runtime Security</a>
+      <a href="../06-security/11-supply-chain-security.html"><span class="num">11</span>Supply Chain Security</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics.html"><span class="num">01</span>Metrics</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Tracing</a>
+      <a href="../07-observability/04-alerting.html"><span class="num">04</span>Alerting</a>
+      <a href="../07-observability/05-dashboards.html"><span class="num">05</span>Dashboards</a>
+      <a href="../07-observability/06-ebpf-observability.html"><span class="num">06</span>eBPF Observability</a>
+      <a href="../07-observability/07-debugging-production-issues.html"><span class="num">07</span>Debugging Production</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-engineering-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/01-crds-and-operators.html"><span class="num">01</span>CRDs &amp; Operators</a>
+      <a href="../08-platform-engineering/02-controller-runtime.html"><span class="num">02</span>controller-runtime</a>
+      <a href="../08-platform-engineering/03-admission-webhooks.html"><span class="num">03</span>Admission Webhooks</a>
+      <a href="../08-platform-engineering/04-custom-schedulers.html"><span class="num">04</span>Custom Schedulers</a>
+      <a href="../08-platform-engineering/05-aggregated-apiserver.html"><span class="num">05</span>Aggregated API Servers</a>
+      <a href="../08-platform-engineering/06-gitops.html"><span class="num">06</span>GitOps</a>
+      <a href="../08-platform-engineering/07-helm.html"><span class="num">07</span>Helm</a>
+      <a href="../08-platform-engineering/08-kustomize.html"><span class="num">08</span>Kustomize</a>
+      <a href="../08-platform-engineering/09-crossplane.html"><span class="num">09</span>Crossplane</a>
+      <a href="../08-platform-engineering/10-cluster-api.html"><span class="num">10</span>Cluster API</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/01-cluster-setup.html"><span class="num">01</span>Cluster Setup</a>
+      <a href="../09-production-operations/02-upgrades.html"><span class="num">02</span>Upgrades</a>
+      <a href="../09-production-operations/03-capacity-planning.html"><span class="num">03</span>Capacity Planning</a>
+      <a href="../09-production-operations/04-cost-optimization.html"><span class="num">04</span>Cost Optimization</a>
+      <a href="../09-production-operations/05-multi-tenancy.html"><span class="num">05</span>Multi-Tenancy</a>
+      <a href="../09-production-operations/06-disaster-recovery.html"><span class="num">06</span>Disaster Recovery</a>
+      <a href="../09-production-operations/07-compliance.html"><span class="num">07</span>Compliance</a>
+      <a href="../09-production-operations/08-performance-tuning.html"><span class="num">08</span>Performance Tuning</a>
+      <a href="../09-production-operations/09-node-management.html"><span class="num">09</span>Node Management</a>
+      <a href="../09-production-operations/10-real-world-incident-analysis.html"><span class="num">10</span>Incident Analysis</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-team-overview.html"><span class="num">00</span>Team Overview</a>
+      <a href="../10-team-workflows/01-developer-workflows.html"><span class="num">01</span>Developer Workflows</a>
+      <a href="../10-team-workflows/02-ci-cd-integration.html"><span class="num">02</span>CI/CD Integration</a>
+      <a href="../10-team-workflows/03-local-development.html"><span class="num">03</span>Local Development</a>
+      <a href="../10-team-workflows/04-code-review-practices.html"><span class="num">04</span>Code Review</a>
+      <a href="../10-team-workflows/05-incident-response.html"><span class="num">05</span>Incident Response</a>
+      <a href="../10-team-workflows/06-on-call-runbooks.html"><span class="num">06</span>On-Call Runbooks</a>
+      <a href="../10-team-workflows/07-capacity-review.html"><span class="num">07</span>Capacity Review</a>
+      <a href="../10-team-workflows/08-security-review.html"><span class="num">08</span>Security Review</a>
+      <a href="../10-team-workflows/09-infrastructure-operations.html"><span class="num">09</span>Infra Operations</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html"><span class="num">00</span>API Flow Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-deployment-rollout.html"><span class="num">02</span>Deployment Rollout</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-service-endpoint-update.html"><span class="num">03</span>Service Endpoint Update</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduler-decision.html"><span class="num">04</span>Scheduler Decision</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-rbac-authorization.html"><span class="num">05</span>RBAC Authorization</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-webhook-lifecycle.html"><span class="num">06</span>Webhook Lifecycle</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-crd-creation.html"><span class="num">07</span>CRD Creation</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-volume-provisioning.html"><span class="num">08</span>Volume Provisioning</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-node-registration.html"><span class="num">09</span>Node Registration</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-hpa-scaling.html"><span class="num">10</span>HPA Scaling</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-secret-injection.html"><span class="num">11</span>Secret Injection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-leader-election.html"><span class="num">12</span>Leader Election</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-garbage-collection.html"><span class="num">13</span>Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-packet-flow.html"><span class="num">14</span>Cross-Node Packet Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Troubleshooting Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-networking-issues.html"><span class="num">02</span>Networking Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html"><span class="num">03</span>Storage Issues</a>
+      <a href="../12-troubleshooting/04-scheduler-failures.html"><span class="num">04</span>Scheduler Failures</a>
+      <a href="../12-troubleshooting/05-control-plane-failures.html"><span class="num">05</span>Control Plane Failures</a>
+      <a href="../12-troubleshooting/06-node-failures.html"><span class="num">06</span>Node Failures</a>
+      <a href="../12-troubleshooting/07-performance-issues.html"><span class="num">07</span>Performance Issues</a>
+      <a href="../12-troubleshooting/08-security-incidents.html"><span class="num">08</span>Security Incidents</a>
+      <a href="../12-troubleshooting/09-etcd-recovery.html"><span class="num">09</span>etcd Recovery</a>
+      <a href="../12-troubleshooting/10-crashloopbackoff-analysis.html"><span class="num">10</span>CrashLoopBackOff</a>
+    </div>
+  </nav>
+</aside>
+<main class="main-content" id="main-content">
+<div class="content-wrap">
+
+<div class="page-header">
+  <div class="file-meta">
+    <span class="tag">01-control-plane/04-kube-controller-manager.html</span>
+    <span class="tag">Port: :10257 (secure)</span>
+    <span class="tag">Prerequisites: 00-control-plane-overview.html, 04-kubernetes-api-model.html</span>
+    <span class="tag">Related: 13-garbage-collection.html, 12-leader-election.html</span>
+  </div>
+  <h1 id="top">kube-controller-manager</h1>
+  <p style="color:var(--text2);font-size:1rem">The engine that drives Kubernetes self-healing — 30+ reconciliation loops running inside a single binary, continuously comparing desired state to observed state and taking corrective action via the Kubernetes API.</p>
+</div>
+
+<!-- ── 1. Overview ── -->
+<h2 id="overview">What kube-controller-manager Does</h2>
+<p>kube-controller-manager is a collection of independent <strong>control loops</strong> (controllers) compiled into one binary and launched as a single process. Each controller watches specific API objects and reconciles them toward their desired state. They share an in-process informer cache, so all 30+ controllers together make only a single set of watch streams to kube-apiserver.</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Process identity</h4>
+    <ul>
+      <li>Binary: <code>kube-controller-manager</code></li>
+      <li>Static pod: <code>/etc/kubernetes/manifests/kube-controller-manager.yaml</code></li>
+      <li>Secure port: <code>:10257</code> (HTTPS, metrics + healthz)</li>
+      <li>Kubeconfig: <code>/etc/kubernetes/controller-manager.conf</code></li>
+      <li>Service account: uses <code>system:kube-controller-manager</code></li>
+      <li>Leader-elected: one active instance per cluster</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Design principles</h4>
+    <ul>
+      <li><strong>Level-triggered</strong>: reconcile based on current observed state, not event history</li>
+      <li><strong>Idempotent</strong>: reconcile can be called any number of times safely</li>
+      <li><strong>Optimistic</strong>: assume success, detect and fix divergence via watch</li>
+      <li><strong>API-only</strong>: all state mutations go through kube-apiserver, never direct to etcd</li>
+      <li><strong>Shared informers</strong>: one watch per resource type, all controllers share</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ── 2. The Reconciliation Loop Pattern ── -->
+<h2 id="reconcile-loop">The Reconciliation Loop Pattern</h2>
+<p>Every controller in kube-controller-manager follows the same fundamental <strong>observe → compare → act</strong> pattern. Understanding this pattern explains why Kubernetes converges to desired state even after partial failures.</p>
+
+<svg width="700" height="200" viewBox="0 0 700 200" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs>
+    <marker id="arc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker>
+    <marker id="arc2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3fb950"/></marker>
+  </defs>
+  <text x="350" y="20" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Controller Reconciliation Loop</text>
+  <!-- Boxes -->
+  <rect x="30" y="50" width="130" height="50" rx="6" fill="#21262d" stroke="#388bfd"/>
+  <text x="95" y="70" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">① Observe</text>
+  <text x="95" y="86" text-anchor="middle" fill="#6e7681" font-size="9">Watch via Informer</text>
+  <line x1="160" y1="75" x2="188" y2="75" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arc)"/>
+
+  <rect x="190" y="50" width="130" height="50" rx="6" fill="#21262d" stroke="#d29922"/>
+  <text x="255" y="70" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">② Compare</text>
+  <text x="255" y="86" text-anchor="middle" fill="#6e7681" font-size="9">Desired vs Observed</text>
+  <line x1="320" y1="75" x2="348" y2="75" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arc)"/>
+
+  <rect x="350" y="50" width="130" height="50" rx="6" fill="#21262d" stroke="#3fb950"/>
+  <text x="415" y="70" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">③ Act</text>
+  <text x="415" y="86" text-anchor="middle" fill="#6e7681" font-size="9">PATCH / CREATE / DELETE</text>
+  <line x1="480" y1="75" x2="508" y2="75" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arc)"/>
+
+  <rect x="510" y="50" width="130" height="50" rx="6" fill="#21262d" stroke="#bc8cff"/>
+  <text x="575" y="70" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">④ Update Status</text>
+  <text x="575" y="86" text-anchor="middle" fill="#6e7681" font-size="9">PATCH /status</text>
+
+  <!-- Feedback loop arrow -->
+  <path d="M 575 100 Q 575 160 350 160 Q 125 160 95 100" fill="none" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arc2)"/>
+  <text x="350" y="177" text-anchor="middle" fill="#3fb950" font-size="9">Watch event triggers re-enqueue → workqueue → reconcile again</text>
+</svg>
+
+<div class="callout note">
+  <div class="callout-title">▶ Level-Triggered vs Edge-Triggered</div>
+  <p>Controllers are <em>level-triggered</em>: they do not replay missed events. When a controller runs, it looks at the <em>current</em> state of the world (from its informer cache) and calculates what needs to change — regardless of what events caused it to be triggered. This means a controller that missed 10 rapid updates will still converge correctly after one reconcile, because it sees the final state, not a sequence of deltas.</p>
+</div>
+
+<p>Key invariants that make this work safely:</p>
+<ul>
+  <li><strong>Reads from informer cache</strong> (<code>resourceVersion=0</code>), not live API — avoids thundering-herd on kube-apiserver</li>
+  <li><strong>Writes go through kube-apiserver</strong> with <code>resourceVersion</code> for optimistic concurrency</li>
+  <li><strong>Status is written separately</strong> via <code>/status</code> subresource — controller owns status, user owns spec</li>
+  <li><strong>Work queue deduplication</strong> — rapid spec changes produce one reconcile, not many</li>
+  <li><strong>Exponential backoff</strong> on errors — failed reconciles retry with increasing delays</li>
+</ul>
+
+<!-- ── 3. Shared Informer Architecture ── -->
+<h2 id="shared-informers">Shared Informer Architecture</h2>
+<p>All controllers inside kube-controller-manager share a single <code>SharedInformerFactory</code>. This means that even though 30+ controllers all need to watch Pods, there is only <em>one</em> Pod watch stream to kube-apiserver, and one copy of the Pod cache in memory. Each controller registers its own event handlers against the shared informer.</p>
+
+<svg width="700" height="220" viewBox="0 0 700 220" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs><marker id="asi" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker></defs>
+  <text x="350" y="20" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">SharedInformerFactory — One Cache, Many Controllers</text>
+  <!-- API server -->
+  <rect x="10" y="40" width="120" height="40" rx="6" fill="#21262d" stroke="#388bfd"/>
+  <text x="70" y="65" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">kube-apiserver</text>
+  <!-- Arrow to SharedInformer -->
+  <line x1="130" y1="60" x2="168" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#asi)"/>
+  <text x="149" y="52" text-anchor="middle" fill="#8b949e" font-size="8">1 Watch</text>
+  <!-- SharedInformer box -->
+  <rect x="170" y="30" width="160" height="60" rx="6" fill="#21262d" stroke="#bc8cff"/>
+  <text x="250" y="52" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">Shared Informer</text>
+  <text x="250" y="67" text-anchor="middle" fill="#6e7681" font-size="9">Reflector + DeltaFIFO</text>
+  <text x="250" y="80" text-anchor="middle" fill="#6e7681" font-size="9">ThreadSafeStore (cache)</text>
+  <!-- Fan-out to controllers -->
+  <line x1="330" y1="60" x2="368" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#asi)"/>
+  <text x="349" y="52" text-anchor="middle" fill="#8b949e" font-size="8">fan-out</text>
+  <!-- Controllers -->
+  <rect x="370" y="30" width="120" height="25" rx="4" fill="#21262d" stroke="#3fb950"/>
+  <text x="430" y="47" text-anchor="middle" fill="#3fb950" font-size="9">Deployment Controller</text>
+  <rect x="370" y="62" width="120" height="25" rx="4" fill="#21262d" stroke="#3fb950"/>
+  <text x="430" y="79" text-anchor="middle" fill="#3fb950" font-size="9">ReplicaSet Controller</text>
+  <rect x="370" y="94" width="120" height="25" rx="4" fill="#21262d" stroke="#3fb950"/>
+  <text x="430" y="111" text-anchor="middle" fill="#3fb950" font-size="9">StatefulSet Controller</text>
+  <rect x="370" y="126" width="120" height="25" rx="4" fill="#21262d" stroke="#3fb950"/>
+  <text x="430" y="143" text-anchor="middle" fill="#3fb950" font-size="9">Node Lifecycle Controller</text>
+  <rect x="370" y="158" width="120" height="25" rx="4" fill="#21262d" stroke="#3fb950"/>
+  <text x="430" y="175" text-anchor="middle" fill="#3fb950" font-size="9">GC Controller (+ 25 more)</text>
+  <!-- Fan-out lines -->
+  <line x1="330" y1="43" x2="369" y2="43" stroke="#58a6ff" stroke-width="1"/>
+  <line x1="330" y1="75" x2="369" y2="75" stroke="#58a6ff" stroke-width="1"/>
+  <line x1="330" y1="107" x2="369" y2="107" stroke="#58a6ff" stroke-width="1"/>
+  <line x1="330" y1="139" x2="369" y2="139" stroke="#58a6ff" stroke-width="1"/>
+  <line x1="330" y1="171" x2="369" y2="171" stroke="#58a6ff" stroke-width="1"/>
+  <!-- Work queues -->
+  <rect x="510" y="30" width="90" height="170" rx="6" fill="#21262d" stroke="#d29922"/>
+  <text x="555" y="50" text-anchor="middle" fill="#d29922" font-size="10" font-weight="700">Work Queues</text>
+  <text x="555" y="70" text-anchor="middle" fill="#6e7681" font-size="9">one per controller</text>
+  <text x="555" y="88" text-anchor="middle" fill="#6e7681" font-size="9">rate-limited</text>
+  <text x="555" y="106" text-anchor="middle" fill="#6e7681" font-size="9">deduplicating</text>
+  <text x="555" y="124" text-anchor="middle" fill="#6e7681" font-size="9">→ Reconcile()</text>
+  <!-- Arrows to workqueue -->
+  <line x1="490" y1="43" x2="509" y2="43" stroke="#d29922" stroke-width="1" marker-end="url(#asi)"/>
+  <line x1="490" y1="75" x2="509" y2="75" stroke="#d29922" stroke-width="1" marker-end="url(#asi)"/>
+  <line x1="490" y1="107" x2="509" y2="107" stroke="#d29922" stroke-width="1" marker-end="url(#asi)"/>
+  <line x1="490" y1="139" x2="509" y2="139" stroke="#d29922" stroke-width="1" marker-end="url(#asi)"/>
+  <line x1="490" y1="171" x2="509" y2="171" stroke="#d29922" stroke-width="1" marker-end="url(#asi)"/>
+  <text x="350" y="205" text-anchor="middle" fill="#8b949e" font-size="9">Informer architecture described in detail in 04-kubernetes-api-model.html § Informer Architecture</text>
+</svg>
+
+<!-- ── 4. Complete Controller Inventory ── -->
+<h2 id="controllers">Complete Controller Inventory</h2>
+<p>As of Kubernetes 1.30, kube-controller-manager runs the following controllers. Each is a separate goroutine with its own work queue and informer event handlers.</p>
+
+<h3 id="workload-controllers">Workload Controllers</h3>
+<div class="component-grid">
+  <div class="component-card">
+    <h4>Deployment Controller</h4>
+    <p>Watches Deployments and their child ReplicaSets. On spec change, creates a new RS with updated pod template hash, scales it up, and scales down old RS — implementing the rolling update strategy. Computes <code>maxSurge</code>/<code>maxUnavailable</code> constraints.</p>
+  </div>
+  <div class="component-card">
+    <h4>ReplicaSet Controller</h4>
+    <p>Maintains the exact number of Pod replicas specified by <code>spec.replicas</code>. Watches Pods via label selector. On pod count divergence: creates or deletes Pods. Sets <code>ownerReference</code> on created Pods pointing back to the RS.</p>
+  </div>
+  <div class="component-card">
+    <h4>StatefulSet Controller</h4>
+    <p>Manages Pods with stable network identity and persistent storage. Creates Pods in order (0, 1, 2…), ensures each is Running+Ready before creating the next. Handles PVC creation per pod, rolling updates with <code>partition</code> support.</p>
+  </div>
+  <div class="component-card">
+    <h4>DaemonSet Controller</h4>
+    <p>Ensures exactly one Pod runs on every eligible node (respecting <code>nodeSelector</code>, affinity, taints). Creates Pods directly with <code>spec.nodeName</code> set — bypasses the scheduler. Handles node addition/removal and rolling updates.</p>
+  </div>
+  <div class="component-card">
+    <h4>Job Controller</h4>
+    <p>Manages batch jobs to completion. Tracks succeeded/failed pod counts against <code>completions</code>/<code>parallelism</code>. Handles pod failures via <code>backoffLimit</code>. Supports Indexed completion mode for parallelism with job index injection.</p>
+  </div>
+  <div class="component-card">
+    <h4>CronJob Controller</h4>
+    <p>Creates Job objects on a cron schedule. Enforces <code>concurrencyPolicy</code> (Allow/Forbid/Replace) and <code>startingDeadlineSeconds</code>. Tracks history of completed/failed jobs up to <code>successfulJobsHistoryLimit</code>.</p>
+  </div>
+  <div class="component-card">
+    <h4>ReplicationController</h4>
+    <p>Legacy predecessor to ReplicaSet. Functionally identical but does not support set-based selectors. Still active for backward compatibility. New workloads should use ReplicaSets via Deployments.</p>
+  </div>
+</div>
+
+<h3 id="node-controllers">Node Controllers</h3>
+<div class="component-grid">
+  <div class="component-card">
+    <h4>Node Lifecycle Controller</h4>
+    <p>The most critical node-related controller. Monitors <code>NodeReady</code> condition via kubelet heartbeats. After <code>node-monitor-grace-period</code> (default 40s) without heartbeat, marks node <code>Unknown</code>. After <code>pod-eviction-timeout</code> (default 5m), initiates pod eviction by adding <code>NoExecute</code> taints. Also manages <code>node.kubernetes.io/not-ready</code> and <code>node.kubernetes.io/unreachable</code> taints.</p>
+  </div>
+  <div class="component-card">
+    <h4>Node IPAM Controller</h4>
+    <p>Assigns pod CIDR blocks to nodes from the cluster's <code>--cluster-cidr</code> range. Writes the assigned CIDR to <code>node.spec.podCIDR</code> and <code>node.spec.podCIDRs</code>. Cloud-specific IPAM may delegate to cloud-controller-manager instead.</p>
+  </div>
+  <div class="component-card">
+    <h4>Taint Manager</h4>
+    <p>Part of the node lifecycle subsystem. Watches node taints with <code>NoExecute</code> effect. For each pod on a tainted node, checks tolerations: if not tolerated (or tolerationSeconds expired), marks pod for deletion. Runs the eviction rate limiter to avoid mass eviction storms.</p>
+  </div>
+</div>
+
+<h3 id="storage-controllers">Storage Controllers</h3>
+<div class="component-grid">
+  <div class="component-card">
+    <h4>PersistentVolume Controller</h4>
+    <p>Binds PVCs to PVs via the <em>claim binder</em> loop. For static provisioning: finds a matching PV and binds. For dynamic provisioning with <code>Immediate</code> binding mode: invokes the StorageClass provisioner. Manages the PV lifecycle: Available → Bound → Released → (Retain/Delete/Recycle).</p>
+  </div>
+  <div class="component-card">
+    <h4>AttachDetach Controller</h4>
+    <p>Manages volume attach/detach operations independently from kubelet. Watches pods, determines which volumes need to be attached to which nodes, calls the volume plugin's <code>Attach()</code>/<code>Detach()</code>. Tracks <code>VolumeAttachment</code> objects for CSI volumes.</p>
+  </div>
+  <div class="component-card">
+    <h4>PVC Protection Controller</h4>
+    <p>Adds the <code>kubernetes.io/pvc-protection</code> finalizer to PVCs that are bound to a running pod. Prevents accidental deletion of in-use PVCs — the PVC goes to <code>Terminating</code> but isn't deleted until all pods release it.</p>
+  </div>
+  <div class="component-card">
+    <h4>PV Protection Controller</h4>
+    <p>Adds <code>kubernetes.io/pv-protection</code> finalizer to PVs that are bound to a PVC. Ensures PVs aren't deleted while a PVC is bound to them.</p>
+  </div>
+</div>
+
+<h3 id="network-controllers">Network Controllers</h3>
+<div class="component-grid">
+  <div class="component-card">
+    <h4>Endpoint Controller (legacy)</h4>
+    <p>Watches Services and Pods. For each Service, maintains the <code>Endpoints</code> object with the IP:port of all Ready pods matching the Service selector. Replaced by EndpointSlice controller for scalability but still runs for backward compatibility.</p>
+  </div>
+  <div class="component-card">
+    <h4>EndpointSlice Controller</h4>
+    <p>Manages <code>EndpointSlice</code> objects (max 100 endpoints per slice). Shards a Service's backends across multiple slices for scalability. Incremental updates — only changed slices are updated, reducing kube-apiserver and etcd write amplification on large Services.</p>
+  </div>
+  <div class="component-card">
+    <h4>EndpointSliceMirroring Controller</h4>
+    <p>Mirrors manually-managed <code>Endpoints</code> objects to <code>EndpointSlice</code> objects for backward compatibility. Allows tools that still write to Endpoints (not EndpointSlice) to work with kube-proxy's EndpointSlice-based routing.</p>
+  </div>
+  <div class="component-card">
+    <h4>Service Controller</h4>
+    <p>Watches Services of type <code>LoadBalancer</code> and delegates to the cloud provider (via cloud-controller-manager in modern setups, or in-tree cloud provider plugins) to create/update external load balancers. Also manages Service NodePort allocation.</p>
+  </div>
+</div>
+
+<h3 id="namespace-controllers">Namespace, RBAC, and Security Controllers</h3>
+<div class="component-grid">
+  <div class="component-card">
+    <h4>Namespace Controller</h4>
+    <p>When a Namespace enters <code>Terminating</code> phase (after DELETE call), this controller deletes all resources within the namespace in the correct order, then removes the <code>kubernetes</code> finalizer to allow the Namespace object itself to be deleted.</p>
+  </div>
+  <div class="component-card">
+    <h4>ServiceAccount Controller</h4>
+    <p>Creates a default ServiceAccount named <code>default</code> in every namespace. Also creates the legacy token Secret for each ServiceAccount (pre-1.24 behavior, now managed by <code>TokenRequest</code> API). Ensures the ServiceAccount exists before pods can reference it.</p>
+  </div>
+  <div class="component-card">
+    <h4>Token Controller</h4>
+    <p>Watches ServiceAccount token Secrets. Creates token files when annotations indicate they need populating. Deletes tokens for ServiceAccounts that no longer exist. In 1.24+, the bound service account token volume projection largely replaces this flow.</p>
+  </div>
+  <div class="component-card">
+    <h4>RBAC Bootstrapping Controller</h4>
+    <p>Ensures built-in ClusterRoles and ClusterRoleBindings (like <code>cluster-admin</code>, <code>system:node</code>) exist and are up-to-date. Re-creates them if accidentally deleted. Runs on every leader election.</p>
+  </div>
+  <div class="component-card">
+    <h4>Certificate Signing Controllers</h4>
+    <p>Processes <code>CertificateSigningRequest</code> (CSR) objects. Three sub-controllers: <em>csrsigning</em> (signs approved CSRs using the cluster CA), <em>csrapproving</em> (auto-approves node/kubelet CSRs), <em>csrcleaner</em> (deletes old CSRs after TTL).</p>
+  </div>
+  <div class="component-card">
+    <h4>Bootstrap Token Controller</h4>
+    <p>Manages tokens used for node bootstrapping (e.g., <code>kubeadm join</code>). Cleans up expired bootstrap tokens, creates/updates the <code>cluster-info</code> ConfigMap in <code>kube-public</code>, and creates the RBAC bindings needed for bootstrapping nodes.</p>
+  </div>
+</div>
+
+<h3 id="gc-controllers">Garbage Collection and Lifecycle Controllers</h3>
+<div class="component-grid">
+  <div class="component-card">
+    <h4>Garbage Collector</h4>
+    <p>The most complex controller. Traverses the <code>ownerReferences</code> graph to delete orphaned objects. Maintains a DAG of all API objects in memory. When an owner is deleted, orphans are queued for deletion. Handles foreground/background deletion cascades. See <a href="../11-api-flows-and-sequence-diagrams/13-garbage-collection.html">13-garbage-collection.html</a>.</p>
+  </div>
+  <div class="component-card">
+    <h4>TTL Controller</h4>
+    <p>Deletes completed Jobs and their pods after <code>spec.ttlSecondsAfterFinished</code> expires. This is a separate mechanism from <code>successfulJobsHistoryLimit</code> on CronJob — TTL operates on individual Jobs regardless of their parent.</p>
+  </div>
+  <div class="component-card">
+    <h4>TTL-After-Finished Controller</h4>
+    <p>Specifically handles the <code>.spec.ttlSecondsAfterFinished</code> field on Jobs. Watches for completed Jobs and sets up a timer to delete them. Prevents accumulation of finished Jobs cluttering the cluster.</p>
+  </div>
+  <div class="component-card">
+    <h4>Resource Quota Controller</h4>
+    <p>Enforces <code>ResourceQuota</code> objects. Watches all resource types and maintains usage counts. Replenishes quota when resources are deleted. Quota admission happens in the apiserver admission pipeline; this controller maintains the quota usage status.</p>
+  </div>
+  <div class="component-card">
+    <h4>HorizontalPodAutoscaler (HPA) Controller</h4>
+    <p>Polls metrics (CPU, memory, custom metrics via metrics-server or custom metrics API) every <code>--horizontal-pod-autoscaler-sync-period</code> (default 15s). Calculates desired replicas, applies scale-up/scale-down stabilization windows, and PATCHes the target's <code>/scale</code> subresource.</p>
+  </div>
+  <div class="component-card">
+    <h4>Disruption Controller</h4>
+    <p>Maintains <code>PodDisruptionBudget</code> status. Tracks how many disruptions have occurred vs allowed. Updates <code>status.disruptionsAllowed</code>. The eviction API (used by <code>kubectl drain</code> and the scheduler's preemption) checks this status before evicting pods.</p>
+  </div>
+</div>
+
+<!-- ── 5. Deep Dive: Node Lifecycle Controller ── -->
+<h2 id="node-lifecycle">Deep Dive: Node Lifecycle Controller</h2>
+<p>The Node Lifecycle Controller is arguably the most operationally important controller — it determines when failed nodes trigger pod eviction and how quickly your cluster recovers from node failures.</p>
+
+<svg width="700" height="230" viewBox="0 0 700 230" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs><marker id="anl" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker></defs>
+  <text x="350" y="20" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Node Failure Detection and Eviction Timeline</text>
+  <!-- Timeline -->
+  <line x1="30" y1="80" x2="670" y2="80" stroke="#30363d" stroke-width="2"/>
+  <!-- Tick marks -->
+  <line x1="30" y1="75" x2="30" y2="85" stroke="#8b949e" stroke-width="2"/>
+  <line x1="200" y1="75" x2="200" y2="85" stroke="#d29922" stroke-width="2"/>
+  <line x1="400" y1="75" x2="400" y2="85" stroke="#f85149" stroke-width="2"/>
+  <line x1="600" y1="75" x2="600" y2="85" stroke="#f85149" stroke-width="2"/>
+  <!-- Labels above -->
+  <text x="30" y="65" text-anchor="middle" fill="#3fb950" font-size="9">t=0</text>
+  <text x="30" y="55" text-anchor="middle" fill="#3fb950" font-size="9">Last heartbeat</text>
+  <text x="200" y="65" text-anchor="middle" fill="#d29922" font-size="9">t=40s</text>
+  <text x="200" y="55" text-anchor="middle" fill="#d29922" font-size="9">node-monitor-grace-period</text>
+  <text x="400" y="65" text-anchor="middle" fill="#f85149" font-size="9">t=5m40s</text>
+  <text x="400" y="55" text-anchor="middle" fill="#f85149" font-size="9">pod-eviction-timeout</text>
+  <text x="600" y="65" text-anchor="middle" fill="#f85149" font-size="9">t~6m+</text>
+  <text x="600" y="55" text-anchor="middle" fill="#f85149" font-size="9">Pods terminated</text>
+  <!-- Labels below -->
+  <text x="115" y="100" text-anchor="middle" fill="#8b949e" font-size="9">Node reports Unknown</text>
+  <text x="115" y="112" text-anchor="middle" fill="#8b949e" font-size="9">node.k8s.io/unreachable taint added</text>
+  <text x="300" y="100" text-anchor="middle" fill="#d29922" font-size="9">NoExecute taint effect:</text>
+  <text x="300" y="112" text-anchor="middle" fill="#d29922" font-size="9">pods without toleration evicted</text>
+  <text x="500" y="100" text-anchor="middle" fill="#f85149" font-size="9">Pods with toleration (300s)</text>
+  <text x="500" y="112" text-anchor="middle" fill="#f85149" font-size="9">also evicted</text>
+  <!-- Boxes for phases -->
+  <rect x="30" y="130" width="170" height="30" rx="4" fill="rgba(63,185,80,.1)" stroke="#3fb950"/>
+  <text x="115" y="150" text-anchor="middle" fill="#3fb950" font-size="9">NodeReady=True (healthy)</text>
+  <rect x="200" y="130" width="200" height="30" rx="4" fill="rgba(210,153,34,.1)" stroke="#d29922"/>
+  <text x="300" y="150" text-anchor="middle" fill="#d29922" font-size="9">NodeReady=Unknown (grace period)</text>
+  <rect x="400" y="130" width="270" height="30" rx="4" fill="rgba(248,81,73,.1)" stroke="#f85149"/>
+  <text x="535" y="150" text-anchor="middle" fill="#f85149" font-size="9">Eviction in progress / Pods being rescheduled</text>
+  <!-- Eviction rate limiter note -->
+  <text x="350" y="195" text-anchor="middle" fill="#8b949e" font-size="9">Eviction rate-limited: default 0.1 pods/s per zone (--node-eviction-rate)</text>
+  <text x="350" y="210" text-anchor="middle" fill="#8b949e" font-size="9">Rate drops to 0 if &gt;55% nodes in zone unhealthy (partition avoidance)</text>
+</svg>
+
+<table>
+<tr><th>Parameter</th><th>Flag</th><th>Default</th><th>Description</th></tr>
+<tr><td>Grace period</td><td><code>--node-monitor-grace-period</code></td><td>40s</td><td>Time after last heartbeat before node is marked Unknown</td></tr>
+<tr><td>Eviction timeout</td><td><code>--pod-eviction-timeout</code></td><td>5m0s</td><td>How long to wait before evicting pods from unreachable node</td></tr>
+<tr><td>Eviction rate</td><td><code>--node-eviction-rate</code></td><td>0.1/s</td><td>Max pods evicted per second in a healthy zone</td></tr>
+<tr><td>Secondary rate</td><td><code>--secondary-node-eviction-rate</code></td><td>0.01/s</td><td>Eviction rate when &gt;55% nodes unhealthy (network partition)</td></tr>
+<tr><td>Unhealthy threshold</td><td><code>--unhealthy-zone-threshold</code></td><td>55%</td><td>Fraction of unhealthy nodes to trigger secondary rate</td></tr>
+<tr><td>Monitor period</td><td><code>--node-monitor-period</code></td><td>5s</td><td>How often controller checks node status</td></tr>
+</table>
+
+<div class="callout warn">
+  <div class="callout-title">⚠ Network Partition Avoidance</div>
+  <p>If more than 55% of nodes in a zone become unreachable simultaneously, the eviction rate drops to near-zero. This is intentional — it detects a network partition scenario where the control plane lost contact with an entire zone. In that case, mass-evicting pods would be counterproductive because the nodes (and their pods) are likely still running fine. The controller waits for the zone to recover rather than evicting healthy workloads.</p>
+</div>
+
+<!-- ── 6. Deep Dive: Garbage Collector ── -->
+<h2 id="garbage-collector">Deep Dive: Garbage Collector</h2>
+<p>The Garbage Collector (GC) is the most architecturally complex controller. It maintains an in-memory <strong>owner-dependency graph</strong> (a DAG) of all API objects and propagates deletions through the graph.</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>GraphBuilder</h4>
+    <p>Watches ALL resource types via a "meta-only" informer (fetches only <code>metadata</code>, not full objects — much cheaper). Builds a DAG: edges are <code>ownerReferences</code>. When an object is created/deleted, the graph is updated and affected nodes are enqueued for processing.</p>
+  </div>
+  <div class="card">
+    <h4>GarbageCollector</h4>
+    <p>Processes the dirty-queue from GraphBuilder. For each object: if owner is missing/deleted and object lacks a <code>foregroundDeletion</code> finalizer → delete the object. For foreground deletion: remove dependents first, then remove the owner's <code>foregroundDeletion</code> finalizer.</p>
+  </div>
+</div>
+
+<pre><code># ownerReference chain: Deployment → ReplicaSet → Pod
+kubectl get pod my-pod-abc12 -o jsonpath='{.metadata.ownerReferences}'
+# [{apiVersion:apps/v1, kind:ReplicaSet, name:my-deploy-6799fc88d8, uid:..., controller:true}]
+
+kubectl get rs my-deploy-6799fc88d8 -o jsonpath='{.metadata.ownerReferences}'
+# [{apiVersion:apps/v1, kind:Deployment, name:my-deploy, uid:..., controller:true}]
+
+# Delete deployment with background GC (default)
+kubectl delete deployment my-deploy
+# Deployment deleted immediately; RS and Pods deleted asynchronously by GC
+
+# Delete with foreground GC (wait for dependents)
+kubectl delete deployment my-deploy --cascade=foreground
+
+# Orphan — delete deployment but keep ReplicaSets and Pods
+kubectl delete deployment my-deploy --cascade=orphan
+
+# Check if GC is processing (look for rapid object deletions)
+kubectl get events --field-selector reason=SuccessfulDelete | head -20</code></pre>
+
+<details>
+<summary>GC Race Condition: Dangling ownerReferences</summary>
+<div class="details-body">
+<p>If a pod is created with an ownerReference pointing to a UID that no longer exists (e.g., due to a rapid delete+recreate), the GC will delete the pod as an orphan. This is a known issue when controllers don't set <code>blockOwnerDeletion: true</code> on ownerReferences. Controllers should always verify the owner's UID is current before creating dependents.</p>
+<pre><code># Detect pods with dangling ownerReferences
+kubectl get pods -A -o json | jq -r '
+  .items[] |
+  select(.metadata.ownerReferences != null) |
+  "\(.metadata.namespace)/\(.metadata.name): owner=\(.metadata.ownerReferences[0].name)"
+' | head -20</code></pre>
+</div>
+</details>
+
+<!-- ── 7. Deep Dive: Deployment Controller ── -->
+<h2 id="deployment-controller">Deep Dive: Deployment Controller</h2>
+<p>The Deployment controller orchestrates rolling updates by managing ReplicaSets. Understanding its algorithm is essential for debugging slow rollouts and unexpected pod terminations.</p>
+
+<pre><code># Rolling update algorithm
+# Given: maxSurge=1, maxUnavailable=1, replicas=3
+#
+# Initial state: RS-v1 has 3 pods (all Ready)
+# After spec.template change:
+#
+# Step 1: Create RS-v2 with 0 replicas
+# Step 2: Scale RS-v2 to 1 (maxSurge=1, total=4=3+1)
+# Step 3: Wait for RS-v2 pod[0] to be Ready
+# Step 4: Scale RS-v1 to 2 (maxUnavailable=1, so min Ready=2)
+# Step 5: Scale RS-v2 to 2 → wait → scale RS-v1 to 1
+# Step 6: Scale RS-v2 to 3 → wait → scale RS-v1 to 0
+# RS-v1 kept at 0 replicas (not deleted) for rollback
+
+kubectl rollout status deployment/my-deploy
+kubectl rollout history deployment/my-deploy
+kubectl rollout undo deployment/my-deploy          # roll back to previous RS
+kubectl rollout undo deployment/my-deploy --to-revision=2  # roll back to specific revision</code></pre>
+
+<table>
+<tr><th>Field</th><th>Default</th><th>Effect</th></tr>
+<tr><td><code>spec.strategy.rollingUpdate.maxSurge</code></td><td>25%</td><td>Max pods above desired count during rollout. Higher = faster rollout, more resource burst</td></tr>
+<tr><td><code>spec.strategy.rollingUpdate.maxUnavailable</code></td><td>25%</td><td>Max unavailable pods during rollout. 0 = zero-downtime. Lower = slower rollout</td></tr>
+<tr><td><code>spec.progressDeadlineSeconds</code></td><td>600</td><td>Time before rollout is marked Failed if not progressing</td></tr>
+<tr><td><code>spec.minReadySeconds</code></td><td>0</td><td>Seconds a new pod must be Ready before old pod is terminated</td></tr>
+<tr><td><code>spec.revisionHistoryLimit</code></td><td>10</td><td>Number of old ReplicaSets to keep for rollback</td></tr>
+</table>
+
+<details>
+<summary>Deployment conditions and status fields</summary>
+<div class="details-body">
+<pre><code># Key status fields
+kubectl get deploy my-deploy -o yaml | grep -A 30 "status:"
+# status:
+#   availableReplicas: 3     # Ready pods with minReadySeconds met
+#   readyReplicas: 3          # pods passing readinessProbe
+#   replicas: 3               # total pods (including not ready)
+#   updatedReplicas: 3        # pods with current template
+#   observedGeneration: 5     # last spec generation processed
+#   conditions:
+#   - type: Available          # availableReplicas >= minAvailable
+#     status: "True"
+#   - type: Progressing        # rollout is making progress
+#     status: "True"
+#   - type: ReplicaFailure     # pod creation failing
+#     status: "False"
+
+# Detect stalled rollout
+kubectl get deploy my-deploy -o jsonpath='{.status.conditions[?(@.type=="Progressing")].message}'</code></pre>
+</div>
+</details>
+
+<!-- ── 8. Deep Dive: HPA Controller ── -->
+<h2 id="hpa-controller">Deep Dive: HPA Controller</h2>
+<p>The Horizontal Pod Autoscaler controller runs its own sync loop independently from the event-driven controllers. It polls metrics at a fixed interval and calculates desired replicas using a ratio formula.</p>
+
+<pre><code>desiredReplicas = ceil(currentReplicas * (currentMetricValue / desiredMetricValue))
+
+# Example: target CPU = 50%, current CPU = 80%, current replicas = 3
+# desiredReplicas = ceil(3 * (80 / 50)) = ceil(4.8) = 5
+
+# Scale-up: immediate (no stabilization by default)
+# Scale-down: 5-minute stabilization window (--horizontal-pod-autoscaler-downscale-stabilization)
+# This prevents flapping on temporary load spikes</code></pre>
+
+<pre><code>apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: AverageValue
+        averageValue: 500Mi
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "100"
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5-minute cooldown on scale-down
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60              # max 10% pods removed per minute
+    scaleUp:
+      stabilizationWindowSeconds: 0    # immediate scale-up
+      policies:
+      - type: Pods
+        value: 4
+        periodSeconds: 60              # max 4 pods added per minute</code></pre>
+
+<div class="callout note">
+  <div class="callout-title">▶ HPA and SSA Field Ownership Conflict</div>
+  <p>If you manage <code>spec.replicas</code> via Server-Side Apply in your manifests, the HPA will conflict with your manager — it sets <code>spec.replicas</code> via its own field manager. Best practice: omit <code>spec.replicas</code> from your Deployment manifest when HPA manages it (or set it to the initial value and let HPA take over). See <a href="../00-foundations/04-kubernetes-api-model.html#ssa">04-kubernetes-api-model.html § SSA</a>.</p>
+</div>
+
+<!-- ── 9. Configuration Reference ── -->
+<h2 id="config">Configuration and Key Flags</h2>
+
+<pre><code># kube-controller-manager static pod (kubeadm)
+spec:
+  containers:
+  - command:
+    - kube-controller-manager
+    - --allocate-node-cidrs=true
+    - --cluster-cidr=10.244.0.0/16
+    - --service-cluster-ip-range=10.96.0.0/12
+    - --cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt
+    - --cluster-signing-key-file=/etc/kubernetes/pki/ca.key
+    - --controllers=*,bootstrapsigner,tokencleaner  # * = all default, plus extras
+    - --kubeconfig=/etc/kubernetes/controller-manager.conf
+    - --leader-elect=true
+    - --root-ca-file=/etc/kubernetes/pki/ca.crt
+    - --service-account-private-key-file=/etc/kubernetes/pki/sa.key
+    - --use-service-account-credentials=true
+    - --node-monitor-grace-period=40s
+    - --pod-eviction-timeout=5m0s
+    - --node-eviction-rate=0.1
+    - --concurrent-deployment-syncs=5
+    - --concurrent-replicaset-syncs=5
+    - --concurrent-gc-syncs=20</code></pre>
+
+<table>
+<tr><th>Flag</th><th>Default</th><th>Purpose</th></tr>
+<tr><td><code>--controllers</code></td><td><code>*</code></td><td>Comma-separated list of controllers to enable. <code>*</code>=all. Prefix with <code>-</code> to disable (e.g., <code>-ttl</code>)</td></tr>
+<tr><td><code>--concurrent-deployment-syncs</code></td><td>5</td><td>Number of Deployment objects synced in parallel</td></tr>
+<tr><td><code>--concurrent-replicaset-syncs</code></td><td>5</td><td>Number of ReplicaSet objects synced in parallel</td></tr>
+<tr><td><code>--concurrent-statefulset-syncs</code></td><td>10</td><td>Number of StatefulSet objects synced in parallel</td></tr>
+<tr><td><code>--concurrent-daemonset-syncs</code></td><td>2</td><td>Number of DaemonSet objects synced in parallel</td></tr>
+<tr><td><code>--concurrent-gc-syncs</code></td><td>20</td><td>GC goroutines for garbage collecting orphaned objects</td></tr>
+<tr><td><code>--concurrent-endpoint-syncs</code></td><td>5</td><td>Endpoint reconciliation goroutines</td></tr>
+<tr><td><code>--horizontal-pod-autoscaler-sync-period</code></td><td>15s</td><td>HPA metrics poll interval</td></tr>
+<tr><td><code>--horizontal-pod-autoscaler-downscale-stabilization</code></td><td>5m0s</td><td>Scale-down stabilization window</td></tr>
+<tr><td><code>--use-service-account-credentials</code></td><td>true</td><td>Each controller uses its own SA token (fine-grained RBAC)</td></tr>
+<tr><td><code>--leader-elect</code></td><td>true</td><td>Enable leader election for HA</td></tr>
+<tr><td><code>--kube-api-qps</code></td><td>20</td><td>API server QPS limit</td></tr>
+<tr><td><code>--kube-api-burst</code></td><td>30</td><td>API server burst above QPS</td></tr>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">▶ --use-service-account-credentials</div>
+  <p>When enabled (default), each controller runs with its own ServiceAccount token instead of the kube-controller-manager credential. This enables fine-grained RBAC: the node lifecycle controller has Node/Pod access, the deployment controller has Deployment/ReplicaSet/Pod access, etc. Disabling this collapses all permissions to the single <code>system:kube-controller-manager</code> credential, which is a security regression.</p>
+</div>
+
+<!-- ── 10. Leader Election Deep Dive ── -->
+<h2 id="leader-election">Leader Election</h2>
+<p>kube-controller-manager uses a <code>Lease</code> object in <code>kube-system</code> namespace for leader election. Only the leader runs the controllers; standby instances loop on lease renewal attempts.</p>
+
+<pre><code># Check current leader
+kubectl -n kube-system get lease kube-controller-manager -o yaml
+# .spec.holderIdentity: "master-1_..."
+# .spec.acquireTime: "2024-01-15T10:30:00Z"
+# .spec.renewTime: "2024-01-15T11:45:30Z"   # updated every leaseDuration/3
+# .spec.leaseDurationSeconds: 15
+
+# Leader election logs
+kubectl -n kube-system logs kube-controller-manager-master-1 | grep -i "leader"
+# I0115 10:30:00 leaderelection.go:258] successfully acquired lease kube-system/kube-controller-manager
+
+# Lease parameters (via flags):
+# --leader-elect-lease-duration=15s    # time a non-leader waits to acquire
+# --leader-elect-renew-deadline=10s    # time leader has to renew before losing
+# --leader-elect-retry-period=2s       # retry period for acquiring/renewing</code></pre>
+
+<div class="callout danger">
+  <div class="callout-title">✖ Split-Brain During Leader Election</div>
+  <p>If the leader fails to renew its lease (e.g., network partition from apiserver) but continues running, two instances may briefly believe they are leader. Kubernetes tolerates this because controllers are idempotent and use optimistic concurrency — conflicting writes return 409 and are retried. The Lease mechanism minimizes the window but cannot guarantee exactly-once execution. Controllers must be designed with this in mind.</p>
+</div>
+
+<!-- ── 11. Metrics and Alerting ── -->
+<h2 id="metrics">Metrics and Alerting</h2>
+
+<pre><code># Scrape metrics
+curl -sk https://localhost:10257/metrics \
+  --cert /etc/kubernetes/pki/controller-manager-client.crt \
+  --key /etc/kubernetes/pki/controller-manager-client.key
+
+# Key metrics
+workqueue_depth{name="deployment"}                    # items in work queue
+workqueue_adds_total{name="deployment"}               # total items added
+workqueue_queue_duration_seconds{name="deployment"}   # time items wait in queue
+workqueue_work_duration_seconds{name="deployment"}    # time to process each item
+workqueue_retries_total{name="deployment"}            # retries due to errors
+
+controller_runtime_reconcile_total{controller="deployment",result="success"}
+controller_runtime_reconcile_total{controller="deployment",result="error"}
+controller_runtime_reconcile_errors_total{controller="deployment"}
+
+# Node lifecycle
+node_collector_evictions_total{zone="us-east-1a"}     # pods evicted
+node_collector_unhealthy_nodes_in_zone{zone="us-east-1a"}
+
+# GC
+garbage_collector_attempt_to_delete_queue_consumers   # GC worker count
+garbage_collector_dirty_processing_latency_seconds
+
+# HPA
+horizontal_pod_autoscaler_metadata_generation          # HPA reconcile count</code></pre>
+
+<details>
+<summary>Prometheus Alerting Rules</summary>
+<div class="details-body">
+<pre><code>groups:
+- name: kube-controller-manager
+  rules:
+  - alert: KubeControllerManagerDown
+    expr: absent(up{job="kube-controller-manager"} == 1)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "kube-controller-manager is down"
+      description: "No kube-controller-manager instance is active. Self-healing is suspended."
+
+  - alert: KubeControllerManagerHighWorkQueueDepth
+    expr: workqueue_depth{job="kube-controller-manager",name=~"deployment|replicaset"} > 100
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Controller work queue depth is high"
+      description: "{{ $labels.name }} controller queue depth is {{ $value }}."
+
+  - alert: KubeControllerManagerReconcileErrors
+    expr: |
+      rate(workqueue_retries_total{job="kube-controller-manager"}[5m]) > 1
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High controller reconcile error rate"
+      description: "Controller {{ $labels.name }} is retrying at {{ $value }}/s."
+
+  - alert: KubeNodeEvictionHigh
+    expr: rate(node_collector_evictions_total[5m]) > 0.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High node eviction rate"
+      description: "{{ $value }} pods/s evicted in zone {{ $labels.zone }}."
+
+  - alert: KubeControllerManagerLeaderElectionLost
+    expr: |
+      increase(leader_election_master_status{job="kube-controller-manager"}[5m]) == 0
+      and on(instance) leader_election_master_status == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "No kube-controller-manager leader"</code></pre>
+</div>
+</details>
+
+<!-- ── 12. Troubleshooting ── -->
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<details>
+<summary>Pods not being created / Deployment stuck</summary>
+<div class="details-body">
+<pre><code># Check if kube-controller-manager is running
+kubectl -n kube-system get pod -l component=kube-controller-manager
+kubectl -n kube-system logs kube-controller-manager-master-1 | tail -50
+
+# Check work queue depth
+kubectl get --raw /metrics | grep 'workqueue_depth{name="deployment"}'
+
+# Check Deployment conditions
+kubectl describe deploy my-deploy | grep -A 5 "Conditions:"
+
+# Check ReplicaSet events
+kubectl get events --field-selector involvedObject.kind=ReplicaSet
+
+# Common causes:
+# - kube-controller-manager in CrashLoopBackOff (check logs)
+# - Resource quota exhausted (ResourceQuota controller rejecting pods)
+# - Image pull secret missing (pod creation succeeds but pod stuck)
+# - RBAC: controller SA missing permissions to create pods</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Pods not evicted from failed node</summary>
+<div class="details-body">
+<pre><code># Check node conditions
+kubectl describe node failed-node | grep -A 10 "Conditions:"
+
+# Check node taints (NoExecute should be added)
+kubectl get node failed-node -o jsonpath='{.spec.taints}'
+
+# Check pod toleration seconds
+kubectl get pod my-pod -o jsonpath='{.spec.tolerations}'
+
+# Check eviction rate limit metrics
+kubectl get --raw /metrics | grep node_collector_evictions_total
+
+# Force-evict a pod (bypasses normal eviction flow)
+kubectl delete pod my-pod --grace-period=0 --force
+
+# If node-monitor-grace-period not met yet, wait or reduce it
+# (changing requires restarting kube-controller-manager)</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Objects stuck in Terminating state</summary>
+<div class="details-body">
+<pre><code># Find what finalizers are blocking deletion
+kubectl get &lt;resource&gt; &lt;name&gt; -o jsonpath='{.metadata.finalizers}'
+
+# Find all objects with finalizers
+kubectl get all -A -o json | jq -r '
+  .items[] |
+  select(.metadata.finalizers != null and (.metadata.finalizers | length) > 0) |
+  "\(.kind) \(.metadata.namespace)/\(.metadata.name): \(.metadata.finalizers)"
+'
+
+# Emergency: manually remove a stuck finalizer (DANGEROUS — only if controller is dead)
+kubectl patch &lt;resource&gt; &lt;name&gt; --type=json \
+  -p '[{"op":"remove","path":"/metadata/finalizers"}]'
+
+# Check if the relevant controller is running (e.g., pvc-protection requires running kcm)
+kubectl -n kube-system logs kube-controller-manager-master-1 | grep -i "pvc-protection"</code></pre>
+</div>
+</details>
+
+<details>
+<summary>GC not cleaning up orphaned pods/replicasets</summary>
+<div class="details-body">
+<pre><code># Check GC work queue
+kubectl get --raw /metrics | grep garbage_collector
+
+# Check if GC is processing
+kubectl -n kube-system logs kube-controller-manager-master-1 | grep -i "garbage"
+
+# Find orphaned ReplicaSets (no ownerReference or owner missing)
+kubectl get rs -A -o json | jq -r '
+  .items[] |
+  select(.metadata.ownerReferences == null or (.metadata.ownerReferences | length) == 0) |
+  "\(.metadata.namespace)/\(.metadata.name)"
+'
+
+# Check GC concurrent syncs (increase if cluster has many objects)
+# --concurrent-gc-syncs=20 (default); increase to 50+ for very large clusters</code></pre>
+</div>
+</details>
+
+<details>
+<summary>HPA not scaling / wrong replica count</summary>
+<div class="details-body">
+<pre><code># Check HPA status
+kubectl describe hpa my-app
+# Look for: "unable to get metrics", "failed to get CPU utilization"
+# Conditions section shows why scaling is blocked
+
+# Check metrics-server is running and healthy
+kubectl top pods -n kube-system
+kubectl -n kube-system get pods -l k8s-app=metrics-server
+
+# Check if resource requests are set (required for CPU% metric)
+kubectl get pod my-pod -o jsonpath='{.spec.containers[0].resources.requests}'
+
+# Check HPA events
+kubectl get events --field-selector involvedObject.kind=HorizontalPodAutoscaler
+
+# Check if min/max bounds are blocking
+kubectl get hpa my-app -o jsonpath='{.spec.minReplicas},{.spec.maxReplicas},{.status.currentReplicas}'</code></pre>
+</div>
+</details>
+
+<!-- ── 13. Production Best Practices ── -->
+<h2 id="production">Production Best Practices</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Always run ≥2 replicas with leader election</h4>
+    <p>With a single kube-controller-manager instance, a crash means no self-healing until it restarts. Run 2–3 replicas. Only the leader is active; standby instances take over within <code>leaseDurationSeconds</code> (15s default) of leader failure.</p>
+  </div>
+  <div class="card">
+    <h4>Tune eviction parameters for your SLA</h4>
+    <p>Default <code>pod-eviction-timeout=5m</code> means workloads wait 5+ minutes to reschedule on node failure. For latency-sensitive services, reduce to 60–90s. For stateful workloads that should prefer node recovery over rescheduling, keep the default or increase.</p>
+  </div>
+  <div class="card">
+    <h4>Set resource requests on every container</h4>
+    <p>The HPA controller and the Node Lifecycle controller both depend on accurate resource accounting. Without CPU/memory requests, HPA cannot compute utilization, and the scheduler cannot make good placement decisions.</p>
+  </div>
+  <div class="card">
+    <h4>Use ResourceQuota per namespace</h4>
+    <p>Without ResourceQuota, a rogue deployment can consume all cluster resources. Set CPU/memory quotas per namespace. The ResourceQuota controller enforces these at admission time, not at scheduling time.</p>
+  </div>
+  <div class="card">
+    <h4>Monitor work queue depth</h4>
+    <p>High <code>workqueue_depth</code> for the deployment or replicaset controller indicates the controller is falling behind. This manifests as slow rollouts. Increase <code>--concurrent-deployment-syncs</code> or investigate if kube-apiserver is throttling the controller.</p>
+  </div>
+  <div class="card">
+    <h4>Keep revisionHistoryLimit reasonable</h4>
+    <p>Default <code>revisionHistoryLimit: 10</code> keeps 10 old ReplicaSets. On clusters with hundreds of Deployments, this creates thousands of zombie ReplicaSets. Reduce to 3–5 for most workloads; set 0 only if you never need rollback.</p>
+  </div>
+  <div class="card">
+    <h4>Use PodDisruptionBudgets for all stateful apps</h4>
+    <p>Without a PDB, the node lifecycle controller can evict all pods of a StatefulSet simultaneously during zone failure. PDBs ensure the Disruption controller blocks eviction if it would violate <code>minAvailable</code>.</p>
+  </div>
+  <div class="card">
+    <h4>Audit finalizers regularly</h4>
+    <p>Finalizers that are never removed cause objects to accumulate in <code>Terminating</code> state, consuming etcd space and slowing GC. Audit for stuck Terminating objects monthly: <code>kubectl get all -A --field-selector metadata.deletionTimestamp!=null</code>.</p>
+  </div>
+  <div class="card">
+    <h4>Increase concurrent syncs for large clusters</h4>
+    <p>On clusters with 1000+ nodes or 10,000+ pods, increase <code>--concurrent-gc-syncs=50</code>, <code>--concurrent-deployment-syncs=20</code>, and tune <code>--kube-api-qps=100 --kube-api-burst=200</code>. Monitor workqueue depth to know when tuning is needed.</p>
+  </div>
+  <div class="card">
+    <h4>Network partition: trust secondary eviction rate</h4>
+    <p>If you see eviction rates drop to near-zero and many nodes show Unknown, this is likely a zone-level network partition, not individual node failures. Do NOT manually force-evict all pods — the workloads may be running fine in the partitioned zone. Wait for the partition to resolve.</p>
+  </div>
+</div>
+
+<div class="nav-footer">
+  <a class="nav-btn" href="03-kube-scheduler.html">
+    <span>← Previous</span>
+    kube-scheduler
+  </a>
+  <a class="nav-btn next" href="05-cloud-controller-manager.html">
+    <span>Next →</span>
+    cloud-controller-manager
+  </a>
+</div>
+
+</div><!-- /content-wrap -->
+</main>
+<aside class="toc-panel">
+  <h4>On This Page</h4>
+  <a href="#overview">What kcm Does</a>
+  <a href="#reconcile-loop">Reconciliation Loop Pattern</a>
+  <a href="#shared-informers">Shared Informer Architecture</a>
+  <a href="#controllers">Controller Inventory</a>
+  <a href="#workload-controllers" class="toc-h3">Workload Controllers</a>
+  <a href="#node-controllers" class="toc-h3">Node Controllers</a>
+  <a href="#storage-controllers" class="toc-h3">Storage Controllers</a>
+  <a href="#network-controllers" class="toc-h3">Network Controllers</a>
+  <a href="#namespace-controllers" class="toc-h3">Namespace / RBAC</a>
+  <a href="#gc-controllers" class="toc-h3">GC &amp; Lifecycle</a>
+  <a href="#node-lifecycle">Node Lifecycle Deep Dive</a>
+  <a href="#garbage-collector">Garbage Collector Deep Dive</a>
+  <a href="#deployment-controller">Deployment Controller Deep Dive</a>
+  <a href="#hpa-controller">HPA Controller Deep Dive</a>
+  <a href="#config">Configuration &amp; Flags</a>
+  <a href="#leader-election">Leader Election</a>
+  <a href="#metrics">Metrics &amp; Alerting</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#production">Production Best Practices</a>
+</aside>
+</div>
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
+<script>
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  pre.style.position='relative';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('toc-active'));
+      const act=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if(act)act.classList.add('toc-active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+const searchInput=document.getElementById('search-input');
+function clearHighlights(){
+  document.querySelectorAll('mark.search-hl').forEach(m=>{
+    m.replaceWith(document.createTextNode(m.textContent));
+  });
+  document.normalize();
+}
+function highlightText(root,term){
+  if(!term)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false);
+  const nodes=[];let n;
+  while(n=walker.nextNode()){
+    if(n.parentElement.closest('.topbar,.sidebar'))continue;
+    if(n.textContent.toLowerCase().includes(term))nodes.push(n);
+  }
+  nodes.forEach(node=>{
+    const frag=document.createDocumentFragment();
+    const parts=node.textContent.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'));
+    parts.forEach(p=>{
+      if(p.toLowerCase()===term){
+        const m=document.createElement('mark');m.className='search-hl';m.textContent=p;frag.appendChild(m);
+      } else frag.appendChild(document.createTextNode(p));
+    });
+    node.replaceWith(frag);
+  });
+}
+searchInput.addEventListener('input',function(){
+  clearHighlights();
+  const q=this.value.trim().toLowerCase();
+  if(q.length>=2)highlightText(document.getElementById('main-content'),q);
+});
+</script>
+</body>
+</html>

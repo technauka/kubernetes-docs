@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volumes | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sidebar-logo{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;}
+.sidebar-title{font-weight:600;font-size:14px;}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text);outline:none;}
+.sidebar-search input:focus{border-color:var(--accent);}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+.theme-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3);cursor:pointer;background:none;border:none;color:var(--text2);}
+
+/* Top bar */
+.topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:99;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--text);font-size:18px;}
+.breadcrumb{font-size:13px;color:var(--text3);}
+.breadcrumb span{color:var(--text2);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.back-to-top{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+.back-to-top.visible{opacity:1;}
+
+/* Layout */
+.main-wrapper{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;padding:64px 40px 80px;max-width:900px;min-width:0;overflow-y:auto;height:100vh;}
+.toc-sidebar{width:var(--toc-w);flex-shrink:0;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);background:var(--bg);}
+.toc-sidebar h4{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.toc-sidebar a{display:block;font-size:12px;color:var(--text3);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-sidebar a:hover{color:var(--text2);}
+.toc-sidebar a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-sidebar a.toc-h3{padding-left:16px;}
+
+/* Content */
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.3;}
+h2{font-size:22px;font-weight:600;margin:48px 0 16px;padding-top:8px;border-top:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:16px;color:var(--text2);}
+.lead{font-size:17px;color:var(--text2);margin-bottom:24px;}
+.page-meta{display:flex;gap:16px;margin-bottom:32px;flex-wrap:wrap;}
+.meta-badge{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.meta-badge.green{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.3);}
+.meta-badge.blue{background:rgba(88,166,255,.12);color:var(--accent);border-color:rgba(88,166,255,.3);}
+.meta-badge.yellow{background:rgba(210,153,34,.12);color:var(--yellow);border-color:rgba(210,153,34,.3);}
+
+/* Coverage block */
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+
+/* Code */
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin-bottom:20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;font-size:12px;border:1px solid var(--border);color:var(--text2);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+
+/* Callouts */
+.callout{border-radius:8px;padding:14px 16px;margin-bottom:20px;border-left:4px solid;display:flex;gap:10px;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;font-size:14px;}
+.callout-body strong{display:block;margin-bottom:4px;}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.tip{background:rgba(63,185,80,.08);border-color:var(--green);}
+
+/* Diagrams */
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px;overflow-x:auto;}
+.diagram pre{background:none;border:none;padding:0;margin:0;font-size:13px;color:var(--text2);}
+
+/* Section nav */
+.section-nav{display:flex;justify-content:space-between;margin-top:64px;padding-top:24px;border-top:1px solid var(--border);}
+.section-nav a{display:flex;flex-direction:column;gap:4px;max-width:45%;}
+.section-nav a .nav-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.section-nav a .nav-title{font-size:14px;color:var(--accent);}
+.section-nav a.next{text-align:right;}
+
+/* Volume type badge */
+.vol-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;margin-left:8px;}
+.vol-ephemeral{background:rgba(210,153,34,.15);color:var(--yellow);}
+.vol-persistent{background:rgba(63,185,80,.15);color:var(--green);}
+.vol-deprecated{background:rgba(248,81,73,.15);color:var(--red);}
+.vol-network{background:rgba(188,140,255,.15);color:var(--purple);}
+
+/* Subpath diagram */
+.subpath-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+
+@media(max-width:1100px){.toc-sidebar{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrapper{margin-left:0;}
+  .main-content{padding:64px 20px 80px;}
+  .topbar{left:0;}
+  .hamburger{display:block;}
+  .coverage-body{grid-template-columns:1fr !important;}
+  .subpath-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">K8s</div>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="sidebar-filter" placeholder="Filter topics…" oninput="filterNav(this.value)">
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">00 — Foundations</div>
+      <a href="../00-foundations/00-kubernetes-overview.html">Kubernetes Overview</a>
+      <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+      <a href="../00-foundations/02-api-machinery.html">API Machinery</a>
+      <a href="../00-foundations/03-kubectl-and-client.html">kubectl &amp; Client</a>
+      <a href="../00-foundations/04-objects-and-manifests.html">Objects &amp; Manifests</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 — Workloads</div>
+      <a href="../01-workloads/00-pods.html">Pods</a>
+      <a href="../01-workloads/01-deployments.html">Deployments</a>
+      <a href="../01-workloads/02-statefulsets.html">StatefulSets</a>
+      <a href="../01-workloads/03-daemonsets.html">DaemonSets</a>
+      <a href="../01-workloads/04-jobs-and-cronjobs.html">Jobs &amp; CronJobs</a>
+      <a href="../01-workloads/05-replicasets.html">ReplicaSets</a>
+      <a href="../01-workloads/06-horizontal-pod-autoscaler.html">HPA</a>
+      <a href="../01-workloads/07-vertical-pod-autoscaler.html">VPA</a>
+      <a href="../01-workloads/08-pod-disruption-budgets.html">PDBs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 — Scheduling</div>
+      <a href="../02-scheduling/00-scheduler-overview.html">Scheduler Overview</a>
+      <a href="../02-scheduling/01-node-affinity.html">Node Affinity</a>
+      <a href="../02-scheduling/02-pod-affinity-antiaffinity.html">Pod Affinity</a>
+      <a href="../02-scheduling/03-taints-and-tolerations.html">Taints &amp; Tolerations</a>
+      <a href="../02-scheduling/04-resource-management.html">Resource Management</a>
+      <a href="../02-scheduling/05-priority-and-preemption.html">Priority &amp; Preemption</a>
+      <a href="../02-scheduling/06-topology-spread.html">Topology Spread</a>
+      <a href="../02-scheduling/07-custom-scheduler.html">Custom Scheduler</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 — Networking</div>
+      <a href="../03-networking/00-networking-model.html">Networking Model</a>
+      <a href="../03-networking/01-services.html">Services</a>
+      <a href="../03-networking/02-dns.html">DNS</a>
+      <a href="../03-networking/03-ingress.html">Ingress</a>
+      <a href="../03-networking/04-cni-plugins.html">CNI Plugins</a>
+      <a href="../03-networking/06-gateway-api.html">Gateway API</a>
+      <a href="../03-networking/07-network-policies.html">Network Policies</a>
+      <a href="../03-networking/08-ipv4-ipv6-dual-stack.html">IPv4/IPv6 Dual-Stack</a>
+      <a href="../03-networking/09-load-balancing.html">Load Balancing</a>
+      <a href="../03-networking/10-service-mesh.html">Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 — Storage</div>
+      <a href="00-storage-overview.html">Storage Overview</a>
+      <a href="01-volumes.html" class="active">Volumes</a>
+      <a href="02-persistent-volumes.html">Persistent Volumes</a>
+      <a href="03-storage-classes.html">Storage Classes</a>
+      <a href="04-csi-drivers.html">CSI Drivers</a>
+      <a href="05-volume-snapshots.html">Volume Snapshots</a>
+      <a href="06-stateful-storage-patterns.html">Stateful Patterns</a>
+      <a href="07-storage-capacity.html">Storage Capacity</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 — Configuration</div>
+      <a href="../05-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../05-configuration/01-secrets.html">Secrets</a>
+      <a href="../05-configuration/02-resource-quotas.html">Resource Quotas</a>
+      <a href="../05-configuration/03-limit-ranges.html">Limit Ranges</a>
+      <a href="../05-configuration/04-namespaces.html">Namespaces</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">☀️</span> Toggle theme
+    </button>
+  </div>
+</aside>
+
+<!-- Top bar -->
+<div class="topbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div class="breadcrumb">04 — Storage <span>/ Volumes</span></div>
+  <div class="topbar-right">
+    <button class="back-to-top" id="back-to-top" onclick="scrollToTop()">↑ Top</button>
+  </div>
+</div>
+
+<!-- Main wrapper -->
+<div class="main-wrapper">
+<main class="main-content" id="main-content">
+
+<h1>Volumes</h1>
+<p class="lead">Complete reference for every Kubernetes volume type — from ephemeral scratch directories to NFS network shares — with mount mechanics, subPath gotchas, init container patterns, and the full lifecycle of a volume from pod creation to deletion.</p>
+
+<div class="page-meta">
+  <span class="meta-badge green">Section 04 of 13</span>
+  <span class="meta-badge blue">File 2 of 8</span>
+  <span class="meta-badge yellow">Platform Engineer</span>
+</div>
+
+<details class="coverage">
+  <summary>What This Page Covers</summary>
+  <div class="coverage-body">
+    <li>How volumes differ from container filesystem (COW layer) — mount semantics</li>
+    <li>Volume mount lifecycle: kubelet NodeStage → NodePublish → container start → container stop → NodeUnpublish → NodeUnstage</li>
+    <li>emptyDir — disk vs RAM medium, sizeLimit, multi-container sharing, cache patterns</li>
+    <li>configMap volume — keys as files, defaultMode, items projection, optional flag, update propagation timing</li>
+    <li>secret volume — tmpfs backing, defaultMode, items projection, immutable secrets, update propagation</li>
+    <li>downwardAPI volume — fieldRef (name/namespace/labels/annotations/podIP/serviceAccountName) vs resourceFieldRef (limits/requests)</li>
+    <li>projected volume — combining all four sources; serviceAccountToken with audience + expirationSeconds</li>
+    <li>hostPath — type options (Directory/DirectoryOrCreate/File/FileOrCreate/Socket/CharDevice/BlockDevice); security risks; legitimate use cases (DaemonSets, node-local monitoring)</li>
+    <li>NFS volume — server/path/readOnly; mount options; connection pooling; no dynamic provisioner</li>
+    <li>iscsi volume — targetPortal/iqn/lun/fsType; CHAP authentication; multipath</li>
+    <li>fc (Fibre Channel) — targetWWNs/lun/fsType; prerequisites</li>
+    <li>cephfs / rbd (in-tree, deprecated path to CSI)</li>
+    <li>generic ephemeral volumes — inline volumeClaimTemplate; owner reference auto-cleanup</li>
+    <li>CSI ephemeral volumes — driver volumeLifecycleModes:Ephemeral; Secrets Store CSI Driver pattern</li>
+    <li>image volumes (alpha 1.31) — OCI image as read-only volume mount</li>
+    <li>subPath — mounting a single file/directory from a volume; subPathExpr with env vars; limitations with ConfigMap live-reload</li>
+    <li>volumeMounts fields — mountPath, readOnly, mountPropagation (None/HostToContainer/Bidirectional)</li>
+    <li>mountPropagation deep dive — None (isolated), HostToContainer (see host mounts), Bidirectional (propagate to host, requires privileged)</li>
+    <li>Init containers and shared volumes — data population patterns, wait-for patterns</li>
+    <li>Sidecar containers and shared volumes — log shipping, metrics scraping via shared emptyDir</li>
+    <li>Volume ownership and fsGroup — fsGroupChangePolicy (Always vs OnRootMismatch); supplementalGroups</li>
+    <li>Immutable ConfigMaps and Secrets — immutable: true; performance benefit (kubelet stops watching)</li>
+    <li>Volume size limits — emptyDir sizeLimit enforcement; ephemeral storage limit interaction</li>
+    <li>Deprecated and removed volume types — gitRepo (removed), flocker (removed), glusterfs (removed 1.26), azureFile/azureDisk (removed 1.27 in-tree), awsElasticBlockStore (removed 1.27 in-tree)</li>
+    <li>5 troubleshooting runbooks — volume not updating, permission denied on mount, wrong owner, subPath blocks ConfigMap reload, emptyDir memory exhaustion</li>
+    <li>7 best practices</li>
+  </div>
+</details>
+
+<!-- ============================================================ -->
+<h2 id="how-volumes-work">How Volumes Work</h2>
+
+<p>A Kubernetes volume is a named storage object declared at the pod level and mounted into one or more containers within that pod. Unlike a container's ephemeral writable layer (which disappears on container restart), a volume's lifecycle is tied to the <em>pod</em> — it persists across container restarts but is cleaned up when the pod is deleted (for ephemeral volumes) or detached (for persistent volumes).</p>
+
+<div class="diagram">
+<pre>
+POD
+├── spec.volumes[]          ← named volume declarations (pod-scoped)
+│   ├── name: config        ← referenced by containers
+│   ├── name: data
+│   └── name: tmp
+│
+└── spec.containers[]
+    └── container
+        └── volumeMounts[]  ← bind declared volumes into container paths
+            ├── name: config   mountPath: /etc/app
+            ├── name: data     mountPath: /var/data
+            └── name: tmp      mountPath: /tmp
+
+Volume lifecycle (kubelet perspective):
+  Pod scheduled → NodeStageVolume (format/mount to staging path if block)
+               → NodePublishVolume (bind-mount into pod directory)
+               → containers start with /proc/mounts showing the volume
+  Pod deleted  → containers stop
+               → NodeUnpublishVolume (unmount from pod dir)
+               → NodeUnstageVolume (unmount from staging dir)
+               → volume reclaimed (ephemeral: deleted; persistent: detached)
+</pre>
+</div>
+
+<p>Volumes are <strong>not</strong> container-scoped. Two containers in the same pod sharing a volume see exactly the same bytes — writes by one are immediately visible to the other.</p>
+
+<!-- ============================================================ -->
+<h2 id="emptydir">emptyDir</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>An empty directory created by kubelet when the pod is assigned to a node. All containers in the pod can read and write to it. Deleted when the pod is removed from the node (not just when a container crashes — the volume survives container restarts).</p>
+
+<pre><code>volumes:
+- name: cache
+  emptyDir:
+    sizeLimit: 512Mi    # optional: enforced via ephemeral storage eviction
+    medium: ""          # "" = node disk (default); "Memory" = tmpfs (RAM)
+
+containers:
+- name: app
+  volumeMounts:
+  - name: cache
+    mountPath: /var/cache/app</code></pre>
+
+<h3 id="emptydir-medium">Memory-backed emptyDir</h3>
+<p>Setting <code>medium: Memory</code> mounts a tmpfs filesystem. Data lives in RAM — extremely fast but counts against the container's memory limit:</p>
+
+<pre><code>volumes:
+- name: shared-mem
+  emptyDir:
+    medium: Memory
+    sizeLimit: 256Mi    # prevents this emptyDir from using more than 256Mi of RAM</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Memory medium counts against container memory</strong> A tmpfs emptyDir counts against the node's memory, but in older Kubernetes (&lt;1.22) it did <em>not</em> count against the container's memory limit. Since 1.22, the kubelet includes the tmpfs usage in the container's memory accounting. If your container writes large amounts to a Memory emptyDir without a sizeLimit, it can trigger OOMKill.</div>
+</div>
+
+<h3 id="emptydir-patterns">Common emptyDir Patterns</h3>
+
+<table>
+  <tr><th>Pattern</th><th>Description</th><th>Example</th></tr>
+  <tr><td>Build cache</td><td>Compiler/tool cache shared across build steps</td><td>Maven <code>~/.m2</code>, pip cache</td></tr>
+  <tr><td>Log sharing</td><td>App writes logs; sidecar reads and ships to Fluentd/Loki</td><td>App → <code>/var/log</code> ← Fluent Bit sidecar</td></tr>
+  <tr><td>Scratch space</td><td>Temp files during data processing (avoids container layer writes)</td><td>ETL job staging area</td></tr>
+  <tr><td>IPC socket</td><td>App and sidecar communicate via Unix socket on shared emptyDir</td><td>Envoy uses <code>/tmp/agent.sock</code></td></tr>
+  <tr><td>Init → main handoff</td><td>Init container writes config/data; main container consumes</td><td>git clone → app reads code</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="configmap-volume">configMap Volume</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>Mounts ConfigMap keys as files inside the container. The files are updated automatically when the ConfigMap changes (within the kubelet sync period, typically 1–2 minutes).</p>
+
+<pre><code>apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  app.yaml: |
+    port: 8080
+    log_level: info
+  nginx.conf: |
+    worker_processes auto;
+---
+volumes:
+- name: config
+  configMap:
+    name: app-config
+    defaultMode: 0644       # file permissions (octal)
+    items:                   # optional: project only specific keys
+    - key: app.yaml
+      path: config/app.yaml  # path within the mountPath directory
+      mode: 0640             # per-file override
+    optional: false          # if true, pod starts even if ConfigMap missing</code></pre>
+
+<p>Without <code>items</code>, every key becomes a file at the root of <code>mountPath</code>. The directory listing mirrors the ConfigMap's data keys exactly.</p>
+
+<h3 id="configmap-update">Update Propagation</h3>
+
+<p>Kubelet syncs ConfigMap volume content on a period governed by <code>--sync-frequency</code> (default 1 minute) plus an additional jitter. The update path:</p>
+
+<ol style="color:var(--text2);padding-left:24px;margin-bottom:16px;font-size:14px;line-height:2;">
+  <li>ConfigMap updated in etcd via API server</li>
+  <li>Kubelet's reflector detects the change (watch event)</li>
+  <li>Kubelet writes new content to a temporary directory (atomic rename)</li>
+  <li>The <code>..data</code> symlink in the volume is atomically swapped to point to the new directory</li>
+  <li>Application reads the updated files (if it re-reads on change — inotify works on the symlink target)</li>
+</ol>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>subPath blocks ConfigMap live-reload</strong> If you use <code>subPath</code> to mount a single key as a specific file path (e.g., <code>/etc/nginx/nginx.conf</code>), the atomic symlink swap does <em>not</em> apply — kubelet writes the file directly. Updates will <strong>not</strong> be propagated to a running container. The file is fixed at pod start time. Use a full directory mount and configure your app to read from the directory, or restart the pod on ConfigMap change.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="secret-volume">secret Volume</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>Mounts Secret keys as files. Identical to configMap volumes in mechanics, with two important differences: the files are backed by a <strong>tmpfs</strong> mount on the node (data never written to disk), and the default permission mode is <code>0644</code> (you should lower this to <code>0400</code> for credentials).</p>
+
+<pre><code>volumes:
+- name: tls-certs
+  secret:
+    secretName: my-tls-secret
+    defaultMode: 0400        # read-only for owner; recommended for credentials
+    items:
+    - key: tls.crt
+      path: server.crt
+    - key: tls.key
+      path: server.key
+    optional: false</code></pre>
+
+<h3 id="immutable-secrets">Immutable Secrets and ConfigMaps</h3>
+
+<p>Setting <code>immutable: true</code> on a Secret or ConfigMap prevents any updates to its data. Kubelet stops watching immutable objects — removing the watch overhead for large clusters with many ConfigMaps/Secrets.</p>
+
+<pre><code>apiVersion: v1
+kind: Secret
+metadata:
+  name: static-tls-creds
+immutable: true    # cannot be changed after creation; must delete and recreate
+stringData:
+  api-key: "supersecret"</code></pre>
+
+<div class="callout tip">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body"><strong>Use immutable for versioned configs</strong> Bundle config version in the name (<code>app-config-v3</code>) and mark it immutable. Update the Deployment to reference the new name. This gives you a clear history, prevents accidental mutation, and reduces kubelet overhead. Rollback = point Deployment back to the previous name.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="downwardapi-volume">downwardAPI Volume</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>Exposes pod and container metadata as files. The same information available via environment variable downward API, but as files — suitable for larger values like labels and annotations that can exceed env var size limits.</p>
+
+<pre><code>volumes:
+- name: pod-info
+  downwardAPI:
+    defaultMode: 0444
+    items:
+    - path: pod-name
+      fieldRef:
+        fieldPath: metadata.name
+    - path: pod-namespace
+      fieldRef:
+        fieldPath: metadata.namespace
+    - path: pod-ip
+      fieldRef:
+        fieldPath: status.podIP
+    - path: node-name
+      fieldRef:
+        fieldPath: spec.nodeName
+    - path: labels
+      fieldRef:
+        fieldPath: metadata.labels    # all labels as key="value"\n pairs
+    - path: annotations
+      fieldRef:
+        fieldPath: metadata.annotations
+    - path: cpu-limit
+      resourceFieldRef:
+        containerName: app
+        resource: limits.cpu
+        divisor: "1m"               # express in millicores
+    - path: mem-request
+      resourceFieldRef:
+        containerName: app
+        resource: requests.memory
+        divisor: "1Mi"</code></pre>
+
+<h4>Available fieldRef Fields</h4>
+<table>
+  <tr><th>fieldPath</th><th>Value</th><th>Live Updates?</th></tr>
+  <tr><td><code>metadata.name</code></td><td>Pod name</td><td>No</td></tr>
+  <tr><td><code>metadata.namespace</code></td><td>Pod namespace</td><td>No</td></tr>
+  <tr><td><code>metadata.uid</code></td><td>Pod UID</td><td>No</td></tr>
+  <tr><td><code>metadata.labels</code></td><td>All labels as <code>key="value"</code> pairs, one per line</td><td>Yes — kubelet updates file on label change</td></tr>
+  <tr><td><code>metadata.annotations</code></td><td>All annotations, same format</td><td>Yes</td></tr>
+  <tr><td><code>spec.nodeName</code></td><td>Node the pod is scheduled on</td><td>No</td></tr>
+  <tr><td><code>spec.serviceAccountName</code></td><td>Service account name</td><td>No</td></tr>
+  <tr><td><code>status.podIP</code></td><td>Primary pod IP</td><td>Yes</td></tr>
+  <tr><td><code>status.hostIP</code></td><td>Node IP</td><td>No</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="projected-volume">projected Volume</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>A projected volume combines multiple sources — configMap, secret, downwardAPI, and serviceAccountToken — into a single directory mount. All sources appear as files at the same mount point.</p>
+
+<pre><code>volumes:
+- name: combined
+  projected:
+    defaultMode: 0444
+    sources:
+    - configMap:
+        name: app-config
+        items:
+        - key: app.yaml
+          path: config/app.yaml
+    - secret:
+        name: db-creds
+        items:
+        - key: password
+          path: secrets/db-password
+          mode: 0400
+    - downwardAPI:
+        items:
+        - path: meta/pod-name
+          fieldRef:
+            fieldPath: metadata.name
+    - serviceAccountToken:
+        audience: api            # audience for the token (OIDC aud claim)
+        expirationSeconds: 3600  # token rotated automatically by kubelet
+        path: token/sa-token</code></pre>
+
+<h3 id="service-account-token">serviceAccountToken in projected Volume</h3>
+
+<p>This is the standard mechanism for injecting service account tokens into pods (replacing the legacy auto-mounted <code>/var/run/secrets/kubernetes.io/serviceaccount/token</code>). The token is a <strong>bound service account token</strong> (audience + expiry) and is rotated by kubelet before expiry without restarting the pod. The kubelet fetches a fresh token via the <code>TokenRequest</code> API and atomically replaces the file.</p>
+
+<pre><code>volumes:
+- name: kube-api-access
+  projected:
+    sources:
+    - serviceAccountToken:
+        expirationSeconds: 3607         # kubelet rotates at 80% of expiry
+        path: token
+    - configMap:
+        name: kube-root-ca.crt          # cluster CA bundle
+        items:
+        - key: ca.crt
+          path: ca.crt
+    - downwardAPI:
+        items:
+        - path: namespace
+          fieldRef:
+            fieldPath: metadata.namespace</code></pre>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>Why projected replaces the legacy token mount</strong> The legacy <code>secret</code>-based token mount (auto-created <code>kubernetes.io/service-account-token</code> Secret) has no expiry. The projected <code>serviceAccountToken</code> is audience-bound and expires — a compromised token is only valid for &lt;1 hour rather than indefinitely. Use <code>automountServiceAccountToken: false</code> + an explicit projected volume when you need token control.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="hostpath">hostPath</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>Mounts a file or directory from the <em>host node's filesystem</em> directly into the container. Powerful but dangerous — misuse allows container escape to the node.</p>
+
+<pre><code>volumes:
+- name: docker-sock
+  hostPath:
+    path: /var/run/docker.sock
+    type: Socket
+
+- name: host-logs
+  hostPath:
+    path: /var/log/pods
+    type: Directory
+
+- name: created-dir
+  hostPath:
+    path: /mnt/fast-ssd/myapp
+    type: DirectoryOrCreate   # creates the directory if it doesn't exist</code></pre>
+
+<h3 id="hostpath-types">hostPath Type Options</h3>
+<table>
+  <tr><th>type</th><th>Behavior</th></tr>
+  <tr><td><code>""</code> (empty)</td><td>No check — mount whatever exists (or nothing) at the path</td></tr>
+  <tr><td><code>DirectoryOrCreate</code></td><td>Create directory with 0755 if it doesn't exist; fail if path is a file</td></tr>
+  <tr><td><code>Directory</code></td><td>Path must exist and be a directory; fail otherwise</td></tr>
+  <tr><td><code>FileOrCreate</code></td><td>Create empty file with 0644 if it doesn't exist; fail if path is a directory</td></tr>
+  <tr><td><code>File</code></td><td>Path must exist and be a regular file</td></tr>
+  <tr><td><code>Socket</code></td><td>Path must exist and be a Unix socket</td></tr>
+  <tr><td><code>CharDevice</code></td><td>Path must be a character device</td></tr>
+  <tr><td><code>BlockDevice</code></td><td>Path must be a block device</td></tr>
+</table>
+
+<div class="callout danger">
+  <div class="callout-icon">🔴</div>
+  <div class="callout-body"><strong>hostPath security risks</strong>
+    <br>• Mounting <code>/</code>, <code>/etc</code>, or <code>/var/run/docker.sock</code> gives the container full node access.
+    <br>• hostPath volumes bypass Kubernetes storage quotas and LimitRanges entirely.
+    <br>• Pod scheduled to a different node sees a different (possibly missing) path — workloads are not portable.
+    <br>• Restrict with PodSecurity admission (Restricted profile blocks hostPath) or OPA/Kyverno policies.
+  </div>
+</div>
+
+<h4>Legitimate hostPath Use Cases</h4>
+<ul style="color:var(--text2);padding-left:24px;margin-bottom:16px;font-size:14px;line-height:2;">
+  <li>DaemonSets collecting node-level metrics (<code>/proc</code>, <code>/sys</code>, <code>/var/log</code>)</li>
+  <li>Container runtime socket for container management tools (Falco, Portainer, node-level CRI tools)</li>
+  <li>Node-local storage benchmarking tools</li>
+  <li>CNI plugin configuration on <code>/etc/cni/net.d</code></li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="nfs">NFS Volume</h2>
+<span class="vol-badge vol-network">Network</span>
+
+<p>Mounts an NFS export directly into the pod. No CSI driver required — the NFS client is built into the Linux kernel. Supports RWX (ReadWriteMany) natively.</p>
+
+<pre><code>volumes:
+- name: nfs-share
+  nfs:
+    server: nfs-server.prod.svc.cluster.local   # NFS server hostname or IP
+    path: /exports/shared-data                  # exported path on server
+    readOnly: false</code></pre>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>NFS mount options</strong> The in-tree <code>nfs</code> volume type does not expose mount options. For production NFS with custom options (<code>nfsvers=4.1,rsize=1048576,hard,timeo=600</code>), use a StorageClass backed by the <a href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner">NFS Subdir External Provisioner</a> or a CSI NFS driver, which pass mount options through <code>mountOptions</code> on the StorageClass.</div>
+</div>
+
+<h3 id="nfs-considerations">NFS Production Considerations</h3>
+<ul style="color:var(--text2);padding-left:24px;margin-bottom:16px;font-size:14px;line-height:2;">
+  <li><strong>UID/GID mapping</strong>: NFS uses UID/GID for file ownership. If the container runs as UID 1000 but the NFS export expects UID 2000, permission errors occur. Use <code>fsGroup</code> or configure NFS <code>all_squash</code> / <code>anonuid</code>.</li>
+  <li><strong>NFSv4 vs v3</strong>: NFSv4 has stateful connections and simpler firewall rules (single port 2049). NFSv3 uses multiple ports. Default is v4 on modern systems.</li>
+  <li><strong>Hard vs soft mounts</strong>: Hard mounts (default) retry indefinitely on server failure — pods hang but don't corrupt. Soft mounts return EIO on timeout — pods crash but recover quickly.</li>
+  <li><strong>Connection from pods</strong>: The in-tree NFS volume connects from the <em>node</em>, not the pod. Firewall rules must allow node IPs to reach the NFS server on port 2049.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="iscsi">iSCSI Volume</h2>
+<span class="vol-badge vol-network">Network</span>
+
+<pre><code>volumes:
+- name: iscsi-vol
+  iscsi:
+    targetPortal: 192.168.1.100:3260   # iSCSI target IP:port
+    iqn: iqn.2023-01.com.example:storage.target.1   # iSCSI Qualified Name
+    lun: 0                              # LUN number
+    fsType: ext4
+    readOnly: false
+    chapAuthDiscovery: true             # enable CHAP for discovery
+    chapAuthSession: true               # enable CHAP per session
+    secretRef:
+      name: chap-secret                 # Secret with discovery-user/discovery-password</code></pre>
+
+<p>iSCSI volumes are RWO only — a single node can mount them read-write. Use for legacy SAN storage integration. For new deployments, prefer a CSI driver (e.g., iSCSI-based OpenEBS) which handles node failure, topology awareness, and monitoring.</p>
+
+<!-- ============================================================ -->
+<h2 id="generic-ephemeral">Generic Ephemeral Volumes</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>A generic ephemeral volume embeds a PVC template directly in the pod spec. Kubernetes creates the PVC when the pod is created and garbage-collects it when the pod is deleted (via owner reference). This enables ephemeral use of any StorageClass — including cloud SSDs — without pre-creating PVCs.</p>
+
+<pre><code>volumes:
+- name: scratch
+  ephemeral:
+    volumeClaimTemplate:
+      metadata:
+        labels:
+          type: scratch-volume
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: gp3-encrypted
+        resources:
+          requests:
+            storage: 50Gi</code></pre>
+
+<p>The created PVC is named <code>&lt;pod-name&gt;-&lt;volume-name&gt;</code> (e.g., <code>my-pod-scratch</code>). It has an owner reference to the pod, so it is deleted automatically when the pod is deleted. If the pod is part of a ReplicaSet/Deployment, each replica gets its own PVC.</p>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Scheduler must be capacity-aware</strong> Generic ephemeral volumes with WaitForFirstConsumer StorageClass work correctly — the scheduler accounts for the storage when placing the pod. With Immediate binding, the PVC may provision in the wrong zone. Use WaitForFirstConsumer for zonal storage.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="csi-ephemeral">CSI Ephemeral Volumes</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>An inline CSI volume — no PVC or PV objects are created. The CSI driver must declare <code>volumeLifecycleModes: [Ephemeral]</code> in its CSIDriver object. The most prominent use case is the <strong>Secrets Store CSI Driver</strong>, which mounts secrets from Vault, AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager as files.</p>
+
+<pre><code>volumes:
+- name: secrets-store
+  csi:
+    driver: secrets-store.csi.k8s.io
+    readOnly: true
+    volumeAttributes:
+      secretProviderClass: my-aws-secrets   # SecretProviderClass CRD reference</code></pre>
+
+<pre><code>apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: my-aws-secrets
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "prod/db/password"
+        objectType: "secretsmanager"
+        objectAlias: "db-password"
+      - objectName: "prod/tls/cert"
+        objectType: "secretsmanager"
+        objectAlias: "tls.crt"</code></pre>
+
+<p>The Secrets Store CSI Driver also supports syncing the mounted secret into a Kubernetes Secret object (for use as env vars or imagePullSecrets), configurable via <code>secretObjects</code> in the SecretProviderClass.</p>
+
+<!-- ============================================================ -->
+<h2 id="image-volumes">Image Volumes (Alpha, 1.31+)</h2>
+<span class="vol-badge vol-ephemeral">Ephemeral</span>
+
+<p>Image volumes (alpha in 1.31, requires <code>ImageVolume</code> feature gate) mount an OCI container image as a read-only volume. Useful for distributing large, immutable datasets, ML models, or binary assets packaged as OCI images without including them in the application container image.</p>
+
+<pre><code>volumes:
+- name: ml-model
+  image:
+    reference: registry.example.com/models/resnet50:v3
+    pullPolicy: IfNotPresent</code></pre>
+
+<p>The image is pulled by the container runtime and mounted read-only. No write access. The image's filesystem layers are overlaid exactly as they are in a container image (overlayfs), but exposed as a bind-mount into the pod.</p>
+
+<!-- ============================================================ -->
+<h2 id="subpath">subPath and subPathExpr</h2>
+
+<p>By default, a volumeMount mounts the entire volume at the target path. <code>subPath</code> mounts only a specific file or subdirectory from within the volume, while still mounting it at <code>mountPath</code>.</p>
+
+<h3 id="subpath-use-cases">Common subPath Use Cases</h3>
+
+<div class="subpath-grid">
+<div>
+<h4>Multiple containers, same volume, different subdirs</h4>
+<pre><code>volumes:
+- name: data
+  emptyDir: {}
+
+containers:
+- name: app
+  volumeMounts:
+  - name: data
+    mountPath: /app/data
+    subPath: app        # mounts data/app/ → /app/data
+
+- name: sidecar
+  volumeMounts:
+  - name: data
+    mountPath: /sidecar/data
+    subPath: sidecar    # mounts data/sidecar/ → /sidecar/data</code></pre>
+</div>
+<div>
+<h4>Single ConfigMap key to specific file path</h4>
+<pre><code>volumes:
+- name: nginx-conf
+  configMap:
+    name: nginx-config
+
+containers:
+- name: nginx
+  volumeMounts:
+  - name: nginx-conf
+    mountPath: /etc/nginx/nginx.conf
+    subPath: nginx.conf  # mount only key nginx.conf
+                         # NOTE: live-reload does NOT work</code></pre>
+</div>
+</div>
+
+<h3 id="subpathexpr">subPathExpr</h3>
+
+<p><code>subPathExpr</code> uses environment variable expansion to build the subPath dynamically. Requires <code>$(VAR_NAME)</code> syntax — <em>not</em> shell <code>$VAR</code>.</p>
+
+<pre><code>env:
+- name: POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+
+volumeMounts:
+- name: shared-logs
+  mountPath: /var/log/pods
+  subPathExpr: $(POD_NAME)    # each pod writes to its own subdirectory</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>subPath limitations</strong>
+    <br>• ConfigMap/Secret live-reload (atomic symlink swap) does <em>not</em> work with subPath. The file is fixed at pod creation.
+    <br>• You cannot use subPath with a projected volume's serviceAccountToken source.
+    <br>• subPathExpr requires the env var to be defined in the same container's <code>env</code> field (not just set in the environment).
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="volumemounts">volumeMounts Fields</h2>
+
+<pre><code>volumeMounts:
+- name: data                     # must match a volume name in spec.volumes
+  mountPath: /var/data           # absolute path inside container
+  subPath: ""                    # optional: subdirectory within volume
+  readOnly: false                # default false; true = read-only bind mount
+  mountPropagation: None         # None | HostToContainer | Bidirectional</code></pre>
+
+<h3 id="mountpropagation">mountPropagation</h3>
+
+<p>Controls whether mount events (new bind mounts) inside the container or on the host are visible across the boundary:</p>
+
+<table>
+  <tr><th>Value</th><th>Container sees host mounts?</th><th>Host sees container mounts?</th><th>Use Case</th></tr>
+  <tr><td><code>None</code> (default)</td><td>No (isolation)</td><td>No</td><td>99% of workloads — complete isolation</td></tr>
+  <tr><td><code>HostToContainer</code></td><td>Yes — new mounts on host under this path are visible</td><td>No</td><td>Monitoring agents that need to see node-level mounts (e.g., cAdvisor reading /proc/mounts)</td></tr>
+  <tr><td><code>Bidirectional</code></td><td>Yes</td><td>Yes — container mounts propagate to host</td><td>FUSE filesystems, CSI node plugins that mount on behalf of other pods. Requires <code>privileged: true</code>.</td></tr>
+</table>
+
+<div class="callout danger">
+  <div class="callout-icon">🔴</div>
+  <div class="callout-body"><strong>Bidirectional requires privileged</strong> Kubernetes will reject a <code>Bidirectional</code> mountPropagation unless the container has <code>securityContext.privileged: true</code>. Bidirectional propagation means the container can create mounts visible to the host — a significant privilege. Only use it for CSI node plugin DaemonSets that explicitly need it.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="init-containers">Init Containers and Shared Volumes</h2>
+
+<p>Init containers run to completion before any app containers start. They share the same pod volumes — the classic pattern is an init container that populates a volume, which the main container then reads from.</p>
+
+<h3 id="init-patterns">Init Container Volume Patterns</h3>
+
+<h4>Pattern 1: git clone into emptyDir</h4>
+<pre><code>initContainers:
+- name: git-clone
+  image: alpine/git:latest
+  command: [git, clone, "https://github.com/org/app-config", /config]
+  volumeMounts:
+  - name: config-data
+    mountPath: /config
+
+containers:
+- name: app
+  image: myapp:latest
+  volumeMounts:
+  - name: config-data
+    mountPath: /app/config
+    readOnly: true
+
+volumes:
+- name: config-data
+  emptyDir: {}</code></pre>
+
+<h4>Pattern 2: Wait for dependency + write signal file</h4>
+<pre><code>initContainers:
+- name: wait-for-db
+  image: busybox
+  command:
+  - sh
+  - -c
+  - |
+    until nc -z postgres-svc 5432; do
+      echo "waiting for database..."; sleep 2
+    done
+    echo "DB ready" > /signal/ready
+  volumeMounts:
+  - name: signal
+    mountPath: /signal
+
+containers:
+- name: app
+  volumeMounts:
+  - name: signal
+    mountPath: /signal
+    readOnly: true
+
+volumes:
+- name: signal
+  emptyDir: {}</code></pre>
+
+<h4>Pattern 3: Certificate generation</h4>
+<pre><code>initContainers:
+- name: cert-gen
+  image: cfssl/cfssl
+  command: [/bin/sh, -c, "cfssl gencert ... | cfssljson -bare /certs/server"]
+  volumeMounts:
+  - name: certs
+    mountPath: /certs
+
+containers:
+- name: app
+  volumeMounts:
+  - name: certs
+    mountPath: /etc/ssl/app
+    readOnly: true
+
+volumes:
+- name: certs
+  emptyDir:
+    medium: Memory    # certs in RAM — never hit disk</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="sidecar-volumes">Sidecar Containers and Shared Volumes</h2>
+
+<p>Kubernetes 1.29 introduced native sidecar support via <code>initContainers</code> with <code>restartPolicy: Always</code> — sidecars start before main containers and stay running. The log-shipping pattern is the canonical use case:</p>
+
+<pre><code>initContainers:
+- name: log-shipper           # native sidecar: restartPolicy: Always
+  restartPolicy: Always
+  image: fluent/fluent-bit:latest
+  volumeMounts:
+  - name: log-dir
+    mountPath: /var/log/app
+    readOnly: true
+  - name: fluent-config
+    mountPath: /fluent-bit/etc
+
+containers:
+- name: app
+  image: myapp:latest
+  volumeMounts:
+  - name: log-dir
+    mountPath: /var/log/app   # app writes here; sidecar reads from same dir
+
+volumes:
+- name: log-dir
+  emptyDir: {}
+- name: fluent-config
+  configMap:
+    name: fluent-bit-config</code></pre>
+
+<p>The sidecar starts <em>before</em> the main container (blocking until the sidecar's startup probe passes if configured), and is terminated <em>after</em> the main container exits — ensuring all logs are flushed before the sidecar exits.</p>
+
+<!-- ============================================================ -->
+<h2 id="fsgroup">Volume Ownership: fsGroup and fsGroupChangePolicy</h2>
+
+<p><code>fsGroup</code> in the pod's <code>securityContext</code> sets the supplemental GID for the pod and chowns all files in mounted volumes to that GID on mount. This solves the common problem where a container running as a non-root user (UID 1000) can't write to a volume provisioned with root ownership.</p>
+
+<pre><code>securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 2000               # all volume files are chowned to GID 2000
+  fsGroupChangePolicy: OnRootMismatch   # default: Always (chown every mount)</code></pre>
+
+<h3 id="fsgroup-policy">fsGroupChangePolicy</h3>
+<table>
+  <tr><th>Policy</th><th>Behavior</th><th>Performance</th></tr>
+  <tr><td><code>Always</code> (default)</td><td>Recursively chown all files on every mount — even if ownership is already correct</td><td>Slow for large volumes (millions of files)</td></tr>
+  <tr><td><code>OnRootMismatch</code></td><td>Only chown if the root directory's ownership/permissions don't match the expected fsGroup</td><td>Fast after first mount; recommended for large PVCs</td></tr>
+</table>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>fsGroup performance with large volumes</strong> A PostgreSQL database PVC with millions of files and <code>fsGroupChangePolicy: Always</code> will spend minutes chowning files on every pod restart. This blocks the container from starting and causes spurious CrashLoopBackOff-looking delays. Use <code>OnRootMismatch</code> for database pods, or set the fsGroup correctly at PVC creation time.</div>
+</div>
+
+<h3 id="supplemental-groups">supplementalGroups</h3>
+<pre><code>securityContext:
+  fsGroup: 2000
+  supplementalGroups: [3000, 4000]   # additional GIDs added to the process's group set</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="deprecated-volumes">Deprecated and Removed Volume Types</h2>
+
+<table>
+  <tr><th>Volume Type</th><th>Status</th><th>Replacement</th></tr>
+  <tr><td><code>gitRepo</code></td><td>Removed (1.25+)</td><td>Init container with <code>git clone</code></td></tr>
+  <tr><td><code>flocker</code></td><td>Removed (1.25+)</td><td>CSI driver</td></tr>
+  <tr><td><code>glusterfs</code></td><td>Removed (1.26+)</td><td>CSI driver (glusterfs-csi)</td></tr>
+  <tr><td><code>azureFile</code> (in-tree)</td><td>Removed (1.27+)</td><td><code>file.csi.azure.com</code> CSI driver</td></tr>
+  <tr><td><code>azureDisk</code> (in-tree)</td><td>Removed (1.27+)</td><td><code>disk.csi.azure.com</code> CSI driver</td></tr>
+  <tr><td><code>awsElasticBlockStore</code> (in-tree)</td><td>Removed (1.27+)</td><td><code>ebs.csi.aws.com</code> CSI driver</td></tr>
+  <tr><td><code>gcePersistentDisk</code> (in-tree)</td><td>Removed (1.28+)</td><td><code>pd.csi.storage.gke.io</code> CSI driver</td></tr>
+  <tr><td><code>cephfs</code> / <code>rbd</code> (in-tree)</td><td>Deprecated, target removal 1.31+</td><td><code>cephfs.csi.ceph.com</code> / <code>rbd.csi.ceph.com</code></td></tr>
+  <tr><td><code>portworxVolume</code></td><td>Deprecated 1.25</td><td>Portworx CSI driver</td></tr>
+</table>
+
+<div class="callout danger">
+  <div class="callout-icon">🔴</div>
+  <div class="callout-body"><strong>In-tree removal affects existing PVs</strong> If you have existing PVs using removed in-tree drivers (e.g., <code>awsElasticBlockStore</code>) and upgrade past 1.27, the API server will reject those PV specs. You must migrate PVs to CSI before upgrading. Use the <a href="https://github.com/kubernetes-csi/csi-migration">volume migration controller</a> or manually reprovision.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="volume-size-limits">Volume Size Limits and Ephemeral Storage</h2>
+
+<p>emptyDir volumes with <code>sizeLimit</code> set are evicted when usage exceeds the limit. Without <code>sizeLimit</code>, emptyDir is unbounded but counts against the node's <strong>ephemeral storage</strong>. A container's <code>resources.limits.ephemeral-storage</code> limit applies to the sum of the container's writable layer + log files + all emptyDir volumes the container uses.</p>
+
+<pre><code>containers:
+- name: app
+  resources:
+    requests:
+      ephemeral-storage: 1Gi
+    limits:
+      ephemeral-storage: 2Gi    # enforced by kubelet; evicts pod if exceeded
+
+volumes:
+- name: tmp
+  emptyDir:
+    sizeLimit: 500Mi    # subset of the container's ephemeral storage limit</code></pre>
+
+<p>The kubelet checks ephemeral storage usage periodically (default 1 minute). On eviction, the pod is terminated with <code>Reason: Evicted</code> and <code>Message: Pod ephemeral local storage usage exceeds the total limit of containers</code>.</p>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<h3>Runbook: ConfigMap Volume Not Updating in Container</h3>
+<pre><code># Verify the ConfigMap was actually updated
+kubectl get cm &lt;name&gt; -o yaml | grep -A 5 data
+
+# Check if subPath is in use — this blocks updates
+kubectl get pod &lt;name&gt; -o yaml | grep subPath
+# If subPath is present → updates won't propagate → must restart pod
+
+# If no subPath, check kubelet sync delay
+# Wait up to 2 minutes after ConfigMap update
+# Force a check by annotating the pod to trigger a rollout
+kubectl rollout restart deployment/&lt;name&gt;</code></pre>
+
+<h3>Runbook: Permission Denied on Volume Mount</h3>
+<pre><code># Check what UID/GID the container runs as
+kubectl exec -it &lt;pod&gt; -- id
+# uid=1000(app) gid=1000(app)
+
+# Check volume file ownership
+kubectl exec -it &lt;pod&gt; -- ls -la /var/data
+# drwxr-xr-x 2 root root 4096 Jan 1 00:00 .  ← root-owned, GID 0
+
+# Fix: add fsGroup to pod securityContext
+# spec.securityContext.fsGroup: 1000
+# Then rolling restart
+
+# For PVs provisioned with specific UID: check CSI driver fsGroup support
+# fsGroupPolicy: File = chown by kubelet; None = driver handles it</code></pre>
+
+<h3>Runbook: emptyDir Memory Exhaustion (OOMKill)</h3>
+<pre><code># Symptoms: container OOMKilled despite low heap usage
+# Cause: large writes to medium:Memory emptyDir counted in container memory
+
+# Check tmpfs mounts in pod
+kubectl exec -it &lt;pod&gt; -- df -h | grep tmpfs
+
+# Add sizeLimit to the emptyDir to cap memory usage
+# volumes:
+# - name: cache
+#   emptyDir:
+#     medium: Memory
+#     sizeLimit: 256Mi    # prevents this volume from eating container memory</code></pre>
+
+<h3>Runbook: Volume Stuck — Previous Pod's Mount Not Cleaned Up</h3>
+<pre><code># Symptoms: new pod stuck in ContainerCreating with "already mounted" error
+# Cause: previous pod on same node crashed without unmounting volume
+
+# Check node events
+kubectl describe node &lt;node&gt; | grep -i mount
+
+# Force delete the stuck pod (use only if pod is truly gone from node)
+kubectl delete pod &lt;old-pod&gt; --force --grace-period=0
+
+# If VolumeAttachment is stuck (CSI block volumes)
+kubectl get volumeattachment
+kubectl delete volumeattachment &lt;stuck-attachment&gt;
+
+# If node is partitioned/unreachable, CSI drivers respect:
+# --node-drain-timeout / manual annotation: volume.kubernetes.io/selected-node</code></pre>
+
+<h3>Runbook: Wrong fsGroup — Files Not Owned by Expected GID</h3>
+<pre><code># Verify pod securityContext
+kubectl get pod &lt;name&gt; -o jsonpath='{.spec.securityContext}'
+
+# Check if volume driver supports fsGroup
+kubectl get csidriver &lt;driver&gt; -o yaml | grep fsGroupPolicy
+# ReadWriteOnceWithFSType = only chown if fsType is set AND accessMode is RWO
+# File = always chown (most drivers)
+# None = kubelet does NOT chown — driver handles it (e.g., NFS with no-root-squash)
+
+# For NFS: fsGroup has no effect unless nfs driver is configured for root-squash-off
+# Set GID at NFS export level instead</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol style="color:var(--text2);padding-left:24px;font-size:14px;line-height:2;">
+  <li><strong>Prefer projected volumes over separate configMap/secret/downwardAPI mounts</strong> when you need multiple sources — one volume, one directory, less cognitive overhead.</li>
+  <li><strong>Never use subPath for live-reloaded config</strong>. Mount the full directory and configure the application to read from it. Use <code>inotify</code>/<code>fsnotify</code> in the app to watch the directory, not individual files.</li>
+  <li><strong>Mark configuration ConfigMaps and Secrets immutable</strong> when they are versioned. Use the version in the name. This removes kubelet watch overhead and prevents accidental mutation.</li>
+  <li><strong>Use <code>fsGroupChangePolicy: OnRootMismatch</code></strong> for any PVC with more than a few thousand files. The default <code>Always</code> causes startup delays proportional to file count.</li>
+  <li><strong>Avoid hostPath in application workloads</strong>. Enforce this with a Kyverno or OPA Gatekeeper policy that blocks hostPath except for designated DaemonSet namespaces.</li>
+  <li><strong>Set <code>sizeLimit</code> on emptyDir volumes</strong> used for caches or scratch space. An unbounded emptyDir used by a runaway process can evict the entire pod (and others on the node) via ephemeral storage pressure.</li>
+  <li><strong>Use native sidecar containers (1.29+)</strong> with <code>restartPolicy: Always</code> for log shippers and metric collectors instead of regular sidecars. They have correct startup/shutdown ordering, and pod termination blocks until the sidecar exits.</li>
+</ol>
+
+<!-- ============================================================ -->
+<div class="section-nav">
+  <a href="00-storage-overview.html">
+    <span class="nav-label">← Previous</span>
+    <span class="nav-title">Storage Overview</span>
+  </a>
+  <a href="02-persistent-volumes.html" class="next">
+    <span class="nav-label">Next →</span>
+    <span class="nav-title">Persistent Volumes</span>
+  </a>
+</div>
+
+</main>
+
+<!-- TOC sidebar -->
+<aside class="toc-sidebar">
+  <h4>On This Page</h4>
+  <a href="#how-volumes-work">How Volumes Work</a>
+  <a href="#emptydir">emptyDir</a>
+  <a href="#emptydir-medium" class="toc-h3">Memory medium</a>
+  <a href="#emptydir-patterns" class="toc-h3">Common Patterns</a>
+  <a href="#configmap-volume">configMap Volume</a>
+  <a href="#configmap-update" class="toc-h3">Update Propagation</a>
+  <a href="#secret-volume">secret Volume</a>
+  <a href="#immutable-secrets" class="toc-h3">Immutable Secrets</a>
+  <a href="#downwardapi-volume">downwardAPI Volume</a>
+  <a href="#projected-volume">projected Volume</a>
+  <a href="#service-account-token" class="toc-h3">SA Token</a>
+  <a href="#hostpath">hostPath</a>
+  <a href="#hostpath-types" class="toc-h3">Type Options</a>
+  <a href="#nfs">NFS Volume</a>
+  <a href="#iscsi">iSCSI Volume</a>
+  <a href="#generic-ephemeral">Generic Ephemeral</a>
+  <a href="#csi-ephemeral">CSI Ephemeral</a>
+  <a href="#image-volumes">Image Volumes</a>
+  <a href="#subpath">subPath</a>
+  <a href="#subpathexpr" class="toc-h3">subPathExpr</a>
+  <a href="#volumemounts">volumeMounts Fields</a>
+  <a href="#mountpropagation" class="toc-h3">mountPropagation</a>
+  <a href="#init-containers">Init Containers</a>
+  <a href="#sidecar-volumes">Sidecar Containers</a>
+  <a href="#fsgroup">fsGroup</a>
+  <a href="#fsgroup-policy" class="toc-h3">fsGroupChangePolicy</a>
+  <a href="#deprecated-volumes">Deprecated Types</a>
+  <a href="#volume-size-limits">Size Limits</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<script>
+(function(){
+  const t = localStorage.getItem('k8s-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('theme-icon').textContent = t === 'dark' ? '☀️' : '🌙';
+})();
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  document.getElementById('theme-icon').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+}
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => {
+  btt.classList.toggle('visible', main.scrollTop > 300);
+});
+function scrollToTop(){ main.scrollTo({top:0,behavior:'smooth'}); }
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.onclick = () => {
+    navigator.clipboard.writeText(pre.innerText.replace('Copy','').trim());
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  };
+  pre.appendChild(btn);
+});
+const tocLinks = document.querySelectorAll('.toc-sidebar a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(a => a.classList.remove('active'));
+      const active = document.querySelector(`.toc-sidebar a[href="#${e.target.id}"]`);
+      if(active) active.classList.add('active');
+    }
+  });
+},{root: main, rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+function filterNav(val){
+  const q = val.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Developer Portal — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.07)}
+main{flex:1;overflow-y:auto;padding:0;max-width:960px}
+.content{padding:40px 48px 80px}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:36px}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px}
+.breadcrumb a{color:var(--text3)}
+h1{font-size:32px;font-weight:700;line-height:1.2;margin-bottom:10px}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--text2)}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:14px;color:var(--text2)}
+ul,ol{margin:0 0 14px 20px;color:var(--text2)}
+li{margin-bottom:4px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:'JetBrains Mono','Fira Code',monospace;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;background:var(--bg3);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout strong{display:block;margin-bottom:4px;font-size:13px}
+.callout p{margin:0;font-size:13px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+td{padding:9px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin:0 0 8px;color:var(--text);font-size:14px;text-transform:none;letter-spacing:0}
+.card p{margin:0;font-size:13px}
+.card .tag{margin-top:8px;display:inline-block}
+.section-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:13px;color:var(--text2);transition:all .15s}
+.section-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:0 0 32px;display:inline-block;min-width:280px;max-width:420px}
+.toc-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:18px}
+.toc li{margin-bottom:3px;font-size:13px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;line-height:1}
+.btt{position:fixed;bottom:32px;right:32px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden}
+details.coverage summary{padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;flex-shrink:0}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+.coverage-body li{font-size:12px;color:var(--text2);margin-bottom:2px}
+@media(max-width:768px){.sidebar{display:none;position:fixed;z-index:300;height:100vh}.sidebar.open{display:flex}.topbar{display:flex}.content{padding:24px 20px 60px}.coverage-body{grid-template-columns:1fr}.card-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter…" id="nav-filter"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Overview</a>
+    <a href="../01-getting-started/01-core-concepts.html">Core Concepts</a>
+    <a href="../01-getting-started/02-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/03-kubectl-basics.html">kubectl Basics</a>
+    <a href="../01-getting-started/04-first-deployment.html">First Deployment</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../02-workloads/00-pods.html">Pods</a>
+    <a href="../02-workloads/01-deployments.html">Deployments</a>
+    <a href="../02-workloads/02-statefulsets.html">StatefulSets</a>
+    <a href="../02-workloads/03-daemonsets.html">DaemonSets</a>
+    <a href="../02-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../02-workloads/05-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="../02-workloads/06-vertical-pod-autoscaler.html">VPA</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+    <a href="../03-networking/03-network-policies.html">Network Policies</a>
+    <a href="../03-networking/04-dns.html">DNS</a>
+    <a href="../03-networking/05-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">PV &amp; PVC</a>
+    <a href="../04-storage/02-storage-classes.html">StorageClasses</a>
+    <a href="../04-storage/03-stateful-storage-patterns.html">Stateful Patterns</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="../05-security/00-security-overview.html">Overview</a>
+    <a href="../05-security/01-rbac.html">RBAC</a>
+    <a href="../05-security/02-pod-security.html">Pod Security</a>
+    <a href="../05-security/03-network-security.html">Network Security</a>
+    <a href="../05-security/04-secrets-management.html">Secrets Management</a>
+    <a href="../05-security/05-supply-chain-security.html">Supply Chain</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../06-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../06-configuration/01-resource-management.html">Resources</a>
+    <a href="../06-configuration/02-scheduling.html">Scheduling</a>
+    <a href="../06-configuration/03-helm.html">Helm</a>
+    <a href="../06-configuration/04-kustomize.html">Kustomize</a>
+    <a href="../06-configuration/05-admission-controllers.html">Admission</a>
+    <a href="../06-configuration/06-crd-operators.html">CRDs &amp; Operators</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="../07-observability/00-observability-overview.html">Overview</a>
+    <a href="../07-observability/01-metrics.html">Metrics</a>
+    <a href="../07-observability/02-logging.html">Logging</a>
+    <a href="../07-observability/03-tracing.html">Distributed Tracing</a>
+    <a href="../07-observability/04-events.html">Events</a>
+    <a href="../07-observability/05-dashboards.html">Dashboards</a>
+    <a href="../07-observability/06-alerting.html">Alerting</a>
+    <a href="../07-observability/07-profiling.html">Continuous Profiling</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Platform Engineering</div>
+    <a href="00-platform-overview.html">Overview</a>
+    <a href="01-cluster-provisioning.html">Cluster Provisioning</a>
+    <a href="02-gitops.html">GitOps</a>
+    <a href="03-ci-cd-pipelines.html">CI/CD Pipelines</a>
+    <a href="04-developer-portal.html" class="active">Developer Portal</a>
+    <a href="05-policy-enforcement.html">Policy Enforcement</a>
+    <a href="06-multi-tenancy.html">Multi-Tenancy</a>
+    <a href="07-cost-management.html">Cost Management</a>
+    <a href="08-service-catalog.html">Service Catalog</a>
+    <a href="09-secrets-automation.html">Secrets Automation</a>
+    <a href="10-platform-apis.html">Platform APIs</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Production Operations</div>
+    <a href="../09-production-operations/00-operations-overview.html">Overview</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span style="font-size:14px;font-weight:600;color:var(--text)">Developer Portal</span>
+</div>
+
+<main id="main">
+<div class="content">
+
+<div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-platform-overview.html">Platform Engineering</a> › Developer Portal</div>
+
+<div class="page-header">
+  <h1>Developer Portal</h1>
+  <div class="page-meta">
+    <span>Backstage: service catalog, templates, TechDocs, and scorecards</span>
+    <span class="tag">Backstage</span>
+    <span class="tag">Service Catalog</span>
+    <span class="tag">Software Templates</span>
+    <span class="tag">TechDocs</span>
+    <span class="tag">Scorecards</span>
+  </div>
+</div>
+
+<div class="section-nav">
+  <a href="03-ci-cd-pipelines.html">← CI/CD Pipelines</a>
+  <a href="05-policy-enforcement.html">Policy Enforcement →</a>
+</div>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#backstage-overview">Backstage Overview</a></li>
+    <li><a href="#backstage-deploy">Deploying Backstage on Kubernetes</a></li>
+    <li><a href="#service-catalog">Service Catalog</a></li>
+    <li><a href="#catalog-info">catalog-info.yaml Reference</a></li>
+    <li><a href="#software-templates">Software Templates</a></li>
+    <li><a href="#template-actions">Template Actions &amp; Custom Actions</a></li>
+    <li><a href="#techdocs">TechDocs</a></li>
+    <li><a href="#plugins">Essential Plugins</a></li>
+    <li><a href="#scorecards">Scorecards &amp; Tech Health</a></li>
+    <li><a href="#onboarding">Onboarding Automation</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="backstage-overview">1. Backstage Overview</h2>
+
+<p>Backstage (CNCF Graduated) is an open platform for building Internal Developer Portals. It provides a unified interface where developers can discover services, create new projects from templates, read documentation, view Kubernetes workload status, and track technical health — all without switching between a dozen different tools.</p>
+
+<pre><code>Backstage components:
+
+┌──────────────────────────────────────────────────────────┐
+│                   Backstage Portal                        │
+│                                                          │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │              Service Catalog                        │  │
+│  │  All services, APIs, libraries, pipelines, teams   │  │
+│  │  Ingested from catalog-info.yaml files in Git repos│  │
+│  └────────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────┐  ┌──────────────────────────────┐  │
+│  │ Software         │  │  TechDocs                    │  │
+│  │ Templates        │  │  (docs-as-code, MkDocs →     │  │
+│  │ (Scaffolder)     │  │   rendered in portal)        │  │
+│  └──────────────────┘  └──────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────── ┐  │
+│  │  Plugins                                            │  │
+│  │  Kubernetes • Argo CD • GitHub Actions • Grafana   │  │
+│  │  PagerDuty • SonarQube • Snyk • Cost • Lighthouse  │  │
+│  └────────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │  Scorecards / Tech Health                          │  │
+│  │  Track adoption: SLOs, docs, on-call, security     │  │
+│  └────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────┘</code></pre>
+
+<div class="callout callout-info">
+  <strong>Backstage is not a product — it is a framework</strong>
+  <p>Backstage ships as an open-source framework that you customise, build, and deploy. Unlike SaaS portals, you own the instance, the data, and the plugin integrations. The platform team maintains it as a product with a roadmap, versioning, and adoption metrics. This ownership model is why ~50% of enterprises that adopt it succeed, and ~50% abandon it after 6 months due to underestimating the investment required.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="backstage-deploy">2. Deploying Backstage on Kubernetes</h2>
+
+<h3>Architecture</h3>
+
+<pre><code>┌──────────────────────────────────────────────────────┐
+│  Backstage Deployment (Node.js app)                   │
+│  ├── backend (Express.js + plugins)                   │
+│  └── frontend (React SPA served by backend)           │
+│                                                       │
+│  External deps:                                       │
+│  ├── PostgreSQL (catalog, auth, scaffolder state)     │
+│  ├── GitHub / GitLab (catalog ingestion, auth, SCM)   │
+│  ├── Okta / Google OIDC (authentication)              │
+│  └── Object storage (TechDocs HTML artifacts)         │
+└──────────────────────────────────────────────────────┘</code></pre>
+
+<h3>Helm Deployment</h3>
+
+<pre><code># Build and push Backstage Docker image (required — Backstage isn't shipped as a prebuilt image)
+# In your Backstage app directory:
+yarn install
+yarn tsc
+yarn build:backend
+
+docker build -t 123456789.dkr.ecr.us-east-1.amazonaws.com/backstage:${GIT_SHA} \
+  --file packages/backend/Dockerfile .
+docker push 123456789.dkr.ecr.us-east-1.amazonaws.com/backstage:${GIT_SHA}
+
+# Deploy via Helm
+helm repo add backstage https://backstage.github.io/charts
+helm repo update
+
+helm upgrade --install backstage backstage/backstage \
+  --namespace backstage \
+  --create-namespace \
+  --values backstage-values.yaml</code></pre>
+
+<pre><code># backstage-values.yaml
+backstage:
+  image:
+    registry: 123456789.dkr.ecr.us-east-1.amazonaws.com
+    repository: backstage
+    tag: "abc1234"
+    pullPolicy: IfNotPresent
+
+  replicas: 2
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+  # app-config.yaml content injected as environment variables
+  appConfig:
+    app:
+      title: "MyOrg Developer Portal"
+      baseUrl: https://portal.internal.example.com
+
+    organization:
+      name: "MyOrg"
+
+    backend:
+      baseUrl: https://portal.internal.example.com
+      listen:
+        port: 7007
+      database:
+        client: pg
+        connection:
+          host: ${POSTGRES_HOST}
+          port: 5432
+          user: ${POSTGRES_USER}
+          password: ${POSTGRES_PASSWORD}
+          database: backstage
+
+    integrations:
+      github:
+        - host: github.com
+          token: ${GITHUB_TOKEN}   # Personal access token or GitHub App
+
+    auth:
+      providers:
+        github:
+          development:
+            clientId: ${GITHUB_CLIENT_ID}
+            clientSecret: ${GITHUB_CLIENT_SECRET}
+        okta:
+          production:
+            clientId: ${OKTA_CLIENT_ID}
+            clientSecret: ${OKTA_CLIENT_SECRET}
+            audience: https://myorg.okta.com
+            authServerId: default
+
+    catalog:
+      providers:
+        github:
+          myorg:
+            organization: myorg
+            catalogPath: '/catalog-info.yaml'
+            filters:
+              branch: main
+              repository: '.*'    # all repos
+            schedule:
+              frequency: {minutes: 30}
+              timeout: {minutes: 3}
+
+    techdocs:
+      builder: external           # generate docs in CI, serve from S3
+      generator:
+        runIn: local
+      publisher:
+        type: awsS3
+        awsS3:
+          bucketName: myorg-techdocs
+          region: us-east-1
+
+  extraEnvVarsSecret: backstage-secrets
+
+postgresql:
+  enabled: true
+  primary:
+    persistence:
+      size: 20Gi
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  host: portal.internal.example.com
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    enabled: true</code></pre>
+
+<pre><code># backstage-secrets (Kubernetes Secret managed by ESO or SOPS):
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backstage-secrets
+  namespace: backstage
+stringData:
+  POSTGRES_HOST: postgres.backstage.svc
+  POSTGRES_USER: backstage
+  POSTGRES_PASSWORD: "<from-vault>"
+  GITHUB_TOKEN: "<github-pat-or-app-token>"
+  GITHUB_CLIENT_ID: "<oauth-app-client-id>"
+  GITHUB_CLIENT_SECRET: "<oauth-app-client-secret>"
+  OKTA_CLIENT_ID: "<okta-client-id>"
+  OKTA_CLIENT_SECRET: "<okta-client-secret>"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="service-catalog">3. Service Catalog</h2>
+
+<p>The service catalog is the core of Backstage — a searchable, browsable inventory of every component, API, resource, system, domain, and team in the organisation. Entities are defined by <code>catalog-info.yaml</code> files in each Git repository and automatically ingested by Backstage.</p>
+
+<h3>Entity Kinds</h3>
+
+<table>
+  <tr><th>Kind</th><th>Description</th><th>Example</th></tr>
+  <tr><td><code>Component</code></td><td>A software component (service, library, website, tool)</td><td>order-service, payment-sdk</td></tr>
+  <tr><td><code>API</code></td><td>An API exposed by a Component (OpenAPI, AsyncAPI, GraphQL, gRPC)</td><td>Order API v2 (OpenAPI spec)</td></tr>
+  <tr><td><code>System</code></td><td>A collection of related Components and APIs</td><td>order-management-system</td></tr>
+  <tr><td><code>Domain</code></td><td>A business domain grouping related Systems</td><td>ecommerce, payments</td></tr>
+  <tr><td><code>Group</code></td><td>A team or organisational unit</td><td>platform-team, order-squad</td></tr>
+  <tr><td><code>User</code></td><td>An individual developer (synced from identity provider)</td><td>alice@example.com</td></tr>
+  <tr><td><code>Resource</code></td><td>Infrastructure resources (databases, S3 buckets, queues)</td><td>orders-rds-postgres, payments-sqs</td></tr>
+  <tr><td><code>Location</code></td><td>A pointer to other catalog-info.yaml files</td><td>all-services.yaml in org root</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="catalog-info">4. catalog-info.yaml Reference</h2>
+
+<h3>Component — Service</h3>
+
+<pre><code>apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: order-service
+  title: Order Service
+  description: |
+    Core service for creating and managing customer orders.
+    Handles order lifecycle from cart submission to fulfillment.
+  annotations:
+    # Source location (used by Backstage to link to code)
+    backstage.io/source-location: url:https://github.com/myorg/order-service
+
+    # TechDocs (mkdocs.yml location)
+    backstage.io/techdocs-ref: dir:.
+
+    # GitHub Actions integration (shows CI status)
+    github.com/project-slug: myorg/order-service
+
+    # Kubernetes integration (shows pod/deployment status)
+    backstage.io/kubernetes-id: order-service
+    backstage.io/kubernetes-namespace: order-service
+
+    # Argo CD integration
+    argocd/app-name: order-service
+
+    # PagerDuty integration (shows on-call + incidents)
+    pagerduty.com/service-id: PXXXXX
+
+    # Prometheus/Grafana link
+    grafana/dashboard-selector: "title='Order Service RED'"
+    grafana/alert-label-selector: "service=order-service"
+
+  tags:
+    - go
+    - grpc
+    - critical-path
+
+  links:
+    - url: https://grafana.internal.example.com/d/order-service
+      title: Grafana Dashboard
+      icon: dashboard
+    - url: https://runbooks.internal.example.com/order-service
+      title: Runbook
+      icon: docs
+
+spec:
+  type: service           # service | library | website | tool
+  lifecycle: production   # experimental | production | deprecated
+  owner: group:order-squad
+  system: order-management-system
+
+  # APIs this component provides
+  providesApis:
+    - order-api-v2
+
+  # APIs this component consumes
+  consumesApis:
+    - payment-api-v1
+    - inventory-api-v1
+
+  # Other components this component depends on
+  dependsOn:
+    - component:payment-service
+    - resource:orders-rds-postgres</code></pre>
+
+<h3>API Entity</h3>
+
+<pre><code">apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: order-api-v2
+  description: REST API for order management
+  annotations:
+    backstage.io/source-location: url:https://github.com/myorg/order-service/blob/main/api/openapi.yaml
+spec:
+  type: openapi        # openapi | asyncapi | graphql | grpc
+  lifecycle: production
+  owner: group:order-squad
+  system: order-management-system
+  definition:
+    $text: https://raw.githubusercontent.com/myorg/order-service/main/api/openapi.yaml</code></pre>
+
+<h3>System and Domain</h3>
+
+<pre><code">apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: order-management-system
+  description: All services involved in order lifecycle management
+spec:
+  owner: group:order-squad
+  domain: ecommerce
+---
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: ecommerce
+  description: Customer-facing e-commerce capabilities
+spec:
+  owner: group:ecommerce-platform</code></pre>
+
+<h3>Resource Entity — Cloud Resource</h3>
+
+<pre><code">apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: orders-rds-postgres
+  description: "PostgreSQL 15 RDS instance for order data"
+  annotations:
+    aws.amazon.com/arn: arn:aws:rds:us-east-1:123456789:db:orders-prod
+spec:
+  type: database        # database | s3-bucket | message-queue | cache | etc.
+  owner: group:platform-team
+  system: order-management-system
+  dependencyOf:
+    - component:order-service</code></pre>
+
+<h3>Group and User</h3>
+
+<pre><code"># Groups and Users are typically synced from the identity provider
+# (Okta, GitHub, Azure AD) rather than written manually.
+# But you can define them in YAML for bootstrap:
+
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: order-squad
+  description: Team responsible for order management
+spec:
+  type: team
+  profile:
+    displayName: Order Squad
+    email: order-squad@example.com
+    picture: https://avatars.internal/order-squad.png
+  parent: ecommerce-tribe      # org hierarchy
+  children: []
+  members:
+    - alice
+    - bob
+    - carol</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="software-templates">5. Software Templates</h2>
+
+<p>Software Templates (the Scaffolder) let developers create new services, libraries, and infrastructure from standardised golden-path templates — directly from the Backstage UI, without needing to copy boilerplate or understand Kubernetes YAML.</p>
+
+<h3>Template Structure</h3>
+
+<pre><code">my-go-service-template/
+├── template.yaml          ← Template definition (Backstage reads this)
+├── skeleton/              ← File tree to copy (Nunjucks templated)
+│   ├── cmd/
+│   │   └── server/
+│   │       └── main.go
+│   ├── Dockerfile
+│   ├── helm/
+│   │   ├── Chart.yaml
+│   │   └── values.yaml
+│   ├── .github/
+│   │   └── workflows/
+│   │       └── ci.yaml
+│   ├── catalog-info.yaml
+│   └── docs/
+│       ├── mkdocs.yml
+│       └── index.md
+└── README.md</code></pre>
+
+<h3>Full Template YAML</h3>
+
+<pre><code">apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: go-microservice-template
+  title: Go Microservice
+  description: Creates a production-ready Go microservice with CI/CD, Helm chart, and observability pre-wired
+  tags:
+    - go
+    - microservice
+    - golden-path
+spec:
+  owner: group:platform-team
+  type: service
+
+  # ── Input Parameters (shown as a form in the UI) ──────────────
+  parameters:
+    - title: Service Details
+      required: [name, description, owner]
+      properties:
+        name:
+          title: Service Name
+          type: string
+          description: "Lowercase, hyphenated (e.g. order-service)"
+          pattern: '^[a-z][a-z0-9-]*$'
+          maxLength: 50
+          ui:autofocus: true
+
+        description:
+          title: Description
+          type: string
+          description: What does this service do?
+
+        owner:
+          title: Owning Team
+          type: string
+          description: Team responsible for this service
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+        system:
+          title: System
+          type: string
+          description: Which system does this belong to?
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: System
+
+    - title: Repository
+      required: [repoUrl]
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts: [github.com]
+            allowedOrganizations: [myorg]
+
+    - title: Infrastructure
+      properties:
+        enableDatabase:
+          title: Needs PostgreSQL database?
+          type: boolean
+          default: false
+        enableCache:
+          title: Needs Redis cache?
+          type: boolean
+          default: false
+        enableQueue:
+          title: Needs SQS queue?
+          type: boolean
+          default: false
+
+  # ── Steps (actions executed after form submission) ────────────
+  steps:
+    - id: fetch-template
+      name: Fetch Template
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system | parseEntityRef | pick('name') }}
+          enableDatabase: ${{ parameters.enableDatabase }}
+          enableCache: ${{ parameters.enableCache }}
+          repoName: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+          orgName: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+
+    - id: publish
+      name: Create GitHub Repository
+      action: publish:github
+      input:
+        allowedHosts: [github.com]
+        description: ${{ parameters.description }}
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+        repoVisibility: private
+        protectDefaultBranch: true
+        requireCodeOwnerReviews: true
+        topics:
+          - go
+          - microservice
+          - ${{ parameters.owner | parseEntityRef | pick('name') }}
+
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+    - id: create-argocd-app
+      name: Create Argo CD Application
+      action: argocd:create-resources
+      input:
+        appName: ${{ parameters.name }}
+        argoInstance: production
+        namespace: ${{ parameters.name }}
+        projectName: ${{ parameters.owner | parseEntityRef | pick('name') }}
+        repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+        path: helm
+
+    - id: create-namespace
+      name: Create Kubernetes Namespace
+      action: kubernetes:apply
+      input:
+        clusterUrl: https://k8s.internal.example.com
+        manifest:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ${{ parameters.name }}
+            labels:
+              team: ${{ parameters.owner | parseEntityRef | pick('name') }}
+
+    - id: notify-slack
+      name: Notify Team Slack Channel
+      action: http:backstage:request
+      input:
+        method: POST
+        path: /api/proxy/slack
+        body:
+          text: "🚀 New service *${{ parameters.name }}* created by ${{ user.entity.metadata.name }}"
+
+  # ── Output (links shown to developer after template runs) ─────
+  output:
+    links:
+      - title: Open Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in Catalog
+        entityRef: ${{ steps.register.output.entityRef }}
+      - title: CI Pipeline
+        url: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}/actions</code></pre>
+
+<h3>Skeleton File Templating (Nunjucks)</h3>
+
+<pre><code"># skeleton/catalog-info.yaml (template with Nunjucks)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: ${{ values.orgName }}/${{ values.repoName }}
+    backstage.io/kubernetes-id: ${{ values.name }}
+spec:
+  type: service
+  lifecycle: experimental
+  owner: ${{ values.owner }}
+  system: ${{ values.system }}</code></pre>
+
+<pre><code"># skeleton/helm/values.yaml
+replicaCount: 2
+
+image:
+  repository: 123456789.dkr.ecr.us-east-1.amazonaws.com/${{ values.name }}
+  pullPolicy: IfNotPresent
+  tag: ""   # overridden by CI
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 8080
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8080
+  initialDelaySeconds: 5</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="template-actions">6. Template Actions &amp; Custom Actions</h2>
+
+<h3>Built-in Actions Reference</h3>
+
+<table>
+  <tr><th>Action</th><th>Description</th></tr>
+  <tr><td><code>fetch:template</code></td><td>Copy and render skeleton directory with Nunjucks values</td></tr>
+  <tr><td><code>fetch:plain</code></td><td>Copy plain files without templating</td></tr>
+  <tr><td><code>publish:github</code></td><td>Create GitHub repo, push files, configure branch protection</td></tr>
+  <tr><td><code>publish:gitlab</code></td><td>Create GitLab project and push files</td></tr>
+  <tr><td><code>catalog:register</code></td><td>Register the new entity in the Backstage catalog</td></tr>
+  <tr><td><code>catalog:write</code></td><td>Write a catalog entity to disk before publishing</td></tr>
+  <tr><td><code>github:actions:dispatch</code></td><td>Trigger a GitHub Actions workflow</td></tr>
+  <tr><td><code>argocd:create-resources</code></td><td>Create Argo CD Application and AppProject</td></tr>
+  <tr><td><code>kubernetes:apply</code></td><td>Apply manifest to a registered Kubernetes cluster</td></tr>
+  <tr><td><code>http:backstage:request</code></td><td>Make HTTP request to a backend proxy endpoint</td></tr>
+  <tr><td><code>debug:log</code></td><td>Log a message during scaffolding (dry-run debugging)</td></tr>
+</table>
+
+<h3>Custom Action (Node.js Backend)</h3>
+
+<pre><code">// packages/backend/src/actions/createVaultNamespace.ts
+import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
+import Vault from 'node-vault';
+
+export function createVaultNamespaceAction() {
+  return createTemplateAction<{
+    namespaceName: string;
+    teamName: string;
+  }>({
+    id: 'vault:create-namespace',
+    schema: {
+      input: {
+        required: ['namespaceName', 'teamName'],
+        type: 'object',
+        properties: {
+          namespaceName: { type: 'string', title: 'Vault namespace name' },
+          teamName: { type: 'string', title: 'Team name for policy' },
+        },
+      },
+    },
+    async handler(ctx) {
+      const { namespaceName, teamName } = ctx.input;
+      const { logger } = ctx;
+
+      const vault = Vault({
+        endpoint: process.env.VAULT_ADDR,
+        token: process.env.VAULT_TOKEN,
+      });
+
+      logger.info(`Creating Vault namespace: ${namespaceName}`);
+
+      // Create KV v2 secrets mount for the namespace
+      await vault.mount({
+        mount_point: `${namespaceName}/`,
+        type: 'kv-v2',
+        description: `Secrets for ${teamName}`,
+      });
+
+      // Create policy
+      await vault.addPolicy({
+        name: `${namespaceName}-rw`,
+        rules: `
+          path "${namespaceName}/*" {
+            capabilities = ["create", "read", "update", "delete", "list"]
+          }
+        `,
+      });
+
+      logger.info(`Vault namespace and policy created for ${namespaceName}`);
+
+      ctx.output('vaultPath', `${namespaceName}/`);
+      ctx.output('vaultPolicy', `${namespaceName}-rw`);
+    },
+  });
+}</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="techdocs">7. TechDocs</h2>
+
+<p>TechDocs renders Markdown documentation (using MkDocs) directly in the Backstage portal, linked to each service's catalog entry. The "docs-like-code" approach keeps documentation alongside source code, versioned in Git, and always up to date.</p>
+
+<h3>Repository Setup</h3>
+
+<pre><code"># mkdocs.yml (in service root)
+site_name: Order Service
+site_description: Documentation for the Order Service
+repo_url: https://github.com/myorg/order-service
+
+plugins:
+  - techdocs-core    # required Backstage plugin
+
+nav:
+  - Home: index.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Data Model: architecture/data-model.md
+    - API Design: architecture/api-design.md
+  - Operations:
+    - Deployment: ops/deployment.md
+    - Runbook: ops/runbook.md
+    - Alerting: ops/alerting.md
+  - Development:
+    - Getting Started: dev/getting-started.md
+    - Testing: dev/testing.md
+    - Configuration: dev/configuration.md</code></pre>
+
+<h3>TechDocs Build in CI (External Builder)</h3>
+
+<pre><code"># .github/workflows/techdocs.yaml
+name: TechDocs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'catalog-info.yaml'
+
+jobs:
+  publish-techdocs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install techdocs-cli
+        run: npm install -g @techdocs/cli
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789:role/techdocs-s3-writer
+          aws-region: us-east-1
+
+      - name: Generate and publish TechDocs
+        run: |
+          techdocs-cli generate \
+            --source-dir . \
+            --output-dir ./site \
+            --no-docker
+
+          techdocs-cli publish \
+            --publisher-type awsS3 \
+            --storage-name myorg-techdocs \
+            --entity default/Component/order-service</code></pre>
+
+<h3>App Config for External TechDocs</h3>
+
+<pre><code">techdocs:
+  builder: external         # CI generates, Backstage just serves
+  generator:
+    runIn: local
+  publisher:
+    type: awsS3
+    awsS3:
+      bucketName: myorg-techdocs
+      region: us-east-1
+      credentials:
+        roleArn: arn:aws:iam::123456789:role/backstage-techdocs-reader</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="plugins">8. Essential Plugins</h2>
+
+<h3>Kubernetes Plugin</h3>
+
+<pre><code"># app-config.yaml — Kubernetes plugin config
+kubernetes:
+  serviceLocatorMethod:
+    type: multiTenant    # each service entity gets pods across all clusters
+
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        - url: https://prod-us.k8s.internal
+          name: production-us
+          authProvider: serviceAccount
+          serviceAccountToken: ${K8S_PROD_US_TOKEN}
+          caData: ${K8S_PROD_US_CA}
+        - url: https://staging.k8s.internal
+          name: staging
+          authProvider: serviceAccount
+          serviceAccountToken: ${K8S_STAGING_TOKEN}
+          caData: ${K8S_STAGING_CA}
+
+  customResources:
+    - group: argoproj.io
+      apiVersion: v1alpha1
+      plural: rollouts</code></pre>
+
+<pre><code"># catalog-info.yaml — link entity to Kubernetes workloads
+annotations:
+  backstage.io/kubernetes-id: order-service          # matches Deployment label
+  backstage.io/kubernetes-namespace: order-service   # which namespace to look in
+  backstage.io/kubernetes-label-selector: 'app=order-service'</code></pre>
+
+<h3>Argo CD Plugin</h3>
+
+<pre><code"># app-config.yaml
+argocd:
+  username: ${ARGOCD_USERNAME}
+  password: ${ARGOCD_PASSWORD}
+  appLocatorMethods:
+    - type: config
+      instances:
+        - name: production
+          url: https://argocd.internal.example.com
+          token: ${ARGOCD_TOKEN}
+
+# catalog-info.yaml annotation
+argocd/app-name: order-service
+# or for multiple instances:
+# argocd/app-selector: "app.kubernetes.io/name=order-service"</code></pre>
+
+<h3>GitHub Actions Plugin</h3>
+
+<pre><code"># app-config.yaml
+github:
+  - host: github.com
+    token: ${GITHUB_TOKEN}
+
+# catalog-info.yaml annotation
+github.com/project-slug: myorg/order-service</code></pre>
+
+<h3>Plugin Ecosystem Overview</h3>
+
+<table>
+  <tr><th>Plugin</th><th>Provider</th><th>What It Shows</th></tr>
+  <tr><td>@backstage/plugin-kubernetes</td><td>Core</td><td>Pod status, deployments, rollouts per service</td></tr>
+  <tr><td>@roadiehq/backstage-plugin-argo-cd</td><td>Roadie</td><td>Argo CD app sync status, history</td></tr>
+  <tr><td>@backstage/plugin-github-actions</td><td>Core</td><td>CI workflow runs and status</td></tr>
+  <tr><td>@backstage/plugin-pagerduty</td><td>Core</td><td>On-call schedule, active incidents</td></tr>
+  <tr><td>@roadiehq/backstage-plugin-grafana</td><td>Roadie</td><td>Embedded Grafana dashboards and alerts</td></tr>
+  <tr><td>@backstage/plugin-cost-insights</td><td>Core</td><td>Cloud cost per team/service</td></tr>
+  <tr><td>@backstage/plugin-sonarqube</td><td>Core</td><td>Code quality metrics and issues</td></tr>
+  <tr><td>@backstage/plugin-vault</td><td>Community</td><td>Vault secret paths per service</td></tr>
+  <tr><td>@backstage/plugin-todo</td><td>Core</td><td>TODO/FIXME comments in source code</td></tr>
+  <tr><td>@backstage/plugin-tech-radar</td><td>Core</td><td>Technology adoption radar (ADOPT/TRIAL/HOLD)</td></tr>
+  <tr><td>@backstage/plugin-search</td><td>Core</td><td>Full-text search across catalog, TechDocs, APIs</td></tr>
+  <tr><td>@backstage/plugin-lighthouse</td><td>Core</td><td>Lighthouse website performance audits</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="scorecards">9. Scorecards &amp; Tech Health</h2>
+
+<p>Scorecards track whether services meet the organisation's engineering standards. They answer questions like: "Does every production service have an SLO defined?", "Does every service have an on-call rotation?", "Are all services scanning for vulnerabilities in CI?"</p>
+
+<h3>Backstage Entity Metadata for Scorecards</h3>
+
+<pre><code"># catalog-info.yaml — add metadata that scorecards can check
+metadata:
+  annotations:
+    # On-call (PagerDuty service ID)
+    pagerduty.com/service-id: PXXXXX
+    # SLO defined (custom annotation)
+    slo.io/slo-defined: "true"
+    # Last security scan
+    security.io/last-scan: "2024-01-15"
+    # Runbook URL
+    runbook.io/url: https://runbooks.internal/order-service
+  labels:
+    # Compliance tier
+    compliance-tier: "high"
+    # Data classification
+    data-classification: "pii"</code></pre>
+
+<h3>Custom Scorecard Plugin (using Backstage Catalog API)</h3>
+
+<pre><code"># Scorecards are typically implemented as a custom Backstage plugin
+# or via a commercial tool like Cortex, OpsLevel, or Rely.io.
+# Below is a representative pattern for a custom implementation:
+
+// packages/app/src/components/Scorecard/ScorecardCard.tsx
+import React from 'react';
+import { useEntity } from '@backstage/plugin-catalog-react';
+
+interface Check {
+  name: string;
+  passed: boolean;
+  detail?: string;
+}
+
+function ScorecardCard() {
+  const { entity } = useEntity();
+  const annotations = entity.metadata.annotations ?? {};
+
+  const checks: Check[] = [
+    {
+      name: 'Has PagerDuty on-call',
+      passed: Boolean(annotations['pagerduty.com/service-id']),
+    },
+    {
+      name: 'SLO defined',
+      passed: annotations['slo.io/slo-defined'] === 'true',
+    },
+    {
+      name: 'Has runbook',
+      passed: Boolean(annotations['runbook.io/url']),
+    },
+    {
+      name: 'Has TechDocs',
+      passed: Boolean(annotations['backstage.io/techdocs-ref']),
+    },
+    {
+      name: 'Kubernetes monitoring enabled',
+      passed: Boolean(annotations['backstage.io/kubernetes-id']),
+    },
+  ];
+
+  const score = checks.filter(c => c.passed).length;
+  const total = checks.length;
+
+  return (
+    &lt;Card&gt;
+      &lt;CardHeader title={`Scorecard: ${score}/${total}`} /&gt;
+      &lt;List&gt;
+        {checks.map(c =&gt; (
+          &lt;ListItem key={c.name}&gt;
+            {c.passed ? '✅' : '❌'} {c.name}
+          &lt;/ListItem&gt;
+        ))}
+      &lt;/List&gt;
+    &lt;/Card&gt;
+  );
+}</code></pre>
+
+<h3>Scorecard Dimensions (Platform Standards)</h3>
+
+<table>
+  <tr><th>Dimension</th><th>Check</th><th>Evidence</th></tr>
+  <tr><td>Ownership</td><td>Has owner group defined</td><td><code>spec.owner</code> in catalog-info.yaml</td></tr>
+  <tr><td>On-Call</td><td>Has PagerDuty service</td><td><code>pagerduty.com/service-id</code> annotation</td></tr>
+  <tr><td>Documentation</td><td>TechDocs configured</td><td><code>backstage.io/techdocs-ref</code> annotation</td></tr>
+  <tr><td>Documentation</td><td>Runbook exists</td><td><code>runbook.io/url</code> annotation</td></tr>
+  <tr><td>Reliability</td><td>SLO defined</td><td>PrometheusRule with slo labels in Git</td></tr>
+  <tr><td>Observability</td><td>Kubernetes monitoring enabled</td><td><code>backstage.io/kubernetes-id</code> annotation</td></tr>
+  <tr><td>Security</td><td>Vulnerability scanning in CI</td><td>Trivy step in GitHub Actions workflow</td></tr>
+  <tr><td>Security</td><td>Image signed</td><td>Cosign signature in registry</td></tr>
+  <tr><td>Production readiness</td><td>Resource requests/limits set</td><td>Kyverno policy <code>require-resource-limits</code> passes</td></tr>
+  <tr><td>Production readiness</td><td>PDB configured</td><td>PodDisruptionBudget exists in namespace</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="onboarding">10. Onboarding Automation</h2>
+
+<p>The full power of Backstage is realised when the Software Template provisions everything a new service needs in one click: Git repo, Kubernetes namespace, Argo CD application, Vault namespace, Slack channel, PagerDuty service, and catalog registration.</p>
+
+<pre><code">New service onboarding (fully automated via Backstage Template):
+
+Developer fills form in Backstage:
+  - Service name: payment-webhook-handler
+  - Owner: payments-squad
+  - System: payments-system
+  - Needs PostgreSQL: yes
+
+Template steps execute:
+  1. fetch:template          → Render skeleton files
+  2. publish:github          → Create GitHub repo + branch protection
+  3. github:actions:dispatch → Trigger first CI build
+  4. argocd:create-resources → Create ArgoCD Application (points at Helm chart)
+  5. kubernetes:apply        → Create namespace + ResourceQuota + LimitRange
+  6. vault:create-namespace  → Create Vault namespace + policy (custom action)
+  7. http:backstage:request  → Create PagerDuty service
+  8. http:backstage:request  → Create Slack channel #payment-webhook-handler
+  9. catalog:register        → Register in Backstage catalog
+
+Developer sees output:
+  ✅ Repository: https://github.com/myorg/payment-webhook-handler
+  ✅ Catalog entry: http://portal/catalog/default/Component/payment-webhook-handler
+  ✅ CI Pipeline: https://github.com/myorg/payment-webhook-handler/actions
+
+Time to first deployment: ~5 minutes (vs 2–3 days of tickets previously)</code></pre>
+
+<h3>GitHub App for Backstage (recommended over PAT)</h3>
+
+<pre><code"># Using a GitHub App instead of Personal Access Token gives:
+# - Per-installation permissions (not tied to a user account)
+# - Higher rate limits (5000 req/hr per installation vs 60 anon)
+# - Fine-grained repository access control
+# - Audit trail in GitHub org settings
+
+# Register a GitHub App with these permissions:
+# Repository: contents(rw), pull_requests(rw), workflows(rw), actions(r)
+# Organization: members(r)
+
+# app-config.yaml:
+integrations:
+  github:
+    - host: github.com
+      apps:
+        - appId: ${GITHUB_APP_ID}
+          clientId: ${GITHUB_APP_CLIENT_ID}
+          clientSecret: ${GITHUB_APP_CLIENT_SECRET}
+          webhookSecret: ${GITHUB_WEBHOOK_SECRET}
+          privateKey: ${GITHUB_APP_PRIVATE_KEY}</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">11. Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>1. Treat Backstage as a product with a roadmap</h4>
+    <p>Assign a dedicated owner (2–3 engineers). Publish a quarterly roadmap. Run user research (NPS surveys, shadowing sessions). The most common failure mode is treating Backstage as an "infra project" with no user feedback loop.</p>
+  </div>
+  <div class="card">
+    <h4>2. Start with the service catalog, add features later</h4>
+    <p>Get every service registered with a catalog-info.yaml in the first quarter. The Kubernetes plugin and TechDocs add value immediately. Templates and scorecards can wait until the catalog is populated and developers use the portal daily.</p>
+  </div>
+  <div class="card">
+    <h4>3. Automate catalog-info.yaml population</h4>
+    <p>Write a migration script that generates catalog-info.yaml for all existing services from your CI/GitHub metadata. Requiring manual PR per team creates adoption friction. Auto-generate first, let teams refine.</p>
+  </div>
+  <div class="card">
+    <h4>4. Use the GitHub App, not a PAT</h4>
+    <p>Personal Access Tokens are tied to a user account. When that employee leaves, Backstage breaks silently. GitHub Apps are organisational, have fine-grained permissions, and don't expire unless you rotate them.</p>
+  </div>
+  <div class="card">
+    <h4>5. Store Backstage config in Git, secrets in Vault/ESO</h4>
+    <p><code>app-config.yaml</code> goes in Git. All <code>${VAR}</code> references are secrets in Vault synced by ESO. This gives you version-controlled config with no plaintext credentials. Use a separate <code>app-config.local.yaml</code> for local dev only.</p>
+  </div>
+  <div class="card">
+    <h4>6. Test templates with dry-run before publishing</h4>
+    <p>Use <code>backstage-cli scaffold --dry-run</code> to verify templates generate correct output before making them available to all developers. A broken template for 500 developers is a production incident.</p>
+  </div>
+  <div class="card">
+    <h4>7. Use scorecards to drive platform adoption</h4>
+    <p>Scorecards create a feedback loop: service owners see their score and know exactly what to fix. Tie scorecard results to quarterly platform reviews. Don't mandate — incentivise. "Top scorer" recognition drives more adoption than policy enforcement.</p>
+  </div>
+  <div class="card">
+    <h4>8. Version-pin all Backstage plugins</h4>
+    <p>Backstage and its plugins release frequently. Pin exact versions in <code>package.json</code> and use Renovate to propose upgrades. Never run <code>yarn upgrade</code> in production without testing — breaking API changes between major plugin versions are common.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage Checklist</summary>
+  <ul class="coverage-body">
+    <li>Backstage architecture diagram (service catalog / Software Templates / TechDocs / plugins / scorecards)</li>
+    <li>Backstage is a framework callout (not SaaS — ownership model and failure mode)</li>
+    <li>Backstage architecture: Node.js app + PostgreSQL + GitHub/GitLab + OIDC + S3 for TechDocs</li>
+    <li>Backstage Docker image build (yarn install/tsc/build:backend + docker build)</li>
+    <li>Helm install command + backstage-values.yaml (replicas, resources, appConfig full YAML, PostgreSQL, ingress)</li>
+    <li>appConfig: app/organization/backend/integrations(github)/auth(github+okta)/catalog providers(github with schedule)/techdocs(awsS3)/extraEnvVarsSecret</li>
+    <li>backstage-secrets Secret with all environment variable keys</li>
+    <li>Entity kinds reference table (Component/API/System/Domain/Group/User/Resource/Location)</li>
+    <li>Full catalog-info.yaml Component: all key annotations (source-location/techdocs-ref/github.com/kubernetes-id/argocd/pagerduty/grafana), tags, links, spec (type/lifecycle/owner/system/providesApis/consumesApis/dependsOn)</li>
+    <li>API entity YAML (openapi type, definition $text reference)</li>
+    <li>System + Domain YAML</li>
+    <li>Resource entity YAML (database type, AWS ARN annotation, dependencyOf)</li>
+    <li>Group + User YAML (profile, parent hierarchy, members)</li>
+    <li>Software Template skeleton directory structure</li>
+    <li>Full Template YAML: parameters (3 pages with OwnerPicker/EntityPicker/RepoUrlPicker/booleans), all 7 steps (fetch:template/publish:github/catalog:register/argocd:create-resources/kubernetes:apply/http:backstage:request/notify-slack), output links</li>
+    <li>Template skeleton catalog-info.yaml and values.yaml with Nunjucks variables</li>
+    <li>Built-in template actions reference table (11 actions)</li>
+    <li>Custom action implementation: vault:create-namespace TypeScript class (createTemplateAction schema + async handler with Vault SDK)</li>
+    <li>TechDocs mkdocs.yml structure (techdocs-core plugin, nav hierarchy)</li>
+    <li>TechDocs CI workflow (techdocs-cli generate + publish to S3 with OIDC auth)</li>
+    <li>TechDocs app config (external builder, awsS3 publisher, roleArn)</li>
+    <li>Kubernetes plugin app-config (multiTenant serviceLocator, config cluster list with serviceAccount auth, customResources for Rollouts)</li>
+    <li>Kubernetes plugin catalog-info annotation (kubernetes-id, namespace, label-selector)</li>
+    <li>Argo CD plugin config + catalog-info annotation</li>
+    <li>GitHub Actions plugin config</li>
+    <li>Plugin ecosystem table (12 plugins with provider and description)</li>
+    <li>Scorecard metadata annotations (pagerduty, slo, security-scan, runbook, compliance-tier)</li>
+    <li>Custom Scorecard React component (useEntity hook, checks array, score/total calculation)</li>
+    <li>Scorecard dimensions reference table (10 checks across ownership/on-call/docs/reliability/observability/security/production-readiness)</li>
+    <li>Full onboarding automation flow diagram (9 template steps → 5-minute time-to-deploy vs 2-3 days tickets)</li>
+    <li>GitHub App setup (permissions required, app-config.yaml with appId/privateKey/webhookSecret)</li>
+    <li>8 best practices cards</li>
+  </ul>
+</details>
+
+</div>
+</main>
+
+<button class="btt" id="btt" title="Back to top">↑</button>
+
+<script>
+const sidebar = document.getElementById('sidebar');
+document.getElementById('hamburger').addEventListener('click', () => sidebar.classList.toggle('open'));
+document.getElementById('btt').addEventListener('click', () => document.getElementById('main').scrollTo({top:0,behavior:'smooth'}));
+document.getElementById('main').addEventListener('scroll', function(){
+  document.getElementById('btt').style.display = this.scrollTop > 400 ? 'flex' : 'none';
+});
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn'; btn.textContent = 'copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.innerText.replace(/^copy\n/,''));
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+document.getElementById('nav-filter').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+const tocLinks = document.querySelectorAll('.toc a');
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+}, {root: document.getElementById('main'), rootMargin: '-20% 0px -70% 0px'});
+headings.forEach(h => obs.observe(h));
+</script>
+</body>
+</html>

@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitOps — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.07)}
+main{flex:1;overflow-y:auto;padding:0;max-width:960px}
+.content{padding:40px 48px 80px}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:36px}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px}
+.breadcrumb a{color:var(--text3)}
+h1{font-size:32px;font-weight:700;line-height:1.2;margin-bottom:10px}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--text2)}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:14px;color:var(--text2)}
+ul,ol{margin:0 0 14px 20px;color:var(--text2)}
+li{margin-bottom:4px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:'JetBrains Mono','Fira Code',monospace;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;background:var(--bg3);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout strong{display:block;margin-bottom:4px;font-size:13px}
+.callout p{margin:0;font-size:13px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+td{padding:9px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin:0 0 8px;color:var(--text);font-size:14px;text-transform:none;letter-spacing:0}
+.card p{margin:0;font-size:13px}
+.card .tag{margin-top:8px;display:inline-block}
+.section-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:13px;color:var(--text2);transition:all .15s}
+.section-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:0 0 32px;display:inline-block;min-width:280px;max-width:420px}
+.toc-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:18px}
+.toc li{margin-bottom:3px;font-size:13px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;line-height:1}
+.btt{position:fixed;bottom:32px;right:32px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden}
+details.coverage summary{padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;flex-shrink:0}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+.coverage-body li{font-size:12px;color:var(--text2);margin-bottom:2px}
+@media(max-width:768px){.sidebar{display:none;position:fixed;z-index:300;height:100vh}.sidebar.open{display:flex}.topbar{display:flex}.content{padding:24px 20px 60px}.coverage-body{grid-template-columns:1fr}.card-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter…" id="nav-filter"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Overview</a>
+    <a href="../01-getting-started/01-core-concepts.html">Core Concepts</a>
+    <a href="../01-getting-started/02-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/03-kubectl-basics.html">kubectl Basics</a>
+    <a href="../01-getting-started/04-first-deployment.html">First Deployment</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../02-workloads/00-pods.html">Pods</a>
+    <a href="../02-workloads/01-deployments.html">Deployments</a>
+    <a href="../02-workloads/02-statefulsets.html">StatefulSets</a>
+    <a href="../02-workloads/03-daemonsets.html">DaemonSets</a>
+    <a href="../02-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../02-workloads/05-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="../02-workloads/06-vertical-pod-autoscaler.html">VPA</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+    <a href="../03-networking/03-network-policies.html">Network Policies</a>
+    <a href="../03-networking/04-dns.html">DNS</a>
+    <a href="../03-networking/05-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">PV &amp; PVC</a>
+    <a href="../04-storage/02-storage-classes.html">StorageClasses</a>
+    <a href="../04-storage/03-stateful-storage-patterns.html">Stateful Patterns</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="../05-security/00-security-overview.html">Overview</a>
+    <a href="../05-security/01-rbac.html">RBAC</a>
+    <a href="../05-security/02-pod-security.html">Pod Security</a>
+    <a href="../05-security/03-network-security.html">Network Security</a>
+    <a href="../05-security/04-secrets-management.html">Secrets Management</a>
+    <a href="../05-security/05-supply-chain-security.html">Supply Chain</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../06-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../06-configuration/01-resource-management.html">Resources</a>
+    <a href="../06-configuration/02-scheduling.html">Scheduling</a>
+    <a href="../06-configuration/03-helm.html">Helm</a>
+    <a href="../06-configuration/04-kustomize.html">Kustomize</a>
+    <a href="../06-configuration/05-admission-controllers.html">Admission</a>
+    <a href="../06-configuration/06-crd-operators.html">CRDs &amp; Operators</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="../07-observability/00-observability-overview.html">Overview</a>
+    <a href="../07-observability/01-metrics.html">Metrics</a>
+    <a href="../07-observability/02-logging.html">Logging</a>
+    <a href="../07-observability/03-tracing.html">Distributed Tracing</a>
+    <a href="../07-observability/04-events.html">Events</a>
+    <a href="../07-observability/05-dashboards.html">Dashboards</a>
+    <a href="../07-observability/06-alerting.html">Alerting</a>
+    <a href="../07-observability/07-profiling.html">Continuous Profiling</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Platform Engineering</div>
+    <a href="00-platform-overview.html">Overview</a>
+    <a href="01-cluster-provisioning.html">Cluster Provisioning</a>
+    <a href="02-gitops.html" class="active">GitOps</a>
+    <a href="03-ci-cd-pipelines.html">CI/CD Pipelines</a>
+    <a href="04-developer-portal.html">Developer Portal</a>
+    <a href="05-policy-enforcement.html">Policy Enforcement</a>
+    <a href="06-multi-tenancy.html">Multi-Tenancy</a>
+    <a href="07-cost-management.html">Cost Management</a>
+    <a href="08-service-catalog.html">Service Catalog</a>
+    <a href="09-secrets-automation.html">Secrets Automation</a>
+    <a href="10-platform-apis.html">Platform APIs</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Production Operations</div>
+    <a href="../09-production-operations/00-operations-overview.html">Overview</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span style="font-size:14px;font-weight:600;color:var(--text)">GitOps</span>
+</div>
+
+<main id="main">
+<div class="content">
+
+<div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-platform-overview.html">Platform Engineering</a> › GitOps</div>
+
+<div class="page-header">
+  <h1>GitOps</h1>
+  <div class="page-meta">
+    <span>Git as the single source of truth for cluster state</span>
+    <span class="tag">Argo CD</span>
+    <span class="tag">Flux</span>
+    <span class="tag">ApplicationSets</span>
+    <span class="tag">Image Automation</span>
+    <span class="tag">Progressive Delivery</span>
+  </div>
+</div>
+
+<div class="section-nav">
+  <a href="01-cluster-provisioning.html">← Cluster Provisioning</a>
+  <a href="03-ci-cd-pipelines.html">CI/CD Pipelines →</a>
+</div>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#gitops-principles">GitOps Principles</a></li>
+    <li><a href="#argocd-architecture">Argo CD Architecture</a></li>
+    <li><a href="#argocd-applications">Argo CD Applications</a></li>
+    <li><a href="#app-of-apps">App-of-Apps Pattern</a></li>
+    <li><a href="#applicationsets">ApplicationSets</a></li>
+    <li><a href="#sync-waves">Sync Waves &amp; Hooks</a></li>
+    <li><a href="#argocd-rbac">Argo CD RBAC &amp; SSO</a></li>
+    <li><a href="#flux-architecture">Flux Architecture</a></li>
+    <li><a href="#flux-kustomize">Flux: Kustomize &amp; Helm</a></li>
+    <li><a href="#flux-image-automation">Flux Image Automation</a></li>
+    <li><a href="#argocd-vs-flux">Argo CD vs Flux</a></li>
+    <li><a href="#git-branching">Git Branching Strategies</a></li>
+    <li><a href="#secrets-gitops">Secrets in GitOps</a></li>
+    <li><a href="#drift-detection">Drift Detection &amp; Remediation</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="gitops-principles">1. GitOps Principles</h2>
+
+<p>GitOps is an operational model where the desired state of a system is declared in Git, and an automated agent continuously reconciles the live state to match the declared state. The four core principles (OpenGitOps spec):</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>1. Declarative</h4>
+    <p>The entire system is described declaratively — not imperative scripts. Kubernetes YAML, Helm charts, and Kustomize overlays express <em>what</em> should exist, not <em>how</em> to get there.</p>
+  </div>
+  <div class="card">
+    <h4>2. Versioned and Immutable</h4>
+    <p>The desired state is stored in Git with a complete history. Every change is a commit with authorship, timestamp, and message. Rollback is a Git revert.</p>
+  </div>
+  <div class="card">
+    <h4>3. Pulled Automatically</h4>
+    <p>Software agents (Argo CD, Flux) pull from the Git source and apply changes. No CI system needs cluster credentials. The cluster-side agent initiates all connections — reducing the attack surface.</p>
+  </div>
+  <div class="card">
+    <h4>4. Continuously Reconciled</h4>
+    <p>Agents continuously compare live state with desired state and correct drift. A manual <code>kubectl apply</code> that deviates from Git is automatically reverted (self-heal mode).</p>
+  </div>
+</div>
+
+<pre><code>GitOps flow:
+
+Developer                  Git Repository            Kubernetes Cluster
+    │                            │                          │
+    │── git commit + push ──────▶│                          │
+    │                            │◀── poll (every 3min) ────│
+    │                            │       (Argo CD / Flux)   │
+    │                            │──── diff detected ──────▶│
+    │                            │                          │── apply/sync
+    │                            │                          │── reconcile
+    │                            │◀────── Health: Healthy ──│
+    │                            │                          │
+    │                            │  [manual kubectl apply]  │
+    │                            │                          │── drift detected
+    │                            │◀────── selfHeal ─────────│── revert to Git state</code></pre>
+
+<h3>Push-based vs Pull-based CD</h3>
+
+<table>
+  <tr><th>Dimension</th><th>Push-based (traditional CD)</th><th>Pull-based (GitOps)</th></tr>
+  <tr><td>Who initiates deployment</td><td>CI pipeline pushes to cluster</td><td>Agent in cluster pulls from Git</td></tr>
+  <tr><td>Credentials location</td><td>CI system holds kubeconfig/service account</td><td>Only Git credentials needed outside cluster</td></tr>
+  <tr><td>Attack surface</td><td>CI compromise = cluster compromise</td><td>Cluster credentials never leave cluster</td></tr>
+  <tr><td>Drift detection</td><td>None (pipeline only runs on trigger)</td><td>Continuous — every reconciliation loop</td></tr>
+  <tr><td>Auditability</td><td>CI logs (may be transient)</td><td>Git history (permanent, signed)</td></tr>
+  <tr><td>Multi-cluster</td><td>Complex (credential management per cluster)</td><td>Single agent per cluster, single Git repo</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="argocd-architecture">2. Argo CD Architecture</h2>
+
+<pre><code>┌──────────────────────────────────────────────────────┐
+│                    Argo CD                            │
+│                                                      │
+│  ┌──────────────┐  ┌───────────────┐                 │
+│  │  API Server  │  │   Repo Server │                 │
+│  │  (argocd-    │  │  (git clone,  │                 │
+│  │   server)    │  │   template,   │                 │
+│  │  REST + gRPC │  │   diff cache) │                 │
+│  └──────┬───────┘  └───────┬───────┘                 │
+│         │                  │                         │
+│  ┌──────▼──────────────────▼───────┐                 │
+│  │        Application Controller   │                 │
+│  │  (reconcile loop, sync,         │                 │
+│  │   health assessment,            │                 │
+│  │   hook execution)               │                 │
+│  └──────────────────────────────── ┘                 │
+│                                                      │
+│  ┌──────────────┐  ┌───────────────┐                 │
+│  │  Redis       │  │  Dex (SSO)    │                 │
+│  │  (cache,     │  │  (OIDC auth)  │                 │
+│  │   sessions)  │  │               │                 │
+│  └──────────────┘  └───────────────┘                 │
+└──────────────────────────────────────────────────────┘
+
+Storage: Application CRDs in Kubernetes etcd (not external DB)</code></pre>
+
+<h3>Argo CD Install (Production)</h3>
+
+<pre><code>kubectl create namespace argocd
+
+# HA install (recommended for production — 3 app controller replicas)
+kubectl apply -n argocd \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/ha/install.yaml
+
+# Or via Helm (recommended for managing Argo CD config-as-code)
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+
+helm upgrade --install argocd argo/argo-cd \
+  --namespace argocd \
+  --create-namespace \
+  --values argocd-values.yaml</code></pre>
+
+<pre><code># argocd-values.yaml (production)
+global:
+  domain: argocd.internal.example.com
+
+configs:
+  cm:
+    # Resource tracking: label (default) or annotation
+    application.resourceTrackingMethod: annotation
+
+    # Timeout for sync operations
+    timeout.reconciliation: 180s
+
+    # OIDC SSO via Dex
+    url: https://argocd.internal.example.com
+    oidc.config: |
+      name: Okta
+      issuer: https://myorg.okta.com/oauth2/default
+      clientId: $oidc.okta.clientId
+      clientSecret: $oidc.okta.clientSecret
+      requestedScopes: [openid, profile, email, groups]
+      requestedIDTokenClaims:
+        groups:
+          essential: true
+
+  rbac:
+    policy.csv: |
+      g, platform-admins, role:admin
+      g, developers, role:readonly
+      p, role:team-deployer, applications, sync, */*, allow
+      p, role:team-deployer, applications, get, */*, allow
+    policy.default: role:readonly
+    scopes: '[groups]'
+
+  params:
+    server.insecure: false
+    controller.diff.server.side: "true"    # use server-side diff
+
+repoServer:
+  replicas: 2
+  resources:
+    requests: {cpu: 250m, memory: 256Mi}
+    limits: {memory: 1Gi}
+  # Enable Helm plugins / custom tools
+  volumes:
+    - name: custom-tools
+      emptyDir: {}
+  initContainers:
+    - name: download-tools
+      image: alpine:3.18
+      command: [sh, -c]
+      args:
+        - |
+          # Install helm-secrets plugin for SOPS decryption
+          helm plugin install https://github.com/jkroepke/helm-secrets
+
+applicationSet:
+  replicas: 2
+
+server:
+  replicas: 2
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: argocd.internal.example.com
+    tls: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+
+controller:
+  replicas: 2   # HA: sharded app controller
+  env:
+    - name: ARGOCD_CONTROLLER_REPLICAS
+      value: "2"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="argocd-applications">3. Argo CD Applications</h2>
+
+<h3>Application CRD — Full Reference</h3>
+
+<pre><code>apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: order-service
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io  # cascade delete managed resources on app deletion
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"          # sync ordering
+spec:
+  project: team-a                              # Argo CD AppProject for RBAC
+
+  source:
+    repoURL: https://github.com/myorg/services
+    targetRevision: HEAD                       # or specific tag/branch/SHA
+    path: order-service/helm
+
+    # Helm source
+    helm:
+      releaseName: order-service
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+      values: |
+        image:
+          tag: "1.4.2"
+      ignoreMissingValueFiles: false
+      skipCrds: false
+
+  # Alternative: Kustomize source
+  # source:
+  #   path: order-service/kustomize/overlays/production
+  #   kustomize:
+  #     namePrefix: prod-
+  #     images:
+  #       - myregistry/order-service:1.4.2
+
+  destination:
+    server: https://kubernetes.default.svc    # in-cluster
+    # or: server: https://prod-us.example.com (registered external cluster)
+    namespace: order-service
+
+  syncPolicy:
+    automated:
+      prune: true        # delete resources removed from Git
+      selfHeal: true     # revert manual kubectl changes
+      allowEmpty: false  # never sync to an empty state
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true       # use SSA instead of kubectl apply
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true             # delete resources after all others synced
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignore specific fields that change outside Git (e.g., HPA replicas)
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas                    # HPA manages this
+    - group: ""
+      kind: Secret
+      managedFieldsManagers:
+        - secrets-store-sync               # ESO manages secret data
+
+  revisionHistoryLimit: 10</code></pre>
+
+<h3>AppProject — Team Isolation</h3>
+
+<pre><code>apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: team-a
+  namespace: argocd
+spec:
+  description: "Team A microservices"
+
+  # Only allow syncing to specific clusters/namespaces
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: team-a-*    # wildcard namespace match
+    - server: https://prod-eu.example.com
+      namespace: team-a-*
+
+  # Only allow sources from team's repo
+  sourceRepos:
+    - https://github.com/myorg/team-a-services
+    - https://charts.helm.sh/stable          # approved Helm repos
+
+  # Restrict which K8s resources can be managed
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota              # only platform team can set quotas
+    - group: networking.k8s.io
+      kind: NetworkPolicy              # only platform team can create network policies
+
+  # Orphaned resource monitoring (alert on resources not in any app)
+  orphanedResources:
+    warn: true
+
+  roles:
+    - name: team-a-deployer
+      policies:
+        - p, proj:team-a:team-a-deployer, applications, sync, team-a/*, allow
+        - p, proj:team-a:team-a-deployer, applications, get, team-a/*, allow
+      groups:
+        - team-a-developers</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="app-of-apps">4. App-of-Apps Pattern</h2>
+
+<p>The app-of-apps pattern uses a single root Application that manages other Applications. This allows the entire cluster state to be bootstrapped from a single <code>kubectl apply</code> and maintained declaratively in Git.</p>
+
+<pre><code>platform-gitops/
+└── clusters/production/apps/         ← root app points here
+    ├── cert-manager.yaml              ← each file is an Application CR
+    ├── ingress-nginx.yaml
+    ├── kube-prometheus-stack.yaml
+    ├── external-secrets.yaml
+    ├── gatekeeper.yaml
+    ├── karpenter.yaml
+    └── team-apps/
+        ├── team-a-apps.yaml           ← nested app-of-apps for each team
+        └── team-b-apps.yaml</code></pre>
+
+<pre><code># clusters/production/apps/cert-manager.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"   # install before things that need certs
+spec:
+  project: platform
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.15.0
+    helm:
+      values: |
+        installCRDs: true
+        replicaCount: 2
+        resources:
+          requests: {cpu: 100m, memory: 64Mi}
+          limits: {memory: 256Mi}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="applicationsets">5. ApplicationSets</h2>
+
+<p>ApplicationSet is a controller that generates multiple Argo CD Application resources from a single template using generators. It enables fleet-wide deployments and per-team application management without manual Application YAML per environment.</p>
+
+<h3>List Generator — Explicit Multi-Cluster</h3>
+
+<pre><code>apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: guestbook
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: prod-us-east
+            url: https://prod-us-east.example.com
+            env: production
+          - cluster: prod-eu-west
+            url: https://prod-eu-west.example.com
+            env: production
+          - cluster: staging
+            url: https://staging.example.com
+            env: staging
+  template:
+    metadata:
+      name: "guestbook-{{cluster}}"
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/myorg/platform-gitops
+        targetRevision: HEAD
+        path: "apps/guestbook/overlays/{{env}}"
+      destination:
+        server: "{{url}}"
+        namespace: guestbook
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true</code></pre>
+
+<h3>Git Generator — Directory-based Multi-Env</h3>
+
+<pre><code>apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-addons
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/myorg/platform-gitops
+        revision: HEAD
+        directories:
+          - path: "add-ons/*"           # one Application per directory
+          - path: "add-ons/kustomize/*"
+            exclude: true               # exclude subdirectories
+  template:
+    metadata:
+      name: "addon-{{path.basename}}"
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/myorg/platform-gitops
+        targetRevision: HEAD
+        path: "{{path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{path.basename}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true</code></pre>
+
+<h3>Matrix Generator — Env × App Cartesian Product</h3>
+
+<pre><code>apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services-matrix
+  namespace: argocd
+spec:
+  generators:
+    - matrix:
+        generators:
+          # Generator 1: list of clusters
+          - clusters:
+              selector:
+                matchLabels:
+                  platform.example.com/tier: workload
+          # Generator 2: list of services from git
+          - git:
+              repoURL: https://github.com/myorg/services
+              revision: HEAD
+              files:
+                - path: "services/*/config.json"  # reads JSON per service
+  template:
+    metadata:
+      name: "{{name}}-{{values.service}}"
+    spec:
+      project: "{{values.team}}"
+      source:
+        repoURL: https://github.com/myorg/services
+        targetRevision: HEAD
+        path: "services/{{values.service}}/helm"
+        helm:
+          valueFiles:
+            - values.yaml
+            - "values-{{metadata.labels.environment}}.yaml"
+      destination:
+        server: "{{server}}"
+        namespace: "{{values.service}}"</code></pre>
+
+<h3>Pull Request Generator — Preview Environments</h3>
+
+<pre><code>apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: preview-environments
+  namespace: argocd
+spec:
+  generators:
+    - pullRequest:
+        github:
+          owner: myorg
+          repo: order-service
+          tokenRef:
+            secretName: github-token
+            key: token
+          labels:
+            - preview             # only PRs with this label
+  template:
+    metadata:
+      name: "pr-{{number}}-order-service"
+    spec:
+      project: preview
+      source:
+        repoURL: https://github.com/myorg/order-service
+        targetRevision: "{{head_sha}}"
+        path: helm
+        helm:
+          values: |
+            image:
+              tag: "pr-{{number}}"
+            ingress:
+              host: "pr-{{number}}.preview.example.com"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "preview-pr-{{number}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="sync-waves">6. Sync Waves &amp; Hooks</h2>
+
+<h3>Sync Waves</h3>
+
+<p>Sync waves control the order in which resources are applied within a single sync operation. Resources in lower waves are applied first and must be healthy before higher waves begin.</p>
+
+<pre><code># Resource annotation — wave number (default 0, range: any integer)
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+
+# Common wave ordering pattern:
+# Wave -3: Namespaces
+# Wave -2: CRDs (cert-manager CRDs, Gatekeeper CRDs, etc.)
+# Wave -1: Core infrastructure (cert-manager, external-dns, kube-state-metrics)
+# Wave  0: Default (most resources)
+# Wave  1: Applications that depend on infrastructure
+# Wave  5: Ingress resources (after cert-manager and ingress controller)
+# Wave 10: Smoke test jobs / verification</code></pre>
+
+<h3>Resource Hooks</h3>
+
+<pre><code># PreSync hook — run before sync (e.g., database migrations)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      containers:
+        - name: migrate
+          image: myregistry/order-service:1.4.2
+          command: ["/app/migrate", "up"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: url
+      restartPolicy: Never
+  backoffLimit: 3</code></pre>
+
+<pre><code># PostSync hook — run after all resources are Healthy (e.g., smoke test)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: smoke-test
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded  # auto-cleanup on success
+spec:
+  template:
+    spec:
+      containers:
+        - name: smoke-test
+          image: curlimages/curl:8.4.0
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf http://order-service.order-service/health; do
+                echo "waiting..."; sleep 3
+              done
+              echo "smoke test passed"
+      restartPolicy: Never
+
+# Available hook types:
+# PreSync     — before sync begins
+# Sync        — during sync (parallel with resource apply)
+# PostSync    — after all resources are Healthy
+# SyncFail    — if sync fails (rollback notification, cleanup)
+# PostDelete  — when application is deleted
+
+# Hook delete policies:
+# HookSucceeded      — delete after successful run (default for most)
+# HookFailed         — delete after failed run
+# BeforeHookCreation — delete old hook before creating new one (idempotent)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="argocd-rbac">7. Argo CD RBAC &amp; SSO</h2>
+
+<h3>RBAC Policy Syntax</h3>
+
+<pre><code># argocd-rbac-cm ConfigMap policy.csv
+# Format: p, <subject>, <resource>, <action>, <object>, <effect>
+# Subject: user:<email> or role:<rolename> or group via g mapping
+
+# Built-in roles: role:admin, role:readonly
+
+# Grant team-a group ability to sync/delete only their apps
+p, role:team-a-deployer, applications, sync,   team-a/*, allow
+p, role:team-a-deployer, applications, delete, team-a/*, allow
+p, role:team-a-deployer, applications, get,    team-a/*, allow
+p, role:team-a-deployer, logs,        get,    team-a/*, allow
+
+# Bind groups to roles
+g, okta-group:team-a-engineers, role:team-a-deployer
+g, okta-group:platform-engineers, role:admin
+
+# Resources: applications, repositories, clusters, certificates, gpgkeys,
+#            exec, logs, projects, accounts, applicationsets
+
+# Actions: get, create, update, delete, sync, override, action/*</code></pre>
+
+<h3>argocd CLI Usage</h3>
+
+<pre><code># Login
+argocd login argocd.internal.example.com \
+  --username admin \
+  --password $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)
+
+# App management
+argocd app list
+argocd app get order-service
+argocd app diff order-service           # diff live vs desired state
+argocd app sync order-service           # trigger manual sync
+argocd app sync order-service --dry-run # preview sync without applying
+argocd app history order-service        # deployment history
+argocd app rollback order-service 5     # rollback to revision 5
+
+# Wait for sync to complete in CI
+argocd app wait order-service \
+  --sync \
+  --health \
+  --timeout 300
+
+# Refresh (re-fetch from Git without syncing)
+argocd app get order-service --refresh
+
+# Force sync (ignore sync window)
+argocd app sync order-service --force
+
+# Terminate running sync
+argocd app terminate-op order-service</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="flux-architecture">8. Flux Architecture</h2>
+
+<pre><code>Flux v2 Controllers (GitOps Toolkit):
+
+  ┌───────────────────────────────────────────────────────┐
+  │                    Flux Controllers                    │
+  │                                                       │
+  │  source-controller      → GitRepository               │
+  │                         → HelmRepository              │
+  │                         → OCIRepository               │
+  │                         → Bucket (S3/GCS)             │
+  │                                                       │
+  │  kustomize-controller   → Kustomization               │
+  │                           (applies kustomize overlays)│
+  │                                                       │
+  │  helm-controller        → HelmRelease                 │
+  │                           (manages Helm releases)     │
+  │                                                       │
+  │  notification-controller → Provider (Slack/Teams/PD) │
+  │                          → Alert (what to notify)     │
+  │                          → Receiver (webhook)         │
+  │                                                       │
+  │  image-reflector-controller → ImageRepository         │
+  │                             → ImagePolicy             │
+  │                                                       │
+  │  image-automation-controller → ImageUpdateAutomation  │
+  │                                (writes back to Git)   │
+  └───────────────────────────────────────────────────────┘</code></pre>
+
+<h3>Flux Bootstrap</h3>
+
+<pre><code># Install flux CLI
+curl -s https://fluxcd.io/install.sh | bash
+
+# Bootstrap: installs Flux into cluster AND commits manifests to Git
+flux bootstrap github \
+  --owner=myorg \
+  --repository=platform-gitops \
+  --branch=main \
+  --path=clusters/production \
+  --personal=false \
+  --token-auth=false \
+  --ssh-key-algorithm=ed25519
+
+# This:
+# 1. Creates GitHub deploy key
+# 2. Installs Flux CRDs + controllers in flux-system namespace
+# 3. Commits Flux manifests to clusters/production/flux-system/
+# 4. Creates GitRepository pointing at the repo
+# 5. Creates Kustomization pointing at clusters/production/</code></pre>
+
+<h3>GitRepository Source</h3>
+
+<pre><code>apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: platform-gitops
+  namespace: flux-system
+spec:
+  interval: 1m                 # poll interval
+  url: https://github.com/myorg/platform-gitops
+  ref:
+    branch: main
+  secretRef:
+    name: flux-system           # SSH deploy key or HTTPS token
+  ignore: |
+    # ignore non-Kubernetes files
+    /.github/
+    /docs/
+    **/*.md
+    **/*.png</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="flux-kustomize">9. Flux: Kustomize &amp; Helm</h2>
+
+<h3>Kustomization (Flux)</h3>
+
+<pre><code>apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cluster-addons
+  namespace: flux-system
+spec:
+  interval: 10m                # reconcile every 10 minutes
+  path: "./clusters/production/add-ons"
+  prune: true                  # delete removed resources from cluster
+  sourceRef:
+    kind: GitRepository
+    name: platform-gitops
+  healthChecks:                # wait for these to be healthy before proceeding
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: cert-manager
+      namespace: cert-manager
+  postBuild:
+    substitute:
+      CLUSTER_NAME: "production"
+      AWS_ACCOUNT_ID: "123456789"
+    substituteFrom:
+      - kind: ConfigMap
+        name: cluster-vars     # inject per-cluster variables
+  decryption:
+    provider: sops             # decrypt SOPS-encrypted secrets
+    secretRef:
+      name: sops-age           # age key for SOPS decryption
+  timeout: 5m
+  retryInterval: 30s
+
+  # Dependency: only apply after infrastructure Kustomization is healthy
+  dependsOn:
+    - name: infrastructure</code></pre>
+
+<h3>HelmRelease</h3>
+
+<pre><code">apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: observability
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: ">=60.0.0 <61.0.0"   # semver constraint
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+      interval: 12h                  # check for chart updates
+
+  # Override values
+  values:
+    prometheus:
+      prometheusSpec:
+        retention: 15d
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: ebs-gp3
+              resources:
+                requests:
+                  storage: 100Gi
+
+  # Merge values from ConfigMap/Secret
+  valuesFrom:
+    - kind: ConfigMap
+      name: prometheus-values
+      optional: false
+    - kind: Secret
+      name: prometheus-secrets
+      optional: true
+
+  # Upgrade strategy
+  upgrade:
+    remediation:
+      retries: 3               # retry failed upgrades
+    cleanupOnFail: true        # remove new resources if upgrade fails
+
+  # Rollback on upgrade failure
+  rollback:
+    timeout: 5m
+    cleanupOnFail: true
+
+  # Test hook after upgrade
+  test:
+    enable: true
+    ignoreFailures: false
+
+  # Drift detection: reconcile even if Helm thinks it's in sync
+  driftDetection:
+    mode: enabled
+    ignore:
+      - paths: ["/spec/replicas"]   # HPA manages replicas</code></pre>
+
+<h3>HelmRepository Source</h3>
+
+<pre><code">apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: prometheus-community
+  namespace: flux-system
+spec:
+  interval: 12h
+  url: https://prometheus-community.github.io/helm-charts
+
+---
+# OCI Helm registry (Helm 3.8+, preferred for private charts)
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: myorg-charts
+  namespace: flux-system
+spec:
+  interval: 12h
+  type: oci
+  url: oci://123456789.dkr.ecr.us-east-1.amazonaws.com/helm-charts
+  secretRef:
+    name: ecr-credentials</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="flux-image-automation">10. Flux Image Automation</h2>
+
+<p>Flux image automation monitors container registries for new image tags, selects the latest matching a policy (semver, alphabetical, regex), and writes the updated tag back to Git — triggering a GitOps sync automatically.</p>
+
+<pre><code"># 1. Define which registry to watch
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: order-service
+  namespace: flux-system
+spec:
+  interval: 5m
+  image: 123456789.dkr.ecr.us-east-1.amazonaws.com/order-service
+  secretRef:
+    name: ecr-credentials
+
+---
+# 2. Define how to select the "latest" tag
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: order-service
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: order-service
+  policy:
+    semver:
+      range: ">=1.0.0 <2.0.0"   # only 1.x.x tags
+    # Alternative: alphabetical (latest timestamp-tagged image)
+    # alphabetical:
+    #   order: asc
+
+---
+# 3. In the Deployment manifest, add a marker comment:
+# (Flux image automation rewrites the tag between the markers)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: order-service
+          image: 123456789.dkr.ecr.us-east-1.amazonaws.com/order-service:1.3.5 # {"$imagepolicy": "flux-system:order-service"}
+
+---
+# 4. Configure the automation — writes updated tag back to Git
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: platform-gitops
+  git:
+    push:
+      branch: main
+    commit:
+      author:
+        name: Fluxbot
+        email: fluxbot@example.com
+      messageTemplate: |
+        chore: update {{range .Updated.Images}}{{println .}}{{end}}
+  update:
+    strategy: Setters    # uses imagepolicy markers</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="argocd-vs-flux">11. Argo CD vs Flux</h2>
+
+<table>
+  <tr><th>Feature</th><th>Argo CD</th><th>Flux v2</th></tr>
+  <tr><td>UI</td><td>Rich web UI (app tree, diff view, sync log)</td><td>No built-in UI (Weave GitOps provides one)</td></tr>
+  <tr><td>Multi-cluster</td><td>Central management cluster deploys to all</td><td>Each cluster runs its own Flux controllers</td></tr>
+  <tr><td>Application model</td><td>Application CRD (Helm/Kustomize/raw YAML)</td><td>Separate HelmRelease + Kustomization CRDs</td></tr>
+  <tr><td>Fleet management</td><td>ApplicationSet (generators for fleet)</td><td>Per-cluster Flux install, no central ApplicationSet</td></tr>
+  <tr><td>Image automation</td><td>Argocd-image-updater (external tool)</td><td>Built-in image-reflector + image-automation controllers</td></tr>
+  <tr><td>Secrets decryption</td><td>Helm-secrets plugin (SOPS) or ESO</td><td>Native SOPS + age/gpg decryption in Kustomization</td></tr>
+  <tr><td>Drift self-heal</td><td>selfHeal: true (automatic)</td><td>Continuous reconciliation (always self-heals)</td></tr>
+  <tr><td>Notification</td><td>Built-in notifications controller</td><td>notification-controller with Provider/Alert CRDs</td></tr>
+  <tr><td>Dependency ordering</td><td>Sync waves + hooks</td><td>dependsOn in Kustomization/HelmRelease</td></tr>
+  <tr><td>RBAC</td><td>AppProject + RBAC policies (Casbin)</td><td>Kubernetes RBAC on CRDs; multi-tenancy via namespacing</td></tr>
+  <tr><td>Rollback</td><td>argocd app rollback to history entry</td><td>Helm rollback via HelmRelease spec changes</td></tr>
+  <tr><td>Progressive delivery</td><td>Argo Rollouts (separate but integrated)</td><td>Flagger (separate, supported)</td></tr>
+  <tr><td>CNCF status</td><td>Graduated (2022)</td><td>Graduated (2022)</td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>Choosing between them</strong>
+  <p>Use <strong>Argo CD</strong> when you need a central management plane for many clusters, a UI for developer visibility, and explicit sync control (sync windows, manual approval before prod). Use <strong>Flux</strong> when you prefer a fully GitOps-native (no UI) approach, native image automation, SOPS secrets integration, or deploying to clusters with restricted outbound network access (agent-only in-cluster). Many large organisations use both: Flux in clusters, Argo CD in management cluster for fleet visibility.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="git-branching">12. Git Branching Strategies for GitOps</h2>
+
+<h3>Strategy Comparison</h3>
+
+<table>
+  <tr><th>Strategy</th><th>Branch per Env</th><th>Path per Env</th><th>Tag-based</th></tr>
+  <tr>
+    <td><strong>Description</strong></td>
+    <td>main→prod, staging→staging, dev→dev branches</td>
+    <td>Single branch; clusters/dev/, clusters/staging/, clusters/prod/ paths</td>
+    <td>Tags (v1.4.2-prod) trigger environment promotion</td>
+  </tr>
+  <tr>
+    <td><strong>Promotion</strong></td>
+    <td>PR/merge from dev→staging→main</td>
+    <td>Copy/update values from one path to another; single PR</td>
+    <td>Tag push triggers deployment pipeline</td>
+  </tr>
+  <tr>
+    <td><strong>Auditability</strong></td>
+    <td>Hard (diff across branches)</td>
+    <td>Easy (diff within same repo/branch)</td>
+    <td>Medium (tag history)</td>
+  </tr>
+  <tr>
+    <td><strong>Complexity</strong></td>
+    <td>High (merge conflicts, branch divergence)</td>
+    <td>Low (single source of truth)</td>
+    <td>Medium</td>
+  </tr>
+  <tr>
+    <td><strong>Recommended</strong></td>
+    <td>Not recommended</td>
+    <td>✓ Recommended</td>
+    <td>For Helm chart promotion only</td>
+  </tr>
+</table>
+
+<h3>Recommended: Path-per-Environment Structure</h3>
+
+<pre><code>platform-gitops/
+├── clusters/
+│   ├── production/
+│   │   ├── flux-system/         ← Flux bootstrap manifests (auto-managed)
+│   │   └── apps/                ← ApplicationSet / Kustomization manifests
+│   ├── staging/
+│   │   └── apps/
+│   └── dev/
+│       └── apps/
+│
+├── add-ons/                     ← Helm chart wrappers (environment-agnostic)
+│   ├── cert-manager/
+│   │   ├── kustomization.yaml
+│   │   ├── helmrelease.yaml
+│   │   └── values.yaml          ← common defaults
+│   └── kube-prometheus-stack/
+│       ├── helmrelease.yaml
+│       └── values.yaml
+│
+└── services/                    ← Application workload definitions
+    ├── order-service/
+    │   ├── base/                ← kustomize base
+    │   └── overlays/
+    │       ├── dev/             ← 1 replica, debug env vars
+    │       ├── staging/         ← 2 replicas, staging config
+    │       └── production/      ← 3 replicas, HPA enabled, PDB</code></pre>
+
+<h3>Promotion Workflow</h3>
+
+<pre><code># Promotion = updating the image tag (or other config) in the target environment path
+
+# Method 1: Automated (Flux image automation or Argo CD Image Updater)
+# CI builds image → pushes tag → image automation detects → commits to services/order-service/overlays/staging/
+
+# Method 2: Scripted promotion (in CI pipeline after staging tests pass)
+CURRENT_TAG=$(yq eval '.images[0].newTag' services/order-service/overlays/staging/kustomization.yaml)
+yq eval -i ".images[0].newTag = \"${CURRENT_TAG}\"" \
+  services/order-service/overlays/production/kustomization.yaml
+
+git add services/order-service/overlays/production/
+git commit -m "chore: promote order-service ${CURRENT_TAG} to production"
+git push origin main
+
+# GitOps agent detects the commit → syncs production cluster
+
+# Method 3: Manual PR-based promotion (for regulated environments)
+# Developer opens PR updating production overlay
+# Requires approval from tech lead + platform team
+# Auto-merge on approval → GitOps syncs</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="secrets-gitops">13. Secrets in GitOps</h2>
+
+<p>The fundamental constraint: Git must never contain plaintext secrets. Three approaches are widely used, each with different trust boundaries.</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>SOPS + age/GPG</h4>
+    <p>Encrypt secret values before committing to Git. Decrypt at apply time in-cluster. Flux has native SOPS support. Argo CD needs the helm-secrets plugin.</p>
+    <span class="tag">in-repo</span>
+  </div>
+  <div class="card">
+    <h4>External Secrets Operator (ESO)</h4>
+    <p>Secrets live in Vault/AWS SM/GCP SM. ESO syncs them into Kubernetes Secrets. GitOps repos only contain ExternalSecret CRs (references, no values).</p>
+    <span class="tag">recommended</span>
+  </div>
+  <div class="card">
+    <h4>Sealed Secrets</h4>
+    <p>Encrypt with cluster's public key; only that cluster can decrypt. GitOps repo contains SealedSecret CRs. Simple but requires re-encryption for key rotation.</p>
+    <span class="tag">simple</span>
+  </div>
+</div>
+
+<h3>SOPS + age Integration (Flux)</h3>
+
+<pre><code># 1. Generate age key pair
+age-keygen -o age.agekey
+# Public key: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sf7m4scg9y4f
+
+# 2. Store private key in cluster (for Flux decryption)
+kubectl create secret generic sops-age \
+  -n flux-system \
+  --from-file=age.agekey=age.agekey
+
+# 3. Create .sops.yaml to configure which files to encrypt
+# and which keys to use:
+cat .sops.yaml
+creation_rules:
+  - path_regex: .*/secrets/.*\.yaml
+    age: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sf7m4scg9y4f
+
+# 4. Encrypt a secret file
+sops -e secrets/db-credentials.yaml > secrets/db-credentials.enc.yaml
+
+# 5. In Flux Kustomization, enable SOPS decryption:
+spec:
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age</code></pre>
+
+<h3>External Secrets Operator (GitOps-compatible)</h3>
+
+<pre><code># In GitOps repo — no secret values, only references:
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: db-credentials
+  namespace: order-service
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: aws-secretsmanager
+  target:
+    name: db-credentials           # creates this K8s Secret
+    creationPolicy: Owner
+  data:
+    - secretKey: url
+      remoteRef:
+        key: production/order-service/db
+        property: connection_string</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="drift-detection">14. Drift Detection &amp; Remediation</h2>
+
+<h3>Argo CD Drift Detection</h3>
+
+<pre><code># View drift for an application
+argocd app diff order-service
+
+# Application status when drifted:
+# STATUS: OutOfSync (even if selfHeal is enabled, there is a window before correction)
+
+# PrometheusRule: alert when applications are out of sync
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: argocd-alerts
+  namespace: argocd
+spec:
+  groups:
+    - name: argocd
+      rules:
+        - alert: ArgoCDAppOutOfSync
+          expr: |
+            argocd_app_info{sync_status="OutOfSync"} == 1
+          for: 10m          # allow selfHeal window
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Argo CD app {{ $labels.name }} is OutOfSync"
+            description: "App {{ $labels.name }} in project {{ $labels.project }} has been OutOfSync for 10m"
+
+        - alert: ArgoCDAppUnhealthy
+          expr: |
+            argocd_app_info{health_status!~"Healthy|Progressing"} == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Argo CD app {{ $labels.name }} is {{ $labels.health_status }}"
+
+        - alert: ArgoCDSyncFailed
+          expr: |
+            argocd_app_info{sync_status="Unknown"} == 1
+          for: 5m
+          labels:
+            severity: critical</code></pre>
+
+<h3>Argo CD Notifications</h3>
+
+<pre><code># notifications-cm ConfigMap — send Slack message on sync failure
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  service.slack: |
+    token: $slack-token
+
+  template.app-sync-failed: |
+    slack:
+      attachments: |
+        [{
+          "title": "{{.app.metadata.name}}",
+          "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+          "color": "danger",
+          "fields": [
+            {"title": "Sync Status", "value": "{{.app.status.sync.status}}", "short": true},
+            {"title": "Health", "value": "{{.app.status.health.status}}", "short": true},
+            {"title": "Error", "value": "{{.app.status.operationState.message}}"}
+          ]
+        }]
+
+  trigger.on-sync-failed: |
+    - when: app.status.operationState.phase in ['Error', 'Failed']
+      send: [app-sync-failed]
+
+  trigger.on-health-degraded: |
+    - when: app.status.health.status == 'Degraded'
+      send: [app-sync-failed]
+
+  subscriptions: |
+    - recipients: [slack:platform-alerts]
+      triggers: [on-sync-failed, on-health-degraded]</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">15. Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>1. Use path-per-environment, not branch-per-env</h4>
+    <p>Branch-per-environment causes merge conflicts and divergence. A single <code>main</code> branch with <code>clusters/dev/</code>, <code>clusters/staging/</code>, <code>clusters/production/</code> paths is auditable and easy to diff.</p>
+  </div>
+  <div class="card">
+    <h4>2. Enable prune and selfHeal from day one</h4>
+    <p>Disable these during initial migration only. Without prune, orphaned resources accumulate silently. Without selfHeal, manual changes go undetected. Git is truth — enforce it.</p>
+  </div>
+  <div class="card">
+    <h4>3. Use AppProjects to enforce team isolation</h4>
+    <p>Never give teams access to the default AppProject. Each team gets an AppProject restricting their source repos, destination clusters/namespaces, and allowed resource types. This prevents a misconfigured app from affecting other teams.</p>
+  </div>
+  <div class="card">
+    <h4>4. Never store plaintext secrets in Git</h4>
+    <p>Use SOPS (for in-repo encrypted secrets), ESO (for external secret stores), or Sealed Secrets. All three are compatible with GitOps. Plaintext secrets in Git are irrecoverable even after rotation (git history retains them).</p>
+  </div>
+  <div class="card">
+    <h4>5. Pin chart versions and image tags</h4>
+    <p>Never use <code>targetRevision: HEAD</code> for production add-ons. Pin Helm chart versions (<code>version: 60.3.0</code>) and image tags. Use Renovate or Dependabot to propose version bumps via PR — not automatic floating.</p>
+  </div>
+  <div class="card">
+    <h4>6. Use sync waves for dependency ordering</h4>
+    <p>CRDs must exist before CRs. Cert-manager must be healthy before Ingress with TLS. Database migrations must complete before new pods start. Model these with sync waves and hooks rather than sleeps in scripts.</p>
+  </div>
+  <div class="card">
+    <h4>7. Alert on OutOfSync and Degraded</h4>
+    <p>A GitOps system that doesn't alert on persistent OutOfSync is providing a false sense of security. <code>argocd_app_info{sync_status="OutOfSync"}</code> for &gt;10 minutes deserves a Slack notification at minimum.</p>
+  </div>
+  <div class="card">
+    <h4>8. Use ServerSideApply for large resources</h4>
+    <p>Add <code>ServerSideApply=true</code> to syncOptions for all applications. SSA handles CRD updates, larger objects, and manager conflicts better than client-side apply. Required for Kyverno and Gatekeeper policy CRDs.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage Checklist</summary>
+  <ul class="coverage-body">
+    <li>GitOps four principles (OpenGitOps spec): declarative/versioned/pull/reconciled</li>
+    <li>GitOps flow diagram: git push → agent poll → diff → apply → self-heal</li>
+    <li>Push-based vs pull-based CD comparison table (credentials/drift/auditability/multi-cluster)</li>
+    <li>Argo CD architecture diagram (API server / repo server / application controller / Redis / Dex)</li>
+    <li>Argo CD Helm install with argocd-values.yaml (HA, OIDC SSO, RBAC, repoServer replicas, ingress, SSA)</li>
+    <li>Application CRD full reference: source (Helm/Kustomize), syncPolicy (automated prune/selfHeal/allowEmpty), syncOptions, retry, ignoreDifferences, finalizers</li>
+    <li>AppProject CRD: destinations, sourceRepos, resource whitelist/blacklist, orphanedResources, roles</li>
+    <li>App-of-apps pattern: directory structure + cert-manager Application example with sync-wave annotation</li>
+    <li>ApplicationSet List generator (explicit multi-cluster)</li>
+    <li>ApplicationSet Git generator (directory-based, one app per dir)</li>
+    <li>ApplicationSet Matrix generator (clusters × services cartesian product)</li>
+    <li>ApplicationSet Pull Request generator (GitHub PR preview environments)</li>
+    <li>Sync waves: ordering pattern (-3 to 10) with resource annotation</li>
+    <li>PreSync hook (db-migrate Job with BeforeHookCreation policy)</li>
+    <li>PostSync hook (smoke-test Job with HookSucceeded delete policy)</li>
+    <li>All hook types and delete policies reference</li>
+    <li>Argo CD RBAC policy.csv syntax (p/g entries, resources, actions)</li>
+    <li>argocd CLI: login, list, get, diff, sync, dry-run, history, rollback, wait, refresh, force, terminate-op</li>
+    <li>Flux v2 controllers diagram (source/kustomize/helm/notification/image-reflector/image-automation)</li>
+    <li>flux bootstrap github command (creates deploy key, installs, commits to Git)</li>
+    <li>GitRepository source with interval, ref, secretRef, ignore patterns</li>
+    <li>Flux Kustomization: interval, prune, healthChecks, postBuild substitute/substituteFrom, decryption (SOPS), dependsOn, timeout</li>
+    <li>HelmRelease: chart spec with semver constraint, values, valuesFrom, upgrade remediation, rollback, driftDetection, test</li>
+    <li>HelmRepository (HTTP + OCI type with ECR)</li>
+    <li>Flux image automation: ImageRepository → ImagePolicy (semver range) → Deployment marker comment → ImageUpdateAutomation (writes back to Git)</li>
+    <li>Argo CD vs Flux comparison table (12 dimensions)</li>
+    <li>Choosing between them callout (central management vs per-cluster)</li>
+    <li>Git branching strategies: branch-per-env vs path-per-env vs tag-based comparison table</li>
+    <li>Path-per-environment recommended structure (clusters/add-ons/services with overlays)</li>
+    <li>Promotion workflow: automated (image automation), scripted (yq + git push), manual PR</li>
+    <li>Secrets in GitOps: SOPS vs ESO vs Sealed Secrets cards</li>
+    <li>SOPS + age setup: keygen, store in cluster, .sops.yaml creation rules, encrypt command, Flux decryption config</li>
+    <li>ESO ExternalSecret in GitOps repo (reference-only, no values)</li>
+    <li>Drift detection: argocd app diff + PrometheusRule (OutOfSync/Unhealthy/SyncFailed alerts)</li>
+    <li>Argo CD notifications ConfigMap (Slack on sync-failed + health-degraded)</li>
+    <li>8 best practices cards</li>
+  </ul>
+</details>
+
+</div>
+</main>
+
+<button class="btt" id="btt" title="Back to top">↑</button>
+
+<script>
+const sidebar = document.getElementById('sidebar');
+document.getElementById('hamburger').addEventListener('click', () => sidebar.classList.toggle('open'));
+document.getElementById('btt').addEventListener('click', () => document.getElementById('main').scrollTo({top:0,behavior:'smooth'}));
+document.getElementById('main').addEventListener('scroll', function(){
+  document.getElementById('btt').style.display = this.scrollTop > 400 ? 'flex' : 'none';
+});
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn'; btn.textContent = 'copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.innerText.replace(/^copy\n/,''));
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+document.getElementById('nav-filter').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+const tocLinks = document.querySelectorAll('.toc a');
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+}, {root: document.getElementById('main'), rootMargin: '-20% 0px -70% 0px'});
+headings.forEach(h => obs.observe(h));
+</script>
+</body>
+</html>

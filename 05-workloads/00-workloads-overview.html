@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workloads Overview — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sidebar-logo{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;}
+.sidebar-search{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;margin-top:10px;}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);text-decoration:none;transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);}
+.nav-section a.active{color:var(--accent);background:var(--bg3);border-left:2px solid var(--accent);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-wrap{width:var(--toc-w);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);}
+.page-header{margin-bottom:32px;}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.breadcrumb a{color:var(--text3);text-decoration:none;}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:12px;}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;font-family:'SFMono-Regular',Consolas,monospace;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;padding:3px 8px;cursor:pointer;}
+.copy-btn:hover{background:var(--bg4);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-weight:700;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.callout-info .callout-title{color:var(--accent);}
+.callout-warn .callout-title{color:var(--yellow);}
+.callout-danger .callout-title{color:var(--red);}
+.callout-success .callout-title{color:var(--green);}
+.callout p{margin:0;font-size:14px;}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+/* Workload cards */
+.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin:20px 0;}
+.wl-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s;}
+.wl-card:hover{border-color:var(--accent);}
+.wl-card-header{display:flex;align-items:center;gap:10px;}
+.wl-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.wl-title{font-weight:700;font-size:15px;color:var(--text);}
+.wl-subtitle{font-size:12px;color:var(--text3);}
+.wl-card p{font-size:13px;color:var(--text2);margin:0;}
+.wl-card ul{margin:4px 0 0 16px;font-size:12px;color:var(--text3);}
+.wl-link{margin-top:auto;font-size:12px;color:var(--accent);}
+/* Decision matrix */
+.decision-table td:first-child{font-weight:600;color:var(--text);}
+.check{color:var(--green);}
+.cross{color:var(--red);}
+.partial{color:var(--yellow);}
+/* Controller diagram */
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--text2);overflow-x:auto;white-space:pre;}
+/* Section roadmap */
+.roadmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:20px 0;}
+.roadmap-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;text-decoration:none;display:block;transition:border-color .2s;}
+.roadmap-item:hover{border-color:var(--accent);text-decoration:none;}
+.roadmap-num{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.roadmap-title{font-size:13px;font-weight:600;color:var(--text);}
+.roadmap-desc{font-size:12px;color:var(--text3);margin-top:4px;}
+/* Coverage */
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+/* TOC */
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px;}
+.toc-list{list-style:none;margin:0;padding:0;}
+.toc-list li{margin-bottom:2px;}
+.toc-list a{font-size:12px;color:var(--text2);text-decoration:none;display:block;padding:3px 0;border-left:2px solid transparent;padding-left:8px;}
+.toc-list a:hover{color:var(--text);}
+.toc-list a.active{color:var(--accent);border-left-color:var(--accent);}
+/* Page nav */
+.page-nav{display:flex;justify-content:space-between;margin-top:56px;padding-top:20px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;flex-direction:column;gap:4px;color:var(--text2);text-decoration:none;max-width:45%;}
+.page-nav a:hover{color:var(--accent);}
+.page-nav .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.page-nav .nav-title{font-size:14px;font-weight:600;}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;position:sticky;top:0;z-index:99;align-items:center;justify-content:space-between;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:14px;font-weight:600;}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:12px;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.back-top.visible{opacity:1;}
+@media(max-width:1200px){.toc-wrap{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrap{margin-left:0;}.topbar{display:flex;}.main-content{padding:20px 16px;}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="../index.html" class="sidebar-logo">⎈ Kubernetes Docs</a>
+  </div>
+  <input type="text" class="sidebar-search" placeholder="Filter navigation…" id="nav-search">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-overview.html">Overview</a>
+    <a href="../01-getting-started/01-architecture.html">Architecture</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html" class="active">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">☰</button>
+  <span class="topbar-title">Workloads Overview</span>
+  <button class="theme-btn" id="theme-btn-top">☀</button>
+</div>
+
+<div class="main-wrap">
+<main class="main-content" id="main-content">
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="../index.html">Home</a> › Workloads Overview
+    </div>
+    <h1>Workloads Overview</h1>
+    <div class="page-meta">
+      <span>Section 5.0</span>
+      <span>All workload kinds · Controller patterns · Autoscaling · Scheduling</span>
+      <span>All levels</span>
+    </div>
+  </div>
+
+  <details class="coverage">
+    <summary>▶ What This Page Covers</summary>
+    <div class="coverage-body">
+      <li>Kubernetes workload model: Pod as the atomic unit</li>
+      <li>All workload controller kinds and their primary use cases</li>
+      <li>Controller reconciliation loop pattern — desired vs observed state</li>
+      <li>ReplicaSet mechanics and why you never use it directly</li>
+      <li>Deployment, StatefulSet, DaemonSet, Job, CronJob decision matrix</li>
+      <li>Pod template propagation from controller to pods</li>
+      <li>Label selector immutability and its implications</li>
+      <li>Owner references and garbage collection cascade</li>
+      <li>Pod identity: ephemeral (Deployment) vs stable (StatefulSet)</li>
+      <li>Workload autoscaling landscape: HPA, VPA, KEDA, Cluster Autoscaler</li>
+      <li>Resource model: requests, limits, QoS classes</li>
+      <li>Scheduling primitives: nodeSelector, affinity, taints/tolerations, topology spread</li>
+      <li>Pod lifecycle phases and container states</li>
+      <li>Graceful termination: SIGTERM, preStop, terminationGracePeriodSeconds</li>
+      <li>Init containers vs sidecar containers (native 1.29+)</li>
+      <li>Workload identity and service accounts</li>
+      <li>Cross-cutting concerns: RBAC, NetworkPolicy, PodSecurity per workload kind</li>
+      <li>Section roadmap linking all 11 subsequent files</li>
+    </div>
+  </details>
+
+  <!-- ============================================================ -->
+  <h2 id="pod-as-unit">The Pod: Kubernetes' Atomic Workload Unit</h2>
+
+  <p>Every workload in Kubernetes runs as one or more <strong>Pods</strong>. A Pod is a co-scheduled group of one or more containers sharing a network namespace (same IP, same port space) and optionally sharing storage volumes. Pods are ephemeral by design — they are created, run, and eventually terminate. Controllers give pods durability, scale, and update semantics.</p>
+
+  <div class="diagram">Workload hierarchy:
+
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                     Controller Object                            │
+  │  (Deployment / StatefulSet / DaemonSet / Job / CronJob)         │
+  │                           │                                      │
+  │              manages      ▼                                      │
+  │                    ┌────────────┐                                │
+  │                    │ ReplicaSet │  (Deployment only)             │
+  │                    └─────┬──────┘                                │
+  │                          │ owns (ownerRef)                       │
+  │          ┌───────────────┼───────────────┐                      │
+  │          ▼               ▼               ▼                      │
+  │       ┌─────┐         ┌─────┐         ┌─────┐                  │
+  │       │ Pod │         │ Pod │         │ Pod │                  │
+  │       │  0  │         │  1  │         │  2  │                  │
+  │       └──┬──┘         └──┬──┘         └──┬──┘                  │
+  │          │               │               │                      │
+  │    ┌─────┴──┐      ┌─────┴──┐      ┌─────┴──┐                  │
+  │    │  app   │      │  app   │      │  app   │  containers       │
+  │    │sidecar │      │sidecar │      │sidecar │  (shared netns)  │
+  │    └────────┘      └────────┘      └────────┘                  │
+  └──────────────────────────────────────────────────────────────────┘
+
+  Pod ← atomic scheduling unit: all containers land on the same node
+  Controller ← reconciles desired replica count / placement against actual</div>
+
+  <!-- ============================================================ -->
+  <h2 id="controller-pattern">The Controller Reconciliation Pattern</h2>
+
+  <p>All Kubernetes workload controllers follow the same fundamental loop: watch the actual state of the cluster, compare it to the desired state declared in the spec, and take actions to reconcile the difference. This pattern makes Kubernetes self-healing — if a pod crashes, the controller notices and creates a replacement.</p>
+
+  <div class="diagram">Controller reconciliation loop (every ~15s or on watch event):
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Controller (e.g., Deployment controller in kube-controller-manager) │
+  │                                                              │
+  │  1. LIST/WATCH: fetch all pods matching .spec.selector      │
+  │  2. Count running pods → actualReplicas = 2                 │
+  │  3. Read desired state → spec.replicas = 3                  │
+  │  4. Diff: need 1 more pod                                   │
+  │  5. CREATE pod from .spec.template                          │
+  │  6. Update status.availableReplicas                         │
+  │                                                              │
+  │  Triggers: pod deleted → under-replicated → create          │
+  │            pod added extra → over-replicated → delete        │
+  │            spec.replicas changed → scale up/down             │
+  │            node failure → pod evicted → create replacement  │
+  └──────────────────────────────────────────────────────────────┘</div>
+
+  <p>The controller never talks to kubelet directly. It writes Pod objects to the API server. The scheduler picks them up and assigns <code>spec.nodeName</code>. Kubelet on the assigned node watches for pods with its node name and starts the containers.</p>
+
+  <!-- ============================================================ -->
+  <h2 id="workload-kinds">Workload Controller Kinds</h2>
+
+  <div class="wl-grid">
+    <div class="wl-card">
+      <div class="wl-card-header">
+        <div class="wl-icon" style="background:rgba(88,166,255,.15);">🔵</div>
+        <div>
+          <div class="wl-title">Deployment</div>
+          <div class="wl-subtitle">apps/v1</div>
+        </div>
+      </div>
+      <p>Manages stateless replicated applications. Creates and manages ReplicaSets for rolling updates and rollback. The go-to controller for web servers, APIs, and microservices.</p>
+      <ul>
+        <li>Stateless — any pod can serve any request</li>
+        <li>RollingUpdate or Recreate strategy</li>
+        <li>Rollback via revision history</li>
+        <li>HPA-compatible for autoscaling</li>
+      </ul>
+      <a href="02-deployments.html" class="wl-link">→ Deployments deep dive</a>
+    </div>
+
+    <div class="wl-card">
+      <div class="wl-card-header">
+        <div class="wl-icon" style="background:rgba(63,185,80,.15);">🟢</div>
+        <div>
+          <div class="wl-title">StatefulSet</div>
+          <div class="wl-subtitle">apps/v1</div>
+        </div>
+      </div>
+      <p>Manages stateful applications requiring stable network identity, stable persistent storage, and ordered deployment/scaling. Each pod gets a fixed ordinal and a dedicated PVC.</p>
+      <ul>
+        <li>Stable DNS: pod-0.svc.ns.svc.cluster.local</li>
+        <li>Ordered creation (0→N) and deletion (N→0)</li>
+        <li>volumeClaimTemplates for per-pod PVCs</li>
+        <li>Used for databases, message queues, caches</li>
+      </ul>
+      <a href="03-statefulsets.html" class="wl-link">→ StatefulSets deep dive</a>
+    </div>
+
+    <div class="wl-card">
+      <div class="wl-card-header">
+        <div class="wl-icon" style="background:rgba(210,153,34,.15);">🟡</div>
+        <div>
+          <div class="wl-title">DaemonSet</div>
+          <div class="wl-subtitle">apps/v1</div>
+        </div>
+      </div>
+      <p>Runs exactly one pod per node (or per matching node). New nodes automatically get a pod. Used for infrastructure agents that must be co-located with every workload node.</p>
+      <ul>
+        <li>Log collectors (Fluentd, Filebeat)</li>
+        <li>Monitoring agents (node-exporter, Datadog)</li>
+        <li>CNI plugins, CSI node plugins</li>
+        <li>Can target node subsets via nodeSelector</li>
+      </ul>
+      <a href="04-daemonsets.html" class="wl-link">→ DaemonSets deep dive</a>
+    </div>
+
+    <div class="wl-card">
+      <div class="wl-card-header">
+        <div class="wl-icon" style="background:rgba(188,140,255,.15);">🟣</div>
+        <div>
+          <div class="wl-title">Job</div>
+          <div class="wl-subtitle">batch/v1</div>
+        </div>
+      </div>
+      <p>Runs one or more pods to completion. The controller tracks successful completions and retries on failure. Used for batch processing, database migrations, one-off scripts.</p>
+      <ul>
+        <li>completions × parallelism for parallel work queues</li>
+        <li>backoffLimit controls retry count</li>
+        <li>activeDeadlineSeconds for timeout</li>
+        <li>Indexed Jobs for partitioned work (1.21+)</li>
+      </ul>
+      <a href="05-jobs-cronjobs.html" class="wl-link">→ Jobs &amp; CronJobs deep dive</a>
+    </div>
+
+    <div class="wl-card">
+      <div class="wl-card-header">
+        <div class="wl-icon" style="background:rgba(209,134,22,.15);">🟠</div>
+        <div>
+          <div class="wl-title">CronJob</div>
+          <div class="wl-subtitle">batch/v1</div>
+        </div>
+      </div>
+      <p>Creates Jobs on a cron schedule. Manages job history (successfulJobsHistoryLimit / failedJobsHistoryLimit) and handles missed schedules via concurrencyPolicy.</p>
+      <ul>
+        <li>Standard Unix cron syntax</li>
+        <li>concurrencyPolicy: Allow / Forbid / Replace</li>
+        <li>startingDeadlineSeconds for missed fires</li>
+        <li>Time zone support (spec.timeZone, 1.27 GA)</li>
+      </ul>
+      <a href="05-jobs-cronjobs.html" class="wl-link">→ Jobs &amp; CronJobs deep dive</a>
+    </div>
+
+    <div class="wl-card">
+      <div class="wl-card-header">
+        <div class="wl-icon" style="background:rgba(248,81,73,.15);">🔴</div>
+        <div>
+          <div class="wl-title">ReplicaSet</div>
+          <div class="wl-subtitle">apps/v1</div>
+        </div>
+      </div>
+      <p>Maintains a stable set of replica pods. Rarely used directly — Deployment manages ReplicaSets on your behalf and adds rolling update and rollback capability.</p>
+      <ul>
+        <li>Direct use only for specialized controllers</li>
+        <li>Owns pods via label selector + ownerReference</li>
+        <li>No update strategy — use Deployment instead</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="decision-matrix">Workload Decision Matrix</h2>
+
+  <div class="table-wrap">
+    <table class="decision-table">
+      <thead>
+        <tr>
+          <th>Requirement</th>
+          <th>Deployment</th>
+          <th>StatefulSet</th>
+          <th>DaemonSet</th>
+          <th>Job</th>
+          <th>CronJob</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Stateless replicas</td>
+          <td class="check">✓ primary</td>
+          <td class="cross">✗</td>
+          <td class="partial">~ (1/node)</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Stable pod identity (name)</td>
+          <td class="cross">✗ random</td>
+          <td class="check">✓ ordinal</td>
+          <td class="partial">~ (node-scoped)</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Stable DNS per pod</td>
+          <td class="cross">✗</td>
+          <td class="check">✓ headless svc</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Per-pod dedicated PVC</td>
+          <td class="cross">✗</td>
+          <td class="check">✓ volumeClaimTemplates</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Run on every node</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓ primary</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Run to completion</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓ primary</td>
+          <td class="check">✓ scheduled</td>
+        </tr>
+        <tr>
+          <td>Scheduled / recurring</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓ primary</td>
+        </tr>
+        <tr>
+          <td>Parallel batch processing</td>
+          <td class="partial">~ (Deployment HPA)</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓ indexed/work-queue</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Rolling update strategy</td>
+          <td class="check">✓ maxSurge/maxUnavailable</td>
+          <td class="check">✓ partition-based</td>
+          <td class="check">✓ maxUnavailable</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Automatic rollback</td>
+          <td class="check">✓ revision history</td>
+          <td class="cross">✗ manual</td>
+          <td class="cross">✗ manual</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>HPA autoscaling</td>
+          <td class="check">✓</td>
+          <td class="check">✓</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Access to host network/PID</td>
+          <td class="partial">~ (with hostNetwork)</td>
+          <td class="partial">~</td>
+          <td class="check">✓ common pattern</td>
+          <td class="partial">~</td>
+          <td class="partial">~</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="owner-references">Owner References and Garbage Collection</h2>
+
+  <p>Every pod created by a controller carries an <code>ownerReferences</code> entry pointing back to the controller (or its ReplicaSet). When the owner is deleted, the garbage collector cascades deletion to all owned objects — by default, this includes pods.</p>
+
+  <pre><code># Pod created by a Deployment has two owner refs (pod → ReplicaSet → Deployment):
+metadata:
+  ownerReferences:
+  - apiVersion: apps/v1
+    kind: ReplicaSet
+    name: nginx-7d9c8f8b6
+    uid: abc123...
+    controller: true          # only one ownerRef can be the controller
+    blockOwnerDeletion: true  # prevents owner deletion until this object is deleted first
+
+# Cascade modes when deleting a Deployment:
+# --cascade=foreground  → owner marked for deletion, GC deletes pods first (default UI)
+# --cascade=background  → owner deleted immediately, GC cleans up pods asynchronously
+# --cascade=orphan      → owner deleted, pods left running (useful for StatefulSet migration)</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Label Selector Immutability</div>
+    <p>The <code>.spec.selector</code> on a Deployment, StatefulSet, or DaemonSet is <strong>immutable after creation</strong>. To change labels on pods, you must delete and recreate the controller. If you change pod template labels without changing the selector, the old pods are orphaned (no longer matched) and the controller creates new pods — causing a temporary scale-up beyond desired replicas.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="pod-template">Pod Template Propagation</h2>
+
+  <p>All controllers embed a <code>spec.template</code> which is a complete PodSpec (minus <code>apiVersion</code>, <code>kind</code>, and <code>metadata.name</code>). The controller stamps this template onto every pod it creates, injecting a generated name and the controller's ownerReference.</p>
+
+  <pre><code>apiVersion: apps/v1
+kind: Deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx          # must match template labels
+  template:               # ← PodTemplateSpec: everything below becomes the Pod spec
+    metadata:
+      labels:
+        app: nginx        # must satisfy selector.matchLabels
+        version: v1.2.3   # additional labels allowed
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+        # ... full PodSpec here</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Template Changes Trigger Rolling Updates</div>
+    <p>Any change to <code>spec.template</code> (image tag, env vars, resource limits, annotations) triggers a rolling update. Changes to <code>spec.replicas</code> do not. If you need to force a rolling restart without changing the template (e.g., to pick up a new ConfigMap), use <code>kubectl rollout restart deployment/NAME</code> — it adds a <code>kubectl.kubernetes.io/restartedAt</code> annotation to the template.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="autoscaling">Autoscaling Landscape</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Scaler</th><th>What It Scales</th><th>Metric Sources</th><th>Reaction Time</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>HPA</strong><br><small>HorizontalPodAutoscaler</small></td>
+          <td>Deployment/StatefulSet replicas</td>
+          <td>CPU, memory (metrics-server); custom (Prometheus Adapter); external</td>
+          <td>~15–30s</td>
+          <td>GA; built-in. Cannot scale to zero.</td>
+        </tr>
+        <tr>
+          <td><strong>VPA</strong><br><small>VerticalPodAutoscaler</small></td>
+          <td>Pod CPU/memory requests</td>
+          <td>Historical usage (VPA recommender)</td>
+          <td>Requires pod restart (Off/Initial/Auto modes)</td>
+          <td>Addon; conflicts with HPA on CPU/memory. Use Off mode for recommendations only.</td>
+        </tr>
+        <tr>
+          <td><strong>KEDA</strong><br><small>Kubernetes Event-Driven Autoscaling</small></td>
+          <td>Deployment/Job replicas (incl. scale to zero)</td>
+          <td>Kafka lag, SQS depth, Prometheus, cron, 60+ scalers</td>
+          <td>~1–5s (event-driven)</td>
+          <td>CNCF graduated. ScaledObject / ScaledJob CRDs. Wraps HPA.</td>
+        </tr>
+        <tr>
+          <td><strong>Cluster Autoscaler</strong></td>
+          <td>Node count in node groups</td>
+          <td>Pending pods (unschedulable)</td>
+          <td>~1–3 min (cloud API)</td>
+          <td>Works with HPA — HPA adds pods, CA adds nodes. Per-cloud provider.</td>
+        </tr>
+        <tr>
+          <td><strong>Karpenter</strong></td>
+          <td>Node provisioning (AWS-native)</td>
+          <td>Pending pod requirements (shape, topology, GPU)</td>
+          <td>~30–60s</td>
+          <td>AWS-native; smarter bin-packing than CA; consolidation feature.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="resource-model">Resource Model Summary</h2>
+
+  <p>Every container specifies CPU and memory <code>requests</code> (scheduling guarantee) and <code>limits</code> (enforcement ceiling). The combination determines the pod's <strong>Quality of Service (QoS) class</strong>, which governs eviction priority under node pressure.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>QoS Class</th><th>Condition</th><th>Eviction Priority</th><th>OOM Kill Priority</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Guaranteed</strong></td>
+          <td>requests == limits for ALL containers (CPU + memory)</td>
+          <td>Last evicted</td>
+          <td>Lowest OOM score (-998)</td>
+        </tr>
+        <tr>
+          <td><strong>Burstable</strong></td>
+          <td>At least one container has requests &lt; limits, or only requests set</td>
+          <td>Middle</td>
+          <td>Middle OOM score (based on memory usage ratio)</td>
+        </tr>
+        <tr>
+          <td><strong>BestEffort</strong></td>
+          <td>No requests or limits on ANY container</td>
+          <td>First evicted</td>
+          <td>Highest OOM score (1000)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <pre><code># Guaranteed QoS — both resources, requests == limits in every container
+resources:
+  requests:
+    cpu: "500m"
+    memory: "512Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+# Burstable QoS — requests set, limits higher or absent
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "1"
+    memory: "512Mi"
+
+# BestEffort QoS — no resources specified (dev/test only)
+resources: {}</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">CPU Limits Are a Trap</div>
+    <p>CPU limits cause <strong>CPU throttling</strong> via CFS bandwidth control — the container is paused for the remainder of its quota period even if the node has idle capacity. This inflates p99 latency invisibly. Many platform teams remove CPU limits entirely and rely on CPU requests for scheduling fairness. Memory limits remain necessary because memory is not compressible — exceeding the limit causes an OOM kill.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="scheduling-primitives">Scheduling Primitives Summary</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Mechanism</th><th>Direction</th><th>Hard/Soft</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><code>nodeSelector</code></td><td>Pod → Node</td><td>Hard</td><td>Simple label match; schedule to GPU nodes, SSD nodes</td></tr>
+        <tr><td><code>nodeAffinity</code> required</td><td>Pod → Node</td><td>Hard</td><td>Complex label expressions; zone restriction</td></tr>
+        <tr><td><code>nodeAffinity</code> preferred</td><td>Pod → Node</td><td>Soft</td><td>Prefer certain node types but don't require them</td></tr>
+        <tr><td><code>podAffinity</code> required</td><td>Pod → Pod</td><td>Hard</td><td>Co-locate pods (e.g., app + cache on same node)</td></tr>
+        <tr><td><code>podAntiAffinity</code> required</td><td>Pod → Pod</td><td>Hard</td><td>Spread replicas across nodes/zones</td></tr>
+        <tr><td><code>podAntiAffinity</code> preferred</td><td>Pod → Pod</td><td>Soft</td><td>Best-effort spread without blocking scheduling</td></tr>
+        <tr><td><code>taints</code> on Node</td><td>Node → Pod</td><td>Hard/Soft</td><td>Reserve nodes for specific workloads (NoSchedule/PreferNoSchedule)</td></tr>
+        <tr><td><code>tolerations</code> on Pod</td><td>Pod → Node</td><td>Override taint</td><td>Allow pods to run on tainted nodes (GPU, spot, control-plane)</td></tr>
+        <tr><td><code>TopologySpreadConstraints</code></td><td>Pod → Topology</td><td>Hard/Soft</td><td>Even distribution across zones/nodes; preferred over anti-affinity</td></tr>
+        <tr><td><code>priorityClass</code></td><td>Pod → Scheduler</td><td>Preemption</td><td>Critical pods preempt lower-priority pods; system-cluster-critical for infra</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="pod-lifecycle-summary">Pod Lifecycle Summary</h2>
+
+  <div class="diagram">Pod lifecycle phases:
+
+  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │ Pending  │───►│ Running  │───►│Succeeded │    │  Failed  │    │ Unknown  │
+  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+       │               │
+       │ Scheduled      │ All containers                Pod in terminal state
+       │ to node        │ running/starting              (exit 0 all containers)
+       │                │
+       │                ▼
+       │          Container states:
+       │          ┌──────────┐  ┌──────────┐  ┌──────────┐
+       │          │ Waiting  │  │ Running  │  │Terminated│
+       │          └──────────┘  └──────────┘  └──────────┘
+       │          (init, image  (started,     (exit code,
+       │           pull, crash)  probes)       reason, age)
+       │
+  Conditions (all must be True for Running → Ready):
+  ┌──────────────────────┬────────────────────────────────────────┐
+  │ PodScheduled         │ scheduler found a node                 │
+  │ Initialized          │ all init containers completed          │
+  │ ContainersReady      │ all containers passed readiness probe  │
+  │ Ready                │ pod can receive traffic (Endpoints)    │
+  └──────────────────────┴────────────────────────────────────────┘</div>
+
+  <h3>Graceful Termination Sequence</h3>
+
+  <pre><code># Termination flow when pod is deleted:
+# 1. Pod marked Terminating; removed from Service Endpoints immediately
+# 2. preStop hook executed (if defined) — blocks until hook exits or timeout
+# 3. SIGTERM sent to PID 1 of each container
+# 4. Wait up to terminationGracePeriodSeconds (default: 30s)
+# 5. SIGKILL sent if still running after grace period
+
+spec:
+  terminationGracePeriodSeconds: 60   # override default 30s
+  containers:
+  - name: app
+    lifecycle:
+      preStop:
+        exec:
+          command: ["/bin/sh", "-c", "sleep 5"]   # drain in-flight requests
+        # OR
+        httpGet:
+          path: /drain
+          port: 8080</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">preStop Sleep Pattern for Zero-Downtime Deploys</div>
+    <p>Between pod deletion and kube-proxy/CoreDNS propagating the Endpoints removal, there is a race: new requests can still be routed to a terminating pod. A <code>preStop: sleep 5</code> introduces a delay before SIGTERM, giving load balancers time to drain. This is a common production pattern. Set <code>terminationGracePeriodSeconds</code> to at least <code>preStop duration + app shutdown time + 10s buffer</code>.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="init-sidecars">Init Containers and Sidecar Containers</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Type</th><th>Defined In</th><th>Run When</th><th>Must Complete?</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Init container</strong></td>
+          <td><code>spec.initContainers</code></td>
+          <td>Before main containers; sequential</td>
+          <td>Yes (exit 0) — failure restarts pod</td>
+          <td>Wait for DB, git clone, certificate generation, schema migration</td>
+        </tr>
+        <tr>
+          <td><strong>Native sidecar (1.29+)</strong></td>
+          <td><code>spec.initContainers</code> with <code>restartPolicy: Always</code></td>
+          <td>Started in init phase, runs for pod lifetime</td>
+          <td>No — runs alongside main containers</td>
+          <td>Log shippers, service mesh proxies, secret injectors that must start before main app</td>
+        </tr>
+        <tr>
+          <td><strong>Regular sidecar (legacy)</strong></td>
+          <td><code>spec.containers</code></td>
+          <td>Parallel with main containers</td>
+          <td>No — but blocks pod Ready</td>
+          <td>Envoy proxy, Vault agent, metrics exporter</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="workload-identity">Workload Identity and Service Accounts</h2>
+
+  <p>Every pod runs under a <strong>ServiceAccount</strong>. The mounted service account token (projected volume at <code>/var/run/secrets/kubernetes.io/serviceaccount/token</code>) allows the pod to authenticate to the Kubernetes API server. With IRSA (AWS), Workload Identity (GCP/Azure), or SPIFFE/SPIRE, the same token is exchanged for cloud credentials without long-lived secrets.</p>
+
+  <pre><code>spec:
+  serviceAccountName: my-app-sa      # default: "default" SA in namespace
+  automountServiceAccountToken: false # disable if pod doesn't need API access
+
+# Best practice: create a dedicated SA per workload, not share "default"
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-app-sa
+  namespace: production
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/my-app-role  # IRSA</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="cross-cutting">Cross-Cutting Concerns per Workload Kind</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Concern</th><th>Deployment</th><th>StatefulSet</th><th>DaemonSet</th><th>Job</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>RBAC</strong></td>
+          <td colspan="4">ServiceAccount bound to Role/ClusterRole — same pattern for all kinds</td>
+        </tr>
+        <tr>
+          <td><strong>NetworkPolicy</strong></td>
+          <td>Pod label selector</td>
+          <td>Pod label selector (ordinal pods all share same labels)</td>
+          <td>Pod label selector</td>
+          <td>Pod label selector (job-name label auto-applied)</td>
+        </tr>
+        <tr>
+          <td><strong>PodSecurity</strong></td>
+          <td colspan="4">Enforced at namespace level via <code>pod-security.kubernetes.io/enforce</code> label; applies to all pod-creating objects in namespace</td>
+        </tr>
+        <tr>
+          <td><strong>PodDisruptionBudget</strong></td>
+          <td>Essential for zero-downtime</td>
+          <td>Essential for quorum apps</td>
+          <td>Optional (one pod per node, drain handled separately)</td>
+          <td>Not applicable (run-to-completion)</td>
+        </tr>
+        <tr>
+          <td><strong>HPA</strong></td>
+          <td>✓</td>
+          <td>✓</td>
+          <td>✗</td>
+          <td>✗ (use KEDA ScaledJob)</td>
+        </tr>
+        <tr>
+          <td><strong>Probes</strong></td>
+          <td>startup/liveness/readiness all apply</td>
+          <td>Same; readiness blocks pod-N start in OrderedReady mode</td>
+          <td>startup/liveness; readiness less critical (not load-balanced)</td>
+          <td>Probes apply but rarely used; activeDeadlineSeconds preferred</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="section-roadmap">Section Roadmap</h2>
+
+  <p>This section covers 11 additional files, each a deep dive into a specific workload topic:</p>
+
+  <div class="roadmap">
+    <a href="01-pods.html" class="roadmap-item">
+      <div class="roadmap-num">5.1</div>
+      <div class="roadmap-title">Pods</div>
+      <div class="roadmap-desc">Full PodSpec, probes, security context, multi-container patterns</div>
+    </a>
+    <a href="02-deployments.html" class="roadmap-item">
+      <div class="roadmap-num">5.2</div>
+      <div class="roadmap-title">Deployments</div>
+      <div class="roadmap-desc">RollingUpdate strategy, maxSurge/maxUnavailable, rollback, revision history</div>
+    </a>
+    <a href="03-statefulsets.html" class="roadmap-item">
+      <div class="roadmap-num">5.3</div>
+      <div class="roadmap-title">StatefulSets</div>
+      <div class="roadmap-desc">Ordered lifecycle, volumeClaimTemplates, headless service, update strategies</div>
+    </a>
+    <a href="04-daemonsets.html" class="roadmap-item">
+      <div class="roadmap-num">5.4</div>
+      <div class="roadmap-title">DaemonSets</div>
+      <div class="roadmap-desc">Node targeting, RollingUpdate, host namespaces, tolerations for control plane</div>
+    </a>
+    <a href="05-jobs-cronjobs.html" class="roadmap-item">
+      <div class="roadmap-num">5.5</div>
+      <div class="roadmap-title">Jobs &amp; CronJobs</div>
+      <div class="roadmap-desc">completions, parallelism, indexed jobs, backoffLimit, TTL, cron scheduling</div>
+    </a>
+    <a href="06-horizontal-pod-autoscaler.html" class="roadmap-item">
+      <div class="roadmap-num">5.6</div>
+      <div class="roadmap-title">HPA</div>
+      <div class="roadmap-desc">v2 API, custom metrics, external metrics, stabilization window, KEDA</div>
+    </a>
+    <a href="07-vertical-pod-autoscaler.html" class="roadmap-item">
+      <div class="roadmap-num">5.7</div>
+      <div class="roadmap-title">VPA</div>
+      <div class="roadmap-desc">Recommender/Updater/Admission Controller, modes, HPA conflict, Goldilocks</div>
+    </a>
+    <a href="08-pod-disruption-budgets.html" class="roadmap-item">
+      <div class="roadmap-num">5.8</div>
+      <div class="roadmap-title">PodDisruptionBudgets</div>
+      <div class="roadmap-desc">minAvailable, maxUnavailable, unhealthyPodEvictionPolicy, node drain interaction</div>
+    </a>
+    <a href="09-resource-management.html" class="roadmap-item">
+      <div class="roadmap-num">5.9</div>
+      <div class="roadmap-title">Resource Management</div>
+      <div class="roadmap-desc">Requests vs limits, QoS, LimitRange, ResourceQuota, eBPF overhead, right-sizing</div>
+    </a>
+    <a href="10-scheduling.html" class="roadmap-item">
+      <div class="roadmap-num">5.10</div>
+      <div class="roadmap-title">Scheduling</div>
+      <div class="roadmap-desc">Scheduler framework, affinity, taints/tolerations, topology spread, priority/preemption</div>
+    </a>
+    <a href="11-pod-lifecycle.html" class="roadmap-item">
+      <div class="roadmap-num">5.11</div>
+      <div class="roadmap-title">Pod Lifecycle</div>
+      <div class="roadmap-desc">Phases, conditions, probes, init containers, graceful termination, restart policies</div>
+    </a>
+  </div>
+
+  <div class="page-nav">
+    <a href="../04-storage/07-storage-capacity.html">
+      <span class="nav-label">← Previous</span>
+      <span class="nav-title">Storage Capacity</span>
+    </a>
+    <a href="01-pods.html" style="text-align:right">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">Pods</span>
+    </a>
+  </div>
+
+</main>
+
+<aside class="toc-wrap">
+  <div class="toc-title">On This Page</div>
+  <ul class="toc-list" id="toc-list">
+    <li><a href="#pod-as-unit">Pod as Atomic Unit</a></li>
+    <li><a href="#controller-pattern">Controller Reconciliation</a></li>
+    <li><a href="#workload-kinds">Workload Controller Kinds</a></li>
+    <li><a href="#decision-matrix">Decision Matrix</a></li>
+    <li><a href="#owner-references">Owner References &amp; GC</a></li>
+    <li><a href="#pod-template">Pod Template Propagation</a></li>
+    <li><a href="#autoscaling">Autoscaling Landscape</a></li>
+    <li><a href="#resource-model">Resource Model &amp; QoS</a></li>
+    <li><a href="#scheduling-primitives">Scheduling Primitives</a></li>
+    <li><a href="#pod-lifecycle-summary">Pod Lifecycle Summary</a></li>
+    <li><a href="#init-sidecars">Init &amp; Sidecar Containers</a></li>
+    <li><a href="#workload-identity">Workload Identity</a></li>
+    <li><a href="#cross-cutting">Cross-Cutting Concerns</a></li>
+    <li><a href="#section-roadmap">Section Roadmap</a></li>
+  </ul>
+</aside>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+function toggleTheme(){const t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);localStorage.setItem('k8s-theme',t);}
+document.getElementById('theme-btn-top').addEventListener('click',toggleTheme);
+document.getElementById('hamburger').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{backTop.classList.toggle('visible',main.scrollTop>400);});
+backTop.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code').innerText);
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc-list a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-search').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

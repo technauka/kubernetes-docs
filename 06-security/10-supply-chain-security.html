@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supply Chain Security | Kubernetes Documentation</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#30363d;
+  --border:#30363d; --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --accent:#58a6ff; --accent2:#388bfd; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --orange:#d18616; --code-bg:#161b22;
+}
+[data-theme="light"] {
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eaeef2; --bg4:#d0d7de;
+  --border:#d0d7de; --text:#24292f; --text2:#57606a; --text3:#6e7781;
+  --accent:#0969da; --accent2:#0550ae; --green:#1a7f37; --yellow:#9a6700;
+  --red:#cf222e; --purple:#8250df; --orange:#953800; --code-bg:#f6f8fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-filter{padding:12px 16px;border-bottom:1px solid var(--border);}
+.sidebar-filter input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;}
+.sidebar-filter input:focus{outline:none;border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+
+.main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
+.page-header{margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.breadcrumb{font-size:13px;color:var(--text3);margin-bottom:12px;}
+.breadcrumb a{color:var(--text3);}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;margin-bottom:12px;}
+.page-desc{font-size:16px;color:var(--text2);line-height:1.6;}
+.meta-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.tag{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--text2);}
+.tag.adv{border-color:var(--red);color:var(--red);}
+
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{margin:0 0 16px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'SF Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+.copy-btn:hover{color:var(--text);}
+
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid;}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.warning{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-size:13px;font-weight:700;margin-bottom:6px;}
+.callout.danger .callout-title{color:var(--red);}
+.callout.warning .callout-title{color:var(--yellow);}
+.callout.info .callout-title{color:var(--accent);}
+.callout.success .callout-title{color:var(--green);}
+.callout p{margin-bottom:0;font-size:14px;}
+
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);border-bottom:1px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 10px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card.danger{border-color:var(--red);}
+.card.warning{border-color:var(--yellow);}
+.card.success{border-color:var(--green);}
+.card.info{border-color:var(--accent);}
+
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'SF Mono','Fira Code',monospace;font-size:13px;line-height:1.8;overflow-x:auto;}
+.diagram .box{display:inline-block;border:1px solid var(--border);padding:4px 12px;border-radius:4px;background:var(--bg3);}
+.diagram .box.red{border-color:var(--red);color:var(--red);}
+.diagram .box.green{border-color:var(--green);color:var(--green);}
+.diagram .box.blue{border-color:var(--accent);color:var(--accent);}
+.diagram .box.yellow{border-color:var(--yellow);color:var(--yellow);}
+.diagram .box.purple{border-color:var(--purple);color:var(--purple);}
+
+.steps{display:flex;flex-direction:column;gap:0;margin:20px 0;}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step-num{width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.step-num.green{background:var(--green);}
+.step-num.yellow{background:var(--yellow);}
+.step-num.red{background:var(--red);}
+.step-content h4{margin:0 0 4px;font-size:14px;color:var(--text);}
+.step-content p{margin:0;font-size:13px;}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge.red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge.green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge.yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge.blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge.purple{background:rgba(188,140,255,.15);color:var(--purple);}
+
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden;}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;border-top:1px solid var(--border);}
+.coverage-body li{font-size:13px;color:var(--text2);}
+
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:32px;}
+.toc-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{font-size:13px;margin-bottom:4px;}
+.toc a{color:var(--text2);}
+.toc a:hover{color:var(--accent);}
+.toc a.active{color:var(--accent);}
+
+.toolbar{position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:100;}
+.toolbar button{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+.toolbar button:hover{color:var(--text);border-color:var(--text3);}
+.back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;}
+.back-to-top.visible{opacity:1;}
+
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;}
+@media(max-width:768px){
+  .hamburger{display:block;}
+  .sidebar{position:fixed;left:-280px;top:0;z-index:150;transition:left .25s;}
+  .sidebar.open{left:0;}
+  .main{padding:24px 20px;}
+}
+
+.k{color:#ff7b72;} .s{color:#a5d6ff;} .c{color:#8b949e;font-style:italic;} .n{color:#ffa657;} .cm{color:#3fb950;}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">K8s <span>Docs</span></div>
+  </div>
+  <div class="sidebar-filter">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="00-security-overview.html">Security Overview</a>
+    <a href="01-rbac.html">RBAC</a>
+    <a href="02-pod-security.html">Pod Security</a>
+    <a href="03-network-policies.html">Network Policies</a>
+    <a href="04-secrets-management.html">Secrets Management</a>
+    <a href="05-service-accounts.html">Service Accounts</a>
+    <a href="06-admission-controllers.html">Admission Controllers</a>
+    <a href="07-image-security.html">Image Security</a>
+    <a href="08-audit-logging.html">Audit Logging</a>
+    <a href="09-encryption-at-rest.html">Encryption at Rest</a>
+    <a href="10-supply-chain-security.html" class="active">Supply Chain Security</a>
+    <a href="11-compliance.html">Compliance</a>
+  </div>
+</nav>
+
+<main class="main" id="main">
+  <div class="toolbar">
+    <button onclick="toggleTheme()">Theme</button>
+  </div>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-security-overview.html">Security</a> › Supply Chain Security</div>
+    <h1>Supply Chain Security</h1>
+    <p class="page-desc">End-to-end software supply chain security for Kubernetes workloads: SBOM generation, in-toto attestations, Sigstore Policy Controller, CI/CD pipeline hardening, dependency management, third-party operator security, and Helm chart verification.</p>
+    <div class="meta-tags">
+      <span class="tag adv">Advanced</span>
+      <span class="tag">Security</span>
+      <span class="tag">Supply Chain</span>
+      <span class="tag">SLSA</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">On This Page</div>
+    <ol>
+      <li><a href="#attack-landscape">Supply Chain Attack Landscape</a></li>
+      <li><a href="#trust-chain">The Full Trust Chain</a></li>
+      <li><a href="#sbom">SBOM: Software Bill of Materials</a></li>
+      <li><a href="#attestations">in-toto Attestations</a></li>
+      <li><a href="#policy-controller">Sigstore Policy Controller</a></li>
+      <li><a href="#cicd-hardening">CI/CD Pipeline Hardening</a></li>
+      <li><a href="#dependency-management">Dependency Management</a></li>
+      <li><a href="#third-party">Third-Party Operators &amp; Helm Charts</a></li>
+      <li><a href="#sca">Software Composition Analysis</a></li>
+      <li><a href="#runtime-integrity">Runtime Integrity</a></li>
+      <li><a href="#observability">Metrics, Alerts &amp; Runbooks</a></li>
+      <li><a href="#best-practices">Best Practices</a></li>
+    </ol>
+  </div>
+
+  <details class="coverage">
+    <summary>Coverage Checklist</summary>
+    <ul class="coverage-body">
+      <li>Supply chain attack taxonomy: 9 attack types</li>
+      <li>Full trust chain from source to running pod</li>
+      <li>SBOM formats: CycloneDX vs SPDX comparison</li>
+      <li>SBOM generation: Syft, Trivy, Docker buildx</li>
+      <li>SBOM storage and distribution via OCI registry</li>
+      <li>in-toto attestation framework</li>
+      <li>in-toto link metadata and layouts</li>
+      <li>Cosign attest / verify-attestation</li>
+      <li>Sigstore Policy Controller: ClusterImagePolicy</li>
+      <li>Policy Controller: keyless + attestation policies</li>
+      <li>GitHub Actions: pin actions to SHA, OIDC permissions</li>
+      <li>GitHub Actions: secret scanning, dependency review</li>
+      <li>Lockfile enforcement: go.sum, package-lock.json</li>
+      <li>Renovate / Dependabot for automated updates</li>
+      <li>Private module proxy / artifact repository</li>
+      <li>Third-party operator security vetting</li>
+      <li>Helm chart verification: provenance files, OCI signing</li>
+      <li>SCA tools: OWASP Dependency-Check, Snyk, Grype</li>
+      <li>VEX (Vulnerability Exploitability eXchange)</li>
+      <li>Runtime integrity: dm-verity, kata containers</li>
+      <li>5 metrics, 4 alerts, 5 runbooks, 8 best practices</li>
+    </ul>
+  </details>
+
+  <!-- ───── ATTACK LANDSCAPE ───── -->
+  <h2 id="attack-landscape">Supply Chain Attack Landscape</h2>
+
+  <p>A software supply chain attack compromises software or its delivery infrastructure before it reaches the consumer. Kubernetes clusters are high-value targets because a single compromised component can affect all workloads.</p>
+
+  <div class="card-grid">
+    <div class="card danger">
+      <h4>Source Code Compromise</h4>
+      <p>Attacker gains write access to source repository and injects malicious code. Bypasses all binary-level controls — the attack is in source.</p>
+    </div>
+    <div class="card danger">
+      <h4>Build System Compromise</h4>
+      <p>Attacker controls CI/CD pipeline and injects malicious code during compilation or packaging without touching source. Classic SolarWinds pattern.</p>
+    </div>
+    <div class="card danger">
+      <h4>Dependency Confusion</h4>
+      <p>Attacker publishes a package to a public registry with the same name as a private internal package at a higher version number. Build tools prefer the public version.</p>
+    </div>
+    <div class="card danger">
+      <h4>Typosquatting</h4>
+      <p>Malicious packages with names similar to popular packages: <code>reqeusts</code> instead of <code>requests</code>, <code>colourama</code> instead of <code>colorama</code>.</p>
+    </div>
+    <div class="card danger">
+      <h4>Compromised Base Image</h4>
+      <p>Malicious code injected into a popular Docker Hub base image. All downstream images built from it inherit the backdoor. See <a href="07-image-security.html">Image Security</a>.</p>
+    </div>
+    <div class="card danger">
+      <h4>Registry Credential Theft</h4>
+      <p>Attacker steals registry push credentials from CI/CD environment and replaces legitimate images with malicious ones using the same tag.</p>
+    </div>
+    <div class="card warning">
+      <h4>Malicious Third-Party Operator</h4>
+      <p>Kubernetes operator installed from an untrusted source requests excessive RBAC permissions and acts as persistent backdoor with cluster-wide access.</p>
+    </div>
+    <div class="card warning">
+      <h4>Compromised Helm Chart</h4>
+      <p>Helm chart from a public repository contains malicious container images or injects privileged workloads. Chart maintainer account compromise.</p>
+    </div>
+    <div class="card warning">
+      <h4>CI/CD Secret Exfiltration</h4>
+      <p>Pull request from a fork triggers a CI workflow with access to organization secrets. Attacker exfiltrates registry credentials, signing keys, or cloud credentials.</p>
+    </div>
+  </div>
+
+  <!-- ───── TRUST CHAIN ───── -->
+  <h2 id="trust-chain">The Full Trust Chain</h2>
+
+  <p>Securing the supply chain means establishing and verifying trust at every step from source code to running container.</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── Source → Running Pod: the full trust chain ────────────────────────</span>
+<br>
+<br><span class="box green">1. Source Code</span>
+<br>  ├── Branch protection, required reviews, signed commits
+<br>  ├── Secret scanning (detect-secrets, Gitleaks, GitHub secret scanning)
+<br>  └── Dependency lockfiles committed to repo
+<br>   │
+<br>   ▼
+<br><span class="box green">2. CI/CD Build</span>
+<br>  ├── Pinned action SHAs (GitHub Actions)
+<br>  ├── Minimal OIDC permissions, no long-lived secrets
+<br>  ├── Reproducible builds (hermetic where possible)
+<br>  ├── <span style="color:var(--accent)">Generate SBOM</span> (Syft / Trivy)
+<br>  └── <span style="color:var(--accent)">Generate SLSA provenance attestation</span>
+<br>   │
+<br>   ▼
+<br><span class="box green">3. Container Image</span>
+<br>  ├── Multi-stage build, distroless base
+<br>  ├── Vulnerability scan (Trivy — block on CRITICAL/HIGH)
+<br>  ├── <span style="color:var(--accent)">Cosign sign</span> (keyless via OIDC)
+<br>  └── <span style="color:var(--accent)">Cosign attest</span> (SBOM + provenance)
+<br>   │
+<br>   ▼
+<br><span class="box green">4. Registry</span>
+<br>  ├── Private registry, immutable tags
+<br>  ├── Registry scanning gate
+<br>  └── Push credentials short-lived (OIDC, not static credentials)
+<br>   │
+<br>   ▼
+<br><span class="box green">5. Admission</span>
+<br>  ├── <span style="color:var(--accent)">Sigstore Policy Controller</span>: verify signature + attestations
+<br>  ├── Registry allow-list: only approved registries
+<br>  └── Digest pinning enforcement
+<br>   │
+<br>   ▼
+<br><span class="box green">6. Running Pod</span>
+<br>  ├── Falco: runtime behavior monitoring
+<br>  ├── Trivy Operator: continuous CVE scanning
+<br>  └── Network policies restrict blast radius
+  </div>
+
+  <!-- ───── SBOM ───── -->
+  <h2 id="sbom">SBOM: Software Bill of Materials</h2>
+
+  <p>An SBOM is a machine-readable inventory of every component in a software artifact — OS packages, language libraries, build tools, and their versions and licenses. It is the foundation of supply chain visibility.</p>
+
+  <h3>SBOM Formats</h3>
+
+  <table>
+    <thead><tr><th>Format</th><th>Maintained By</th><th>Primary Use</th><th>Interchange</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>CycloneDX</strong></td>
+        <td>OWASP</td>
+        <td>Security analysis, vulnerability correlation</td>
+        <td>JSON, XML, Protobuf</td>
+      </tr>
+      <tr>
+        <td><strong>SPDX</strong></td>
+        <td>Linux Foundation</td>
+        <td>License compliance, legal review</td>
+        <td>JSON, YAML, RDF, tag-value</td>
+      </tr>
+      <tr>
+        <td><strong>SWID</strong></td>
+        <td>ISO/IEC 19770-2</td>
+        <td>Enterprise asset management</td>
+        <td>XML</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-title">CycloneDX vs SPDX</div>
+    <p>CycloneDX is optimized for security use cases — it has native fields for vulnerabilities, CVSS scores, and patch status. SPDX is the NTIA minimum elements standard and better suited for license compliance. Most tools support both. Prefer CycloneDX for Kubernetes supply chain pipelines.</p>
+  </div>
+
+  <h3>Generating SBOMs with Syft</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Install Syft</span>
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+<span class="c"># Generate CycloneDX SBOM from container image</span>
+syft registry.example.com/myapp@sha256:abc123 \
+  -o cyclonedx-json=sbom.cyclonedx.json
+
+<span class="c"># Generate SPDX SBOM</span>
+syft registry.example.com/myapp@sha256:abc123 \
+  -o spdx-json=sbom.spdx.json
+
+<span class="c"># Generate SBOM from source directory (during build)</span>
+syft dir:. -o cyclonedx-json=sbom.cyclonedx.json
+
+<span class="c"># Generate from Docker image tarball</span>
+syft docker-archive:myapp.tar -o cyclonedx-json=sbom.cyclonedx.json
+
+<span class="c"># Include licenses in output</span>
+syft registry.example.com/myapp@sha256:abc123 \
+  -o cyclonedx-json=sbom.cyclonedx.json \
+  --config syft.yaml  # syft.yaml: catalogers, exclude patterns</code></pre>
+
+  <h3>Generating SBOMs with Trivy</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Generate CycloneDX SBOM with Trivy</span>
+trivy image \
+  --format cyclonedx \
+  --output sbom.cyclonedx.json \
+  registry.example.com/myapp@sha256:abc123
+
+<span class="c"># Generate SPDX SBOM</span>
+trivy image \
+  --format spdx-json \
+  --output sbom.spdx.json \
+  registry.example.com/myapp@sha256:abc123
+
+<span class="c"># Docker buildx: generate SBOM during build (BuildKit 0.11+)</span>
+docker buildx build \
+  --sbom=true \
+  --output type=registry \
+  --tag registry.example.com/myapp:1.0.0 \
+  .</code></pre>
+
+  <h3>Distributing SBOMs via OCI Registry</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code"><span class="c"># Attach SBOM as OCI artifact referrer (using cosign)</span>
+cosign attach sbom \
+  --sbom sbom.cyclonedx.json \
+  --type cyclonedx \
+  registry.example.com/myapp@sha256:abc123
+
+<span class="c"># Verify and retrieve attached SBOM</span>
+cosign download sbom registry.example.com/myapp@sha256:abc123
+
+<span class="c"># Attach as attestation (preferred — signed and verifiable)</span>
+cosign attest \
+  --key cosign.key \
+  --type cyclonedx \
+  --predicate sbom.cyclonedx.json \
+  registry.example.com/myapp@sha256:abc123
+
+<span class="c"># Download and verify SBOM attestation</span>
+cosign verify-attestation \
+  --key cosign.pub \
+  --type cyclonedx \
+  registry.example.com/myapp@sha256:abc123 | \
+  jq '.payload | @base64d | fromjson | .predicate'</code></pre>
+
+  <!-- ───── ATTESTATIONS ───── -->
+  <h2 id="attestations">in-toto Attestations</h2>
+
+  <p>in-toto is a framework for cryptographically securing software supply chain operations. It defines a format for recording facts about software artifacts (attestations) that can be verified independently of the artifact itself.</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── in-toto attestation structure ────────────────────────────────────</span>
+<br>
+<br><span class="box blue">Attestation Envelope</span> (DSSE — Dead Simple Signing Envelope)
+<br>  ├── <span class="box">Statement</span>
+<br>  │   ├── _type: "https://in-toto.io/Statement/v0.1"
+<br>  │   ├── subject: [{name, digest}]  ← what artifact this is about
+<br>  │   └── predicateType: "..."       ← what kind of fact
+<br>  │
+<br>  └── <span class="box">Predicate</span> (varies by predicateType)
+<br>      ├── <span style="color:var(--green)">slsaprovenance/v1</span>: build metadata (builder, source, inputs)
+<br>      ├── <span style="color:var(--green)">cyclonedx</span>: SBOM component list
+<br>      ├── <span style="color:var(--green)">spdx</span>: SBOM (SPDX format)
+<br>      ├── <span style="color:var(--accent)">cosign.sigstore.dev/attestation/vuln/v1</span>: vulnerability scan results
+<br>      └── <span style="color:var(--accent)">custom</span>: any JSON predicate you define
+  </div>
+
+  <h3>SLSA Provenance Attestation</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># SLSA provenance predicate (v1) — generated by build platform</span>
+{
+  <span class="s">"_type"</span>: <span class="s">"https://in-toto.io/Statement/v0.1"</span>,
+  <span class="s">"subject"</span>: [{
+    <span class="s">"name"</span>: <span class="s">"registry.example.com/myapp"</span>,
+    <span class="s">"digest"</span>: { <span class="s">"sha256"</span>: <span class="s">"abc123..."</span> }
+  }],
+  <span class="s">"predicateType"</span>: <span class="s">"https://slsa.dev/provenance/v1"</span>,
+  <span class="s">"predicate"</span>: {
+    <span class="s">"buildDefinition"</span>: {
+      <span class="s">"buildType"</span>: <span class="s">"https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1"</span>,
+      <span class="s">"externalParameters"</span>: {
+        <span class="s">"workflow"</span>: {
+          <span class="s">"ref"</span>: <span class="s">"refs/tags/v1.2.3"</span>,
+          <span class="s">"repository"</span>: <span class="s">"https://github.com/myorg/myrepo"</span>,
+          <span class="s">"path"</span>: <span class="s">".github/workflows/release.yaml"</span>
+        }
+      }
+    },
+    <span class="s">"runDetails"</span>: {
+      <span class="s">"builder"</span>: {
+        <span class="s">"id"</span>: <span class="s">"https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.10.0"</span>
+      },
+      <span class="s">"metadata"</span>: {
+        <span class="s">"invocationId"</span>: <span class="s">"https://github.com/myorg/myrepo/actions/runs/1234567890"</span>,
+        <span class="s">"startedOn"</span>: <span class="s">"2024-01-15T10:00:00Z"</span>,
+        <span class="s">"finishedOn"</span>: <span class="s">"2024-01-15T10:05:00Z"</span>
+      }
+    }
+  }
+}</code></pre>
+
+  <h3>Vulnerability Attestation</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Generate vulnerability scan attestation with Trivy + Cosign</span>
+
+<span class="c"># 1. Run Trivy scan and save results</span>
+trivy image \
+  --format cosign-vuln \
+  --output vuln-results.json \
+  registry.example.com/myapp@sha256:abc123
+
+<span class="c"># 2. Attest vulnerability scan results</span>
+cosign attest \
+  --key cosign.key \
+  --type vuln \
+  --predicate vuln-results.json \
+  registry.example.com/myapp@sha256:abc123
+
+<span class="c"># 3. Verify vulnerability attestation at admission (Policy Controller)</span>
+<span class="c"># (Policy Controller can reject images whose latest scan exceeds CVE threshold)</span></code></pre>
+
+  <!-- ───── POLICY CONTROLLER ───── -->
+  <h2 id="policy-controller">Sigstore Policy Controller</h2>
+
+  <p>The Sigstore Policy Controller is a validating admission webhook that enforces image signature and attestation policies. It is more expressive than Kyverno's <code>verifyImages</code> and is the reference implementation for Sigstore-native policies.</p>
+
+  <div class="callout info">
+    <div class="callout-title">Policy Controller vs Kyverno verifyImages</div>
+    <p>Both enforce Cosign signatures at admission. Policy Controller is purpose-built for Sigstore and supports richer attestation policies (e.g., require SBOM with no Critical CVEs). Kyverno's <code>verifyImages</code> is integrated with Kyverno's broader policy framework. If you already run Kyverno, use its <code>verifyImages</code>. If you want a dedicated supply chain tool, use Policy Controller. See <a href="07-image-security.html">Image Security</a> for Kyverno verifyImages details.</p>
+  </div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Install Sigstore Policy Controller</span>
+helm repo add sigstore https://sigstore.github.io/helm-charts
+helm install policy-controller sigstore/policy-controller \
+  --namespace cosign-system \
+  --create-namespace</code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Opt namespace into Policy Controller enforcement</span>
+kubectl label namespace production \
+  policy.sigstore.dev/include=true</code></pre>
+
+  <h3>ClusterImagePolicy: Keyless Signature</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="k">apiVersion</span>: <span class="s">policy.sigstore.dev/v1beta1</span>
+<span class="k">kind</span>: <span class="s">ClusterImagePolicy</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">require-signed-images</span>
+<span class="k">spec</span>:
+  <span class="k">images</span>:
+  - <span class="k">glob</span>: <span class="s">"registry.example.com/**"</span>
+  <span class="k">authorities</span>:
+  - <span class="k">keyless</span>:
+      <span class="k">url</span>: <span class="s">https://fulcio.sigstore.dev</span>
+      <span class="k">identities</span>:
+      - <span class="k">issuer</span>: <span class="s">https://token.actions.githubusercontent.com</span>
+        <span class="k">subject</span>: <span class="s">https://github.com/myorg/myrepo/.github/workflows/release.yaml@refs/heads/main</span></code></pre>
+
+  <h3>ClusterImagePolicy: Require SBOM Attestation</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="k">apiVersion</span>: <span class="s">policy.sigstore.dev/v1beta1</span>
+<span class="k">kind</span>: <span class="s">ClusterImagePolicy</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">require-sbom-attestation</span>
+<span class="k">spec</span>:
+  <span class="k">images</span>:
+  - <span class="k">glob</span>: <span class="s">"registry.example.com/**"</span>
+  <span class="k">authorities</span>:
+  - <span class="k">keyless</span>:
+      <span class="k">url</span>: <span class="s">https://fulcio.sigstore.dev</span>
+      <span class="k">identities</span>:
+      - <span class="k">issuer</span>: <span class="s">https://token.actions.githubusercontent.com</span>
+        <span class="k">subjectRegExp</span>: <span class="s">"https://github.com/myorg/.*"</span>
+    <span class="k">attestations</span>:
+    - <span class="k">name</span>: <span class="s">must-have-sbom</span>
+      <span class="k">predicateType</span>: <span class="s">https://cyclonedx.org/bom</span>
+      <span class="k">policy</span>:
+        <span class="k">type</span>: <span class="s">cue</span>
+        <span class="k">data</span>: |
+          <span class="c"># CUE policy: SBOM must have at least one component</span>
+          predicate: components: [_, ...]</code></pre>
+
+  <h3>ClusterImagePolicy: Require Vulnerability Scan with No Critical CVEs</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="k">apiVersion</span>: <span class="s">policy.sigstore.dev/v1beta1</span>
+<span class="k">kind</span>: <span class="s">ClusterImagePolicy</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">require-vuln-attestation</span>
+<span class="k">spec</span>:
+  <span class="k">images</span>:
+  - <span class="k">glob</span>: <span class="s">"registry.example.com/**"</span>
+  <span class="k">authorities</span>:
+  - <span class="k">keyless</span>:
+      <span class="k">url</span>: <span class="s">https://fulcio.sigstore.dev</span>
+      <span class="k">identities</span>:
+      - <span class="k">issuer</span>: <span class="s">https://token.actions.githubusercontent.com</span>
+        <span class="k">subjectRegExp</span>: <span class="s">"https://github.com/myorg/.*"</span>
+    <span class="k">attestations</span>:
+    - <span class="k">name</span>: <span class="s">no-critical-cves</span>
+      <span class="k">predicateType</span>: <span class="s">cosign.sigstore.dev/attestation/vuln/v1</span>
+      <span class="k">policy</span>:
+        <span class="k">type</span>: <span class="s">cue</span>
+        <span class="k">data</span>: |
+          import "time"
+          <span class="c"># Scan must be less than 24 hours old</span>
+          predicate: scanner: result: Summary: Critical: 0
+          predicate: metadata: scanFinishedOn: >time.Now().Add(-24*time.Hour)</code></pre>
+
+  <!-- ───── CICD HARDENING ───── -->
+  <h2 id="cicd-hardening">CI/CD Pipeline Hardening</h2>
+
+  <p>The CI/CD pipeline is the highest-privilege environment in the supply chain. Compromising the build pipeline allows injecting malicious code into all downstream artifacts without modifying source.</p>
+
+  <h3>GitHub Actions Hardening</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># .github/workflows/release.yaml — hardened workflow</span>
+<span class="k">name</span>: <span class="s">Release</span>
+<span class="k">on</span>:
+  <span class="k">push</span>:
+    <span class="k">tags</span>: [<span class="s">'v*'</span>]
+
+<span class="k">permissions</span>:              <span class="c"># Minimal top-level permissions</span>
+  <span class="k">contents</span>: <span class="s">read</span>
+
+<span class="k">jobs</span>:
+  <span class="k">build-and-sign</span>:
+    <span class="k">runs-on</span>: <span class="s">ubuntu-latest</span>
+    <span class="k">permissions</span>:
+      <span class="k">contents</span>: <span class="s">read</span>
+      <span class="k">id-token</span>: <span class="s">write</span>     <span class="c"># Required for OIDC token (Cosign keyless)</span>
+      <span class="k">packages</span>: <span class="s">write</span>     <span class="c"># Required for pushing to GHCR</span>
+      <span class="k">attestations</span>: <span class="s">write</span> <span class="c"># Required for GitHub Attestations API</span>
+
+    <span class="k">steps</span>:
+    <span class="c"># Pin actions to immutable SHA — never use @main or @v1 (mutable tags)</span>
+    - <span class="k">name</span>: <span class="s">Checkout</span>
+      <span class="k">uses</span>: <span class="s">actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683</span>  <span class="c"># v4.2.2</span>
+
+    - <span class="k">name</span>: <span class="s">Set up Docker Buildx</span>
+      <span class="k">uses</span>: <span class="s">docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349</span>  <span class="c"># v3.7.1</span>
+
+    - <span class="k">name</span>: <span class="s">Log in to GHCR</span>
+      <span class="k">uses</span>: <span class="s">docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567</span>  <span class="c"># v3.3.0</span>
+      <span class="k">with</span>:
+        <span class="k">registry</span>: <span class="s">ghcr.io</span>
+        <span class="k">username</span>: <span class="s">${{ github.actor }}</span>
+        <span class="k">password</span>: <span class="s">${{ secrets.GITHUB_TOKEN }}</span>  <span class="c"># Short-lived, auto-rotated</span>
+
+    - <span class="k">name</span>: <span class="s">Build and push</span>
+      <span class="k">id</span>: <span class="s">build</span>
+      <span class="k">uses</span>: <span class="s">docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75</span>  <span class="c"># v6.9.0</span>
+      <span class="k">with</span>:
+        <span class="k">context</span>: <span class="s">.</span>
+        <span class="k">push</span>: <span class="s">true</span>
+        <span class="k">tags</span>: <span class="s">ghcr.io/${{ github.repository }}:${{ github.sha }}</span>
+        <span class="k">sbom</span>: <span class="s">true</span>           <span class="c"># BuildKit SBOM generation</span>
+        <span class="k">provenance</span>: <span class="s">mode=max</span>  <span class="c"># SLSA provenance</span>
+
+    - <span class="k">name</span>: <span class="s">Sign image</span>
+      <span class="k">run</span>: |
+        cosign sign --yes \
+          ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+      <span class="k">env</span>:
+        <span class="k">COSIGN_EXPERIMENTAL</span>: <span class="s">"1"</span></code></pre>
+
+  <div class="callout danger">
+    <div class="callout-title">Never Use Mutable Action References</div>
+    <p>Using <code>actions/checkout@v4</code> is dangerous — the <code>v4</code> tag can be moved to point to a different commit. A compromised action maintainer or tag overwrite runs arbitrary code in your pipeline. Pin every action to an immutable commit SHA. Use tools like <code>pin-github-action</code> or Dependabot to manage SHA updates.</p>
+  </div>
+
+  <h3>Fork PR Security</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Prevent fork PRs from accessing secrets</span>
+<span class="k">on</span>:
+  <span class="k">pull_request_target</span>:    <span class="c"># DANGER: runs in context of base repo, has secrets</span>
+<span class="c"># Use pull_request instead — runs in fork context, no secrets</span>
+<span class="k">on</span>:
+  <span class="k">pull_request</span>:           <span class="c"># Safe: no access to base repo secrets</span>
+
+<span class="c"># Require approval for first-time contributors</span>
+<span class="c"># Settings → Actions → Fork pull request workflows → Require approval</span></code></pre>
+
+  <h3>Securing CI Secrets</h3>
+
+  <table>
+    <thead><tr><th>Approach</th><th>Description</th><th>Security Level</th></tr></thead>
+    <tbody>
+      <tr><td>Static secrets in CI vars</td><td>Long-lived credentials stored in CI settings</td><td><span class="badge red">Low</span></td></tr>
+      <tr><td>OIDC federation</td><td>CI gets short-lived token via OIDC trust with cloud provider</td><td><span class="badge green">High</span></td></tr>
+      <tr><td>Vault AppRole from CI</td><td>CI authenticates to Vault, retrieves short-lived creds</td><td><span class="badge green">High</span></td></tr>
+      <tr><td>GitHub Actions OIDC → AWS AssumeRoleWithWebIdentity</td><td>No static AWS credentials; role assumed per workflow run</td><td><span class="badge green">Highest</span></td></tr>
+    </tbody>
+  </table>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># GitHub Actions OIDC → AWS ECR (no static credentials)</span>
+- <span class="k">name</span>: <span class="s">Configure AWS credentials via OIDC</span>
+  <span class="k">uses</span>: <span class="s">aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502</span>
+  <span class="k">with</span>:
+    <span class="k">role-to-assume</span>: <span class="s">arn:aws:iam::123456789012:role/github-actions-ecr-push</span>
+    <span class="k">aws-region</span>: <span class="s">us-east-1</span>
+
+<span class="c"># AWS IAM role trust policy (allows GitHub Actions OIDC)</span>
+{
+  <span class="s">"Effect"</span>: <span class="s">"Allow"</span>,
+  <span class="s">"Principal"</span>: { <span class="s">"Federated"</span>: <span class="s">"arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"</span> },
+  <span class="s">"Action"</span>: <span class="s">"sts:AssumeRoleWithWebIdentity"</span>,
+  <span class="s">"Condition"</span>: {
+    <span class="s">"StringEquals"</span>: {
+      <span class="s">"token.actions.githubusercontent.com:aud"</span>: <span class="s">"sts.amazonaws.com"</span>
+    },
+    <span class="s">"StringLike"</span>: {
+      <span class="s">"token.actions.githubusercontent.com:sub"</span>: <span class="s">"repo:myorg/myrepo:*"</span>
+    }
+  }
+}</code></pre>
+
+  <!-- ───── DEPENDENCY MANAGEMENT ───── -->
+  <h2 id="dependency-management">Dependency Management</h2>
+
+  <h3>Lockfile Integrity</h3>
+
+  <p>Lockfiles record the exact versions and checksums of every dependency. Committing them to the repository ensures reproducibility and enables detection of unexpected changes.</p>
+
+  <table>
+    <thead><tr><th>Language</th><th>Lockfile</th><th>Integrity Mechanism</th><th>Enforce in CI</th></tr></thead>
+    <tbody>
+      <tr><td>Go</td><td><code>go.sum</code></td><td>SHA-256 hash of each module version</td><td><code>go mod verify</code></td></tr>
+      <tr><td>Node.js</td><td><code>package-lock.json</code> / <code>yarn.lock</code></td><td>SHA-512 per package (npm); SHA-1 (yarn)</td><td><code>npm ci</code> (fails if lock mismatch)</td></tr>
+      <tr><td>Python</td><td><code>requirements.txt</code> + hashes / <code>poetry.lock</code></td><td><code>--hash=sha256:</code> per package</td><td><code>pip install --require-hashes</code></td></tr>
+      <tr><td>Rust</td><td><code>Cargo.lock</code></td><td>Checksum per crate version</td><td><code>cargo fetch --locked</code></td></tr>
+      <tr><td>Java (Maven)</td><td>None built-in</td><td>Use checksum plugin or Gradle verification</td><td>Gradle: <code>verification-metadata.xml</code></td></tr>
+    </tbody>
+  </table>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Python: install with hash verification</span>
+<span class="c"># requirements.txt with hashes</span>
+requests==2.31.0 \
+  --hash=sha256:58cd2187423839f822e6c5d5ded81a... \
+  --hash=sha256:942c5a758f98d790eaed1a29cb6eefc...
+
+<span class="c"># Install enforcing hash verification</span>
+pip install --require-hashes -r requirements.txt
+
+<span class="c"># Go: verify all module checksums</span>
+go mod verify
+<span class="c"># Fails if any module hash doesn't match go.sum</span>
+
+<span class="c"># Node: use npm ci (not npm install) in CI</span>
+<span class="c"># npm ci: installs exactly what's in package-lock.json, fails on mismatch</span>
+npm ci --only=production</code></pre>
+
+  <h3>Private Module Proxy / Artifact Repository</h3>
+
+  <p>Routing all dependency downloads through a private proxy prevents dependency confusion attacks — the proxy enforces that internal package names never resolve to public registries.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Go: use private module proxy (Athens, Artifactory, Nexus)</span>
+GONOSUMCHECK=*.internal.example.com \
+GONOSUMDB=*.internal.example.com \
+GOFLAGS=-mod=mod \
+GOPROXY=https://goproxy.internal.example.com,direct \
+  go build ./...
+
+<span class="c"># npm: private registry via .npmrc</span>
+# .npmrc
+registry=https://registry.example.com
+//registry.example.com/:_authToken=${NPM_TOKEN}
+<span class="c"># Block public registry fallback:</span>
+@myorg:registry=https://registry.example.com
+
+<span class="c"># pip: private PyPI mirror</span>
+pip install --index-url https://pypi.internal.example.com/simple/ \
+  --no-deps \
+  requests==2.31.0</code></pre>
+
+  <div class="callout danger">
+    <div class="callout-title">Dependency Confusion Attack Vector</div>
+    <p>If your build tool falls back to a public registry when a package isn't found in your private registry, an attacker can publish a package with the same name as your internal package at a higher version. The build tool will download and execute the attacker's package. Prevent fallback by configuring your proxy to be authoritative for your namespace — or block all external registry access from build nodes.</p>
+  </div>
+
+  <h3>Automated Dependency Updates</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># .github/renovate.json — automated dependency updates with PR per change</span>
+{
+  <span class="s">"$schema"</span>: <span class="s">"https://docs.renovatebot.com/renovate-schema.json"</span>,
+  <span class="s">"extends"</span>: [<span class="s">"config:recommended"</span>],
+  <span class="s">"packageRules"</span>: [
+    {
+      <span class="s">"matchUpdateTypes"</span>: [<span class="s">"patch"</span>],
+      <span class="s">"automerge"</span>: <span class="s">true</span>     <span class="c">// Auto-merge patch updates if CI passes</span>
+    },
+    {
+      <span class="s">"matchDepTypes"</span>: [<span class="s">"action"</span>],
+      <span class="s">"pinDigests"</span>: <span class="s">true</span>     <span class="c">// Pin GitHub Action versions to SHA</span>
+    }
+  ],
+  <span class="s">"vulnerabilityAlerts"</span>: {
+    <span class="s">"enabled"</span>: <span class="s">true</span>,
+    <span class="s">"labels"</span>: [<span class="s">"security"</span>]
+  }
+}</code></pre>
+
+  <!-- ───── THIRD PARTY ───── -->
+  <h2 id="third-party">Third-Party Operators &amp; Helm Charts</h2>
+
+  <p>Kubernetes operators and Helm charts from external sources are high-risk: they often request cluster-admin or broad RBAC permissions and run privileged workloads.</p>
+
+  <h3>Operator Security Vetting Checklist</h3>
+
+  <table>
+    <thead><tr><th>Check</th><th>Command / Tool</th><th>Red Flag</th></tr></thead>
+    <tbody>
+      <tr><td>RBAC permissions requested</td><td><code>kubectl auth can-i --list --as=system:serviceaccount:operator-ns:operator-sa</code></td><td>cluster-admin, wildcard resources, secret reads cluster-wide</td></tr>
+      <tr><td>Pod security</td><td>Review operator Deployment spec</td><td>privileged:true, hostPID, hostNetwork, hostPath mounts</td></tr>
+      <tr><td>Image provenance</td><td><code>cosign verify</code> operator images</td><td>No signature, unknown registry, no provenance</td></tr>
+      <tr><td>CVE status</td><td><code>trivy image</code> on operator images</td><td>CRITICAL CVEs in running operator image</td></tr>
+      <tr><td>Source code</td><td>Review GitHub repo</td><td>Inactive maintainers, no release process, no security policy</td></tr>
+      <tr><td>Network egress</td><td>Apply NetworkPolicy deny-all first</td><td>Operator dials back to vendor infrastructure unexpectedly</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Helm Chart Verification</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code"><span class="c"># Helm provenance: verify chart integrity (classic Helm signing)</span>
+<span class="c"># Chart packager creates .prov file with PGP signature</span>
+
+<span class="c"># Import chart maintainer's PGP key</span>
+gpg --import maintainer-pubkey.gpg
+
+<span class="c"># Install with provenance verification</span>
+helm install myrelease myrepo/mychart --verify
+
+<span class="c"># Download chart and verify manually</span>
+helm pull myrepo/mychart --verify --provenance
+
+<span class="c"># Helm OCI: charts stored as OCI artifacts can be signed with Cosign</span>
+cosign sign oci://registry.example.com/charts/mychart:1.2.3
+cosign verify \
+  --key cosign.pub \
+  oci://registry.example.com/charts/mychart:1.2.3</code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Helm chart security review: render and inspect before installing</span>
+
+<span class="c"># Render all templates to stdout</span>
+helm template myrelease myrepo/mychart --values my-values.yaml
+
+<span class="c"># Check for dangerous RBAC</span>
+helm template myrelease myrepo/mychart | \
+  grep -A5 "ClusterRoleBinding\|cluster-admin\|\"*\""
+
+<span class="c"># Check for privileged pods</span>
+helm template myrelease myrepo/mychart | \
+  grep -i "privileged\|hostPID\|hostNetwork\|hostPath"
+
+<span class="c"># Use Polaris to audit rendered templates</span>
+helm template myrelease myrepo/mychart | polaris audit --audit-path -</code></pre>
+
+  <div class="callout warning">
+    <div class="callout-title">Helm Dependency Charts</div>
+    <p>Helm charts can have sub-chart dependencies. A parent chart with reasonable permissions might pull in a sub-chart with <code>cluster-admin</code>. Always render and inspect the full template output, not just the parent chart. Run <code>helm dependency update</code> and review <code>charts/</code> directory contents.</p>
+  </div>
+
+  <!-- ───── SCA ───── -->
+  <h2 id="sca">Software Composition Analysis</h2>
+
+  <p>Software Composition Analysis (SCA) identifies open-source components and their known vulnerabilities (CVEs) and license obligations in your codebase and container images.</p>
+
+  <h3>SCA in the Pipeline</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code"><span class="c"># Grype: vulnerability scan from SBOM</span>
+grype sbom:sbom.cyclonedx.json \
+  --fail-on critical \
+  --output json > vuln-report.json
+
+<span class="c"># OWASP Dependency-Check for Java/Node/Python</span>
+dependency-check \
+  --project myapp \
+  --scan ./app \
+  --format JSON \
+  --out ./reports \
+  --nvdApiKey $NVD_API_KEY
+
+<span class="c"># OSV-Scanner: checks against OSV database (comprehensive, fast)</span>
+osv-scanner --lockfile package-lock.json
+osv-scanner --sbom sbom.cyclonedx.json</code></pre>
+
+  <h3>VEX: Vulnerability Exploitability eXchange</h3>
+
+  <p>VEX documents allow you to assert that a CVE in a dependency is not exploitable in your specific artifact — reducing false positives in vulnerability reports.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># VEX document: assert CVE not exploitable in our context</span>
+{
+  <span class="s">"@context"</span>: <span class="s">"https://openvex.dev/ns/v0.2.0"</span>,
+  <span class="s">"@id"</span>: <span class="s">"https://example.com/vex/myapp-1.0.0"</span>,
+  <span class="s">"author"</span>: <span class="s">"security@example.com"</span>,
+  <span class="s">"timestamp"</span>: <span class="s">"2024-01-15T10:00:00Z"</span>,
+  <span class="s">"statements"</span>: [
+    {
+      <span class="s">"vulnerability"</span>: { <span class="s">"name"</span>: <span class="s">"CVE-2023-44487"</span> },
+      <span class="s">"products"</span>: [{ <span class="s">"@id"</span>: <span class="s">"pkg:oci/myapp@sha256:abc123"</span> }],
+      <span class="s">"status"</span>: <span class="s">"not_affected"</span>,
+      <span class="s">"justification"</span>: <span class="s">"vulnerable_code_not_in_execute_path"</span>,
+      <span class="s">"impact_statement"</span>: <span class="s">"HTTP/2 is not used by this component; TLS terminates at ingress"</span>
+    }
+  ]
+}
+
+<span class="c"># Generate VEX with vexctl</span>
+vexctl create \
+  --product "pkg:oci/myapp@sha256:abc123" \
+  --vuln CVE-2023-44487 \
+  --status not_affected \
+  --justification vulnerable_code_not_in_execute_path
+
+<span class="c"># Trivy respects VEX: filter results using VEX document</span>
+trivy image \
+  --vex vex-document.openvex.json \
+  registry.example.com/myapp@sha256:abc123</code></pre>
+
+  <!-- ───── RUNTIME INTEGRITY ───── -->
+  <h2 id="runtime-integrity">Runtime Integrity</h2>
+
+  <h3>dm-verity for Container Image Verification</h3>
+
+  <p>dm-verity is a Linux kernel mechanism that cryptographically verifies block device data on every read. When used with container storage, it ensures the on-disk image layers match their expected hash — preventing tampering after pull.</p>
+
+  <div class="callout info">
+    <div class="callout-title">dm-verity in Container Runtimes</div>
+    <p>containerd and CRI-O support read-only overlay filesystems backed by dm-verity via the <code>stargz-snapshotter</code> or <code>overlayfs-verity</code>. This is primarily useful in environments where you cannot fully trust the node storage, such as edge deployments or multi-tenant bare-metal clusters.</p>
+  </div>
+
+  <h3>Kata Containers for Workload Isolation</h3>
+
+  <p>Kata Containers run each pod in a lightweight VM instead of a container. This provides hardware-level isolation between workloads and between workloads and the host kernel — the strongest available workload isolation.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Use Kata Containers runtime class for high-security workloads</span>
+<span class="k">apiVersion</span>: <span class="s">node.k8s.io/v1</span>
+<span class="k">kind</span>: <span class="s">RuntimeClass</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">kata-containers</span>
+<span class="k">handler</span>: <span class="s">kata</span>
+<span class="k">scheduling</span>:
+  <span class="k">nodeSelector</span>:
+    <span class="k">kata-containers</span>: <span class="s">"true"</span>
+---
+<span class="k">spec</span>:
+  <span class="k">runtimeClassName</span>: <span class="s">kata-containers</span>
+  <span class="k">containers</span>:
+  - <span class="k">name</span>: <span class="s">sensitive-workload</span>
+    <span class="k">image</span>: <span class="s">registry.example.com/payment-service@sha256:abc123</span></code></pre>
+
+  <!-- ───── OBSERVABILITY ───── -->
+  <h2 id="observability">Metrics, Alerts &amp; Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Source</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>cosign_verification_failures_total</code></td><td>Policy Controller</td><td>Images rejected due to missing/invalid signature</td></tr>
+      <tr><td><code>policy_controller_admissions_total</code></td><td>Policy Controller</td><td>Total admissions evaluated by Policy Controller</td></tr>
+      <tr><td><code>trivy_vulnerability_id</code></td><td>Trivy Operator</td><td>CVEs in running workloads (see Image Security)</td></tr>
+      <tr><td><code>sbom_age_hours</code></td><td>Custom / SBOM pipeline</td><td>Age of most recent SBOM per image</td></tr>
+      <tr><td><code>unsigned_image_deployments_total</code></td><td>Policy Controller audit</td><td>Deployments that would be blocked in enforce mode</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Alerts</h3>
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Alert: Unsigned image deployment blocked</span>
+- <span class="k">alert</span>: <span class="s">UnsignedImageBlocked</span>
+  <span class="k">expr</span>: <span class="s">increase(cosign_verification_failures_total[5m]) > 0</span>
+  <span class="k">for</span>: <span class="s">0m</span>
+  <span class="k">severity</span>: <span class="s">critical</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Image signature verification failed — possible supply chain attack or CI misconfiguration"</span>
+
+<span class="c"># Alert: SBOM attestation missing for new deployment</span>
+- <span class="k">alert</span>: <span class="s">SBOMAttestationMissing</span>
+  <span class="k">expr</span>: <span class="s">increase(policy_controller_admissions_total{policy="require-sbom-attestation",result="denied"}[5m]) > 0</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Deployment rejected: missing SBOM attestation"</span>
+
+<span class="c"># Alert: Critical CVE in SBOM attestation</span>
+- <span class="k">alert</span>: <span class="s">CriticalCVEInAttestaton</span>
+  <span class="k">expr</span>: <span class="s">increase(policy_controller_admissions_total{policy="require-vuln-attestation",result="denied"}[5m]) > 0</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Deployment rejected: Critical CVE in vulnerability attestation"</span>
+
+<span class="c"># Alert: Policy Controller webhook unhealthy</span>
+- <span class="k">alert</span>: <span class="s">PolicyControllerWebhookDown</span>
+  <span class="k">expr</span>: <span class="s">up{job="policy-controller"} == 0</span>
+  <span class="k">for</span>: <span class="s">2m</span>
+  <span class="k">severity</span>: <span class="s">critical</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Policy Controller webhook down — supply chain enforcement not active"</span></code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Unsigned Image Deployment Blocked</h4>
+      <p>1. Check which image is failing: Policy Controller logs<br>2. Determine if CI signing step ran: check workflow logs<br>3. If CI failure: re-run signing step, push signature<br>4. If attack suspected: check registry push audit logs for unauthorized pushes</p>
+    </div>
+    <div class="card">
+      <h4>Dependency Confusion Detected</h4>
+      <p>1. Identify the suspicious package version pulled<br>2. Check if it came from public registry vs internal proxy<br>3. Block package at proxy level immediately<br>4. Audit all CI runs that may have used the package<br>5. Rotate any credentials that ran in affected CI jobs</p>
+    </div>
+    <div class="card">
+      <h4>Compromised Third-Party Operator</h4>
+      <p>1. Delete operator deployment immediately<br>2. Audit RBAC actions by operator SA in last 24h via audit logs<br>3. Rotate any secrets the operator had access to<br>4. Check for resources created by the operator (check ownerReferences)</p>
+    </div>
+    <div class="card">
+      <h4>Policy Controller Admission Failures Spike</h4>
+      <p>1. Check Policy Controller pod health and logs<br>2. Verify Fulcio/Rekor (Sigstore) are reachable (for keyless)<br>3. Check if signing keys/certificates have expired<br>4. Review ClusterImagePolicy for syntax errors after recent changes</p>
+    </div>
+    <div class="card">
+      <h4>Build Pipeline Secret Exposure</h4>
+      <p>1. Immediately rotate all secrets that may have been exposed<br>2. Identify which runs/forks had access to the workflow<br>3. Revoke and re-issue registry push credentials, signing keys<br>4. Audit all images pushed during the exposure window</p>
+    </div>
+  </div>
+
+  <!-- ───── BEST PRACTICES ───── -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num green">1</div>
+      <div class="step-content">
+        <h4>Sign every image — enforce verification at admission</h4>
+        <p>Keyless Cosign signing in CI costs nothing and takes seconds. Without admission enforcement, signing is security theater. Deploy Policy Controller or Kyverno <code>verifyImages</code> with <code>Enforce</code> mode in production. See <a href="07-image-security.html">Image Security</a> for Cosign details.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">2</div>
+      <div class="step-content">
+        <h4>Generate and attest SBOMs for every build</h4>
+        <p>SBOMs provide the component inventory needed for rapid CVE triage when new vulnerabilities are disclosed. Without an SBOM, determining whether your workload is affected requires manual analysis of every image.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h4>Pin all CI actions to immutable SHA digests</h4>
+        <p>Mutable action references (<code>@main</code>, <code>@v1</code>) execute whatever code the tag points to at run time — including code pushed after a maintainer account compromise. Use Renovate to automate SHA updates.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
+      <div class="step-content">
+        <h4>Use OIDC federation instead of static CI credentials</h4>
+        <p>Static registry push credentials, cloud API keys, and signing keys stored in CI secrets are a high-value target. Replace them with OIDC federation: GitHub Actions OIDC → AWS AssumeRoleWithWebIdentity, GCP Workload Identity, or Azure Federated Credentials.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">5</div>
+      <div class="step-content">
+        <h4>Route all dependencies through a private proxy</h4>
+        <p>A private artifact proxy (Artifactory, Nexus, Athens) centralizes dependency fetching, prevents dependency confusion attacks, and provides a single place to block compromised packages. Configure build tools to use the proxy with no public fallback for internal package namespaces.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">6</div>
+      <div class="step-content">
+        <h4>Vet third-party operators before installation</h4>
+        <p>Review RBAC requests, pod security settings, and image provenance of every operator before installing it in a production cluster. Prefer operators from vendors with active security programs, signed images, and published SBOMs.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">7</div>
+      <div class="step-content">
+        <h4>Achieve SLSA Level 3 for critical workloads</h4>
+        <p>SLSA Level 3 provides non-forgeable provenance from a hosted build platform. Use the <code>slsa-github-generator</code> reusable workflow to generate SLSA 3 attestations automatically for every release. Require SLSA provenance verification in Policy Controller.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">8</div>
+      <div class="step-content">
+        <h4>Use VEX to reduce CVE triage noise</h4>
+        <p>Not every CVE in a dependency is exploitable in your deployment context. Publish VEX documents alongside your SBOMs to assert non-exploitability for known false-positive CVEs. This reduces alert fatigue and lets teams focus on real risks.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="back-to-top" id="back-to-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+</main>
+
+<script>
+function toggleTheme(){
+  const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  if(t !== 'dark') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('k8s-theme', t);
+}
+(function(){
+  const t = localStorage.getItem('k8s-theme');
+  if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+})();
+
+function copyCode(btn){
+  const pre = btn.parentElement;
+  const code = pre.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display = a.textContent.toLowerCase().includes(v.toLowerCase()) ? '' : 'none';
+  });
+}
+
+const main = document.getElementById('main');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{
+  btt.classList.toggle('visible', main.scrollTop > 400);
+});
+
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    const id = e.target.id;
+    const link = document.querySelector(`.toc a[href="#${id}"]`);
+    if(link) link.classList.toggle('active', e.isIntersecting);
+  });
+},{root: main, rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('h2[id]').forEach(h=>observer.observe(h));
+</script>
+</body>
+</html>

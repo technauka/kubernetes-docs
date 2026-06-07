@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Persistent Volumes | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sidebar-logo{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;}
+.sidebar-title{font-weight:600;font-size:14px;}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text);outline:none;}
+.sidebar-search input:focus{border-color:var(--accent);}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+.theme-toggle{background:none;border:none;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:8px;font-size:12px;}
+.topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:99;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--text);font-size:18px;}
+.breadcrumb{font-size:13px;color:var(--text3);}
+.breadcrumb span{color:var(--text2);}
+.topbar-right{margin-left:auto;}
+.back-to-top{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+.back-to-top.visible{opacity:1;}
+.main-wrapper{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;padding:64px 40px 80px;max-width:900px;min-width:0;overflow-y:auto;height:100vh;}
+.toc-sidebar{width:var(--toc-w);flex-shrink:0;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);background:var(--bg);}
+.toc-sidebar h4{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.toc-sidebar a{display:block;font-size:12px;color:var(--text3);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-sidebar a:hover{color:var(--text2);}
+.toc-sidebar a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-sidebar a.toc-h3{padding-left:16px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.3;}
+h2{font-size:22px;font-weight:600;margin:48px 0 16px;padding-top:8px;border-top:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:16px;color:var(--text2);}
+.lead{font-size:17px;color:var(--text2);margin-bottom:24px;}
+.page-meta{display:flex;gap:16px;margin-bottom:32px;flex-wrap:wrap;}
+.meta-badge{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.meta-badge.green{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.3);}
+.meta-badge.blue{background:rgba(88,166,255,.12);color:var(--accent);border-color:rgba(88,166,255,.3);}
+.meta-badge.yellow{background:rgba(210,153,34,.12);color:var(--yellow);border-color:rgba(210,153,34,.3);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin-bottom:20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;font-size:12px;border:1px solid var(--border);color:var(--text2);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:14px 16px;margin-bottom:20px;border-left:4px solid;display:flex;gap:10px;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;font-size:14px;}
+.callout-body strong{display:block;margin-bottom:4px;}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.tip{background:rgba(63,185,80,.08);border-color:var(--green);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px;overflow-x:auto;}
+.diagram pre{background:none;border:none;padding:0;margin:0;font-size:13px;color:var(--text2);}
+.section-nav{display:flex;justify-content:space-between;margin-top:64px;padding-top:24px;border-top:1px solid var(--border);}
+.section-nav a{display:flex;flex-direction:column;gap:4px;max-width:45%;}
+.section-nav a .nav-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.section-nav a .nav-title{font-size:14px;color:var(--accent);}
+.section-nav a.next{text-align:right;}
+ol.steps{color:var(--text2);padding-left:24px;margin-bottom:20px;font-size:14px;line-height:2.2;}
+ol.steps li{padding-left:4px;}
+ul.plain{color:var(--text2);padding-left:24px;margin-bottom:16px;font-size:14px;line-height:2;}
+@media(max-width:1100px){.toc-sidebar{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrapper{margin-left:0;}
+  .main-content{padding:64px 20px 80px;}
+  .topbar{left:0;}
+  .hamburger{display:block;}
+  .coverage-body{grid-template-columns:1fr !important;}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">K8s</div>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="sidebar-filter" placeholder="Filter topics…" oninput="filterNav(this.value)">
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">00 — Foundations</div>
+      <a href="../00-foundations/00-kubernetes-overview.html">Kubernetes Overview</a>
+      <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+      <a href="../00-foundations/02-api-machinery.html">API Machinery</a>
+      <a href="../00-foundations/03-kubectl-and-client.html">kubectl &amp; Client</a>
+      <a href="../00-foundations/04-objects-and-manifests.html">Objects &amp; Manifests</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 — Networking</div>
+      <a href="../03-networking/06-gateway-api.html">Gateway API</a>
+      <a href="../03-networking/07-network-policies.html">Network Policies</a>
+      <a href="../03-networking/09-load-balancing.html">Load Balancing</a>
+      <a href="../03-networking/10-service-mesh.html">Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 — Storage</div>
+      <a href="00-storage-overview.html">Storage Overview</a>
+      <a href="01-volumes.html">Volumes</a>
+      <a href="02-persistent-volumes.html" class="active">Persistent Volumes</a>
+      <a href="03-storage-classes.html">Storage Classes</a>
+      <a href="04-csi-drivers.html">CSI Drivers</a>
+      <a href="05-volume-snapshots.html">Volume Snapshots</a>
+      <a href="06-stateful-storage-patterns.html">Stateful Patterns</a>
+      <a href="07-storage-capacity.html">Storage Capacity</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 — Configuration</div>
+      <a href="../05-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../05-configuration/01-secrets.html">Secrets</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">☀️</span> Toggle theme
+    </button>
+  </div>
+</aside>
+
+<div class="topbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div class="breadcrumb">04 — Storage <span>/ Persistent Volumes</span></div>
+  <div class="topbar-right">
+    <button class="back-to-top" id="back-to-top" onclick="scrollToTop()">↑ Top</button>
+  </div>
+</div>
+
+<div class="main-wrapper">
+<main class="main-content" id="main-content">
+
+<h1>Persistent Volumes</h1>
+<p class="lead">A complete deep dive into PersistentVolumes and PersistentVolumeClaims — the binding algorithm, finalizers, protection, StatefulSet volumeClaimTemplates, orphaned PVC cleanup, PV migration, and every edge case that causes data loss or stuck pods in production.</p>
+
+<div class="page-meta">
+  <span class="meta-badge green">Section 04 of 13</span>
+  <span class="meta-badge blue">File 3 of 8</span>
+  <span class="meta-badge yellow">Platform Engineer</span>
+</div>
+
+<details class="coverage">
+  <summary>What This Page Covers</summary>
+  <div class="coverage-body">
+    <li>PV and PVC object model — cluster-scoped PV vs namespace-scoped PVC</li>
+    <li>Full PV spec reference — all fields with annotations</li>
+    <li>Full PVC spec reference — storageClassName, selector, volumeMode, volumeName</li>
+    <li>Binding algorithm — 5-step match order; best-fit selection logic</li>
+    <li>PV phases — Available/Bound/Released/Failed with state machine diagram</li>
+    <li>PVC phases — Pending/Bound/Lost with causes for each</li>
+    <li>PVC protection finalizer — kubernetes.io/pvc-protection; blocks PVC deletion while pod uses it</li>
+    <li>PV protection finalizer — kubernetes.io/pv-protection; blocks PV deletion while bound</li>
+    <li>Reclaim policy mechanics — Retain (claimRef, manual cleanup), Delete (external-provisioner GC)</li>
+    <li>Changing reclaim policy — patch on existing PV; StorageClass default doesn't retroactively apply</li>
+    <li>StatefulSet volumeClaimTemplates — per-replica PVC naming (data-pod-0), ordered provisioning, PVC not deleted on scale-down</li>
+    <li>Orphaned PVCs — PVCs left behind after StatefulSet deletion; manual cleanup required</li>
+    <li>PVC deletion order — safe StatefulSet teardown sequence</li>
+    <li>Label selectors on PVC — matchLabels/matchExpressions for static PV targeting</li>
+    <li>Capacity over-provisioning trap — PVC binds to larger PV than requested</li>
+    <li>Cross-namespace PV reuse — why it's blocked; how to work around</li>
+    <li>PV nodeAffinity — required for local PVs; optional for topology constraints on CSI PVs</li>
+    <li>PVC resizing — patch workflow; FileSystemResizePending condition; driver support matrix</li>
+    <li>PV cloning — dataSource: PVC; same namespace, same StorageClass</li>
+    <li>PV from snapshot restore — dataSource: VolumeSnapshot</li>
+    <li>dataSourceRef — cross-namespace clone via VolumeSnapshotContent (1.26+)</li>
+    <li>StorageClass defaulting — annotation behavior; changing default SC; multiple defaults behavior</li>
+    <li>Kubernetes 1.26+ retroactive default StorageClass assignment</li>
+    <li>PV migration — in-tree to CSI; volume.kubernetes.io/storage-provisioner annotation; migrated-to annotation</li>
+    <li>Detach/force-detach scenarios — node failure; volumeattachment stuck; CSI migration impact</li>
+    <li>6 metrics + 4 alerting rules + 5 troubleshooting runbooks</li>
+    <li>8 best practices</li>
+  </div>
+</details>
+
+<!-- ============================================================ -->
+<h2 id="object-model">Object Model</h2>
+
+<p>PersistentVolumes (PVs) and PersistentVolumeClaims (PVCs) implement a two-level indirection: <em>administrators</em> provision storage capacity (PVs), and <em>developers</em> request storage (PVCs). Kubernetes binds them together.</p>
+
+<div class="diagram">
+<pre>
+CLUSTER SCOPE                         NAMESPACE SCOPE
+─────────────────────────────────     ─────────────────────────────────
+PersistentVolume (PV)                 PersistentVolumeClaim (PVC)
+  name: pv-prod-db-001                  name: data
+  capacity: 100Gi                       namespace: production
+  accessModes: [RWO]                    requests.storage: 100Gi
+  storageClassName: gp3                 accessModes: [RWO]
+  reclaimPolicy: Retain                 storageClassName: gp3
+  status.phase: Bound          ◄────────status.phase: Bound
+  spec.claimRef:                        spec.volumeName: pv-prod-db-001
+    namespace: production
+    name: data
+    uid: abc-123
+
+                  ↕ (1:1 binding)
+
+StorageClass (cluster-scoped)
+  name: gp3
+  provisioner: ebs.csi.aws.com
+  volumeBindingMode: WaitForFirstConsumer
+  reclaimPolicy: Delete
+</pre>
+</div>
+
+<p>Key ownership rules:</p>
+<ul class="plain">
+  <li>One PV can be bound to exactly <strong>one</strong> PVC at a time.</li>
+  <li>One PVC is bound to exactly <strong>one</strong> PV.</li>
+  <li>PVs are cluster-scoped; PVCs are namespace-scoped. A PVC in namespace A cannot bind to a PV already claimed by namespace B.</li>
+  <li>The binding is recorded on both objects: PV's <code>spec.claimRef</code> and PVC's <code>spec.volumeName</code> (set post-bind in <code>status</code>).</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="pv-spec">PersistentVolume Spec — Full Reference</h2>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-prod-db-001
+  labels:
+    type: ssd                   # used by PVC label selectors
+    env: production
+  annotations:
+    pv.kubernetes.io/provisioned-by: ebs.csi.aws.com   # set by dynamic provisioner
+    volume.kubernetes.io/storage-provisioner: ebs.csi.aws.com
+spec:
+  # ── Storage capacity ──────────────────────────────────────────
+  capacity:
+    storage: 100Gi              # reported capacity; CSI driver may report actual
+
+  # ── Access modes ──────────────────────────────────────────────
+  accessModes:
+    - ReadWriteOnce             # RWO | ROX | RWX | RWOP (GA 1.29)
+
+  # ── Volume mode ───────────────────────────────────────────────
+  volumeMode: Filesystem        # Filesystem (default) | Block
+
+  # ── Reclaim policy ────────────────────────────────────────────
+  persistentVolumeReclaimPolicy: Retain  # Retain | Delete | Recycle(deprecated)
+
+  # ── StorageClass association ───────────────────────────────────
+  storageClassName: gp3         # must match PVC storageClassName to bind
+                                # empty string = no class; not same as unset
+
+  # ── Mount options (passed to mount command) ───────────────────
+  mountOptions:
+    - noatime
+    - discard
+
+  # ── CSI source ────────────────────────────────────────────────
+  csi:
+    driver: ebs.csi.aws.com
+    volumeHandle: vol-0abc123def456789   # unique ID on storage backend
+    fsType: ext4
+    readOnly: false
+    volumeAttributes:
+      throughput: "250"
+      iops: "3000"
+
+  # ── Topology constraint (CSI / local volumes) ─────────────────
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.ebs.csi.aws.com/zone
+              operator: In
+              values: [us-east-1a]
+
+  # ── Claim reference (set by bind controller; do not set manually) ──
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: data
+    namespace: production
+    uid: abc-def-123            # UID prevents rebind to new PVC with same name</code></pre>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>storageClassName: "" vs omitted</strong> An empty string (<code>storageClassName: ""</code>) explicitly means "no StorageClass" — the PV will only bind to PVCs that also have <code>storageClassName: ""</code>. An omitted <code>storageClassName</code> field causes the default StorageClass to be used (set by admission controller). These are different values with different binding behavior.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pvc-spec">PersistentVolumeClaim Spec — Full Reference</h2>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data
+  namespace: production
+  annotations:
+    volume.beta.kubernetes.io/storage-provisioner: ebs.csi.aws.com  # set by provisioner
+spec:
+  # ── Storage request ───────────────────────────────────────────
+  resources:
+    requests:
+      storage: 100Gi           # minimum; may bind to larger PV (static binding)
+
+  # ── Access modes ──────────────────────────────────────────────
+  accessModes:
+    - ReadWriteOnce
+
+  # ── Volume mode ───────────────────────────────────────────────
+  volumeMode: Filesystem       # must match PV volumeMode
+
+  # ── StorageClass ──────────────────────────────────────────────
+  storageClassName: gp3        # "" = static binding with no class
+                                # omit = default StorageClass
+
+  # ── Static binding: target specific PV ───────────────────────
+  volumeName: pv-prod-db-001   # skip binding algorithm; pin to this PV
+
+  # ── Static binding: label selector ───────────────────────────
+  selector:
+    matchLabels:
+      type: ssd
+      env: production
+    matchExpressions:
+      - key: tier
+        operator: In
+        values: [fast, ultra-fast]
+
+  # ── Data population sources ───────────────────────────────────
+  dataSource:                  # clone from existing PVC or restore from snapshot
+    kind: PersistentVolumeClaim
+    name: source-pvc           # must be in same namespace, same StorageClass
+
+  # dataSourceRef allows cross-namespace snapshot content refs (1.26+)
+  # dataSourceRef:
+  #   apiGroup: snapshot.storage.k8s.io
+  #   kind: VolumeSnapshotContent
+  #   name: vsc-cross-ns</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="binding-algorithm">Binding Algorithm</h2>
+
+<p>The PersistentVolume controller (inside kube-controller-manager) runs a continuous reconciliation loop. For each unbound PVC, it searches for the best-fit PV:</p>
+
+<ol class="steps">
+  <li><strong>storageClassName match</strong> — PV's <code>storageClassName</code> must equal the PVC's. Both empty strings match each other.</li>
+  <li><strong>accessModes check</strong> — The PV must support all modes the PVC requests (PV's set ⊇ PVC's set). A PV with RWO+ROX satisfies a PVC requesting only RWO.</li>
+  <li><strong>volumeMode check</strong> — Must match exactly (both Filesystem or both Block).</li>
+  <li><strong>capacity check</strong> — PV capacity ≥ PVC requested storage.</li>
+  <li><strong>label selector check</strong> — If the PVC has a <code>selector</code>, PV labels must satisfy it.</li>
+</ol>
+
+<p>Among all matching PVs, the controller selects the <strong>smallest capacity PV</strong> that satisfies the request (best-fit). This minimizes wasted capacity. If the PVC has <code>volumeName</code>, the algorithm is bypassed and that specific PV is targeted directly.</p>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Capacity overshoot with static PVs</strong> If the smallest matching PV is 500Gi but the PVC requests 20Gi, the PVC binds to the 500Gi PV and the pod sees 500Gi — not 20Gi. You cannot shrink. Dynamic provisioning (via StorageClass) provisions exactly the requested size, so this only affects static binding.</div>
+</div>
+
+<h3 id="binding-modes">WaitForFirstConsumer and Topology-Aware Binding</h3>
+
+<p>When the StorageClass uses <code>volumeBindingMode: WaitForFirstConsumer</code>, the binding algorithm is deferred until a pod using the PVC is scheduled. The scheduler selects a node first, then the bind controller creates (or selects) a PV in the zone matching that node's topology labels.</p>
+
+<div class="diagram">
+<pre>
+WaitForFirstConsumer binding sequence:
+
+1. PVC created → stays in Pending (no PV yet)
+2. Pod created referencing PVC
+3. Scheduler selects node N in zone us-east-1a
+4. Scheduler annotates PVC:
+   volume.kubernetes.io/selected-node: node-N
+5. PVC bind controller sees the annotation
+6. Dynamic provisioner creates PV in us-east-1a
+7. Bind controller binds PVC → PV
+8. Kubelet on node-N mounts the volume
+9. Pod starts
+
+Without WaitForFirstConsumer (Immediate):
+1. PVC created → provisioner immediately creates PV (zone may be random)
+2. Pod scheduler must find node in same zone as PV
+3. If no nodes in that zone → Pod stuck Pending forever
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pv-phases">PV and PVC Phase State Machines</h2>
+
+<h3 id="pv-states">PV Phases</h3>
+<table>
+  <tr><th>Phase</th><th>Meaning</th><th>Transitions To</th></tr>
+  <tr><td><code>Available</code></td><td>PV exists, not bound to any PVC</td><td>Bound (when matching PVC found)</td></tr>
+  <tr><td><code>Bound</code></td><td>PV is bound 1:1 to a PVC</td><td>Released (when PVC is deleted)</td></tr>
+  <tr><td><code>Released</code></td><td>PVC deleted; PV retains data; <code>claimRef</code> still set</td><td>Available (admin removes claimRef), Failed (reclamation error), Deleted (Delete policy)</td></tr>
+  <tr><td><code>Failed</code></td><td>Automatic reclamation failed (e.g., cloud volume delete API error)</td><td>Requires manual intervention</td></tr>
+</table>
+
+<h3 id="pvc-states">PVC Phases</h3>
+<table>
+  <tr><th>Phase</th><th>Meaning</th><th>Common Causes</th></tr>
+  <tr><td><code>Pending</code></td><td>PVC created but not yet bound to a PV</td><td>No matching PV, provisioner error, WaitForFirstConsumer waiting for pod, quota exceeded</td></tr>
+  <tr><td><code>Bound</code></td><td>Bound to a PV; ready for pods to use</td><td>—</td></tr>
+  <tr><td><code>Lost</code></td><td>Bound PV has been deleted or is unavailable</td><td>Admin deleted PV manually while PVC was bound; node failure with local PV</td></tr>
+</table>
+
+<div class="callout danger">
+  <div class="callout-icon">🔴</div>
+  <div class="callout-body"><strong>PVC in Lost phase</strong> A pod referencing a Lost PVC will be stuck in <code>ContainerCreating</code>. The data may still exist on the storage backend — the PV object was just deleted. To recover: create a new PV with the same <code>volumeHandle</code> pointing to the existing cloud volume, then manually set <code>claimRef</code> on the new PV to point to the lost PVC. The PVC will re-bind.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="finalizers">Finalizers and Deletion Protection</h2>
+
+<p>Kubernetes uses finalizers to prevent accidental deletion of PVs and PVCs while they are in use.</p>
+
+<h3 id="pvc-protection">PVC Protection Finalizer</h3>
+
+<p>When a PVC is created, the admission controller adds <code>kubernetes.io/pvc-protection</code> as a finalizer. The <code>PVCProtection</code> controller in kube-controller-manager removes this finalizer only when no pod is actively using the PVC. If you run <code>kubectl delete pvc &lt;name&gt;</code> while a pod has it mounted:</p>
+
+<ol class="steps">
+  <li>PVC moves to <code>Terminating</code> (deletion timestamp set)</li>
+  <li>Finalizer prevents actual deletion</li>
+  <li>Pod continues running with the volume</li>
+  <li>When the pod is deleted, the PVC controller removes the finalizer</li>
+  <li>PVC is deleted; PV moves to Released</li>
+</ol>
+
+<pre><code># Check finalizers on a PVC
+kubectl get pvc data -o jsonpath='{.metadata.finalizers}'
+# ["kubernetes.io/pvc-protection"]
+
+# PVC stuck in Terminating? Check if any pod is still mounting it
+kubectl get pods --all-namespaces -o json | \
+  jq -r '.items[] | select(.spec.volumes[]?.persistentVolumeClaim.claimName=="data") | .metadata.name'</code></pre>
+
+<h3 id="pv-protection">PV Protection Finalizer</h3>
+
+<p>Similarly, PVs have a <code>kubernetes.io/pv-protection</code> finalizer that prevents deletion while the PV is bound to a PVC. Deleting a bound PV moves it to <code>Terminating</code>; it completes deletion only when the PVC is deleted first.</p>
+
+<pre><code># Force-remove a stuck finalizer (DANGEROUS — only if you are sure data is not needed)
+kubectl patch pv &lt;name&gt; -p '{"metadata":{"finalizers":null}}'</code></pre>
+
+<div class="callout danger">
+  <div class="callout-icon">🔴</div>
+  <div class="callout-body"><strong>Never force-remove finalizers unless data is expendable</strong> Removing the <code>pvc-protection</code> finalizer allows immediate PVC deletion even while a pod is using it — the volume unmounts from under a running container. This will corrupt any database or stateful application using the volume. Only do this for test environments or when data loss is explicitly acceptable.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="reclaim-policy">Reclaim Policy Mechanics</h2>
+
+<h3 id="retain-policy">Retain</h3>
+
+<p>When the PVC is deleted, the PV moves to <code>Released</code>. The underlying storage (cloud volume, NFS directory, etc.) is preserved. The PV's <code>claimRef</code> still points to the deleted PVC — preventing automatic rebinding. An administrator must manually intervene:</p>
+
+<pre><code># Option 1: Delete the PV and recreate it (cleanest)
+kubectl delete pv &lt;name&gt;
+# Manually create a new PV pointing to the same storage backend volumeHandle
+
+# Option 2: Remove claimRef to make the PV available again
+kubectl patch pv &lt;name&gt; --type=json \
+  -p '[{"op":"remove","path":"/spec/claimRef"}]'
+# PV moves back to Available; can be claimed by a new PVC</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Data from previous tenant</strong> If you remove the claimRef and allow a new PVC to bind, the new consumer gets a volume containing the previous tenant's data. For shared-namespace clusters, this is a data leak. Always verify the volume is clean before reuse, or use snapshots to make a clean clone.</div>
+</div>
+
+<h3 id="delete-policy">Delete</h3>
+
+<p>When the PVC is deleted, the external-provisioner sidecar calls the CSI <code>DeleteVolume</code> RPC. The cloud volume is deleted immediately. The PV object is also deleted. This is the default for dynamically-provisioned cloud StorageClasses.</p>
+
+<h3 id="change-reclaim-policy">Changing Reclaim Policy on an Existing PV</h3>
+
+<p>The StorageClass's <code>reclaimPolicy</code> only applies at provisioning time. Dynamically created PVs inherit the StorageClass policy, but you can change it on individual PVs after creation:</p>
+
+<pre><code># Change a dynamically-provisioned PV from Delete to Retain
+kubectl patch pv &lt;pv-name&gt; \
+  -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+
+# Verify
+kubectl get pv &lt;pv-name&gt; -o jsonpath='{.spec.persistentVolumeReclaimPolicy}'</code></pre>
+
+<div class="callout tip">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body"><strong>Change to Retain before deleting a StatefulSet</strong> Before running <code>kubectl delete statefulset</code> or <code>helm uninstall</code>, patch all PVs used by the StatefulSet to <code>Retain</code>. This ensures the cloud volumes survive even if the PVCs are deleted. You can then inspect and manually clean up, or rebind to a new StatefulSet.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="statefulset-pvcs">StatefulSet volumeClaimTemplates</h2>
+
+<p>StatefulSets are the primary consumer of PVCs in production. They use <code>volumeClaimTemplates</code> to automatically provision a dedicated PVC for each replica. The PVC names follow a deterministic pattern: <code>&lt;template-name&gt;-&lt;statefulset-name&gt;-&lt;ordinal&gt;</code>.</p>
+
+<pre><code>apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: production
+spec:
+  serviceName: postgres
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16
+        volumeMounts:
+        - name: data               # matches volumeClaimTemplates[0].metadata.name
+          mountPath: /var/lib/postgresql/data
+        - name: wal                # matches volumeClaimTemplates[1].metadata.name
+          mountPath: /var/lib/postgresql/wal
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      annotations:
+        volume.beta.kubernetes.io/storage-class: gp3-encrypted
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: gp3-encrypted
+      resources:
+        requests:
+          storage: 100Gi
+  - metadata:
+      name: wal
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: gp3-encrypted
+      resources:
+        requests:
+          storage: 20Gi</code></pre>
+
+<p>This creates PVCs with names:</p>
+<ul class="plain">
+  <li><code>data-postgres-0</code>, <code>data-postgres-1</code>, <code>data-postgres-2</code></li>
+  <li><code>wal-postgres-0</code>, <code>wal-postgres-1</code>, <code>wal-postgres-2</code></li>
+</ul>
+
+<h3 id="pvc-stable-identity">Stable PVC Identity</h3>
+
+<p>When a StatefulSet pod is deleted and rescheduled (on the same or different node), it <em>reattaches</em> to the same PVC with the same name. <code>postgres-0</code> always uses <code>data-postgres-0</code>. This is the key property that makes StatefulSets suitable for databases — pod identity is coupled to storage identity.</p>
+
+<h3 id="orphaned-pvcs">Orphaned PVCs — The StatefulSet Deletion Trap</h3>
+
+<p>When you delete a StatefulSet, Kubernetes does <strong>not</strong> delete the PVCs created by volumeClaimTemplates. They are orphaned — no owner reference, no automatic cleanup. This is intentional (prevents accidental data loss), but it means:</p>
+
+<ul class="plain">
+  <li>PVCs accumulate after CI/CD teardown, failed releases, or namespace cleanup</li>
+  <li>Cloud volumes continue to be billed even after the StatefulSet is gone</li>
+  <li>A reinstalled StatefulSet with the same name will <em>reuse</em> the existing PVCs (the exact same data)</li>
+</ul>
+
+<pre><code># Find all PVCs no longer referenced by any pod
+kubectl get pvc -n &lt;ns&gt; | grep -v Bound
+
+# More precise: find PVCs with no active pod consumer
+for pvc in $(kubectl get pvc -n production -o name); do
+  name=$(echo $pvc | cut -d/ -f2)
+  pods=$(kubectl get pods -n production -o json | \
+    jq -r --arg PVC "$name" '.items[] | select(.spec.volumes[]?.persistentVolumeClaim.claimName==$PVC) | .metadata.name')
+  if [ -z "$pods" ]; then
+    echo "ORPHANED: $name"
+  fi
+done</code></pre>
+
+<h3 id="statefulset-scale-down">Scale-Down Behavior</h3>
+
+<p>Scaling a StatefulSet from 3 to 1 deletes <code>postgres-2</code> and <code>postgres-1</code> pods, but leaves <code>data-postgres-2</code> and <code>data-postgres-1</code> PVCs intact. Scaling back up to 3 reattaches to the existing PVCs. This is correct for databases where data must survive scale-down.</p>
+
+<p>If you explicitly want PVCs deleted on scale-down (e.g., ephemeral read replicas), use the <code>whenDeleted</code> and <code>whenScaled</code> fields in <code>spec.persistentVolumeClaimRetentionPolicy</code> (GA 1.27):</p>
+
+<pre><code>spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain        # Retain | Delete — on StatefulSet delete
+    whenScaled: Delete         # Retain | Delete — on scale-down
+                               # Delete removes PVCs as pods are scaled down</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>whenScaled: Delete is irreversible</strong> Setting <code>whenScaled: Delete</code> means scaling down from 3→1 will permanently delete <code>data-postgres-2</code> and <code>data-postgres-1</code> and their underlying cloud volumes. Only use this for stateless or easily re-seeded replicas (read replicas that can be resynced from primary).</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pvc-clone">PVC Cloning</h2>
+
+<p>A PVC can be created as a clone of an existing PVC using <code>dataSource</code>. The CSI driver's <code>CreateVolume</code> with a data source creates a new volume pre-populated with the source's data. Constraints:</p>
+
+<ul class="plain">
+  <li>Source and destination PVC must be in the <strong>same namespace</strong></li>
+  <li>Source and destination must use the <strong>same StorageClass</strong></li>
+  <li>Destination capacity ≥ source capacity</li>
+  <li>Source PVC must be <code>Bound</code> at the time of cloning</li>
+</ul>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-clone
+  namespace: production
+spec:
+  dataSource:
+    kind: PersistentVolumeClaim
+    name: data-postgres-0        # source PVC (must be Bound, same namespace)
+  accessModes: [ReadWriteOnce]
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 100Gi             # must be ≥ source capacity</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="restore-from-snapshot">Restore from Snapshot</h2>
+
+<p>Restore a PVC from a VolumeSnapshot using <code>dataSource</code> with the snapshot as source. The snapshot must be in the same namespace:</p>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-restored
+  namespace: production
+spec:
+  dataSource:
+    apiGroup: snapshot.storage.k8s.io
+    kind: VolumeSnapshot
+    name: postgres-snap-2024-01-15    # VolumeSnapshot in same namespace
+  accessModes: [ReadWriteOnce]
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 100Gi</code></pre>
+
+<h3 id="datasourceref">dataSourceRef — Cross-Namespace Restore (1.26+)</h3>
+
+<p><code>dataSourceRef</code> extends the clone/restore model to allow referencing a <code>VolumeSnapshotContent</code> directly (bypassing the namespace constraint of VolumeSnapshot). Requires the <code>CrossNamespaceVolumeDataSource</code> feature gate and a <code>ReferenceGrant</code>-like mechanism (via namespace annotation):</p>
+
+<pre><code>spec:
+  dataSourceRef:
+    apiGroup: snapshot.storage.k8s.io
+    kind: VolumeSnapshotContent     # cluster-scoped, cross-namespace
+    name: vsc-shared-backup
+    namespace: backup-ns            # namespace of the VolumeSnapshotContent</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="default-storageclass">Default StorageClass</h2>
+
+<p>A StorageClass can be designated as the default by adding the annotation <code>storageclass.kubernetes.io/is-default-class: "true"</code>. When a PVC is created without specifying <code>storageClassName</code>, the default StorageClass is used.</p>
+
+<pre><code># Check which StorageClass is default
+kubectl get storageclass
+# NAME              PROVISIONER         RECLAIMPOLICY  VOLUMEBINDINGMODE     DEFAULT
+# gp2               kubernetes.io/aws   Delete         Immediate
+# gp3 (default)     ebs.csi.aws.com     Delete         WaitForFirstConsumer  ✓
+
+# Change the default StorageClass
+kubectl patch storageclass gp2 -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl patch storageclass gp3 -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Multiple default StorageClasses</strong> If multiple StorageClasses are marked default, PVC creation without an explicit storageClassName will fail with an admission error. Always ensure exactly one default at a time when switching defaults.</div>
+</div>
+
+<h3 id="retroactive-default">Retroactive Default Assignment (1.26+)</h3>
+
+<p>In Kubernetes 1.26+, if a PVC was created without a <code>storageClassName</code> (explicitly set to <code>""</code> was treated differently), and no default existed at the time, a newly-set default StorageClass is retroactively assigned to the Pending PVC. This allows fixing PVCs that are stuck Pending due to a missing default without recreating them.</p>
+
+<!-- ============================================================ -->
+<h2 id="pv-migration">In-Tree to CSI Migration</h2>
+
+<p>Kubernetes has been migrating in-tree volume plugins to CSI drivers. Most major cloud providers completed migration by 1.27–1.28. When migration is active for a plugin, the kubelet transparently routes in-tree volume operations to the CSI driver.</p>
+
+<h3 id="migration-annotations">Migration Annotations</h3>
+<pre><code># On a dynamically provisioned PV, these annotations track migration:
+annotations:
+  pv.kubernetes.io/provisioned-by: kubernetes.io/aws-ebs    # original in-tree provisioner
+  volume.kubernetes.io/migrated-to: ebs.csi.aws.com          # CSI driver taking over</code></pre>
+
+<h3 id="migration-impact">Migration Impact on Existing Clusters</h3>
+<table>
+  <tr><th>Scenario</th><th>Behavior</th></tr>
+  <tr><td>Existing PVs created by in-tree plugin</td><td>Transparently served by CSI driver after migration; no PV changes needed</td></tr>
+  <tr><td>StorageClass with in-tree provisioner name</td><td>Admission controller rewrites to CSI provisioner name (on clusters with migration enabled)</td></tr>
+  <tr><td>In-tree plugin removed from Kubernetes</td><td>Old PVs using that plugin type are invalid; must migrate before upgrading</td></tr>
+  <tr><td>VolumeAttachment objects</td><td>New CSI-style VolumeAttachment created; old in-tree attachment may linger</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="force-detach">Detach and Force-Detach Scenarios</h2>
+
+<p>A PV attached to a node is represented by a <code>VolumeAttachment</code> object. Under normal operation, kubelet unmounts volumes before pod deletion. Problems arise when a node becomes unreachable.</p>
+
+<h3 id="node-failure-scenario">Node Failure with Attached PV</h3>
+
+<div class="diagram">
+<pre>
+Node N fails (network partition / power loss)
+    │
+    ▼
+Node N's status becomes NotReady
+    │
+    ├─► After node-monitor-grace-period (default 40s):
+    │   Node marked Unreachable
+    │
+    ├─► After pod-eviction-timeout (default 5min):
+    │   Pods on N get deletion timestamp set
+    │
+    ├─► New pod scheduled on node M
+    │   ↓
+    │   Kubelet on M attempts NodePublishVolume
+    │   ↓
+    │   CSI driver tries to attach EBS volume to node M
+    │   ↓
+    │   BLOCKED: EBS volume still "attached" to node N in AWS
+    │
+    └─► Force-detach after max-wait:
+        CSI driver calls ControllerUnpublishVolume
+        (force-detach: works because EBS knows node N is gone)
+        Volume attached to node M, pod starts
+</pre>
+</div>
+
+<h3 id="stuck-volumeattachment">Stuck VolumeAttachment</h3>
+<pre><code># View VolumeAttachment objects
+kubectl get volumeattachment
+
+# Identify which node a PV is attached to
+kubectl get volumeattachment -o json | \
+  jq -r '.items[] | select(.spec.source.persistentVolumeName=="pv-prod-db-001") |
+  "\(.metadata.name) → node: \(.spec.nodeName) attached: \(.status.attached)"'
+
+# If node is truly gone and attachment is stuck, force delete the VolumeAttachment
+# This tells the CSI driver to release the attachment
+kubectl delete volumeattachment &lt;name&gt;
+
+# WARNING: Only do this if the node is confirmed gone or the volume is not mounted.
+# Force-deleting an attachment while a node is still mounting the volume
+# can cause data corruption if two nodes mount the volume simultaneously.</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="pvc-resize">PVC Resizing Deep Dive</h2>
+
+<p>Volume expansion requires <code>allowVolumeExpansion: true</code> on the StorageClass. Expansion is a two-phase operation:</p>
+
+<ol class="steps">
+  <li><strong>Controller expand</strong> — CSI <code>ControllerExpandVolume</code> resizes the backing cloud storage (e.g., EBS volume goes from 100Gi → 200Gi). This happens while the pod may be running.</li>
+  <li><strong>Node expand</strong> — CSI <code>NodeExpandVolume</code> runs filesystem resize commands (<code>resize2fs</code> for ext4, <code>xfs_growfs</code> for xfs) on the node where the volume is mounted. This requires the volume to be mounted by a running pod.</li>
+</ol>
+
+<pre><code># Step 1: Edit the PVC
+kubectl patch pvc data-postgres-0 -n production \
+  -p '{"spec":{"resources":{"requests":{"storage":"200Gi"}}}}'
+
+# Step 2: Watch status conditions
+kubectl get pvc data-postgres-0 -n production -w -o wide
+
+# Step 3: Check conditions if stuck
+kubectl describe pvc data-postgres-0 -n production | grep -A 4 Conditions:
+# Type                      Status
+# FileSystemResizePending   True
+#   → volume resized at cloud layer; waiting for pod to mount and run NodeExpandVolume
+
+# Step 4: Ensure the pod is running (not CrashLoopBackOff)
+# Kubelet runs NodeExpandVolume on the next mount cycle
+
+# Step 5: Verify from inside the pod
+kubectl exec -it postgres-0 -n production -- df -h /var/lib/postgresql/data</code></pre>
+
+<table>
+  <tr><th>Condition</th><th>Meaning</th></tr>
+  <tr><td><code>FileSystemResizePending: True</code></td><td>Cloud volume resized; filesystem resize pending — pod must be running and mounting the volume</td></tr>
+  <tr><td><code>Resizing: True</code></td><td>Resize in progress (controller expand still running)</td></tr>
+  <tr><td>No conditions, capacity updated</td><td>Resize complete</td></tr>
+</table>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Online resize vs driver support</strong> Not all CSI drivers support online node expansion (while volume is mounted). Azure Disk and GCE PD support online expansion. Older EBS driver versions required the pod to be stopped first. Check your driver's release notes. If the driver doesn't support online node expansion, you must delete the pod (unmount), let the expansion complete, then redeploy.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics and Alerting</h2>
+
+<h3>Key Metrics</h3>
+<table>
+  <tr><th>Metric</th><th>Source</th><th>Alert Threshold</th></tr>
+  <tr><td><code>kube_persistentvolumeclaim_status_phase</code></td><td>kube-state-metrics</td><td>phase=Pending for &gt;10m, phase=Lost for &gt;1m</td></tr>
+  <tr><td><code>kube_persistentvolume_status_phase</code></td><td>kube-state-metrics</td><td>phase=Failed</td></tr>
+  <tr><td><code>kube_persistentvolumeclaim_resource_requests_storage_bytes</code></td><td>kube-state-metrics</td><td>Capacity planning: total PVC bytes per namespace</td></tr>
+  <tr><td><code>kubelet_volume_stats_used_bytes / capacity_bytes</code></td><td>kubelet</td><td>&gt;85% → warn; &gt;95% → critical</td></tr>
+  <tr><td><code>storage_operation_duration_seconds{operation_name="volume_attach"}</code></td><td>kubelet</td><td>P99 &gt; 60s</td></tr>
+  <tr><td><code>attachdetach_controller_total_volumes</code></td><td>kube-controller-manager</td><td>Unattached volumes growing over time</td></tr>
+</table>
+
+<h3>Alerting Rules</h3>
+<pre><code>groups:
+- name: persistent-volumes
+  rules:
+  - alert: PVCPendingTooLong
+    expr: kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+    for: 10m
+    labels: {severity: warning}
+    annotations:
+      summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} stuck Pending"
+
+  - alert: PVCLost
+    expr: kube_persistentvolumeclaim_status_phase{phase="Lost"} == 1
+    for: 1m
+    labels: {severity: critical}
+    annotations:
+      summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is Lost — data may be inaccessible"
+
+  - alert: PVFailed
+    expr: kube_persistentvolume_status_phase{phase="Failed"} == 1
+    for: 1m
+    labels: {severity: critical}
+    annotations:
+      summary: "PV {{ $labels.persistentvolume }} in Failed state — reclamation error"
+
+  - alert: OrphanedPVCsAccumulating
+    expr: count(kube_persistentvolumeclaim_status_phase{phase="Bound"}) by (namespace)
+          - count(kube_pod_spec_volumes_persistentvolumeclaims_info) by (namespace) > 5
+    for: 30m
+    labels: {severity: warning}
+    annotations:
+      summary: "Namespace {{ $labels.namespace }} has many PVCs not mounted by any pod"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<h3>Runbook: PVC Stuck in Pending — Provisioning Failure</h3>
+<pre><code># 1. Describe PVC — check Events section
+kubectl describe pvc &lt;name&gt; -n &lt;ns&gt;
+# Common messages:
+# "no persistent volumes available" → no matching static PV
+# "waiting for a volume to be created, either by external provisioner..." → provisioner issue
+# "error setting quota" → ResourceQuota exceeded
+# "waiting for first consumer to be created before binding" → WaitForFirstConsumer, no pod yet
+
+# 2. Check CSI provisioner logs
+kubectl logs -n kube-system -l app=ebs-csi-controller -c csi-provisioner --tail=100 | grep -i error
+
+# 3. Check if ResourceQuota is blocking
+kubectl describe resourcequota -n &lt;ns&gt;
+
+# 4. Verify StorageClass exists and provisioner is running
+kubectl get storageclass &lt;name&gt;
+kubectl get pods -n kube-system | grep csi</code></pre>
+
+<h3>Runbook: PVC Stuck in Terminating</h3>
+<pre><code># Check finalizers
+kubectl get pvc &lt;name&gt; -o jsonpath='{.metadata.finalizers}'
+# ["kubernetes.io/pvc-protection"]
+
+# Find which pod is using the PVC
+kubectl get pods -n &lt;ns&gt; -o json | jq -r \
+  '.items[] | select(.spec.volumes[]?.persistentVolumeClaim.claimName=="&lt;pvc-name&gt;") | .metadata.name'
+
+# Delete the pod using the PVC first, then PVC will complete deletion
+kubectl delete pod &lt;pod-name&gt; -n &lt;ns&gt;
+
+# If pod is already gone but PVC still stuck (bug/finalizer stuck):
+kubectl patch pvc &lt;name&gt; -n &lt;ns&gt; -p '{"metadata":{"finalizers":null}}'</code></pre>
+
+<h3>Runbook: PVC in Lost Phase</h3>
+<pre><code># The PV that was bound to this PVC no longer exists
+kubectl get pvc &lt;name&gt; -o jsonpath='{.spec.volumeName}'   # → pv-prod-db-001
+
+# Check if PV exists
+kubectl get pv pv-prod-db-001   # → NotFound
+
+# Recovery: recreate the PV pointing to the same cloud volume
+# 1. Find the cloud volume ID from the deleted PV (check your monitoring / cloud console)
+# 2. Create a new PV:
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-prod-db-001-recovered
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes: [ReadWriteOnce]
+  storageClassName: gp3-encrypted
+  persistentVolumeReclaimPolicy: Retain
+  csi:
+    driver: ebs.csi.aws.com
+    volumeHandle: vol-0abc123def456789   # original cloud volume ID
+    fsType: ext4
+  claimRef:                   # pin to the lost PVC
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: &lt;pvc-name&gt;
+    namespace: &lt;ns&gt;
+    uid: &lt;pvc-uid&gt;            # kubectl get pvc &lt;name&gt; -o jsonpath='{.metadata.uid}'
+EOF</code></pre>
+
+<h3>Runbook: Released PV Won't Rebind</h3>
+<pre><code># PV is in Released state; new PVC won't bind even though sizes/classes match
+# Cause: claimRef still points to old PVC
+
+kubectl describe pv &lt;name&gt; | grep -A 5 "Claim:"
+# Claim: production/old-pvc   ← still points to deleted PVC
+
+# Remove claimRef to make PV Available
+kubectl patch pv &lt;name&gt; --type=json \
+  -p '[{"op":"remove","path":"/spec/claimRef"}]'
+
+# PV is now Available; create new PVC to claim it</code></pre>
+
+<h3>Runbook: Orphaned PVCs After StatefulSet Deletion</h3>
+<pre><code># List all PVCs not mounted by any pod in a namespace
+kubectl get pvc -n production --no-headers | awk '{print $1}' | while read pvc; do
+  pods=$(kubectl get pods -n production -o json | \
+    jq -r --arg PVC "$pvc" '.items[] | select(.spec.volumes[]?.persistentVolumeClaim.claimName==$PVC) | .metadata.name')
+  [ -z "$pods" ] && echo "ORPHANED: $pvc"
+done
+
+# Safely delete orphaned PVCs (after confirming data is not needed)
+# First patch to Retain to ensure cloud volume persists as safety net
+kubectl get pvc -n production -o name | xargs -I{} kubectl patch {} -n production \
+  -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+# Then delete PVCs
+kubectl delete pvc -n production &lt;orphaned-pvc-name&gt;</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol style="color:var(--text2);padding-left:24px;font-size:14px;line-height:2.2;">
+  <li><strong>Default StatefulSet PVs to Retain</strong>. Before any StatefulSet deletion or helm uninstall, patch all bound PVs to <code>Retain</code>. This is your last line of defence against accidental data loss.</li>
+  <li><strong>Use <code>persistentVolumeClaimRetentionPolicy</code></strong> (GA 1.27) in StatefulSets to explicitly declare whether PVCs should survive scale-down. Default is Retain for both — which is correct for databases but may cause cost accumulation for ephemeral replicas.</li>
+  <li><strong>Monitor for orphaned PVCs</strong>. Run the orphan-detection script or alert on PVCs not mounted by any pod for &gt;48 hours. Orphaned PVCs = orphaned cloud volumes = unexpected charges.</li>
+  <li><strong>Never reuse a Released PV without inspecting data</strong>. Removing claimRef makes the PV bindable again with previous data intact. Verify the volume is sanitized or explicitly acceptable for the new consumer.</li>
+  <li><strong>Set <code>volumeName</code> for static binding</strong>, not just a label selector. Label selectors can match multiple PVs — volumeName is deterministic and prevents unexpected cross-binding in shared clusters.</li>
+  <li><strong>Use <code>allowVolumeExpansion: true</code> on all StorageClasses</strong>. It costs nothing. Enabling it retroactively on a StorageClass does not expand existing PVCs — it only allows future expansion requests.</li>
+  <li><strong>Implement PVC snapshots before any schema migration or data transformation</strong>. A PVC clone + snapshot takes seconds and gives you an instant rollback path. See <a href="05-volume-snapshots.html">05-volume-snapshots.html</a>.</li>
+  <li><strong>Avoid manual PV creation in dynamic clusters</strong>. Static PVs require operator expertise to manage correctly (claimRef, reclaim, phase transitions). Use dynamic provisioning via StorageClass for all new workloads; reserve static binding for imports of existing cloud volumes.</li>
+</ol>
+
+<!-- ============================================================ -->
+<div class="section-nav">
+  <a href="01-volumes.html">
+    <span class="nav-label">← Previous</span>
+    <span class="nav-title">Volumes</span>
+  </a>
+  <a href="03-storage-classes.html" class="next">
+    <span class="nav-label">Next →</span>
+    <span class="nav-title">Storage Classes</span>
+  </a>
+</div>
+
+</main>
+
+<aside class="toc-sidebar">
+  <h4>On This Page</h4>
+  <a href="#object-model">Object Model</a>
+  <a href="#pv-spec">PV Spec Reference</a>
+  <a href="#pvc-spec">PVC Spec Reference</a>
+  <a href="#binding-algorithm">Binding Algorithm</a>
+  <a href="#binding-modes" class="toc-h3">WaitForFirstConsumer</a>
+  <a href="#pv-phases">PV &amp; PVC Phases</a>
+  <a href="#pv-states" class="toc-h3">PV Phases</a>
+  <a href="#pvc-states" class="toc-h3">PVC Phases</a>
+  <a href="#finalizers">Finalizers</a>
+  <a href="#pvc-protection" class="toc-h3">PVC Protection</a>
+  <a href="#pv-protection" class="toc-h3">PV Protection</a>
+  <a href="#reclaim-policy">Reclaim Policy</a>
+  <a href="#retain-policy" class="toc-h3">Retain</a>
+  <a href="#delete-policy" class="toc-h3">Delete</a>
+  <a href="#change-reclaim-policy" class="toc-h3">Changing Policy</a>
+  <a href="#statefulset-pvcs">StatefulSet PVCs</a>
+  <a href="#pvc-stable-identity" class="toc-h3">Stable Identity</a>
+  <a href="#orphaned-pvcs" class="toc-h3">Orphaned PVCs</a>
+  <a href="#statefulset-scale-down" class="toc-h3">Scale-Down</a>
+  <a href="#pvc-clone">PVC Cloning</a>
+  <a href="#restore-from-snapshot">Restore from Snapshot</a>
+  <a href="#datasourceref" class="toc-h3">dataSourceRef</a>
+  <a href="#default-storageclass">Default StorageClass</a>
+  <a href="#retroactive-default" class="toc-h3">Retroactive Default</a>
+  <a href="#pv-migration">In-Tree to CSI Migration</a>
+  <a href="#force-detach">Detach Scenarios</a>
+  <a href="#stuck-volumeattachment" class="toc-h3">Stuck Attachment</a>
+  <a href="#pvc-resize">PVC Resizing</a>
+  <a href="#metrics">Metrics &amp; Alerting</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<script>
+(function(){
+  const t=localStorage.getItem('k8s-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('theme-icon').textContent=t==='dark'?'☀️':'🌙';
+})();
+function toggleTheme(){
+  const c=document.documentElement.getAttribute('data-theme');
+  const n=c==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',n);
+  localStorage.setItem('k8s-theme',n);
+  document.getElementById('theme-icon').textContent=n==='dark'?'☀️':'🌙';
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>300));
+function scrollToTop(){main.scrollTo({top:0,behavior:'smooth'});}
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.onclick=()=>{
+    navigator.clipboard.writeText(pre.innerText.replace('Copy','').trim());
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  };
+  pre.appendChild(btn);
+});
+const tocLinks=document.querySelectorAll('.toc-sidebar a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(a=>a.classList.remove('active'));
+      const a=document.querySelector(`.toc-sidebar a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h=>obs.observe(h));
+function filterNav(val){
+  const q=val.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+</script>
+</body>
+</html>

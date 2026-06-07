@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>00 · Introduction to Kubernetes | K8s Internals</title>
+<meta name="description" content="Complete production-grade introduction to Kubernetes: what it is, why it exists, problems it solves, comparison with traditional systems, and the mental model every engineer needs."/>
+
+<!-- ========== SHARED CSS ========== -->
+<style>
+/* ---- CSS Variables (Dark / Light) ---- */
+:root[data-theme="dark"]{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--border2:#484f58;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#58a6ff;--accent2:#1f6feb;--accent-hover:#79c0ff;
+  --green:#3fb950;--red:#f85149;--yellow:#d29922;--orange:#db6d28;
+  --purple:#bc8cff;--pink:#f778ba;--teal:#39d353;
+  --code-bg:#161b22;--code-border:#30363d;
+  --sidebar-w:280px;--toc-w:240px;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.6);
+}
+:root[data-theme="light"]{
+  --bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;
+  --border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text2:#57606a;--text3:#6e7781;
+  --accent:#0969da;--accent2:#0550ae;--accent-hover:#0550ae;
+  --green:#1a7f37;--red:#cf222e;--yellow:#9a6700;--orange:#bc4c00;
+  --purple:#8250df;--pink:#bf3989;--teal:#116329;
+  --code-bg:#f6f8fa;--code-border:#d0d7de;
+  --shadow:0 1px 3px rgba(0,0,0,.12);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.15);
+}
+
+/* ---- Reset & Base ---- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.7;
+  display:flex;flex-direction:column;min-height:100vh;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-hover);text-decoration:underline}
+h1,h2,h3,h4,h5,h6{line-height:1.3;font-weight:600;color:var(--text)}
+h1{font-size:2rem;margin-bottom:1rem}
+h2{font-size:1.5rem;margin:2.5rem 0 .75rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.2rem;margin:2rem 0 .5rem;color:var(--accent)}
+h4{font-size:1rem;margin:1.5rem 0 .4rem;color:var(--text2)}
+p{margin-bottom:1rem;color:var(--text)}
+ul,ol{margin:.5rem 0 1rem 1.5rem}
+li{margin:.25rem 0}
+code{
+  font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+  font-size:.85em;background:var(--code-bg);
+  border:1px solid var(--code-border);border-radius:4px;
+  padding:.1em .35em;color:var(--pink)
+}
+pre{
+  background:var(--code-bg);border:1px solid var(--code-border);
+  border-radius:8px;padding:1.25rem;overflow-x:auto;
+  margin:1rem 0;position:relative;
+}
+pre code{background:none;border:none;padding:0;color:var(--text);font-size:.85rem;line-height:1.6}
+blockquote{
+  border-left:4px solid var(--accent2);background:var(--bg2);
+  padding:.75rem 1rem;margin:1rem 0;border-radius:0 6px 6px 0;
+  color:var(--text2);
+}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+th{background:var(--bg3);padding:.6rem .9rem;text-align:left;
+   border:1px solid var(--border);font-weight:600;color:var(--text)}
+td{padding:.55rem .9rem;border:1px solid var(--border);color:var(--text2)}
+tr:hover td{background:var(--bg2)}
+img{max-width:100%;border-radius:6px}
+hr{border:none;border-top:1px solid var(--border);margin:2rem 0}
+
+/* ---- Layout Shell ---- */
+.layout{display:flex;flex:1}
+.sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background:var(--bg2);border-right:1px solid var(--border);
+  height:100vh;position:sticky;top:0;overflow-y:auto;
+  display:flex;flex-direction:column;z-index:100;
+}
+.main-content{flex:1;min-width:0;display:flex;flex-direction:column}
+.article-wrap{
+  max-width:860px;margin:0 auto;padding:2.5rem 2rem 4rem;
+  flex:1;width:100%;
+}
+.toc-panel{
+  width:var(--toc-w);min-width:var(--toc-w);
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  padding:1.5rem 1rem;border-left:1px solid var(--border);
+  background:var(--bg2);
+}
+@media(max-width:1200px){.toc-panel{display:none}}
+@media(max-width:900px){
+  .sidebar{
+    position:fixed;left:-var(--sidebar-w);transform:translateX(-100%);
+    transition:transform .25s;z-index:200;
+  }
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;
+  }
+  .sidebar-overlay.show{display:block}
+  .article-wrap{padding:1.5rem 1rem 3rem}
+}
+
+/* ---- Top Nav ---- */
+.topnav{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:.6rem 1.25rem;display:flex;align-items:center;gap:.75rem;
+  position:sticky;top:0;z-index:150;
+}
+.topnav .menu-btn{
+  display:none;background:none;border:none;color:var(--text);
+  font-size:1.25rem;cursor:pointer;padding:.25rem;
+}
+@media(max-width:900px){.topnav .menu-btn{display:block}}
+.topnav .brand{font-weight:700;font-size:1rem;color:var(--accent);white-space:nowrap}
+.topnav .search-wrap{flex:1;max-width:480px;position:relative}
+.topnav .search-wrap input{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:6px;padding:.4rem .75rem .4rem 2rem;
+  color:var(--text);font-size:.875rem;
+}
+.topnav .search-wrap input:focus{outline:none;border-color:var(--accent)}
+.topnav .search-wrap .si{
+  position:absolute;left:.6rem;top:50%;transform:translateY(-50%);
+  color:var(--text3);font-size:.85rem;pointer-events:none;
+}
+.topnav .spacer{flex:1}
+.theme-btn{
+  background:none;border:1px solid var(--border2);border-radius:6px;
+  color:var(--text);padding:.35rem .6rem;cursor:pointer;font-size:.85rem;
+  white-space:nowrap;
+}
+.theme-btn:hover{background:var(--bg3)}
+
+/* ---- Breadcrumb ---- */
+.breadcrumb{
+  display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;
+  font-size:.8rem;color:var(--text3);margin-bottom:1.5rem;
+}
+.breadcrumb a{color:var(--text2)}
+.breadcrumb .sep{color:var(--text3)}
+
+/* ---- Sidebar Nav ---- */
+.sidebar-header{
+  padding:1rem 1rem .5rem;border-bottom:1px solid var(--border);
+}
+.sidebar-header .logo{font-weight:700;font-size:1rem;color:var(--accent)}
+.sidebar-header .sub{font-size:.75rem;color:var(--text3)}
+.sidebar-search{padding:.6rem .75rem;border-bottom:1px solid var(--border)}
+.sidebar-search input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:5px;padding:.35rem .6rem;color:var(--text);font-size:.8rem;
+}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+.sidebar-nav{padding:.5rem 0;flex:1}
+.sidebar-nav .section-label{
+  font-size:.7rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--text3);padding:.6rem 1rem .2rem;
+}
+.sidebar-nav a{
+  display:block;padding:.3rem 1rem .3rem 1.25rem;
+  font-size:.83rem;color:var(--text2);border-left:2px solid transparent;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sidebar-nav a:hover{background:var(--bg3);color:var(--text);text-decoration:none}
+.sidebar-nav a.active{
+  background:var(--bg3);color:var(--accent);
+  border-left-color:var(--accent);
+}
+
+/* ---- TOC Panel ---- */
+.toc-panel h4{
+  font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text3);margin-bottom:.75rem;
+}
+.toc-panel ol{list-style:none;margin:0;padding:0}
+.toc-panel ol li{margin:.15rem 0}
+.toc-panel ol li a{
+  font-size:.8rem;color:var(--text2);padding:.15rem 0;
+  display:block;
+}
+.toc-panel ol li a:hover{color:var(--accent);text-decoration:none}
+.toc-panel ol li a.active{color:var(--accent);font-weight:600}
+.toc-panel ol li.l2{padding-left:1rem}
+.toc-panel ol li.l3{padding-left:2rem}
+
+/* ---- Prev/Next Nav ---- */
+.doc-nav{
+  display:flex;gap:1rem;margin-top:3rem;padding-top:1.5rem;
+  border-top:1px solid var(--border);
+}
+.doc-nav a{
+  flex:1;display:flex;flex-direction:column;gap:.2rem;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:.9rem 1.1rem;transition:border-color .15s;
+}
+.doc-nav a:hover{border-color:var(--accent);text-decoration:none}
+.doc-nav .label{font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.doc-nav .title{font-size:.9rem;color:var(--accent);font-weight:600}
+.doc-nav .next-link{text-align:right}
+
+/* ---- Callout Boxes ---- */
+.callout{
+  border-radius:8px;padding:1rem 1.25rem;margin:1.25rem 0;
+  border-left:4px solid;
+}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);color:var(--text)}
+.callout.warn{background:rgba(210,153,34,.1);border-color:var(--yellow);color:var(--text)}
+.callout.danger{background:rgba(248,81,73,.1);border-color:var(--red);color:var(--text)}
+.callout.tip{background:rgba(63,185,80,.08);border-color:var(--green);color:var(--text)}
+.callout strong{display:block;margin-bottom:.35rem}
+
+/* ---- Badges ---- */
+.badge{
+  display:inline-block;font-size:.7rem;font-weight:700;
+  padding:.15em .5em;border-radius:3px;text-transform:uppercase;
+  letter-spacing:.04em;vertical-align:middle;margin-left:.35rem;
+}
+.badge.new{background:var(--green);color:#000}
+.badge.stable{background:var(--accent2);color:#fff}
+.badge.beta{background:var(--yellow);color:#000}
+.badge.alpha{background:var(--orange);color:#fff}
+.badge.deprecated{background:var(--red);color:#fff}
+
+/* ---- Collapsible ---- */
+details{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;margin:1rem 0;overflow:hidden;
+}
+details summary{
+  padding:.75rem 1rem;cursor:pointer;font-weight:600;
+  color:var(--text);list-style:none;display:flex;
+  justify-content:space-between;align-items:center;
+  user-select:none;
+}
+details summary::after{content:"▶";font-size:.75rem;color:var(--text3);transition:transform .2s}
+details[open] summary::after{transform:rotate(90deg)}
+details summary:hover{background:var(--bg3)}
+details .details-body{padding:.75rem 1rem 1rem}
+
+/* ---- Diagram / SVG boxes ---- */
+.diagram-wrap{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:1.5rem;margin:1.5rem 0;overflow-x:auto;
+  text-align:center;
+}
+.diagram-wrap .caption{
+  font-size:.8rem;color:var(--text3);margin-top:.75rem;
+  font-style:italic;
+}
+
+/* ---- Sequence Diagram (CSS-based) ---- */
+.seq{width:100%;font-size:.8rem;overflow-x:auto}
+.seq table{width:100%;font-size:.8rem;border:none}
+.seq table td{border:none;padding:.3rem .6rem;text-align:center;background:none}
+.actor-box{
+  background:var(--accent2);color:#fff;font-weight:700;
+  border-radius:5px;padding:.35rem .75rem;display:inline-block;font-size:.8rem;
+}
+.seq-arrow{color:var(--yellow);font-weight:700}
+.seq-msg{color:var(--text2);font-style:italic;font-size:.78rem}
+.seq-line{border-top:2px dashed var(--border2);margin:.3rem 0}
+
+/* ---- Architecture Box ---- */
+.arch-grid{
+  display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  margin:1.5rem 0;
+}
+.arch-box{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:1rem;
+}
+.arch-box h4{margin:0 0 .5rem;font-size:.9rem;color:var(--accent)}
+.arch-box ul{margin:0;padding-left:1.1rem}
+.arch-box ul li{font-size:.82rem;color:var(--text2);margin:.15rem 0}
+
+/* ---- Copy Button ---- */
+.copy-btn{
+  position:absolute;top:.6rem;right:.6rem;
+  background:var(--bg4);border:1px solid var(--border2);
+  border-radius:5px;color:var(--text2);font-size:.72rem;
+  padding:.25rem .55rem;cursor:pointer;opacity:0;
+  transition:opacity .15s;
+}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg3);color:var(--text)}
+
+/* ---- Back to Top ---- */
+#back-top{
+  position:fixed;bottom:1.5rem;right:1.5rem;
+  background:var(--accent2);color:#fff;border:none;
+  border-radius:50%;width:40px;height:40px;font-size:1.1rem;
+  cursor:pointer;display:none;align-items:center;justify-content:center;
+  z-index:300;box-shadow:var(--shadow-lg);transition:background .15s;
+}
+#back-top.show{display:flex}
+#back-top:hover{background:var(--accent)}
+
+/* ---- Search Highlight ---- */
+mark{background:rgba(210,153,34,.35);color:var(--text);border-radius:2px;padding:0 .1em}
+
+/* ---- File Meta Header ---- */
+.file-meta{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:1rem 1.25rem;margin-bottom:2rem;
+  font-size:.83rem;display:grid;gap:.4rem;
+}
+.file-meta strong{color:var(--text3);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}
+.file-meta .tags{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.15rem}
+.file-meta .tag{
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:12px;padding:.15em .6em;font-size:.75rem;color:var(--text2);
+}
+
+/* ---- Dep graph ---- */
+.dep-graph{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:1.25rem;margin:1.5rem 0;
+}
+.dep-graph h4{margin-bottom:.75rem;color:var(--accent)}
+.dep-tree{list-style:none;padding:0;margin:0}
+.dep-tree li{padding:.25rem 0;font-size:.83rem;color:var(--text2);padding-left:1.2rem;
+  border-left:2px solid var(--border);margin-left:.5rem}
+.dep-tree li::before{content:"→ ";color:var(--accent)}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ===== TOP NAV ===== -->
+<nav class="topnav">
+  <button class="menu-btn" id="menuBtn" aria-label="Toggle sidebar">☰</button>
+  <span class="brand">☸ K8s Internals</span>
+  <div class="search-wrap">
+    <span class="si">🔍</span>
+    <input type="text" id="globalSearch" placeholder="Search topics…" autocomplete="off"/>
+  </div>
+  <span class="spacer"></span>
+  <button class="theme-btn" id="themeBtn">☀ Light</button>
+</nav>
+
+<!-- ===== LAYOUT ===== -->
+<div class="layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">☸ Kubernetes Internals</div>
+    <div class="sub">Production-grade deep-dive</div>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="sidebarSearch" placeholder="Filter pages…" autocomplete="off"/>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav">
+    <div class="section-label">00 · Foundations</div>
+    <a href="00-introduction.html" class="active">00 · Introduction</a>
+    <a href="01-history-of-kubernetes.html">01 · History</a>
+    <a href="02-container-orchestration.html">02 · Container Orchestration</a>
+    <a href="03-cluster-architecture-overview.html">03 · Cluster Architecture</a>
+    <a href="04-kubernetes-api-model.html">04 · API Model</a>
+
+    <div class="section-label">01 · Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">00 · Overview</a>
+    <a href="../01-control-plane/01-kube-apiserver.html">01 · kube-apiserver</a>
+    <a href="../01-control-plane/02-etcd.html">02 · etcd</a>
+    <a href="../01-control-plane/03-kube-scheduler.html">03 · Scheduler</a>
+    <a href="../01-control-plane/04-kube-controller-manager.html">04 · Controller Manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">05 · Cloud Controller</a>
+    <a href="../01-control-plane/06-admission-controllers.html">06 · Admission Controllers</a>
+    <a href="../01-control-plane/07-api-aggregation.html">07 · API Aggregation</a>
+
+    <div class="section-label">02 · Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">00 · Worker Node</a>
+    <a href="../02-node-components/01-kubelet.html">01 · kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">02 · kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime-interface.html">03 · CRI</a>
+    <a href="../02-node-components/04-containerd-crio-docker.html">04 · containerd/CRI-O</a>
+    <a href="../02-node-components/05-linux-kernel-cgroups-namespaces.html">05 · cgroups/Namespaces</a>
+    <a href="../02-node-components/06-node-lifecycle.html">06 · Node Lifecycle</a>
+    <a href="../02-node-components/07-windows-worker-nodes.html">07 · Windows Nodes</a>
+
+    <div class="section-label">03 · Networking</div>
+    <a href="../03-networking/00-networking-overview.html">00 · Overview</a>
+    <a href="../03-networking/01-cni-architecture.html">01 · CNI</a>
+    <a href="../03-networking/02-pod-networking.html">02 · Pod Networking</a>
+    <a href="../03-networking/03-service-networking.html">03 · Service Networking</a>
+    <a href="../03-networking/04-kube-proxy-iptables-ipvs-ebpf.html">04 · kube-proxy modes</a>
+    <a href="../03-networking/05-dns-coredns.html">05 · DNS / CoreDNS</a>
+    <a href="../03-networking/06-ingress.html">06 · Ingress</a>
+    <a href="../03-networking/07-gateway-api.html">07 · Gateway API</a>
+    <a href="../03-networking/08-network-policies.html">08 · Network Policies</a>
+    <a href="../03-networking/09-overlay-networking.html">09 · Overlay Networking</a>
+    <a href="../03-networking/10-ebpf-deep-dive.html">10 · eBPF</a>
+    <a href="../03-networking/11-istio-linkerd-service-mesh.html">11 · Service Mesh</a>
+
+    <div class="section-label">04 · Storage</div>
+    <a href="../04-storage/00-storage-overview.html">00 · Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">01 · PVs</a>
+    <a href="../04-storage/02-persistent-volume-claims.html">02 · PVCs</a>
+    <a href="../04-storage/03-storage-classes.html">03 · Storage Classes</a>
+    <a href="../04-storage/04-container-storage-interface.html">04 · CSI</a>
+    <a href="../04-storage/05-dynamic-provisioning.html">05 · Dynamic Provisioning</a>
+    <a href="../04-storage/06-stateful-workloads.html">06 · Stateful Workloads</a>
+    <a href="../04-storage/07-backup-disaster-recovery.html">07 · Backup/DR</a>
+
+    <div class="section-label">05 · Workloads</div>
+    <a href="../05-workloads/00-workloads-overview.html">00 · Overview</a>
+    <a href="../05-workloads/01-pods.html">01 · Pods</a>
+    <a href="../05-workloads/02-multi-container-pods.html">02 · Multi-container</a>
+    <a href="../05-workloads/03-init-containers.html">03 · Init Containers</a>
+    <a href="../05-workloads/04-sidecars.html">04 · Sidecars</a>
+    <a href="../05-workloads/05-ephemeral-containers.html">05 · Ephemeral</a>
+    <a href="../05-workloads/06-replicasets.html">06 · ReplicaSets</a>
+    <a href="../05-workloads/07-deployments.html">07 · Deployments</a>
+    <a href="../05-workloads/08-statefulsets.html">08 · StatefulSets</a>
+    <a href="../05-workloads/09-daemonsets.html">09 · DaemonSets</a>
+    <a href="../05-workloads/10-jobs-cronjobs.html">10 · Jobs/CronJobs</a>
+    <a href="../05-workloads/11-autoscaling.html">11 · Autoscaling</a>
+
+    <div class="section-label">06 · Security</div>
+    <a href="../06-security/00-security-overview.html">00 · Overview</a>
+    <a href="../06-security/01-authentication.html">01 · Authentication</a>
+    <a href="../06-security/02-authorization.html">02 · Authorization</a>
+    <a href="../06-security/03-rbac.html">03 · RBAC</a>
+    <a href="../06-security/04-serviceaccounts.html">04 · ServiceAccounts</a>
+    <a href="../06-security/05-certificates-tls.html">05 · Certificates/TLS</a>
+    <a href="../06-security/06-secrets-management.html">06 · Secrets</a>
+    <a href="../06-security/07-pod-security-standards.html">07 · Pod Security</a>
+    <a href="../06-security/08-opa-gatekeeper.html">08 · OPA/Gatekeeper</a>
+    <a href="../06-security/09-kyverno.html">09 · Kyverno</a>
+    <a href="../06-security/10-runtime-security.html">10 · Runtime Security</a>
+    <a href="../06-security/11-supply-chain-security.html">11 · Supply Chain</a>
+
+    <div class="section-label">07 · Observability</div>
+    <a href="../07-observability/00-observability-overview.html">00 · Overview</a>
+    <a href="../07-observability/01-logging.html">01 · Logging</a>
+    <a href="../07-observability/02-monitoring.html">02 · Monitoring</a>
+    <a href="../07-observability/03-prometheus.html">03 · Prometheus</a>
+    <a href="../07-observability/04-alertmanager.html">04 · Alertmanager</a>
+    <a href="../07-observability/05-tracing.html">05 · Tracing</a>
+    <a href="../07-observability/06-opentelemetry.html">06 · OpenTelemetry</a>
+    <a href="../07-observability/07-debugging-production-issues.html">07 · Debugging</a>
+
+    <div class="section-label">08 · Platform Eng.</div>
+    <a href="../08-platform-engineering/00-platform-engineering-overview.html">00 · Overview</a>
+    <a href="../08-platform-engineering/01-gitops.html">01 · GitOps</a>
+    <a href="../08-platform-engineering/02-argocd.html">02 · ArgoCD</a>
+    <a href="../08-platform-engineering/03-fluxcd.html">03 · FluxCD</a>
+    <a href="../08-platform-engineering/04-helm.html">04 · Helm</a>
+    <a href="../08-platform-engineering/05-kustomize.html">05 · Kustomize</a>
+    <a href="../08-platform-engineering/06-operators-crds.html">06 · Operators/CRDs</a>
+    <a href="../08-platform-engineering/07-webhooks.html">07 · Webhooks</a>
+    <a href="../08-platform-engineering/08-multi-cluster-management.html">08 · Multi-cluster</a>
+    <a href="../08-platform-engineering/09-federation.html">09 · Federation</a>
+    <a href="../08-platform-engineering/10-cluster-api.html">10 · Cluster API</a>
+
+    <div class="section-label">09 · Production Ops</div>
+    <a href="../09-production-operations/00-production-overview.html">00 · Overview</a>
+    <a href="../09-production-operations/01-high-availability.html">01 · HA</a>
+    <a href="../09-production-operations/02-cluster-upgrades.html">02 · Upgrades</a>
+    <a href="../09-production-operations/03-capacity-planning.html">03 · Capacity</a>
+    <a href="../09-production-operations/04-failure-scenarios.html">04 · Failure Scenarios</a>
+    <a href="../09-production-operations/05-node-failures.html">05 · Node Failures</a>
+    <a href="../09-production-operations/06-pod-evictions.html">06 · Pod Evictions</a>
+    <a href="../09-production-operations/07-performance-tuning.html">07 · Perf Tuning</a>
+    <a href="../09-production-operations/08-cost-optimization.html">08 · Cost</a>
+    <a href="../09-production-operations/09-production-checklists.html">09 · Checklists</a>
+    <a href="../09-production-operations/10-real-world-incident-analysis.html">10 · Incidents</a>
+
+    <div class="section-label">10 · Team Workflows</div>
+    <a href="../10-team-workflows/00-team-overview.html">00 · Overview</a>
+    <a href="../10-team-workflows/01-platform-engineers.html">01 · Platform Eng.</a>
+    <a href="../10-team-workflows/02-devops-teams.html">02 · DevOps</a>
+    <a href="../10-team-workflows/03-sre-teams.html">03 · SRE</a>
+    <a href="../10-team-workflows/04-security-teams.html">04 · Security</a>
+    <a href="../10-team-workflows/05-application-developers.html">05 · App Devs</a>
+    <a href="../10-team-workflows/06-data-engineering.html">06 · Data Eng.</a>
+    <a href="../10-team-workflows/07-mlops-teams.html">07 · MLOps</a>
+    <a href="../10-team-workflows/08-networking-teams.html">08 · Networking</a>
+    <a href="../10-team-workflows/09-infrastructure-operations.html">09 · Infra Ops</a>
+
+    <div class="section-label">11 · API Flows</div>
+    <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html">00 · Overview</a>
+    <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-sequence.html">01 · Pod Creation</a>
+    <a href="../11-api-flows-and-sequence-diagrams/02-kubelet-api-calls.html">02 · Kubelet Calls</a>
+    <a href="../11-api-flows-and-sequence-diagrams/03-authentication-flow.html">03 · Auth Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/04-authorization-flow.html">04 · Authz Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/05-scheduler-sequence.html">05 · Scheduler</a>
+    <a href="../11-api-flows-and-sequence-diagrams/06-controller-reconciliation-loop.html">06 · Reconciliation</a>
+    <a href="../11-api-flows-and-sequence-diagrams/07-service-routing-flow.html">07 · Service Routing</a>
+    <a href="../11-api-flows-and-sequence-diagrams/08-dns-resolution-flow.html">08 · DNS Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/09-storage-attach-mount-flow.html">09 · Storage Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/10-container-startup-sequence.html">10 · Container Start</a>
+    <a href="../11-api-flows-and-sequence-diagrams/11-node-registration-flow.html">11 · Node Reg.</a>
+    <a href="../11-api-flows-and-sequence-diagrams/12-certificate-bootstrap-flow.html">12 · Cert Bootstrap</a>
+    <a href="../11-api-flows-and-sequence-diagrams/13-ingress-request-flow.html">13 · Ingress Flow</a>
+    <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-packet-flow.html">14 · Packet Flow</a>
+
+    <div class="section-label">12 · Troubleshooting</div>
+    <a href="../12-troubleshooting/00-troubleshooting-overview.html">00 · Overview</a>
+    <a href="../12-troubleshooting/01-pod-failures.html">01 · Pod Failures</a>
+    <a href="../12-troubleshooting/02-networking-issues.html">02 · Networking</a>
+    <a href="../12-troubleshooting/03-dns-issues.html">03 · DNS</a>
+    <a href="../12-troubleshooting/04-storage-issues.html">04 · Storage</a>
+    <a href="../12-troubleshooting/05-performance-issues.html">05 · Performance</a>
+    <a href="../12-troubleshooting/06-security-issues.html">06 · Security</a>
+    <a href="../12-troubleshooting/07-etcd-failures.html">07 · etcd</a>
+    <a href="../12-troubleshooting/08-control-plane-failures.html">08 · Control Plane</a>
+    <a href="../12-troubleshooting/09-node-notready.html">09 · NotReady</a>
+    <a href="../12-troubleshooting/10-crashloopbackoff-analysis.html">10 · CrashLoopBackOff</a>
+  </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===== MAIN ===== -->
+<div class="main-content">
+<article class="article-wrap" id="articleWrap">
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb">
+  <a href="#">K8s Internals</a>
+  <span class="sep">›</span>
+  <a href="00-introduction.html">00 · Foundations</a>
+  <span class="sep">›</span>
+  <span>00 · Introduction</span>
+</nav>
+
+<!-- File Meta -->
+<div class="file-meta">
+  <div>
+    <strong>File Path</strong>
+    <code>00-foundations/00-introduction.html</code>
+  </div>
+  <div>
+    <strong>Prerequisites</strong>
+    <span>Basic Linux familiarity, understanding of processes, and networking (TCP/IP). No prior Kubernetes knowledge required.</span>
+  </div>
+  <div>
+    <strong>Concepts Covered</strong>
+    <div class="tags">
+      <span class="tag">What is Kubernetes</span>
+      <span class="tag">Why K8s exists</span>
+      <span class="tag">Problems solved</span>
+      <span class="tag">Traditional vs container deployment</span>
+      <span class="tag">Mental model</span>
+      <span class="tag">Architecture overview</span>
+      <span class="tag">Declarative model</span>
+      <span class="tag">Control loop</span>
+      <span class="tag">API resource model</span>
+      <span class="tag">Core components</span>
+      <span class="tag">Cluster topology</span>
+      <span class="tag">Platform personas</span>
+    </div>
+  </div>
+  <div>
+    <strong>Related Files</strong>
+    <div class="tags">
+      <span class="tag"><a href="01-history-of-kubernetes.html">01-history</a></span>
+      <span class="tag"><a href="02-container-orchestration.html">02-container-orchestration</a></span>
+      <span class="tag"><a href="03-cluster-architecture-overview.html">03-cluster-architecture</a></span>
+      <span class="tag"><a href="../01-control-plane/01-kube-apiserver.html">apiserver</a></span>
+      <span class="tag"><a href="../02-node-components/01-kubelet.html">kubelet</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- =================== CONTENT =================== -->
+<h1 id="top">Introduction to Kubernetes</h1>
+<p>
+Kubernetes (often abbreviated as <strong>K8s</strong>) is a production-grade, open-source platform for
+<em>automating deployment, scaling, and management of containerised applications</em>.
+It provides a uniform, declarative API surface that abstracts away the underlying infrastructure
+so engineers can focus on expressing <em>what they want</em> rather than <em>how to achieve it</em>.
+</p>
+
+<div class="callout info">
+  <strong>Reading guide</strong>
+  This document is the conceptual entry-point to a 13-section, 90+ file reference.
+  Every section below links forward to the dedicated deep-dive file.
+  Start here, then follow the <em>Next →</em> button at the bottom to proceed through the series in order.
+</div>
+
+<!-- ====================== SECTION 1 ====================== -->
+<h2 id="what-is-kubernetes">1 · What is Kubernetes?</h2>
+
+<p>
+At its core Kubernetes is a <strong>distributed systems operating system</strong>.
+Just as a single-machine OS (Linux, Windows) schedules processes, manages memory, handles I/O,
+and provides system-call abstractions, Kubernetes performs the equivalent tasks
+across a fleet of machines for containerised workloads.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Single-Machine OS analogy</th><th>Kubernetes equivalent</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Process (PID)</td><td>Container (inside a Pod)</td></tr>
+    <tr><td>Process group</td><td>Pod</td></tr>
+    <tr><td>Process supervisor (systemd/launchd)</td><td>kubelet + controllers</td></tr>
+    <tr><td>Scheduler (CFS)</td><td>kube-scheduler</td></tr>
+    <tr><td>File system mount</td><td>PersistentVolume + CSI driver</td></tr>
+    <tr><td>Network socket</td><td>Service + kube-proxy</td></tr>
+    <tr><td>System config (/etc)</td><td>ConfigMap / Secret</td></tr>
+    <tr><td>Kernel (kernel.org)</td><td>kube-apiserver + etcd</td></tr>
+    <tr><td>cron</td><td>CronJob</td></tr>
+    <tr><td>Daemon (/etc/init.d)</td><td>DaemonSet</td></tr>
+  </tbody>
+</table>
+
+<p>
+Unlike a traditional OS, Kubernetes is <strong>cluster-wide</strong>: the unit of
+resource is a <em>node</em> (physical or virtual machine), and workloads are
+transparently distributed across all nodes by the scheduler.
+</p>
+
+<h3 id="official-definition">Official definition (project README)</h3>
+<blockquote>
+"Kubernetes is an open-source system for automating deployment, scaling, and management
+of containerized applications. It groups containers that make up an application into
+logical units for easy management and discovery."
+</blockquote>
+
+<h3 id="broader-definition">Broader production definition</h3>
+<p>
+For platform engineers, Kubernetes is also:
+</p>
+<ul>
+  <li>A <strong>declarative configuration API</strong> – you describe desired state in YAML/JSON; the system converges reality toward that state.</li>
+  <li>A <strong>self-healing runtime</strong> – components watch for drift and correct it automatically, without human intervention.</li>
+  <li>A <strong>control plane for your entire infrastructure</strong> – networking, storage, compute, certificates, and secrets are all first-class API resources.</li>
+  <li>An <strong>extensibility framework</strong> – CRDs, webhooks, and the aggregation layer let you extend the API to model any domain concept.</li>
+  <li>A <strong>standard layer</strong> – the same manifests run on bare metal in your own data centre, AWS, GCP, Azure, Raspberry Pi, or a laptop.</li>
+</ul>
+
+<!-- ====================== SECTION 2 ====================== -->
+<h2 id="why-kubernetes-exists">2 · Why Kubernetes Exists</h2>
+
+<p>
+To understand why Kubernetes exists, you must understand the problems that preceded it.
+The evolution goes through three distinct eras:
+</p>
+
+<div class="arch-grid">
+  <div class="arch-box">
+    <h4>Era 1 — Bare Metal (pre-2000s)</h4>
+    <ul>
+      <li>One application per physical server</li>
+      <li>Massive under-utilisation (5–15% CPU avg)</li>
+      <li>Long provisioning cycles (weeks)</li>
+      <li>No isolation between services</li>
+      <li>Manual patching and deployment</li>
+    </ul>
+  </div>
+  <div class="arch-box">
+    <h4>Era 2 — Virtual Machines (2000s–2013)</h4>
+    <ul>
+      <li>Better utilisation via hypervisors</li>
+      <li>Still slow (minutes to boot)</li>
+      <li>Image drift between environments</li>
+      <li>"Works on my VM" problems</li>
+      <li>Config management sprawl (Chef/Puppet)</li>
+    </ul>
+  </div>
+  <div class="arch-box">
+    <h4>Era 3 — Containers (2013–present)</h4>
+    <ul>
+      <li>Millisecond startup via cgroups/namespaces</li>
+      <li>Immutable images = reproducibility</li>
+      <li>High density (100s per node)</li>
+      <li>New problem: <em>who orchestrates them?</em></li>
+      <li>K8s solves the orchestration layer</li>
+    </ul>
+  </div>
+</div>
+
+<p>
+When Docker popularised containers in 2013, organisations quickly ran into the
+<strong>"container sprawl"</strong> problem: running hundreds of containers manually
+across dozens of hosts is operationally impossible. You need:
+</p>
+
+<ul>
+  <li>Automatic placement of containers onto healthy nodes</li>
+  <li>Restart of containers that crash</li>
+  <li>Scaling up or down based on demand</li>
+  <li>Rolling updates with zero downtime</li>
+  <li>Service discovery – how does container A find container B?</li>
+  <li>Load balancing across replicas</li>
+  <li>Secret and configuration management</li>
+  <li>Resource accounting and fair-share scheduling</li>
+  <li>Storage lifecycle management</li>
+  <li>Health checking and eviction</li>
+</ul>
+
+<p>
+Google had already solved this problem internally with <strong>Borg</strong> (2003) and later
+<strong>Omega</strong>. Kubernetes (2014) is the open-source, redesigned-for-community successor
+that incorporates a decade of Google's production learnings.
+See <a href="01-history-of-kubernetes.html">01 · History</a> for the full timeline.
+</p>
+
+<!-- ====================== SECTION 3 ====================== -->
+<h2 id="problems-solved">3 · Problems Kubernetes Solves</h2>
+
+<h3 id="problem-scheduling">3.1 Scheduling and Placement</h3>
+<p>
+Manually deciding which server runs which container is error-prone and doesn't scale.
+The <a href="../01-control-plane/03-kube-scheduler.html">kube-scheduler</a> evaluates every node's
+available CPU/memory, hardware topology, affinity rules, taints, and policies to place
+each Pod on the optimal node — automatically, in under a millisecond at moderate scale.
+</p>
+
+<h3 id="problem-selfhealing">3.2 Self-Healing</h3>
+<p>
+Controllers run <em>reconciliation loops</em>: they compare desired state (stored in etcd)
+with observed state (reported by the kubelet) and take corrective actions — restarting
+crashed containers, replacing failed nodes, rescheduling evicted Pods — without paging anyone.
+</p>
+
+<details>
+  <summary>Reconciliation loop pseudocode</summary>
+  <div class="details-body">
+<pre><code class="language-go">// Simplified reconciler pattern (every controller implements this)
+func (r *DeploymentController) Reconcile(ctx context.Context, req Request) (Result, error) {
+    // 1. Fetch desired state from API server
+    desired := r.Get(req.NamespacedName)
+
+    // 2. Fetch current state from cluster
+    current := r.ListPods(desired.Spec.Selector)
+
+    // 3. Diff
+    missing := desired.Replicas - len(current.Running)
+
+    // 4. Act
+    if missing > 0 {
+        r.CreatePods(missing, desired.Template)
+    } else if missing < 0 {
+        r.DeletePods(-missing)
+    }
+
+    // 5. Update status
+    r.UpdateStatus(desired, current)
+    return Result{}, nil
+}</code></pre>
+  </div>
+</details>
+
+<h3 id="problem-scaling">3.3 Horizontal Scaling</h3>
+<p>
+The Horizontal Pod Autoscaler reads metrics (CPU, memory, custom) from the Metrics Server
+or Prometheus Adapter and adjusts the <code>replicas</code> field of a Deployment/ReplicaSet
+automatically. Cluster Autoscaler then provisions or deprovisions nodes as the pod demand changes.
+</p>
+
+<h3 id="problem-rolling">3.4 Rolling Updates and Rollbacks</h3>
+<p>
+Deployments orchestrate rolling updates: it spins up new Pods with the new image,
+waits for them to become Ready, then terminates old Pods — ensuring zero downtime.
+A single <code>kubectl rollout undo</code> reverts to the previous ReplicaSet revision.
+</p>
+
+<pre><code class="language-bash"># Trigger a rolling update
+kubectl set image deployment/web app=myimage:v2
+
+# Watch rollout progress
+kubectl rollout status deployment/web
+
+# Undo if something is wrong
+kubectl rollout undo deployment/web
+
+# Rollout history
+kubectl rollout history deployment/web</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<h3 id="problem-service-discovery">3.5 Service Discovery and Load Balancing</h3>
+<p>
+A <a href="../03-networking/03-service-networking.html">Service</a> object gives a stable
+virtual IP (ClusterIP) and DNS name to a dynamic set of Pods. kube-proxy programs
+iptables/IPVS rules so that traffic to the ClusterIP is load-balanced across all
+healthy Pod endpoints. The Pods themselves can be rescheduled and get new IPs —
+the Service absorbs that churn transparently.
+</p>
+
+<h3 id="problem-config">3.6 Configuration and Secret Management</h3>
+<p>
+ConfigMaps store non-sensitive configuration (environment variables, config files).
+Secrets store sensitive data (passwords, TLS certs, tokens) encrypted at rest in etcd
+and mounted into Pods as environment variables or files. External secret stores (Vault,
+AWS Secrets Manager) can integrate via CSI Secret Store or External Secrets Operator.
+</p>
+
+<h3 id="problem-storage">3.7 Storage Lifecycle</h3>
+<p>
+The CSI (Container Storage Interface) plugin model decouples storage drivers from
+the Kubernetes release cycle. PersistentVolume and PersistentVolumeClaim objects model
+the storage lifecycle: claim, bind, mount, unmount, release, and (optionally) reclaim.
+Storage Classes enable dynamic provisioning — Pods get volumes without pre-provisioned PVs.
+</p>
+
+<h3 id="problem-multi-env">3.8 Environment Parity</h3>
+<p>
+The same container image and manifest that runs on a developer's laptop (kind, minikube, k3s)
+runs identically in production. The CRI, CNI, and CSI plugin model means only the
+plugin implementations differ — the API is identical everywhere.
+</p>
+
+<!-- ====================== SECTION 4 ====================== -->
+<h2 id="traditional-vs-kubernetes">4 · Traditional Systems vs Kubernetes</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Traditional (VMs + scripts)</th>
+      <th>Kubernetes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Deployment unit</td>
+      <td>RPM/deb package, systemd unit, VM image</td>
+      <td>OCI container image + YAML manifest</td>
+    </tr>
+    <tr>
+      <td>Configuration model</td>
+      <td>Imperative (bash/Ansible/Chef)</td>
+      <td>Declarative (YAML, controllers reconcile)</td>
+    </tr>
+    <tr>
+      <td>Scheduling</td>
+      <td>Manual or simplistic (round-robin)</td>
+      <td>Multi-constraint bin-packing scheduler</td>
+    </tr>
+    <tr>
+      <td>Self-healing</td>
+      <td>Nagios alert → on-call → SSH → restart</td>
+      <td>kubelet detects crash → container restarted in seconds</td>
+    </tr>
+    <tr>
+      <td>Scaling</td>
+      <td>Manual + pre-provisioned capacity</td>
+      <td>HPA + Cluster Autoscaler (dynamic, seconds)</td>
+    </tr>
+    <tr>
+      <td>Service discovery</td>
+      <td>Static DNS / load balancer config</td>
+      <td>CoreDNS auto-registers every Service</td>
+    </tr>
+    <tr>
+      <td>Rolling updates</td>
+      <td>Complex scripts, long maintenance windows</td>
+      <td>Built-in, zero-downtime by default</td>
+    </tr>
+    <tr>
+      <td>Secret management</td>
+      <td>Config files on disk, SSH key sharing</td>
+      <td>Secrets API, RBAC-controlled, optional encryption</td>
+    </tr>
+    <tr>
+      <td>Multi-tenancy</td>
+      <td>Separate physical/VM clusters</td>
+      <td>Namespaces + RBAC + Network Policies + quotas</td>
+    </tr>
+    <tr>
+      <td>Observability</td>
+      <td>Fragmented (Nagios, Splunk, bespoke)</td>
+      <td>Standardised (metrics-server, Prometheus, OpenTelemetry)</td>
+    </tr>
+    <tr>
+      <td>Audit trail</td>
+      <td>Sparse, per-machine</td>
+      <td>Structured audit log from API server for every mutation</td>
+    </tr>
+    <tr>
+      <td>Time-to-deploy</td>
+      <td>Hours (VM) / minutes (script)</td>
+      <td>Seconds (Pod scheduling + container pull)</td>
+    </tr>
+    <tr>
+      <td>Infrastructure portability</td>
+      <td>Cloud-specific, vendor locked</td>
+      <td>Same manifests on any conformant cluster</td>
+    </tr>
+    <tr>
+      <td>Extension model</td>
+      <td>Bespoke automation, ad-hoc tooling</td>
+      <td>CRDs + Operators + Admission Webhooks</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ====================== SECTION 5 ====================== -->
+<h2 id="mental-model">5 · The Kubernetes Mental Model</h2>
+
+<p>
+Before diving into internals, you need the right mental model.
+There are <strong>three key ideas</strong> that unlock everything else:
+</p>
+
+<h3 id="mental-desired-state">5.1 Desired State vs. Observed State</h3>
+<p>
+Every Kubernetes resource object has two logical halves:
+</p>
+<ul>
+  <li><strong><code>spec</code></strong> — what you <em>want</em> (desired state). You write this.</li>
+  <li><strong><code>status</code></strong> — what the cluster <em>has</em> (observed state). The system writes this.</li>
+</ul>
+<p>
+Controllers are the agents that continuously work to make <code>status</code> match <code>spec</code>.
+This is the <strong>control loop</strong>, and it is the fundamental pattern behind every Kubernetes component.
+</p>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" style="max-width:700px;width:100%">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/>
+    </marker>
+  </defs>
+  <!-- boxes -->
+  <rect x="10" y="80" width="160" height="60" rx="8" fill="#1f6feb" opacity=".85"/>
+  <text x="90" y="105" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">You (kubectl apply)</text>
+  <text x="90" y="124" text-anchor="middle" fill="#a5d6ff" font-size="11">spec: replicas: 3</text>
+
+  <rect x="270" y="80" width="160" height="60" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="350" y="105" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="600">etcd (desired state)</text>
+  <text x="350" y="124" text-anchor="middle" fill="#8b949e" font-size="11">PersistentStore</text>
+
+  <rect x="530" y="50" width="155" height="60" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="607" y="75" text-anchor="middle" fill="#3fb950" font-size="13" font-weight="600">Controller</text>
+  <text x="607" y="94" text-anchor="middle" fill="#8b949e" font-size="11">ReplicaSet controller</text>
+
+  <rect x="530" y="140" width="155" height="60" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="607" y="165" text-anchor="middle" fill="#d29922" font-size="13" font-weight="600">Cluster (actual)</text>
+  <text x="607" y="184" text-anchor="middle" fill="#8b949e" font-size="11">Running Pods</text>
+
+  <!-- arrows -->
+  <line x1="170" y1="110" x2="268" y2="110" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="215" y="103" text-anchor="middle" fill="#58a6ff" font-size="10">WRITE</text>
+
+  <line x1="430" y1="100" x2="528" y2="85" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="478" y="88" text-anchor="middle" fill="#8b949e" font-size="10">WATCH</text>
+
+  <line x1="607" y1="110" x2="607" y2="138" stroke="#3fb950" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="622" y="128" fill="#3fb950" font-size="10">CREATE/DELETE</text>
+
+  <line x1="607" y1="140" x2="430" y2="120" stroke="#d29922" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="520" y="148" text-anchor="middle" fill="#d29922" font-size="10">UPDATE STATUS</text>
+</svg>
+<div class="caption">Figure 1 — The control loop: desired state in etcd, controllers drive the cluster toward it.</div>
+</div>
+
+<h3 id="mental-api-object">5.2 Everything is an API Object</h3>
+<p>
+Kubernetes exposes a RESTful API. Every resource — Pod, Node, Service, ConfigMap,
+CRD instance — is an object with a versioned API group, a <code>Kind</code>,
+metadata (name, namespace, labels, annotations), <code>spec</code>, and <code>status</code>.
+</p>
+<pre><code class="language-yaml"># Anatomy of a Kubernetes resource object
+apiVersion: apps/v1         # &lt;group&gt;/&lt;version&gt; — "core" group uses just "v1"
+kind: Deployment            # Object type
+metadata:
+  name: web                 # Unique name within namespace
+  namespace: production     # Logical partition
+  labels:                   # Key/value pairs — used by selectors
+    app: web
+    version: v3
+  annotations:              # Non-identifying metadata — arbitrary data
+    deployment.kubernetes.io/revision: "3"
+spec:                       # DESIRED STATE — you write this
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: app
+        image: myapp:v3
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+status:                     # OBSERVED STATE — system writes this
+  replicas: 3
+  readyReplicas: 3
+  availableReplicas: 3
+  conditions:
+  - type: Available
+    status: "True"</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<h3 id="mental-watch">5.3 Watch, Not Poll</h3>
+<p>
+The API server supports long-lived <strong>watch</strong> connections (HTTP chunked streaming,
+WebSocket, or gRPC depending on client). Every controller, kubelet, and kubectl informer
+uses watch to receive change events immediately instead of polling.
+This is what makes Kubernetes highly responsive — a controller reacts in milliseconds
+to a state change, not after a 30-second poll interval.
+</p>
+<pre><code class="language-bash"># Watching all Pod events in real time (same mechanism controllers use internally)
+kubectl get pods --watch
+
+# Watch a specific resource version (raw API)
+curl -k https://&lt;apiserver&gt;/api/v1/pods?watch=1&amp;resourceVersion=12345 \
+  -H "Authorization: Bearer &lt;token&gt;"</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ====================== SECTION 6 ====================== -->
+<h2 id="cluster-architecture-overview">6 · Cluster Architecture Overview</h2>
+
+<p>
+A Kubernetes cluster consists of two logical planes:
+</p>
+<ul>
+  <li><strong>Control Plane</strong> — the brain: API server, etcd, scheduler, controller manager, cloud-controller-manager.</li>
+  <li><strong>Data Plane (worker nodes)</strong> — the muscle: kubelet, kube-proxy, container runtime, CNI plugin.</li>
+</ul>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 760 460" xmlns="http://www.w3.org/2000/svg" style="max-width:760px;width:100%">
+  <defs>
+    <marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#8b949e"/>
+    </marker>
+    <marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/>
+    </marker>
+  </defs>
+  <!-- Control Plane box -->
+  <rect x="10" y="10" width="740" height="185" rx="10" fill="#161b22" stroke="#1f6feb" stroke-width="2"/>
+  <text x="20" y="34" fill="#58a6ff" font-size="13" font-weight="700">CONTROL PLANE</text>
+
+  <!-- kube-apiserver -->
+  <rect x="30" y="50" width="140" height="70" rx="6" fill="#1f6feb" opacity=".9"/>
+  <text x="100" y="79" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">kube-apiserver</text>
+  <text x="100" y="97" text-anchor="middle" fill="#a5d6ff" font-size="10">REST + Watch API</text>
+  <text x="100" y="112" text-anchor="middle" fill="#a5d6ff" font-size="10">Port 6443 (TLS)</text>
+
+  <!-- etcd -->
+  <rect x="200" y="50" width="130" height="70" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="265" y="79" text-anchor="middle" fill="#f0883e" font-size="12" font-weight="600">etcd</text>
+  <text x="265" y="97" text-anchor="middle" fill="#8b949e" font-size="10">Distributed KV</text>
+  <text x="265" y="112" text-anchor="middle" fill="#8b949e" font-size="10">Raft consensus</text>
+
+  <!-- scheduler -->
+  <rect x="360" y="50" width="140" height="70" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="430" y="79" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="600">kube-scheduler</text>
+  <text x="430" y="97" text-anchor="middle" fill="#8b949e" font-size="10">Pod placement</text>
+  <text x="430" y="112" text-anchor="middle" fill="#8b949e" font-size="10">Filter + Score</text>
+
+  <!-- controller-manager -->
+  <rect x="525" y="50" width="165" height="70" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="607" y="72" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">kube-controller-manager</text>
+  <text x="607" y="89" text-anchor="middle" fill="#8b949e" font-size="10">Node, ReplicaSet,</text>
+  <text x="607" y="104" text-anchor="middle" fill="#8b949e" font-size="10">Deployment, Job…</text>
+  <text x="607" y="115" text-anchor="middle" fill="#8b949e" font-size="9">30+ controllers</text>
+
+  <!-- cloud-controller -->
+  <rect x="200" y="140" width="200" height="44" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="300" y="157" text-anchor="middle" fill="#d29922" font-size="11" font-weight="600">cloud-controller-manager</text>
+  <text x="300" y="174" text-anchor="middle" fill="#8b949e" font-size="10">LoadBalancer, Node, Route</text>
+
+  <!-- etcd arrow -->
+  <line x1="170" y1="85" x2="198" y2="85" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a3)"/>
+  <line x1="198" y1="90" x2="170" y2="90" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <!-- scheduler/ctrl arrows to apiserver -->
+  <line x1="430" y1="50" x2="180" y2="75" stroke="#8b949e" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#a2)"/>
+  <line x1="607" y1="50" x2="195" y2="70" stroke="#8b949e" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#a2)"/>
+
+  <!-- Worker Nodes -->
+  <!-- Node 1 -->
+  <rect x="10" y="215" width="230" height="230" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="20" y="237" fill="#8b949e" font-size="12" font-weight="700">WORKER NODE 1</text>
+  <rect x="25" y="248" width="100" height="50" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="75" y="270" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">kubelet</text>
+  <text x="75" y="287" text-anchor="middle" fill="#8b949e" font-size="9">Node agent</text>
+  <rect x="140" y="248" width="90" height="50" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="185" y="270" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">kube-proxy</text>
+  <text x="185" y="285" text-anchor="middle" fill="#8b949e" font-size="9">iptables/IPVS</text>
+  <rect x="25" y="312" width="205" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="127" y="329" text-anchor="middle" fill="#f78166" font-size="10" font-weight="600">containerd / CRI-O</text>
+  <text x="127" y="345" text-anchor="middle" fill="#8b949e" font-size="9">Container Runtime (CRI)</text>
+  <rect x="25" y="362" width="90" height="35" rx="5" fill="#0d1117" stroke="#30363d"/>
+  <text x="70" y="379" text-anchor="middle" fill="#e6edf3" font-size="9">Pod A</text>
+  <text x="70" y="391" text-anchor="middle" fill="#8b949e" font-size="8">2 containers</text>
+  <rect x="130" y="362" width="90" height="35" rx="5" fill="#0d1117" stroke="#30363d"/>
+  <text x="175" y="379" text-anchor="middle" fill="#e6edf3" font-size="9">Pod B</text>
+  <text x="175" y="391" text-anchor="middle" fill="#8b949e" font-size="8">1 container</text>
+
+  <!-- Node 2 -->
+  <rect x="260" y="215" width="230" height="230" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="270" y="237" fill="#8b949e" font-size="12" font-weight="700">WORKER NODE 2</text>
+  <rect x="275" y="248" width="100" height="50" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="325" y="270" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">kubelet</text>
+  <text x="325" y="287" text-anchor="middle" fill="#8b949e" font-size="9">Node agent</text>
+  <rect x="390" y="248" width="90" height="50" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="435" y="270" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">kube-proxy</text>
+  <text x="435" y="285" text-anchor="middle" fill="#8b949e" font-size="9">iptables/IPVS</text>
+  <rect x="275" y="312" width="205" height="40" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="377" y="329" text-anchor="middle" fill="#f78166" font-size="10" font-weight="600">containerd / CRI-O</text>
+  <text x="377" y="345" text-anchor="middle" fill="#8b949e" font-size="9">Container Runtime (CRI)</text>
+  <rect x="275" y="362" width="90" height="35" rx="5" fill="#0d1117" stroke="#30363d"/>
+  <text x="320" y="379" text-anchor="middle" fill="#e6edf3" font-size="9">Pod C</text>
+  <rect x="380" y="362" width="90" height="35" rx="5" fill="#0d1117" stroke="#30363d"/>
+  <text x="425" y="379" text-anchor="middle" fill="#e6edf3" font-size="9">Pod D</text>
+
+  <!-- Node 3 (abbreviated) -->
+  <rect x="510" y="215" width="240" height="230" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="520" y="237" fill="#8b949e" font-size="12" font-weight="700">WORKER NODE N</text>
+  <rect x="525" y="248" width="100" height="50" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="575" y="270" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">kubelet</text>
+  <text x="575" y="287" text-anchor="middle" fill="#8b949e" font-size="9">Node agent</text>
+  <rect x="635" y="248" width="100" height="50" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="685" y="270" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">kube-proxy</text>
+  <text x="685" y="285" text-anchor="middle" fill="#8b949e" font-size="9">iptables/IPVS</text>
+  <text x="630" y="360" text-anchor="middle" fill="#6e7681" font-size="28">⋯</text>
+  <text x="630" y="395" text-anchor="middle" fill="#6e7681" font-size="11">1…1000s of nodes</text>
+
+  <!-- kubelet → apiserver arrows -->
+  <line x1="125" y1="248" x2="100" y2="195" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a3)"/>
+  <line x1="325" y1="248" x2="150" y2="195" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a3)"/>
+  <line x1="575" y1="248" x2="175" y2="195" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a3)"/>
+</svg>
+<div class="caption">Figure 2 — High-level cluster architecture: Control Plane (top) + N worker nodes (bottom). All components communicate via the kube-apiserver.</div>
+</div>
+
+<h3 id="control-plane-components">6.1 Control Plane Components</h3>
+<p>
+The control plane is typically run on dedicated nodes (control plane nodes, formerly called masters).
+In a production HA cluster you have 3 or 5 control plane nodes.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Component</th><th>Role</th><th>Port(s)</th><th>Deep-dive</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>kube-apiserver</code></td>
+      <td>The only stateful frontend. Validates, persists, and serves all API objects. The single source of truth gateway.</td>
+      <td>6443 (HTTPS)</td>
+      <td><a href="../01-control-plane/01-kube-apiserver.html">→</a></td>
+    </tr>
+    <tr>
+      <td><code>etcd</code></td>
+      <td>Distributed key-value store using the Raft consensus algorithm. Stores all cluster state. The only persistent component.</td>
+      <td>2379 (client), 2380 (peer)</td>
+      <td><a href="../01-control-plane/02-etcd.html">→</a></td>
+    </tr>
+    <tr>
+      <td><code>kube-scheduler</code></td>
+      <td>Watches for unscheduled Pods and assigns them to nodes using a pipeline of filter and score plugins.</td>
+      <td>10259 (HTTPS metrics)</td>
+      <td><a href="../01-control-plane/03-kube-scheduler.html">→</a></td>
+    </tr>
+    <tr>
+      <td><code>kube-controller-manager</code></td>
+      <td>Runs 30+ control loops: ReplicaSet, Node, Endpoint, Namespace, Job, etc. Each loop reconciles a resource type.</td>
+      <td>10257 (HTTPS metrics)</td>
+      <td><a href="../01-control-plane/04-kube-controller-manager.html">→</a></td>
+    </tr>
+    <tr>
+      <td><code>cloud-controller-manager</code></td>
+      <td>Cloud-provider-specific controllers: LoadBalancer, Node (cloud metadata), Route. Decouples cloud logic from core.</td>
+      <td>10258 (HTTPS metrics)</td>
+      <td><a href="../01-control-plane/05-cloud-controller-manager.html">→</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="worker-node-components">6.2 Worker Node Components</h3>
+
+<table>
+  <thead>
+    <tr><th>Component</th><th>Role</th><th>Port(s)</th><th>Deep-dive</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>kubelet</code></td>
+      <td>Primary node agent. Watches for Pods assigned to its node via API server watch. Creates/destroys containers via CRI. Reports node/pod status.</td>
+      <td>10250 (HTTPS)</td>
+      <td><a href="../02-node-components/01-kubelet.html">→</a></td>
+    </tr>
+    <tr>
+      <td><code>kube-proxy</code></td>
+      <td>Programs host networking rules (iptables/IPVS/nftables/eBPF) to implement the Service virtual IP abstraction.</td>
+      <td>10256 (healthz)</td>
+      <td><a href="../02-node-components/02-kube-proxy.html">→</a></td>
+    </tr>
+    <tr>
+      <td>Container Runtime (CRI)</td>
+      <td>Runs containers. containerd and CRI-O are standard. Docker shim was removed in 1.24.</td>
+      <td>Unix socket / gRPC</td>
+      <td><a href="../02-node-components/03-container-runtime-interface.html">→</a></td>
+    </tr>
+    <tr>
+      <td>CNI plugin</td>
+      <td>Programs pod networking: assigns IPs, creates veth pairs, sets up routes. Calico, Cilium, Flannel, Weave, etc.</td>
+      <td>—</td>
+      <td><a href="../03-networking/01-cni-architecture.html">→</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ====================== SECTION 7 ====================== -->
+<h2 id="declarative-model">7 · The Declarative Model in Depth</h2>
+
+<p>
+The declarative model is Kubernetes' most important design decision.
+Contrast it with the imperative alternative:
+</p>
+
+<details>
+  <summary>Imperative vs Declarative — side-by-side example</summary>
+  <div class="details-body">
+<pre><code class="language-bash">## IMPERATIVE (old way — scripting)
+# Create a container
+docker run -d --name web -p 80:8080 --restart=always myapp:v1
+
+# Scale it (manual loop)
+for i in 2 3; do
+  docker run -d --name web-$i -p 808$i:8080 myapp:v1
+done
+
+# Update it (manual, risky)
+docker stop web; docker rm web
+docker run -d --name web -p 80:8080 myapp:v2
+
+# Problems:
+# - State is in your head / scripts
+# - Not idempotent
+# - No audit trail
+# - Does not self-heal</code></pre>
+
+<pre><code class="language-yaml">## DECLARATIVE (Kubernetes way)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels: {app: web}
+  template:
+    metadata:
+      labels: {app: web}
+    spec:
+      containers:
+      - name: app
+        image: myapp:v1
+        ports:
+        - containerPort: 8080
+---
+# Benefits:
+# - Apply is idempotent (kubectl apply is safe to run repeatedly)
+# - State is in version control (GitOps)
+# - Any drift is auto-corrected by controllers
+# - Rolling update = change image: myapp:v2, reapply</code></pre>
+  </div>
+</details>
+
+<p>
+When you run <code>kubectl apply -f deployment.yaml</code>, here is what happens internally:
+</p>
+
+<ol>
+  <li>kubectl serialises the object to JSON and sends an HTTP PATCH (or POST for new objects) to the API server.</li>
+  <li>The API server authenticates and authorises the request, runs admission webhooks, validates the schema, and persists the object to etcd.</li>
+  <li>The relevant controller (e.g., Deployment controller) receives a watch event for the changed object.</li>
+  <li>The controller computes the diff and makes further API calls (e.g., creates a new ReplicaSet).</li>
+  <li>The scheduler sees the unscheduled Pods and binds them to nodes.</li>
+  <li>The kubelet on each target node sees the Pod binding and asks the CRI to pull the image and start containers.</li>
+  <li>The kubelet reports Pod status back to the API server, which stores it in etcd.</li>
+</ol>
+
+<p>The entire chain from <code>kubectl apply</code> to running containers typically completes in <strong>2–30 seconds</strong>, depending on image pull time.</p>
+
+<!-- ====================== SECTION 8 ====================== -->
+<h2 id="api-object-model">8 · The API Object Model</h2>
+
+<h3 id="api-groups">8.1 API Groups and Versions</h3>
+<p>
+Kubernetes organises resources into API groups that evolve independently.
+</p>
+
+<table>
+  <thead>
+    <tr><th>API Group</th><th>apiVersion example</th><th>Key resources</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>core (legacy)</td><td><code>v1</code></td><td>Pod, Service, ConfigMap, Secret, Node, PersistentVolume, Namespace</td></tr>
+    <tr><td>apps</td><td><code>apps/v1</code></td><td>Deployment, ReplicaSet, StatefulSet, DaemonSet</td></tr>
+    <tr><td>batch</td><td><code>batch/v1</code></td><td>Job, CronJob</td></tr>
+    <tr><td>networking.k8s.io</td><td><code>networking.k8s.io/v1</code></td><td>Ingress, NetworkPolicy, IngressClass</td></tr>
+    <tr><td>gateway.networking.k8s.io</td><td><code>gateway.networking.k8s.io/v1</code></td><td>Gateway, HTTPRoute, GRPCRoute</td></tr>
+    <tr><td>storage.k8s.io</td><td><code>storage.k8s.io/v1</code></td><td>StorageClass, VolumeAttachment, CSINode</td></tr>
+    <tr><td>rbac.authorization.k8s.io</td><td><code>rbac.authorization.k8s.io/v1</code></td><td>Role, ClusterRole, RoleBinding, ClusterRoleBinding</td></tr>
+    <tr><td>autoscaling</td><td><code>autoscaling/v2</code></td><td>HorizontalPodAutoscaler</td></tr>
+    <tr><td>policy</td><td><code>policy/v1</code></td><td>PodDisruptionBudget</td></tr>
+    <tr><td>apiextensions.k8s.io</td><td><code>apiextensions.k8s.io/v1</code></td><td>CustomResourceDefinition</td></tr>
+    <tr><td>Custom (CRDs)</td><td><code>myco.io/v1alpha1</code></td><td>Whatever you define via CRD</td></tr>
+  </tbody>
+</table>
+
+<h3 id="resource-names">8.2 Resource Naming and Namespacing</h3>
+<p>
+Resources are either <strong>cluster-scoped</strong> (Nodes, PersistentVolumes, ClusterRoles, Namespaces)
+or <strong>namespace-scoped</strong> (Pods, Deployments, Services, Secrets).
+A fully-qualified resource reference is:
+<code>&lt;apiVersion&gt;/&lt;kind&gt;/&lt;namespace&gt;/&lt;name&gt;</code> for namespace-scoped,
+<code>&lt;apiVersion&gt;/&lt;kind&gt;/&lt;name&gt;</code> for cluster-scoped.
+</p>
+
+<h3 id="labels-annotations">8.3 Labels, Annotations, and Selectors</h3>
+<p>
+<strong>Labels</strong> are key/value pairs used for grouping and selection.
+Selectors are queries over labels — Services, ReplicaSets, and NetworkPolicies all
+use label selectors to identify target Pods.
+</p>
+<p>
+<strong>Annotations</strong> carry arbitrary non-identifying metadata — tool configuration,
+audit information, last-applied config. They are not queryable as selectors.
+</p>
+<pre><code class="language-yaml">metadata:
+  labels:
+    app: web
+    env: production
+    tier: frontend
+    version: v3.2.1
+  annotations:
+    # Ingress controller config
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    # GitOps metadata
+    argocd.argoproj.io/managed-by: argocd
+    # Deployment tooling
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {...}
+</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ====================== SECTION 9 ====================== -->
+<h2 id="core-concepts-glossary">9 · Core Concepts Glossary</h2>
+
+<details>
+  <summary>Full glossary of 50+ Kubernetes terms</summary>
+  <div class="details-body">
+  <table>
+    <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+    <tbody>
+      <tr><td>Pod</td><td>Smallest deployable unit. 1+ containers sharing a network namespace and (optionally) volumes.</td></tr>
+      <tr><td>Container</td><td>An OCI-compliant process with its own filesystem layer, run by a CRI-compliant runtime.</td></tr>
+      <tr><td>Node</td><td>A physical or virtual machine in the cluster running kubelet, kube-proxy, and a CRI runtime.</td></tr>
+      <tr><td>Namespace</td><td>Virtual cluster within a cluster. Provides scope for names, RBAC, quotas.</td></tr>
+      <tr><td>ReplicaSet</td><td>Maintains N replicas of a Pod template. Rarely used directly — Deployments own them.</td></tr>
+      <tr><td>Deployment</td><td>Manages ReplicaSets to provide declarative updates and rollbacks for stateless workloads.</td></tr>
+      <tr><td>StatefulSet</td><td>Like a Deployment but with stable network identities and ordered, graceful operations — for stateful apps.</td></tr>
+      <tr><td>DaemonSet</td><td>Ensures one Pod per node (or per matching node) — for cluster-wide agents: CNI, log shippers, etc.</td></tr>
+      <tr><td>Job</td><td>Runs Pods to completion. Retries on failure. Tracks success/failure counts.</td></tr>
+      <tr><td>CronJob</td><td>Creates Jobs on a cron schedule.</td></tr>
+      <tr><td>Service</td><td>Stable virtual IP + DNS name for a set of Pods. Implements load balancing via kube-proxy.</td></tr>
+      <tr><td>ClusterIP</td><td>Default Service type. VIP only reachable within the cluster.</td></tr>
+      <tr><td>NodePort</td><td>Exposes a Service on a static port on every node's IP. Rarely used in production directly.</td></tr>
+      <tr><td>LoadBalancer</td><td>Requests a cloud load balancer. Usually used for external-facing services in cloud environments.</td></tr>
+      <tr><td>Ingress</td><td>HTTP/HTTPS layer-7 routing rules (virtual hosts, paths). Requires an Ingress controller.</td></tr>
+      <tr><td>Gateway API</td><td>Next-gen replacement for Ingress. Richer model with roles, traffic policies, TCP/UDP support.</td></tr>
+      <tr><td>ConfigMap</td><td>Stores non-sensitive key-value config. Injected as env vars or mounted files.</td></tr>
+      <tr><td>Secret</td><td>Base64-encoded (optionally encrypted) sensitive data. Same injection mechanics as ConfigMap.</td></tr>
+      <tr><td>PersistentVolume (PV)</td><td>A piece of storage provisioned by an admin or dynamically. Cluster resource, not namespaced.</td></tr>
+      <tr><td>PersistentVolumeClaim (PVC)</td><td>A namespace-scoped request for storage. Binds to a matching PV.</td></tr>
+      <tr><td>StorageClass</td><td>Defines how storage is dynamically provisioned (provisioner, parameters, reclaim policy).</td></tr>
+      <tr><td>Volume</td><td>A directory accessible to containers in a Pod. Ephemeral or persistent.</td></tr>
+      <tr><td>emptyDir</td><td>Temporary volume, lives as long as the Pod. Good for inter-container data sharing.</td></tr>
+      <tr><td>hostPath</td><td>Mounts a host filesystem path. Security risk — avoid in multi-tenant clusters.</td></tr>
+      <tr><td>ServiceAccount</td><td>Pod identity for API server authentication. Mounted as a projected token.</td></tr>
+      <tr><td>Role / ClusterRole</td><td>A set of permissions (verbs on resources). Role is namespace-scoped, ClusterRole is cluster-scoped.</td></tr>
+      <tr><td>RoleBinding / ClusterRoleBinding</td><td>Assigns a Role or ClusterRole to a subject (user, group, ServiceAccount).</td></tr>
+      <tr><td>RBAC</td><td>Role-Based Access Control — Kubernetes' primary authorisation mechanism.</td></tr>
+      <tr><td>NetworkPolicy</td><td>Firewall rules at the Pod level. Requires a CNI plugin that implements them (Calico, Cilium, etc.).</td></tr>
+      <tr><td>HPA</td><td>HorizontalPodAutoscaler — scales replicas based on metrics.</td></tr>
+      <tr><td>VPA</td><td>VerticalPodAutoscaler — right-sizes container resource requests/limits.</td></tr>
+      <tr><td>PodDisruptionBudget (PDB)</td><td>Limits voluntary disruptions to maintain minimum availability during node drains/upgrades.</td></tr>
+      <tr><td>LimitRange</td><td>Sets default and maximum resource requests/limits per Pod/container in a namespace.</td></tr>
+      <tr><td>ResourceQuota</td><td>Caps total resource consumption (CPU, memory, object counts) per namespace.</td></tr>
+      <tr><td>CRD</td><td>CustomResourceDefinition — extends the Kubernetes API with new resource types.</td></tr>
+      <tr><td>Operator</td><td>A controller that manages a CRD-based resource, encoding domain-specific operational knowledge.</td></tr>
+      <tr><td>Admission Controller</td><td>API server plug-in that intercepts requests before persistence to validate or mutate them.</td></tr>
+      <tr><td>Webhook</td><td>External HTTP server called by the API server for admission. Validating or Mutating.</td></tr>
+      <tr><td>OwnerReference</td><td>Links child objects to their parent (e.g., Pod → ReplicaSet → Deployment). Enables cascading deletes.</td></tr>
+      <tr><td>Finalizer</td><td>Prevents object deletion until a controller removes the finalizer — used for clean-up logic.</td></tr>
+      <tr><td>taint</td><td>A node property that repels Pods unless they have a matching toleration.</td></tr>
+      <tr><td>toleration</td><td>A Pod property allowing it to be scheduled on a tainted node.</td></tr>
+      <tr><td>affinity</td><td>Scheduling constraint expressing attraction (required or preferred) to nodes or other Pods.</td></tr>
+      <tr><td>anti-affinity</td><td>Scheduling constraint expressing repulsion from nodes or other Pods — for spread/HA.</td></tr>
+      <tr><td>QoS class</td><td>Guaranteed, Burstable, or BestEffort — determines eviction priority under memory pressure.</td></tr>
+      <tr><td>cgroups</td><td>Linux kernel resource isolation: CPU, memory, I/O, PID counts — per container.</td></tr>
+      <tr><td>namespace (Linux)</td><td>Linux kernel isolation primitive: pid, net, mnt, uts, ipc, user, cgroup — not Kubernetes Namespace.</td></tr>
+      <tr><td>eBPF</td><td>Extended Berkeley Packet Filter — kernel-level programmable hooks used by Cilium, Falco, etc.</td></tr>
+      <tr><td>Informer</td><td>Client-go library component: combines List+Watch with a local cache + event handlers.</td></tr>
+      <tr><td>leader election</td><td>Mechanism using a Lease API object to ensure only one controller instance is active at a time.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</details>
+
+<!-- ====================== SECTION 10 ====================== -->
+<h2 id="platform-personas">10 · Platform Personas — Who Uses Kubernetes and How</h2>
+
+<p>
+Kubernetes serves many different engineering roles. Understanding which persona you are
+helps you focus on the right sections of this documentation.
+</p>
+
+<div class="arch-grid">
+  <div class="arch-box">
+    <h4>Platform Engineers</h4>
+    <ul>
+      <li>Install and upgrade clusters</li>
+      <li>Design namespace and RBAC topology</li>
+      <li>Manage CRDs, operators, admission webhooks</li>
+      <li>Build internal developer platforms on K8s</li>
+      <li>→ <a href="../10-team-workflows/01-platform-engineers.html">See full guide</a></li>
+    </ul>
+  </div>
+  <div class="arch-box">
+    <h4>Application Developers</h4>
+    <ul>
+      <li>Write Deployments, Services, Ingress</li>
+      <li>Configure resource requests/limits</li>
+      <li>Use ConfigMaps and Secrets</li>
+      <li>Debug pod failures, read logs</li>
+      <li>→ <a href="../10-team-workflows/05-application-developers.html">See full guide</a></li>
+    </ul>
+  </div>
+  <div class="arch-box">
+    <h4>SRE Teams</h4>
+    <ul>
+      <li>Define SLOs and PDBs</li>
+      <li>Tune HPA/VPA/Cluster Autoscaler</li>
+      <li>Operate on-call for cluster incidents</li>
+      <li>Capacity planning, cost attribution</li>
+      <li>→ <a href="../10-team-workflows/03-sre-teams.html">See full guide</a></li>
+    </ul>
+  </div>
+  <div class="arch-box">
+    <h4>Security Teams</h4>
+    <ul>
+      <li>RBAC auditing and policy enforcement</li>
+      <li>OPA/Gatekeeper or Kyverno policies</li>
+      <li>Pod Security Standards / Admission</li>
+      <li>Image scanning, runtime security (Falco)</li>
+      <li>→ <a href="../10-team-workflows/04-security-teams.html">See full guide</a></li>
+    </ul>
+  </div>
+  <div class="arch-box">
+    <h4>DevOps / CI-CD</h4>
+    <ul>
+      <li>Build CI pipelines that push images</li>
+      <li>Manage Helm charts / Kustomize overlays</li>
+      <li>GitOps with ArgoCD or FluxCD</li>
+      <li>Blue/green and canary deployments</li>
+      <li>→ <a href="../10-team-workflows/02-devops-teams.html">See full guide</a></li>
+    </ul>
+  </div>
+  <div class="arch-box">
+    <h4>Data / MLOps Engineers</h4>
+    <ul>
+      <li>Run Spark/Flink/Ray on Kubernetes</li>
+      <li>GPU node pools and device plugins</li>
+      <li>Kubeflow for ML pipelines</li>
+      <li>StatefulSet databases, object storage</li>
+      <li>→ <a href="../10-team-workflows/07-mlops-teams.html">See full guide</a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ====================== SECTION 11 ====================== -->
+<h2 id="quick-start-kubectl">11 · Quick Reference: Essential kubectl Commands</h2>
+
+<pre><code class="language-bash"># ---- Cluster Info ----
+kubectl cluster-info                      # API server URL and CoreDNS
+kubectl get nodes -o wide                 # All nodes with IPs, OS, kernel
+kubectl describe node &lt;node-name&gt;         # Node capacity, allocatable, events
+kubectl get componentstatuses             # etcd, scheduler, controller-manager health (deprecated 1.20+)
+kubectl get --raw /healthz                # API server health check
+kubectl get --raw /metrics | head -40     # Prometheus metrics from API server
+
+# ---- Namespace management ----
+kubectl get namespaces
+kubectl create namespace prod
+kubectl config set-context --current --namespace=prod
+
+# ---- Pod operations ----
+kubectl get pods -A -o wide               # All pods, all namespaces, node info
+kubectl describe pod &lt;name&gt;              # Full event stream, status, volumes
+kubectl logs &lt;pod&gt; -c &lt;container&gt; --previous  # Previous container's logs
+kubectl exec -it &lt;pod&gt; -- bash           # Interactive shell
+kubectl port-forward pod/&lt;name&gt; 8080:80  # Local port tunnel
+
+# ---- Deployment operations ----
+kubectl apply -f manifest.yaml           # Declarative apply (idempotent)
+kubectl diff -f manifest.yaml            # Preview changes before apply
+kubectl rollout status deployment/&lt;name&gt; # Watch rollout progress
+kubectl rollout history deployment/&lt;name&gt; # See revision history
+kubectl rollout undo deployment/&lt;name&gt;   # Rollback to previous revision
+kubectl scale deployment/&lt;name&gt; --replicas=5
+
+# ---- Debugging ----
+kubectl get events --sort-by=.lastTimestamp
+kubectl top nodes                        # CPU/Memory usage (needs metrics-server)
+kubectl top pods -A --sort-by=memory
+kubectl debug node/&lt;node&gt; -it --image=busybox  # Debug node with privileged pod
+kubectl auth can-i create pods --as=serviceaccount:default:mysa  # RBAC check
+
+# ---- Raw API access ----
+kubectl get --raw /api/v1/namespaces
+kubectl get --raw /apis/apps/v1/deployments
+kubectl proxy &amp;                          # Proxy API to localhost:8001 (no TLS)</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ====================== SECTION 12 ====================== -->
+<h2 id="production-best-practices">12 · Production Best Practices (Introduction Level)</h2>
+
+<div class="callout tip">
+  <strong>Start here before reading anything else</strong>
+  These are the non-negotiable practices that distinguish a production Kubernetes cluster from a demo.
+</div>
+
+<details>
+  <summary>12 foundational best practices</summary>
+  <div class="details-body">
+  <ol>
+    <li>
+      <strong>Always set resource requests AND limits</strong> on every container.
+      Without requests, the scheduler cannot make good placement decisions.
+      Without limits, a runaway container can starve the entire node.
+    </li>
+    <li>
+      <strong>Use namespaces for isolation</strong>. Don't run production workloads in
+      <code>default</code>. At minimum: <code>kube-system</code> (platform), <code>monitoring</code>,
+      one namespace per team or application.
+    </li>
+    <li>
+      <strong>Configure liveness and readiness probes</strong>. Without them, Kubernetes
+      cannot determine if your container is actually healthy. A <em>started but broken</em> container
+      with no probe will receive traffic indefinitely.
+    </li>
+    <li>
+      <strong>Run 3 control plane nodes</strong> for HA. etcd requires a quorum;
+      3 nodes tolerate 1 failure. 5 nodes tolerate 2 failures. Never run a single control plane in production.
+    </li>
+    <li>
+      <strong>Separate etcd from other control plane components</strong> on dedicated nodes in large clusters.
+      etcd is I/O-heavy; noisy neighbours degrade consensus latency.
+    </li>
+    <li>
+      <strong>Enable RBAC and disable anonymous access</strong>.
+      Never use <code>cluster-admin</code> for application service accounts.
+      Follow the principle of least privilege.
+    </li>
+    <li>
+      <strong>Use PodDisruptionBudgets</strong> for critical workloads to prevent
+      total unavailability during node drains and cluster upgrades.
+    </li>
+    <li>
+      <strong>Tag everything with labels</strong>: <code>app</code>, <code>env</code>,
+      <code>team</code>, <code>version</code>. This enables cost attribution, filtering,
+      and policy targeting.
+    </li>
+    <li>
+      <strong>Run a Network Policy</strong> default-deny in each namespace and explicitly
+      allow only required flows. Without it, any pod can reach any other pod.
+    </li>
+    <li>
+      <strong>Enable audit logging</strong> on the API server. Store audit logs externally.
+      They are your forensic record for security incidents and compliance.
+    </li>
+    <li>
+      <strong>Back up etcd regularly</strong> to an off-cluster location.
+      etcd holds the entire cluster state — without it, recovery is a rebuild from scratch.
+    </li>
+    <li>
+      <strong>Use a container image vulnerability scanner</strong> (Trivy, Snyk, Anchore)
+      in CI and enforce admission policies to block known-critical CVEs.
+    </li>
+  </ol>
+  </div>
+</details>
+
+<!-- ====================== SECTION 13 ====================== -->
+<h2 id="kubernetes-versions">13 · Kubernetes Versioning and Release Cadence</h2>
+
+<p>
+Kubernetes follows a <strong>semantic-ish versioning</strong> scheme: <code>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;</code>.
+In practice MAJOR is always 1; every new feature release is a MINOR bump. As of early 2025,
+the current stable release is <strong>1.32</strong>.
+</p>
+
+<ul>
+  <li><strong>Release cadence</strong>: 3 minor releases per year (roughly every 4 months).</li>
+  <li><strong>Support window</strong>: 3 minor versions supported at any time (N, N-1, N-2). Each minor version supported for ~14 months.</li>
+  <li><strong>API deprecation policy</strong>: GA APIs supported for 12 months / 3 releases minimum. Beta APIs for 9 months / 3 releases.</li>
+  <li><strong>Skew policy</strong>: kubelet may be at most 2 minor versions behind the API server. kube-proxy must match kubelet or be 1 behind.</li>
+</ul>
+
+<pre><code class="language-bash"># Check cluster and client versions
+kubectl version --short
+
+# Deprecated API check (before upgrading)
+kubectl convert -f old-manifest.yaml --output-version apps/v1  # requires kubectl convert plugin
+
+# API resource availability
+kubectl api-resources
+kubectl api-versions | grep apps</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<div class="callout warn">
+  <strong>Version skew is a common production incident</strong>
+  When upgrading, upgrade the control plane first, then worker nodes.
+  Never let a kubelet be newer than the API server.
+  See <a href="../09-production-operations/02-cluster-upgrades.html">Cluster Upgrades</a> for the full upgrade sequence.
+</div>
+
+<!-- ====================== SECTION 14 ====================== -->
+<h2 id="troubleshooting-intro">14 · Introduction to Troubleshooting Mindset</h2>
+
+<p>
+Kubernetes debugging follows a systematic top-down approach:
+</p>
+
+<ol>
+  <li><strong>Start with events</strong>: <code>kubectl describe pod &lt;name&gt;</code> — the Events section at the bottom tells you what happened.</li>
+  <li><strong>Check controller logs</strong>: if a Deployment isn't rolling, check the controller-manager logs.</li>
+  <li><strong>Check scheduler logs</strong>: if Pods are stuck in <code>Pending</code>, the scheduler log shows why it couldn't place them.</li>
+  <li><strong>Check kubelet logs</strong> on the target node: container pull errors, CRI failures, volume mount failures appear here.</li>
+  <li><strong>Check the container logs</strong>: <code>kubectl logs &lt;pod&gt; -p</code> (previous container) for crash reasons.</li>
+  <li><strong>Check network</strong>: use <code>kubectl exec -it &lt;debug-pod&gt; -- curl http://&lt;service&gt;</code> to test connectivity.</li>
+</ol>
+
+<div class="callout info">
+  <strong>Full troubleshooting guides</strong>
+  See <a href="../12-troubleshooting/00-troubleshooting-overview.html">12 · Troubleshooting</a> for exhaustive guides on every failure category.
+</div>
+
+<!-- ====================== NEXT FILES ====================== -->
+<hr/>
+<h2 id="next-files">Next Files to Study</h2>
+
+<div class="dep-graph">
+  <h4>Dependency Graph — where to go after this file</h4>
+  <ul class="dep-tree">
+    <li><a href="01-history-of-kubernetes.html">00-foundations/01-history-of-kubernetes.html</a> — Borg → Omega → Kubernetes lineage, key design decisions</li>
+    <li><a href="02-container-orchestration.html">00-foundations/02-container-orchestration.html</a> — cgroups, namespaces, OCI, CRI deep dive</li>
+    <li><a href="03-cluster-architecture-overview.html">00-foundations/03-cluster-architecture-overview.html</a> — Component interactions, HA topology, network topology</li>
+    <li><a href="04-kubernetes-api-model.html">00-foundations/04-kubernetes-api-model.html</a> — API object lifecycle, watch semantics, etcd encoding</li>
+    <li><a href="../01-control-plane/00-control-plane-overview.html">01-control-plane/00-control-plane-overview.html</a> — Full control plane internals</li>
+    <li><a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-sequence.html">11-api-flows/01-pod-creation-sequence.html</a> — End-to-end pod creation sequence diagram</li>
+  </ul>
+</div>
+
+<h2 id="references">References</h2>
+<ul>
+  <li>Kubernetes Official Documentation — <em>kubernetes.io/docs</em></li>
+  <li>Borg, Omega, and Kubernetes (Google, ACM Queue 2016) — foundational paper describing the lineage</li>
+  <li>Kubernetes the Hard Way — Kelsey Hightower's manual cluster bootstrap tutorial</li>
+  <li>CNCF Kubernetes Architecture Guide — <em>github.com/cncf/k8s-conformance</em></li>
+  <li>Kubernetes API Reference — <em>kubernetes.io/docs/reference/kubernetes-api/</em></li>
+  <li>client-go source — <em>github.com/kubernetes/client-go</em> (informers, work queues, leader election)</li>
+  <li>OCI Image Spec — <em>github.com/opencontainers/image-spec</em></li>
+  <li>OCI Runtime Spec — <em>github.com/opencontainers/runtime-spec</em></li>
+  <li>CNI Spec — <em>github.com/containernetworking/cni</em></li>
+  <li>CSI Spec — <em>github.com/container-storage-interface/spec</em></li>
+</ul>
+
+<!-- ====================== PREV/NEXT NAV ====================== -->
+<div class="doc-nav">
+  <div style="flex:1"></div>
+  <a href="01-history-of-kubernetes.html" class="next-link">
+    <span class="label">Next →</span>
+    <span class="title">01 · History of Kubernetes</span>
+  </a>
+</div>
+
+</article>
+</div><!-- .main-content -->
+
+<!-- ===== TOC PANEL ===== -->
+<aside class="toc-panel" id="tocPanel">
+  <h4>On this page</h4>
+  <ol id="tocList">
+    <li class="l1"><a href="#what-is-kubernetes">1 · What is Kubernetes?</a></li>
+    <li class="l2"><a href="#official-definition">Official definition</a></li>
+    <li class="l2"><a href="#broader-definition">Broader definition</a></li>
+    <li class="l1"><a href="#why-kubernetes-exists">2 · Why K8s Exists</a></li>
+    <li class="l1"><a href="#problems-solved">3 · Problems Solved</a></li>
+    <li class="l2"><a href="#problem-scheduling">3.1 Scheduling</a></li>
+    <li class="l2"><a href="#problem-selfhealing">3.2 Self-Healing</a></li>
+    <li class="l2"><a href="#problem-scaling">3.3 Scaling</a></li>
+    <li class="l2"><a href="#problem-rolling">3.4 Rolling Updates</a></li>
+    <li class="l2"><a href="#problem-service-discovery">3.5 Service Discovery</a></li>
+    <li class="l2"><a href="#problem-config">3.6 Config/Secrets</a></li>
+    <li class="l2"><a href="#problem-storage">3.7 Storage</a></li>
+    <li class="l2"><a href="#problem-multi-env">3.8 Env Parity</a></li>
+    <li class="l1"><a href="#traditional-vs-kubernetes">4 · Traditional vs K8s</a></li>
+    <li class="l1"><a href="#mental-model">5 · Mental Model</a></li>
+    <li class="l2"><a href="#mental-desired-state">5.1 Desired State</a></li>
+    <li class="l2"><a href="#mental-api-object">5.2 API Objects</a></li>
+    <li class="l2"><a href="#mental-watch">5.3 Watch not Poll</a></li>
+    <li class="l1"><a href="#cluster-architecture-overview">6 · Architecture</a></li>
+    <li class="l2"><a href="#control-plane-components">6.1 Control Plane</a></li>
+    <li class="l2"><a href="#worker-node-components">6.2 Worker Nodes</a></li>
+    <li class="l1"><a href="#declarative-model">7 · Declarative Model</a></li>
+    <li class="l1"><a href="#api-object-model">8 · API Object Model</a></li>
+    <li class="l2"><a href="#api-groups">8.1 API Groups</a></li>
+    <li class="l2"><a href="#resource-names">8.2 Resource Naming</a></li>
+    <li class="l2"><a href="#labels-annotations">8.3 Labels/Annotations</a></li>
+    <li class="l1"><a href="#core-concepts-glossary">9 · Glossary</a></li>
+    <li class="l1"><a href="#platform-personas">10 · Personas</a></li>
+    <li class="l1"><a href="#quick-start-kubectl">11 · kubectl Reference</a></li>
+    <li class="l1"><a href="#production-best-practices">12 · Best Practices</a></li>
+    <li class="l1"><a href="#kubernetes-versions">13 · Versioning</a></li>
+    <li class="l1"><a href="#troubleshooting-intro">14 · Troubleshooting</a></li>
+    <li class="l1"><a href="#next-files">Next Files</a></li>
+    <li class="l1"><a href="#references">References</a></li>
+  </ol>
+</aside>
+
+</div><!-- .layout -->
+
+<!-- Back to top -->
+<button id="back-top" title="Back to top">↑</button>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script>
+// ---- Theme Toggle ----
+const root = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? '☀ Light' : '☾ Dark';
+
+themeBtn.addEventListener('click', () => {
+  const current = root.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  themeBtn.textContent = next === 'dark' ? '☀ Light' : '☾ Dark';
+  localStorage.setItem('k8s-theme', next);
+});
+
+// ---- Sidebar Mobile Toggle ----
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+const menuBtn = document.getElementById('menuBtn');
+menuBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+});
+
+// ---- Back to Top ----
+const backTop = document.getElementById('back-top');
+window.addEventListener('scroll', () => {
+  backTop.classList.toggle('show', window.scrollY > 400);
+});
+backTop.addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+
+// ---- Copy Code Buttons ----
+function copyCode(btn) {
+  const code = btn.previousElementSibling || btn.closest('pre').querySelector('code');
+  navigator.clipboard.writeText(code.textContent).then(() => {
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1800);
+  });
+}
+
+// ---- Global search highlight ----
+const globalSearch = document.getElementById('globalSearch');
+globalSearch.addEventListener('input', function() {
+  const q = this.value.trim();
+  if (!q) { removeHighlights(); return; }
+  highlightText(document.getElementById('articleWrap'), q);
+});
+
+function highlightText(root, q) {
+  removeHighlights();
+  if (!q) return;
+  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  walkText(root, re);
+}
+function removeHighlights() {
+  document.querySelectorAll('mark.search-hl').forEach(m => {
+    m.replaceWith(document.createTextNode(m.textContent));
+  });
+}
+function walkText(node, re) {
+  if (node.nodeType === 3) {
+    if (re.test(node.textContent)) {
+      const span = document.createElement('span');
+      span.innerHTML = node.textContent.replace(re, '<mark class="search-hl">$1</mark>');
+      node.parentNode.replaceChild(span, node);
+    }
+  } else if (node.nodeType === 1 && !['SCRIPT','STYLE','PRE','CODE'].includes(node.tagName)) {
+    [...node.childNodes].forEach(c => walkText(c, re));
+  }
+}
+
+// ---- Sidebar search filter ----
+const sidebarSearch = document.getElementById('sidebarSearch');
+sidebarSearch.addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#sidebarNav a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+// ---- TOC active section tracking ----
+const tocLinks = document.querySelectorAll('#tocList a');
+const sections = [...document.querySelectorAll('h2[id], h3[id]')];
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`#tocList a[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, {rootMargin:'-10% 0px -80% 0px'});
+sections.forEach(s => io.observe(s));
+</script>
+</body>
+</html>

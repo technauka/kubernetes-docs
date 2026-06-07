@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Performance Issues | Kubernetes Docs</title>
+<style>
+:root{--sidebar-w:280px;--toc-w:240px;--font-mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--border2:#21262d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#1f6feb;--accent3:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--orange:#d18616;--purple:#bc8cff;--cyan:#39d353;--pink:#f778ba;--code-bg:#161b22;--code-border:#30363d;--tag-bg:#1f6feb33;--tag-text:#58a6ff;--warn-bg:#3d2b00;--warn-border:#d29922;--note-bg:#0d2137;--note-border:#1f6feb;--danger-bg:#3d0000;--danger-border:#f85149;--success-bg:#0d2b0d;--success-border:#3fb950;--table-head:#21262d;--table-stripe:#161b22;--scrollbar:#30363d;--scrollbar-thumb:#484f58}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--border2:#eaeef2;--text:#1f2328;--text2:#636c76;--text3:#9198a1;--accent:#0969da;--accent2:#0969da;--accent3:#218bff;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--orange:#bc4c00;--purple:#8250df;--cyan:#0550ae;--pink:#bf3989;--code-bg:#f6f8fa;--code-border:#d0d7de;--tag-bg:#ddf4ff;--tag-text:#0969da;--warn-bg:#fff8c5;--warn-border:#d4a72c;--note-bg:#ddf4ff;--note-border:#54aeff;--danger-bg:#ffebe9;--danger-border:#ff8182;--success-bg:#dafbe1;--success-border:#4ac26b;--table-head:#f6f8fa;--table-stripe:#f6f8fa;--scrollbar:#d0d7de;--scrollbar-thumb:#9198a1}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;display:flex;flex-direction:column;min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--scrollbar)}::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:3px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+code{font-family:var(--font-mono);font-size:0.85em;background:var(--code-bg);border:1px solid var(--code-border);border-radius:4px;padding:0.1em 0.35em}
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;padding:1.2rem;overflow-x:auto;position:relative;margin:1rem 0}
+pre code{background:none;border:none;padding:0;font-size:0.82em;line-height:1.6}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:5px;font-size:0.75em;cursor:pointer;opacity:0.7;transition:opacity .2s}.copy-btn:hover{opacity:1}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:1rem}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;display:none;padding:4px}
+.topbar-logo{font-weight:700;font-size:1.05rem;color:var(--text)}.topbar-logo span{color:var(--accent)}
+.breadcrumb{display:flex;align-items:center;gap:0.4rem;font-size:0.82em;color:var(--text2)}.breadcrumb a{color:var(--text2)}.breadcrumb a:hover{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:0.7rem}
+.search-wrap{position:relative}
+#search-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:0.3rem 0.7rem 0.3rem 2rem;font-size:0.82em;width:200px;outline:none}
+#search-input:focus{border-color:var(--accent)}
+.search-wrap::before{content:'⌕';position:absolute;left:0.5rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:1rem;pointer-events:none}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:0.82em}
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);flex-shrink:0;transition:transform .25s}
+.sidebar-search{padding:0.7rem;border-bottom:1px solid var(--border)}
+#sidebar-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:0.3rem 0.6rem;font-size:0.8em;outline:none}
+.sidebar nav{padding:0.5rem 0}
+.nav-section{margin:0.3rem 0}
+.nav-section-title{padding:0.45rem 1rem;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)}
+.nav-section a{display:flex;align-items:center;padding:0.32rem 1rem 0.32rem 1.4rem;font-size:0.83em;color:var(--text2);gap:0.5rem;border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--tag-bg);font-weight:600}
+.nav-section a .num{color:var(--text3);font-size:0.78em;min-width:1.6em}
+.main-content{flex:1;overflow-y:auto;padding:2rem 2.5rem;max-width:calc(100% - var(--toc-w));min-width:0}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);flex-shrink:0;padding:1rem 0}
+.toc-title{font-size:0.75em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:0 1rem 0.5rem}
+.toc-panel a{display:block;font-size:0.8em;color:var(--text2);padding:0.25rem 1rem;border-left:2px solid transparent;transition:all .15s}
+.toc-panel a:hover{color:var(--text);text-decoration:none}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent)}
+.toc-panel a.toc-h3{padding-left:1.8rem;font-size:0.75em}
+.page-header{margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.file-meta{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem}
+.tag{background:var(--tag-bg);color:var(--tag-text);border:1px solid var(--accent2);border-radius:12px;padding:0.2rem 0.7rem;font-size:0.75em;font-family:var(--font-mono)}
+h1{font-size:1.9rem;font-weight:700;margin-bottom:0.5rem;color:var(--text)}
+h2{font-size:1.3rem;font-weight:700;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:1.08rem;font-weight:700;margin:2rem 0 0.8rem;color:var(--text)}
+h4{font-size:0.95rem;font-weight:700;margin:1.5rem 0 0.6rem;color:var(--text2)}
+p{margin:0.7rem 0}ul,ol{margin:0.7rem 0 0.7rem 1.5rem}li{margin:0.25rem 0}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85em}
+th{background:var(--table-head);padding:0.6rem 0.8rem;text-align:left;font-weight:600;border:1px solid var(--border)}
+td{padding:0.5rem 0.8rem;border:1px solid var(--border);vertical-align:top}
+tr:nth-child(even){background:var(--table-stripe)}
+.callout{border-radius:8px;padding:1rem 1.2rem;margin:1.2rem 0;border-left:3px solid}
+.callout.warn{background:var(--warn-bg);border-color:var(--yellow)}.callout.note{background:var(--note-bg);border-color:var(--accent)}.callout.danger{background:var(--danger-bg);border-color:var(--red)}.callout.success{background:var(--success-bg);border-color:var(--green)}
+.callout-title{font-weight:700;margin-bottom:0.4rem;font-size:0.88em;text-transform:uppercase;letter-spacing:0.05em}
+.callout.warn .callout-title{color:var(--yellow)}.callout.note .callout-title{color:var(--accent)}.callout.danger .callout-title{color:var(--red)}.callout.success .callout-title{color:var(--green)}
+.nav-footer{display:flex;gap:1rem;margin:3rem 0 1rem;padding-top:2rem;border-top:1px solid var(--border)}
+.nav-btn{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;cursor:pointer;transition:all .2s;color:var(--text);text-align:left}
+.nav-btn:hover{border-color:var(--accent);background:var(--bg3);text-decoration:none}
+.nav-btn.next{text-align:right}
+.nav-btn .label{font-size:0.75em;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.3rem}
+.nav-btn .title{font-size:0.9em;font-weight:600;color:var(--accent)}
+.back-to-top{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--accent2);color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:1.1rem;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4);z-index:200}
+.back-to-top.visible{display:flex}
+.search-hl{background:var(--yellow);color:#000;border-radius:2px}
+details{margin:0.8rem 0}
+details>summary{cursor:pointer;padding:0.6rem 0.8rem;background:var(--bg3);border:1px solid var(--border);border-radius:6px;font-weight:600;font-size:0.88em;list-style:none;display:flex;align-items:center;gap:0.5rem}
+details>summary::before{content:'▶';font-size:0.7em;transition:transform .2s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>summary::-webkit-details-marker{display:none}
+details .details-body{padding:1rem;background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:1rem 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin:1rem 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.2rem}
+.card h4{margin-top:0;color:var(--accent)}
+@media(max-width:1200px){.toc-panel{display:none}}
+@media(max-width:768px){.hamburger{display:flex}.sidebar{position:fixed;left:0;top:52px;z-index:50;transform:translateX(-100%);height:calc(100vh - 52px)}.sidebar.open{transform:translateX(0)}.main-content{max-width:100%;padding:1.2rem}.grid-2,.grid-3{grid-template-columns:1fr}#search-input{width:130px}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger">&#9776;</button>
+    <span class="topbar-logo"><span>K8s</span> Docs</span>
+    <nav class="breadcrumb">
+      <a href="../COVERAGE.html">Home</a><span>›</span>
+      <a href="00-troubleshooting-overview.html">Troubleshooting</a><span>›</span>
+      <span>Performance Issues</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap"><input id="search-input" type="search" placeholder="Search…" autocomplete="off"/></div>
+    <button class="theme-btn" id="theme-btn">☀ Light</button>
+  </div>
+</div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="../01-control-plane/00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="../01-control-plane/01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="../01-control-plane/02-etcd.html"><span class="num">02</span>etcd</a>
+      <a href="../01-control-plane/03-kube-scheduler.html"><span class="num">03</span>kube-scheduler</a>
+      <a href="../01-control-plane/04-kube-controller-manager.html"><span class="num">04</span>kube-controller-manager</a>
+      <a href="../01-control-plane/05-cloud-controller-manager.html"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="../01-control-plane/06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="../01-control-plane/07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html"><span class="num">02</span>kube-proxy</a>
+      <a href="../02-node-components/03-container-runtime.html"><span class="num">03</span>Container Runtime</a>
+      <a href="../02-node-components/04-cri-interface.html"><span class="num">04</span>CRI Interface</a>
+      <a href="../02-node-components/05-node-lifecycle.html"><span class="num">05</span>Node Lifecycle</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="../03-networking/00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="../03-networking/01-pod-networking.html"><span class="num">01</span>Pod Networking</a>
+      <a href="../03-networking/02-cni-plugins.html"><span class="num">02</span>CNI Plugins</a>
+      <a href="../03-networking/04-dns.html"><span class="num">04</span>DNS</a>
+      <a href="../03-networking/05-ingress.html"><span class="num">05</span>Ingress</a>
+      <a href="../03-networking/07-network-policies.html"><span class="num">07</span>Network Policies</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-csi-drivers.html"><span class="num">04</span>CSI Drivers</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html"><span class="num">01</span>Pods</a>
+      <a href="../05-workloads/02-deployments.html"><span class="num">02</span>Deployments</a>
+      <a href="../05-workloads/03-statefulsets.html"><span class="num">03</span>StatefulSets</a>
+      <a href="../05-workloads/05-jobs-cronjobs.html"><span class="num">05</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/06-horizontal-pod-autoscaler.html"><span class="num">06</span>HPA</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-rbac.html"><span class="num">01</span>RBAC</a>
+      <a href="../06-security/02-pod-security.html"><span class="num">02</span>Pod Security</a>
+      <a href="../06-security/04-secrets-management.html"><span class="num">04</span>Secrets Management</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics.html"><span class="num">01</span>Metrics</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Tracing</a>
+      <a href="../07-observability/06-alerting.html"><span class="num">06</span>Alerting</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/02-gitops.html"><span class="num">02</span>GitOps</a>
+      <a href="../08-platform-engineering/03-ci-cd-pipelines.html"><span class="num">03</span>CI/CD Pipelines</a>
+      <a href="../08-platform-engineering/05-policy-enforcement.html"><span class="num">05</span>Policy Enforcement</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/09-incident-response.html"><span class="num">09</span>Incident Response</a>
+      <a href="../09-production-operations/10-sre-practices.html"><span class="num">10</span>SRE Practices</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-workflows-overview.html"><span class="num">00</span>Overview</a>
+      <a href="../10-team-workflows/01-local-development.html"><span class="num">01</span>Local Development</a>
+      <a href="../10-team-workflows/02-ci-cd-pipelines.html"><span class="num">02</span>CI/CD Pipelines</a>
+      <a href="../10-team-workflows/03-helm.html"><span class="num">03</span>Helm</a>
+      <a href="../10-team-workflows/04-kustomize.html"><span class="num">04</span>Kustomize</a>
+      <a href="../10-team-workflows/05-testing-strategies.html"><span class="num">05</span>Testing Strategies</a>
+      <a href="../10-team-workflows/06-progressive-delivery.html"><span class="num">06</span>Progressive Delivery</a>
+      <a href="../10-team-workflows/07-developer-self-service.html"><span class="num">07</span>Developer Self-Service</a>
+      <a href="../10-team-workflows/08-runbooks.html"><span class="num">08</span>Runbooks</a>
+      <a href="../10-team-workflows/09-on-call.html"><span class="num">09</span>On-Call</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows &amp; Diagrams</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-overview.html"><span class="num">00</span>Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-service-account-token.html"><span class="num">02</span>Service Account Token</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-admission-flow.html"><span class="num">03</span>Admission Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduler-flow.html"><span class="num">04</span>Scheduler Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-rolling-update-flow.html"><span class="num">05</span>Rolling Update Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-hpa-flow.html"><span class="num">06</span>HPA Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-csi-flow.html"><span class="num">07</span>CSI Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-network-policy-flow.html"><span class="num">08</span>Network Policy Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-rbac-flow.html"><span class="num">09</span>RBAC Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-garbage-collection.html"><span class="num">10</span>Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-leader-election.html"><span class="num">11</span>Leader Election</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-webhook-flow.html"><span class="num">12</span>Webhook Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-cni-setup-flow.html"><span class="num">13</span>CNI Setup Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-volume-attach-flow.html"><span class="num">14</span>Volume Attach Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-network-issues.html"><span class="num">02</span>Network Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html"><span class="num">03</span>Storage Issues</a>
+      <a href="../12-troubleshooting/04-performance-issues.html" class="active"><span class="num">04</span>Performance Issues</a>
+      <a href="../12-troubleshooting/05-control-plane-issues.html"><span class="num">05</span>Control Plane Issues</a>
+      <a href="../12-troubleshooting/06-node-issues.html"><span class="num">06</span>Node Issues</a>
+      <a href="../12-troubleshooting/07-security-issues.html"><span class="num">07</span>Security Issues</a>
+      <a href="../12-troubleshooting/08-dns-issues.html"><span class="num">08</span>DNS Issues</a>
+      <a href="../12-troubleshooting/09-ingress-issues.html"><span class="num">09</span>Ingress Issues</a>
+      <a href="../12-troubleshooting/10-etcd-issues.html"><span class="num">10</span>etcd Issues</a>
+    </div>
+  </nav>
+</aside>
+
+<main class="main-content" id="main-content">
+
+<div class="page-header">
+  <div class="file-meta">
+    <span class="tag">Section 12</span>
+  </div>
+  <h1>Performance Issues</h1>
+</div>
+
+<h2 id="overview">Overview</h2>
+<p>Diagnosis and resolution of Kubernetes performance problems — CPU throttling, memory pressure, I/O bottlenecks, slow API server, and HPA/VPA misconfigurations.</p>
+<h2 id="performance-triage-checklist">Performance Triage Checklist</h2>
+<pre><code class="language-bash"># 1. Pod-level resource usage
+kubectl top pods -n &lt;ns&gt; --sort-by=cpu | head -20
+kubectl top pods -n &lt;ns&gt; --sort-by=memory | head -20
+
+# 2. Node-level resource usage
+kubectl top nodes
+
+# 3. Check for CPU throttling (% of time in CFS throttle)
+# Prometheus: container_cpu_throttled_seconds_total
+kubectl get --raw &#x27;/api/v1/namespaces/monitoring/services/prometheus-operated:web/proxy/api/v1/query&#x27; \
+  --data-urlencode &#x27;query=rate(container_cpu_throttled_seconds_total{namespace=&quot;production&quot;}[5m]) /
+    rate(container_cpu_usage_seconds_total{namespace=&quot;production&quot;}[5m]) &gt; 0.25&#x27; | jq .
+
+# 4. Check for OOMKill events
+kubectl get events -n &lt;ns&gt; --field-selector reason=OOMKilling
+kubectl get events -n &lt;ns&gt; | grep OOM
+
+# 5. Check resource requests vs limits
+kubectl get pods -n &lt;ns&gt; -o json | \
+  jq -r &#x27;.items[] | .metadata.name + &quot;: &quot; +
+    (.spec.containers[0].resources | &quot;req_cpu=&quot; + (.requests.cpu//&quot;none&quot;) +
+     &quot; limit_cpu=&quot; + (.limits.cpu//&quot;none&quot;) +
+     &quot; req_mem=&quot; + (.requests.memory//&quot;none&quot;) +
+     &quot; limit_mem=&quot; + (.limits.memory//&quot;none&quot;))&#x27;</code></pre>
+<h2 id="cpu-throttling">CPU Throttling</h2>
+<pre><code>CPU throttling occurs when:
+  A container exceeds its cpu LIMIT.
+  Linux CFS (Completely Fair Scheduler) throttles it for the remainder of the 100ms period.
+
+Symptoms:
+  - p99 latency much higher than p50 (spiky latency)
+  - Application feels &quot;frozen&quot; for short bursts
+  - Prometheus metric: container_cpu_throttled_seconds_total is non-zero
+
+Throttling vs no-limit:
+  cpu limit = 500m → throttled if spikes above 500m for &gt;50ms in 100ms window
+  no cpu limit → container can burst to full node CPU, but may compete with neighbors</code></pre>
+<pre><code class="language-bash"># Check if throttling is occurring
+kubectl exec &lt;pod&gt; -n &lt;ns&gt; -- cat /sys/fs/cgroup/cpu/cpu.stat
+# Look for: throttled_time (nanoseconds) &gt; 0
+
+# PromQL query: throttle ratio per container
+rate(container_cpu_throttled_seconds_total{pod=~&quot;payments-api.*&quot;}[5m]) /
+  rate(container_cpu_usage_seconds_total{pod=~&quot;payments-api.*&quot;}[5m])
+# &gt; 25% throttle ratio is a problem
+
+# Fix options:
+# 1. Increase cpu limit:
+kubectl patch deployment payments-api -n production \
+  -p &#x27;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;containers&quot;:[{&quot;name&quot;:&quot;payments-api&quot;,&quot;resources&quot;:{&quot;limits&quot;:{&quot;cpu&quot;:&quot;2000m&quot;}}}]}}}}&#x27;
+
+# 2. Remove cpu limit entirely (for latency-sensitive services):
+# Risk: pod can consume entire node CPU and starve neighbors
+# Mitigate: use cpu request (guarantees share) without limit
+
+# 3. Profile the application to reduce CPU usage
+# Go: pprof; Java: async-profiler; Node: clinic.js</code></pre>
+<h2 id="memory-pressure-and-oom">Memory Pressure and OOM</h2>
+<pre><code class="language-bash"># Check OOMKill history
+kubectl get events -n &lt;ns&gt; -o json | \
+  jq &#x27;.items[] | select(.reason==&quot;OOMKilling&quot;) |
+    {pod:.involvedObject.name, msg:.message, time:.lastTimestamp}&#x27;
+
+# Current memory usage vs limit
+kubectl top pod &lt;pod&gt; -n &lt;ns&gt;
+kubectl get pod &lt;pod&gt; -n &lt;ns&gt; \
+  -o jsonpath=&#x27;{.spec.containers[0].resources.limits.memory}&#x27;
+
+# Java heap sizing (common mistake)
+# Container limit: 2Gi
+# JVM default heap: 25% of RAM = 512Mi
+# Non-heap (metaspace, code cache, GC overhead): ~512Mi
+# → Total Java process = 1Gi → fits within 2Gi limit
+#
+# Problem: JVM sets heap from HOST memory, not container cgroup limit
+# Fix: add -XX:MaxRAMPercentage=75 or explicit -Xmx1500m
+# OR: -XX:+UseContainerSupport (default in JDK 11+) reads cgroup limits
+
+# Go memory — no GC limit by default
+# Add: GOGC=100 (default), GOMEMLIMIT=1750MiB (Go 1.19+)
+# GOMEMLIMIT tells Go GC to be aggressive before hitting container limit
+
+# Node.js heap
+# --max-old-space-size=1536   (1.5GB for 2GB container)
+
+# VPA recommendation for memory
+kubectl describe vpa &lt;vpa-name&gt; -n &lt;ns&gt;
+# Look for: target memory recommendation</code></pre>
+<h2 id="slow-application-response">Slow Application Response</h2>
+<pre><code class="language-bash"># Step 1: Identify which tier is slow
+# - Is it the database? The upstream API? The app itself?
+kubectl run netshoot --image=nicolaka/netshoot --rm -it -- \
+  curl -w &quot;@curl-format.txt&quot; -o /dev/null -s http://payments-api.production.svc:8080/
+
+# Step 2: Check connection pool exhaustion
+# App log: &quot;too many open connections&quot;, &quot;pool timeout&quot;, &quot;ETIMEDOUT&quot;
+# Fix: tune pool size, or find connection leak
+
+# Step 3: CPU throttling causing latency spikes
+# See CPU throttling section above
+
+# Step 4: GC pauses (Java/Go)
+# Go: check GODEBUG=gctrace=1 output
+# Java: check GC logs (-XX:+PrintGCDetails)
+# Fix: tune GC settings, increase heap headroom
+
+# Step 5: Network latency
+kubectl run netshoot --image=nicolaka/netshoot --rm -it -- \
+  ping -c 10 payments-api.production.svc.cluster.local
+# Inter-pod latency should be &lt;1ms on same node, &lt;5ms across nodes
+
+# Step 6: DNS lookup latency
+kubectl run netshoot --image=nicolaka/netshoot --rm -it -- \
+  time nslookup payments-api.production.svc.cluster.local
+# DNS should resolve in &lt;5ms; if &gt;50ms → CoreDNS issue</code></pre>
+<h2 id="hpa-not-scaling-fast-enough">HPA Not Scaling Fast Enough</h2>
+<pre><code class="language-bash"># Check HPA status
+kubectl describe hpa payments-api -n production
+# Conditions:
+#   AbleToScale: True
+#   ScalingActive: True
+#   ScalingLimited: False
+
+# Current vs target metric
+kubectl get hpa payments-api -n production
+# TARGETS: 850m/200m   ← 4x over target, should be scaling
+
+# Why is it slow to scale?
+# 1. scaleUp.stabilizationWindowSeconds &gt; 0 (default: 0 for scale-up)
+# 2. scaleUp.policies[].value too small (e.g., maxSurge of 2 pods per minute)
+kubectl get hpa payments-api -n production -o yaml | grep -A10 behavior
+
+# 3. Pods are slow to become Ready (long readiness probe initialDelay)
+kubectl describe pod &lt;new-pod&gt; -n production | grep &quot;Readiness&quot;
+
+# 4. metrics-server lag (60s scrape interval)
+kubectl get --raw /apis/metrics.k8s.io/v1beta1/namespaces/production/pods | \
+  jq &#x27;.items[].timestamp&#x27;
+
+# Fix: configure scale-up behavior for faster response
+behavior:
+  scaleUp:
+    stabilizationWindowSeconds: 0
+    policies:
+    - type: Pods
+      value: 10
+      periodSeconds: 60    # allow up to 10 pods per minute
+    - type: Percent
+      value: 100
+      periodSeconds: 60    # or double replicas per minute
+    selectPolicy: Max</code></pre>
+<h2 id="node-resource-exhaustion">Node Resource Exhaustion</h2>
+<pre><code class="language-bash"># Check allocatable vs requested resources on node
+kubectl describe node &lt;node&gt; | grep -A15 &quot;Allocated resources&quot;
+# Requests:   CPU=3500m/4000m (87%), Memory=6Gi/8Gi (75%)
+
+# Find which pods are consuming most resources
+kubectl top pods -n production --sort-by=memory | head -20
+
+# Check for resource request inflation (pods requesting more than they use)
+# PromQL: actual usage vs request
+# container_memory_usage_bytes / on(pod,container) kube_pod_container_resource_requests{resource=&quot;memory&quot;}
+
+# Node is fully packed → new pods stay Pending
+# Options:
+# 1. Scale out: add nodes or use Karpenter auto-provisioning
+# 2. Reduce requests: use VPA to right-size
+# 3. Use bin-packing: switch HPA to MostAllocated scoring strategy
+
+# Check node capacity including extended resources
+kubectl describe node &lt;node&gt; | grep -E &quot;Capacity:|Allocatable:&quot; -A10</code></pre>
+<h2 id="disk-io-bottleneck">Disk I/O Bottleneck</h2>
+<pre><code class="language-bash"># Symptoms: high io_wait, slow database, application timeout
+
+# Check iowait on node
+kubectl debug node/&lt;node&gt; -it --image=ubuntu -- \
+  iostat -x 1 5
+# Look for: %util near 100%, high await (ms), high w_await
+
+# Which process is causing I/O
+kubectl debug node/&lt;node&gt; -it --image=ubuntu -- \
+  iotop -Po   # show only active I/O processes
+
+# Check if pod is hitting EBS burst budget
+# EBS gp3 burst: sustained 3000 IOPS; burst to 3000 for gp3 baseline
+# gp3: 3000 IOPS and 125 MB/s always (no burst bucket needed)
+# gp2: IOPS = 3 × size, can burst to 3000 with burst bucket
+
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/EBS --metric-name BurstBalance \
+  --dimensions Name=VolumeId,Value=$PV_HANDLE \
+  --start-time $(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ) \
+  --end-time $(date -u +%Y-%m-%dT%H:%M:%SZ) \
+  --period 300 --statistics Average
+
+# Upgrade to gp3 with higher IOPS if sustained baseline needed
+kubectl patch storageclass gp3-retain \
+  -p &#x27;{&quot;parameters&quot;:{&quot;iops&quot;:&quot;6000&quot;,&quot;throughput&quot;:&quot;250&quot;}}&#x27;
+# Note: existing PVs not retroactively changed; new PVCs get new params
+
+# Use fio to benchmark actual disk performance
+kubectl apply -f - &lt;&lt;EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fio-test
+  namespace: production
+spec:
+  containers:
+  - name: fio
+    image: nixery.dev/fio
+    command: [&quot;fio&quot;, &quot;--name=randread&quot;, &quot;--ioengine=libaio&quot;,
+              &quot;--rw=randread&quot;, &quot;--bs=4k&quot;, &quot;--numjobs=4&quot;,
+              &quot;--runtime=30&quot;, &quot;--filename=/data/test&quot;,
+              &quot;--size=1G&quot;, &quot;--direct=1&quot;]
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: payments-data
+EOF</code></pre>
+<h2 id="api-server-latency">API Server Latency</h2>
+<pre><code class="language-bash"># API server request latency (high → controllers slow to reconcile)
+kubectl get --raw &#x27;/metrics&#x27; | grep apiserver_request_duration_seconds_bucket | \
+  grep -v &quot;^#&quot; | tail -5
+
+# PromQL: p99 request latency
+histogram_quantile(0.99,
+  sum(rate(apiserver_request_duration_seconds_bucket[5m])) by (le, verb, resource)
+)
+
+# Common causes of API server slowness:
+# 1. etcd latency &gt; 100ms
+kubectl get --raw &#x27;/metrics&#x27; | grep etcd_request_duration
+
+# 2. Too many watch connections (informer leak)
+kubectl get --raw &#x27;/metrics&#x27; | grep apiserver_watch_cache_events_dispatched_total
+
+# 3. Large list requests (missing pagination, large objects)
+kubectl get --raw &#x27;/metrics&#x27; | grep apiserver_request_total | grep LIST
+
+# Fix: ensure controllers use --watch-cache=true, paginate large lists
+# Fix: limit field selectors / label selectors on LIST calls
+# Fix: avoid storing large blobs in etcd (use ConfigMap references)</code></pre>
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="../11-api-flows-and-sequence-diagrams/06-hpa-flow.html">06 — HPA Flow</a> — HPA calculation and scaling triggers</li>
+<li><a href="./01-pod-failures.html">01 — Pod Failures</a> — OOMKilled and eviction</li>
+<li><a href="./06-node-issues.html">06 — Node Issues</a> — node-level resource pressure</li>
+</ul>
+
+<div class="nav-footer">
+  <a href="03-storage-issues.html" class="nav-btn">
+    <div class="label">← Previous</div>
+    <div class="title">Storage Issues</div>
+  </a>
+  <a href="05-control-plane-issues.html" class="nav-btn next">
+    <div class="label">Next →</div>
+    <div class="title">Control Plane Issues</div>
+  </a>
+</div>
+
+</main>
+
+<aside class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#overview">Overview</a>
+  <a href="#performance-triage-checklist">Performance Triage Checklist</a>
+  <a href="#cpu-throttling">CPU Throttling</a>
+  <a href="#memory-pressure-and-oom">Memory Pressure and OOM</a>
+  <a href="#slow-application-response">Slow Application Response</a>
+  <a href="#hpa-not-scaling-fast-enough">HPA Not Scaling Fast Enough</a>
+  <a href="#node-resource-exhaustion">Node Resource Exhaustion</a>
+  <a href="#disk-io-bottleneck">Disk I/O Bottleneck</a>
+  <a href="#api-server-latency">API Server Latency</a>
+  <a href="#related">Related</a>
+</aside>
+</div>
+
+<button class="back-to-top" id="back-to-top">↑</button>
+
+<script>
+
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');btn.className='copy-btn';btn.textContent='Copy';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});
+});
+const tocLinks=[...document.querySelectorAll('.toc-panel a')];
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){tocLinks.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);if(a)a.classList.add('active');}});
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h=>obs.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';});
+});
+const si=document.getElementById('search-input');
+si.addEventListener('input',function(){
+  document.querySelectorAll('.search-hl').forEach(m=>{m.outerHTML=m.textContent;});
+  const q=this.value.trim();if(!q)return;
+  const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  function walk(n){if(n.nodeType===3){if(n.textContent.match(re)){const s=document.createElement('span');s.innerHTML=n.textContent.replace(re,m=>`<mark class="search-hl">${m}</mark>`);n.parentNode.replaceChild(s,n);}}else if(n.nodeType===1&&!['SCRIPT','STYLE','MARK','BUTTON','INPUT'].includes(n.tagName)){[...n.childNodes].forEach(walk);}}
+  walk(document.getElementById('main-content'));
+});
+
+</script>
+</body>
+</html>

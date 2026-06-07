@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>kube-scheduler | K8s Internals</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;
+  --red:#f85149;--purple:#bc8cff;--orange:#d18616;
+  --code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;
+}
+:root[data-theme="light"]{
+  --bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;
+  --border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;
+  --accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;
+  --red:#d1242f;--purple:#8250df;--orange:#953800;
+  --code-bg:#f6f8fa;--sidebar-w:280px;--toc-w:240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow:hidden;height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:.85em;background:var(--code-bg);padding:2px 6px;border-radius:4px;color:var(--purple)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;position:relative;margin:.75rem 0}
+pre code{background:none;padding:0;color:var(--text);font-size:.82rem}
+h1{font-size:2rem;font-weight:700;line-height:1.25}
+h2{font-size:1.4rem;font-weight:600;margin:2rem 0 .75rem;padding-top:.5rem}
+h3{font-size:1.1rem;font-weight:600;margin:1.5rem 0 .5rem;color:var(--text)}
+h4{font-size:.95rem;font-weight:600;margin:1rem 0 .4rem;color:var(--text2)}
+p{margin:.6rem 0}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}
+li{margin:.2rem 0}
+table{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.85rem}
+th{background:var(--bg3);text-align:left;padding:.5rem .75rem;border:1px solid var(--border);font-weight:600}
+td{padding:.45rem .75rem;border:1px solid var(--border);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg2)}
+.topbar{position:sticky;top:0;z-index:200;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1rem;gap:.75rem}
+.topbar-left{display:flex;align-items:center;gap:.75rem;min-width:0}
+.topbar-right{display:flex;align-items:center;gap:.75rem;flex-shrink:0}
+.hamburger{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:4px 6px;border-radius:4px}
+.hamburger:hover{background:var(--bg3)}
+.topbar-logo{font-weight:700;font-size:1rem;white-space:nowrap}
+.topbar-logo span{color:var(--accent)}
+.breadcrumb{display:flex;align-items:center;gap:.35rem;font-size:.8rem;color:var(--text2);white-space:nowrap}
+.breadcrumb span{color:var(--text3)}
+.search-wrap input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.3rem .6rem;border-radius:6px;font-size:.82rem;width:180px}
+.search-wrap input:focus{outline:none;border-color:var(--accent)}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.3rem .7rem;border-radius:6px;cursor:pointer;font-size:.8rem;white-space:nowrap}
+.theme-btn:hover{background:var(--bg4)}
+.layout{display:flex;height:calc(100vh - 52px)}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;height:calc(100vh - 52px);position:sticky;top:52px}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--bg4)}
+.sidebar-search{padding:.6rem .75rem;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.35rem .6rem;border-radius:6px;font-size:.8rem}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+nav{padding:.5rem 0}
+.nav-section{margin-bottom:.25rem}
+.nav-section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:.4rem .75rem .2rem}
+.nav-section a{display:flex;align-items:center;gap:.5rem;padding:.28rem .75rem;font-size:.82rem;color:var(--text2);transition:background .15s,color .15s}
+.nav-section a:hover{background:var(--bg3);color:var(--text);text-decoration:none}
+.nav-section a.active{background:var(--accent2);color:#fff;border-radius:4px;margin:0 .4rem;padding:.28rem .4rem}
+.nav-section a .num{font-size:.7rem;color:var(--text3);min-width:22px}
+.nav-section a.active .num{color:#cde}
+.main-content{flex:1;overflow-y:auto;height:calc(100vh - 52px);padding:0}
+.main-content::-webkit-scrollbar{width:6px}
+.main-content::-webkit-scrollbar-thumb{background:var(--bg4)}
+.content-wrap{max-width:900px;margin:0 auto;padding:2rem 2rem 4rem}
+.toc-panel{width:var(--toc-w);flex-shrink:0;height:calc(100vh - 52px);overflow-y:auto;position:sticky;top:52px;padding:1rem .75rem;border-left:1px solid var(--border)}
+.toc-panel::-webkit-scrollbar{width:3px}
+.toc-panel h4{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:.5rem}
+.toc-panel a{display:block;font-size:.78rem;color:var(--text2);padding:.2rem .4rem;border-radius:4px;line-height:1.4;transition:color .15s}
+.toc-panel a:hover{color:var(--text);text-decoration:none;background:var(--bg3)}
+.toc-panel a.toc-active{color:var(--accent);font-weight:600}
+.toc-panel a.toc-h3{padding-left:1rem;font-size:.74rem}
+.page-header{padding:2rem 0 1.5rem;border-bottom:1px solid var(--border);margin-bottom:2rem}
+.file-meta{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:.72rem;color:var(--text2)}
+.callout{border-radius:8px;padding:.75rem 1rem;margin:.75rem 0;border-left:3px solid}
+.callout.note{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout.warn{background:rgba(210,153,34,.1);border-color:var(--yellow)}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout-title{font-weight:700;font-size:.82rem;margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem}
+.callout.note .callout-title{color:var(--accent)}
+.callout.warn .callout-title{color:var(--yellow)}
+.callout.danger .callout-title{color:var(--red)}
+.callout.success .callout-title{color:var(--green)}
+details{border:1px solid var(--border);border-radius:8px;margin:.6rem 0}
+details summary{padding:.6rem 1rem;cursor:pointer;font-weight:600;font-size:.9rem;list-style:none;display:flex;align-items:center;gap:.5rem}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'▶';font-size:.7rem;color:var(--text3);transition:transform .2s}
+details[open] summary::before{transform:rotate(90deg)}
+details .details-body{padding:.75rem 1rem 1rem;border-top:1px solid var(--border)}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin:.75rem 0}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:.75rem 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.card h4{margin-top:0}
+.component-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;margin:.75rem 0}
+.component-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem}
+.component-card h4{margin-top:0;font-size:.85rem;color:var(--accent)}
+.flow-row{display:flex;align-items:center;gap:.5rem;margin:.4rem 0;flex-wrap:wrap}
+.flow-box{padding:.35rem .8rem;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid;white-space:nowrap}
+.flow-box.cp{background:rgba(88,166,255,.12);border-color:var(--accent);color:var(--accent)}
+.flow-box.etcd{background:rgba(188,140,255,.12);border-color:var(--purple);color:var(--purple)}
+.flow-box.ok{background:rgba(63,185,80,.1);border-color:var(--green);color:var(--green)}
+.flow-box.warn{background:rgba(210,153,34,.1);border-color:var(--yellow);color:var(--yellow)}
+.flow-box.node{background:rgba(248,81,73,.1);border-color:var(--red);color:var(--red)}
+.flow-box.neutral{background:var(--bg3);border-color:var(--border);color:var(--text)}
+.flow-arrow{color:var(--text3);font-size:1.1rem}
+.ext-point{display:inline-flex;align-items:center;gap:.4rem;padding:.25rem .6rem;border-radius:4px;font-size:.78rem;font-weight:600;border:1px solid}
+.ext-point.filter{background:rgba(248,81,73,.1);border-color:var(--red);color:var(--red)}
+.ext-point.score{background:rgba(63,185,80,.1);border-color:var(--green);color:var(--green)}
+.ext-point.bind{background:rgba(88,166,255,.12);border-color:var(--accent);color:var(--accent)}
+.ext-point.reserve{background:rgba(210,153,34,.1);border-color:var(--yellow);color:var(--yellow)}
+.ext-point.permit{background:rgba(188,140,255,.12);border-color:var(--purple);color:var(--purple)}
+.nav-footer{display:flex;justify-content:space-between;gap:1rem;padding:2rem 0;margin-top:2rem;border-top:1px solid var(--border)}
+.nav-btn{display:inline-flex;flex-direction:column;padding:.6rem 1rem;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:.82rem;transition:border-color .2s,color .2s;max-width:220px}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.nav-btn span{font-size:.7rem;color:var(--text3)}
+.nav-btn.next{text-align:right}
+.copy-btn{position:absolute;top:.4rem;right:.4rem;background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;font-size:.72rem;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.back-to-top{position:fixed;bottom:2rem;right:2rem;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .3s;z-index:100}
+.back-to-top.visible{opacity:1;pointer-events:auto}
+mark.search-hl{background:rgba(210,153,34,.45);border-radius:2px;padding:0 1px}
+svg text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+@media(max-width:1100px){.toc-panel{display:none}}
+@media(max-width:768px){.sidebar{position:fixed;left:-300px;top:52px;z-index:150;transition:left .25s}.sidebar.open{left:0}.grid-2,.grid-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger">&#9776;</button>
+    <span class="topbar-logo"><span>K8s</span> Internals</span>
+    <nav class="breadcrumb">
+      <a href="../00-foundations/00-introduction.html">Home</a><span>›</span>
+      <a href="00-control-plane-overview.html">Control Plane</a><span>›</span>
+      <span>kube-scheduler</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap"><input id="search-input" type="search" placeholder="Search…" autocomplete="off"/></div>
+    <button class="theme-btn" id="theme-btn">☀ Light</button>
+  </div>
+</div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="02-etcd.html"><span class="num">02</span>etcd</a>
+      <a href="03-kube-scheduler.html" class="active"><span class="num">03</span>kube-scheduler</a>
+      <a href="04-kube-controller-manager.html"><span class="num">04</span>kube-controller-manager</a>
+      <a href="05-cloud-controller-manager.html"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html"><span class="num">02</span>kube-proxy</a>
+      <a href="../02-node-components/03-container-runtime-interface.html"><span class="num">03</span>CRI</a>
+      <a href="../02-node-components/04-cni-plugins.html"><span class="num">04</span>CNI Plugins</a>
+      <a href="../02-node-components/05-csi-plugins.html"><span class="num">05</span>CSI Plugins</a>
+      <a href="../02-node-components/06-node-lifecycle.html"><span class="num">06</span>Node Lifecycle</a>
+      <a href="../02-node-components/07-windows-worker-nodes.html"><span class="num">07</span>Windows Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="../03-networking/00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="../03-networking/01-pod-networking.html"><span class="num">01</span>Pod Networking</a>
+      <a href="../03-networking/02-services.html"><span class="num">02</span>Services</a>
+      <a href="../03-networking/03-ingress.html"><span class="num">03</span>Ingress</a>
+      <a href="../03-networking/04-gateway-api.html"><span class="num">04</span>Gateway API</a>
+      <a href="../03-networking/05-dns.html"><span class="num">05</span>DNS</a>
+      <a href="../03-networking/06-network-policies.html"><span class="num">06</span>Network Policies</a>
+      <a href="../03-networking/07-load-balancing.html"><span class="num">07</span>Load Balancing</a>
+      <a href="../03-networking/08-ebpf-networking.html"><span class="num">08</span>eBPF Networking</a>
+      <a href="../03-networking/09-ipv4-ipv6-dual-stack.html"><span class="num">09</span>Dual Stack</a>
+      <a href="../03-networking/10-multicluster-networking.html"><span class="num">10</span>Multi-Cluster</a>
+      <a href="../03-networking/11-istio-linkerd-service-mesh.html"><span class="num">11</span>Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-statefulsets-storage.html"><span class="num">04</span>StatefulSets &amp; Storage</a>
+      <a href="../04-storage/05-csi-deep-dive.html"><span class="num">05</span>CSI Deep Dive</a>
+      <a href="../04-storage/06-volume-snapshots.html"><span class="num">06</span>Volume Snapshots</a>
+      <a href="../04-storage/07-backup-disaster-recovery.html"><span class="num">07</span>Backup &amp; DR</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html"><span class="num">01</span>Pods</a>
+      <a href="../05-workloads/02-replicasets.html"><span class="num">02</span>ReplicaSets</a>
+      <a href="../05-workloads/03-deployments.html"><span class="num">03</span>Deployments</a>
+      <a href="../05-workloads/04-statefulsets.html"><span class="num">04</span>StatefulSets</a>
+      <a href="../05-workloads/05-daemonsets.html"><span class="num">05</span>DaemonSets</a>
+      <a href="../05-workloads/06-jobs-cronjobs.html"><span class="num">06</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/07-init-containers.html"><span class="num">07</span>Init Containers</a>
+      <a href="../05-workloads/08-sidecar-containers.html"><span class="num">08</span>Sidecar Containers</a>
+      <a href="../05-workloads/09-resource-management.html"><span class="num">09</span>Resource Management</a>
+      <a href="../05-workloads/10-pod-disruption-budgets.html"><span class="num">10</span>PodDisruptionBudgets</a>
+      <a href="../05-workloads/11-autoscaling.html"><span class="num">11</span>Autoscaling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-rbac.html"><span class="num">01</span>RBAC</a>
+      <a href="../06-security/02-pod-security.html"><span class="num">02</span>Pod Security</a>
+      <a href="../06-security/03-network-policies-security.html"><span class="num">03</span>Network Policy Security</a>
+      <a href="../06-security/04-secrets-management.html"><span class="num">04</span>Secrets Management</a>
+      <a href="../06-security/05-image-security.html"><span class="num">05</span>Image Security</a>
+      <a href="../06-security/06-audit-logging.html"><span class="num">06</span>Audit Logging</a>
+      <a href="../06-security/07-certificate-management.html"><span class="num">07</span>Certificate Management</a>
+      <a href="../06-security/08-oidc-authentication.html"><span class="num">08</span>OIDC Authentication</a>
+      <a href="../06-security/09-admission-security.html"><span class="num">09</span>Admission Security</a>
+      <a href="../06-security/10-runtime-security.html"><span class="num">10</span>Runtime Security</a>
+      <a href="../06-security/11-supply-chain-security.html"><span class="num">11</span>Supply Chain Security</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics.html"><span class="num">01</span>Metrics</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Tracing</a>
+      <a href="../07-observability/04-alerting.html"><span class="num">04</span>Alerting</a>
+      <a href="../07-observability/05-dashboards.html"><span class="num">05</span>Dashboards</a>
+      <a href="../07-observability/06-ebpf-observability.html"><span class="num">06</span>eBPF Observability</a>
+      <a href="../07-observability/07-debugging-production-issues.html"><span class="num">07</span>Debugging Production</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-engineering-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/01-crds-and-operators.html"><span class="num">01</span>CRDs &amp; Operators</a>
+      <a href="../08-platform-engineering/02-controller-runtime.html"><span class="num">02</span>controller-runtime</a>
+      <a href="../08-platform-engineering/03-admission-webhooks.html"><span class="num">03</span>Admission Webhooks</a>
+      <a href="../08-platform-engineering/04-custom-schedulers.html"><span class="num">04</span>Custom Schedulers</a>
+      <a href="../08-platform-engineering/05-aggregated-apiserver.html"><span class="num">05</span>Aggregated API Servers</a>
+      <a href="../08-platform-engineering/06-gitops.html"><span class="num">06</span>GitOps</a>
+      <a href="../08-platform-engineering/07-helm.html"><span class="num">07</span>Helm</a>
+      <a href="../08-platform-engineering/08-kustomize.html"><span class="num">08</span>Kustomize</a>
+      <a href="../08-platform-engineering/09-crossplane.html"><span class="num">09</span>Crossplane</a>
+      <a href="../08-platform-engineering/10-cluster-api.html"><span class="num">10</span>Cluster API</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/01-cluster-setup.html"><span class="num">01</span>Cluster Setup</a>
+      <a href="../09-production-operations/02-upgrades.html"><span class="num">02</span>Upgrades</a>
+      <a href="../09-production-operations/03-capacity-planning.html"><span class="num">03</span>Capacity Planning</a>
+      <a href="../09-production-operations/04-cost-optimization.html"><span class="num">04</span>Cost Optimization</a>
+      <a href="../09-production-operations/05-multi-tenancy.html"><span class="num">05</span>Multi-Tenancy</a>
+      <a href="../09-production-operations/06-disaster-recovery.html"><span class="num">06</span>Disaster Recovery</a>
+      <a href="../09-production-operations/07-compliance.html"><span class="num">07</span>Compliance</a>
+      <a href="../09-production-operations/08-performance-tuning.html"><span class="num">08</span>Performance Tuning</a>
+      <a href="../09-production-operations/09-node-management.html"><span class="num">09</span>Node Management</a>
+      <a href="../09-production-operations/10-real-world-incident-analysis.html"><span class="num">10</span>Incident Analysis</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-team-overview.html"><span class="num">00</span>Team Overview</a>
+      <a href="../10-team-workflows/01-developer-workflows.html"><span class="num">01</span>Developer Workflows</a>
+      <a href="../10-team-workflows/02-ci-cd-integration.html"><span class="num">02</span>CI/CD Integration</a>
+      <a href="../10-team-workflows/03-local-development.html"><span class="num">03</span>Local Development</a>
+      <a href="../10-team-workflows/04-code-review-practices.html"><span class="num">04</span>Code Review</a>
+      <a href="../10-team-workflows/05-incident-response.html"><span class="num">05</span>Incident Response</a>
+      <a href="../10-team-workflows/06-on-call-runbooks.html"><span class="num">06</span>On-Call Runbooks</a>
+      <a href="../10-team-workflows/07-capacity-review.html"><span class="num">07</span>Capacity Review</a>
+      <a href="../10-team-workflows/08-security-review.html"><span class="num">08</span>Security Review</a>
+      <a href="../10-team-workflows/09-infrastructure-operations.html"><span class="num">09</span>Infra Operations</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html"><span class="num">00</span>API Flow Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-deployment-rollout.html"><span class="num">02</span>Deployment Rollout</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-service-endpoint-update.html"><span class="num">03</span>Service Endpoint Update</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduler-decision.html"><span class="num">04</span>Scheduler Decision</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-rbac-authorization.html"><span class="num">05</span>RBAC Authorization</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-webhook-lifecycle.html"><span class="num">06</span>Webhook Lifecycle</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-crd-creation.html"><span class="num">07</span>CRD Creation</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-volume-provisioning.html"><span class="num">08</span>Volume Provisioning</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-node-registration.html"><span class="num">09</span>Node Registration</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-hpa-scaling.html"><span class="num">10</span>HPA Scaling</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-secret-injection.html"><span class="num">11</span>Secret Injection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-leader-election.html"><span class="num">12</span>Leader Election</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-garbage-collection.html"><span class="num">13</span>Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-packet-flow.html"><span class="num">14</span>Cross-Node Packet Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Troubleshooting Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-networking-issues.html"><span class="num">02</span>Networking Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html"><span class="num">03</span>Storage Issues</a>
+      <a href="../12-troubleshooting/04-scheduler-failures.html"><span class="num">04</span>Scheduler Failures</a>
+      <a href="../12-troubleshooting/05-control-plane-failures.html"><span class="num">05</span>Control Plane Failures</a>
+      <a href="../12-troubleshooting/06-node-failures.html"><span class="num">06</span>Node Failures</a>
+      <a href="../12-troubleshooting/07-performance-issues.html"><span class="num">07</span>Performance Issues</a>
+      <a href="../12-troubleshooting/08-security-incidents.html"><span class="num">08</span>Security Incidents</a>
+      <a href="../12-troubleshooting/09-etcd-recovery.html"><span class="num">09</span>etcd Recovery</a>
+      <a href="../12-troubleshooting/10-crashloopbackoff-analysis.html"><span class="num">10</span>CrashLoopBackOff</a>
+    </div>
+  </nav>
+</aside>
+<main class="main-content" id="main-content">
+<div class="content-wrap">
+
+<div class="page-header">
+  <div class="file-meta">
+    <span class="tag">01-control-plane/03-kube-scheduler.html</span>
+    <span class="tag">Port: :10259 (secure)</span>
+    <span class="tag">Prerequisites: 00-control-plane-overview.html, 04-kubernetes-api-model.html</span>
+    <span class="tag">Related: 04-scheduler-decision.html</span>
+  </div>
+  <h1 id="top">kube-scheduler</h1>
+  <p style="color:var(--text2);font-size:1rem">How Kubernetes decides which node runs each Pod — the scheduling framework, two-phase filter/score pipeline, 12 extension points, preemption, topology spread, custom profiles, and performance tuning for large clusters.</p>
+</div>
+
+<!-- ── 1. Overview ── -->
+<h2 id="overview">What kube-scheduler Does</h2>
+<p>kube-scheduler watches the API server for Pods whose <code>spec.nodeName</code> is empty (unbound Pods) and assigns each to the most suitable node by writing a <strong>Binding</strong> object — a POST to <code>/api/v1/namespaces/{ns}/pods/{name}/binding</code>. Once bound, kubelet on the target node picks up the Pod via its own watch stream and starts it.</p>
+
+<div class="callout note">
+  <div class="callout-title">▶ Scheduler is Not in the Data Path</div>
+  <p>The scheduler only runs at Pod creation time. It has no ongoing role once a Pod is bound. If a node dies, the node-lifecycle controller (in kube-controller-manager) marks Pods for deletion; the scheduler re-schedules replacement Pods created by the owning ReplicaSet or StatefulSet.</p>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Process identity</h4>
+    <ul>
+      <li>Binary: <code>kube-scheduler</code></li>
+      <li>Static pod: <code>/etc/kubernetes/manifests/kube-scheduler.yaml</code></li>
+      <li>Secure port: <code>:10259</code> (HTTPS, metrics + healthz)</li>
+      <li>Leader-elected: only one active instance at a time</li>
+      <li>Kubeconfig: <code>/etc/kubernetes/scheduler.conf</code></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Scheduling throughput</h4>
+    <ul>
+      <li>Default: ~100–200 pods/second on a 1000-node cluster</li>
+      <li>Bottleneck: per-pod Filter + Score runs across all nodes</li>
+      <li>Optimization: <code>percentageOfNodesToScore</code> limits nodes evaluated</li>
+      <li>Parallel goroutines: <code>--parallelism</code> flag (default 16)</li>
+    </ul>
+  </div>
+</div>
+
+<svg width="700" height="130" viewBox="0 0 700 130" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs><marker id="as" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker></defs>
+  <text x="350" y="22" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Scheduler High-Level Flow</text>
+  <rect x="10" y="40" width="110" height="40" rx="6" fill="#21262d" stroke="#388bfd"/>
+  <text x="65" y="65" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">Pending Pod</text>
+  <line x1="120" y1="60" x2="148" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#as)"/>
+  <rect x="150" y="40" width="100" height="40" rx="6" fill="#21262d" stroke="#f85149"/>
+  <text x="200" y="65" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">Filter Phase</text>
+  <line x1="250" y1="60" x2="278" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#as)"/>
+  <rect x="280" y="40" width="100" height="40" rx="6" fill="#21262d" stroke="#3fb950"/>
+  <text x="330" y="65" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">Score Phase</text>
+  <line x1="380" y1="60" x2="408" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#as)"/>
+  <rect x="410" y="40" width="110" height="40" rx="6" fill="#21262d" stroke="#bc8cff"/>
+  <text x="465" y="58" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">Select Winner</text>
+  <text x="465" y="72" text-anchor="middle" fill="#6e7681" font-size="9">(highest score)</text>
+  <line x1="520" y1="60" x2="548" y2="60" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#as)"/>
+  <rect x="550" y="40" width="110" height="40" rx="6" fill="#21262d" stroke="#d29922"/>
+  <text x="605" y="58" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">Bind to Node</text>
+  <text x="605" y="72" text-anchor="middle" fill="#6e7681" font-size="9">(POST /binding)</text>
+  <!-- node count labels -->
+  <text x="200" y="100" text-anchor="middle" fill="#6e7681" font-size="9">all nodes → feasible nodes</text>
+  <text x="330" y="100" text-anchor="middle" fill="#6e7681" font-size="9">feasible nodes ranked 0–100</text>
+</svg>
+
+<!-- ── 2. Scheduling Framework ── -->
+<h2 id="framework">Scheduling Framework and Extension Points</h2>
+<p>The Scheduling Framework (introduced in 1.15, stable in 1.19) replaces the old predicates/priorities model. Every scheduling decision is decomposed into <strong>12 ordered extension points</strong>, each implemented by one or more <em>plugins</em>.</p>
+
+<svg width="700" height="310" viewBox="0 0 700 310" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs><marker id="af" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker></defs>
+  <text x="350" y="20" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Scheduling Framework — 12 Extension Points</text>
+  <!-- Queue/Pre-scheduling -->
+  <text x="15" y="45" fill="#8b949e" font-size="10" font-weight="700">QUEUE</text>
+  <rect x="10" y="50" width="100" height="28" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="60" y="69" text-anchor="middle" fill="#8b949e" font-size="10">QueueSort</text>
+  <line x1="110" y1="64" x2="128" y2="64" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <!-- Filter cycle -->
+  <text x="130" y="45" fill="#f85149" font-size="10" font-weight="700">FILTER CYCLE</text>
+  <rect x="130" y="50" width="90" height="28" rx="5" fill="#21262d" stroke="#f85149"/>
+  <text x="175" y="69" text-anchor="middle" fill="#f85149" font-size="10">PreFilter</text>
+  <line x1="220" y1="64" x2="238" y2="64" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <rect x="240" y="50" width="80" height="28" rx="5" fill="#21262d" stroke="#f85149"/>
+  <text x="280" y="69" text-anchor="middle" fill="#f85149" font-size="10">Filter</text>
+  <line x1="320" y1="64" x2="338" y2="64" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <rect x="340" y="50" width="100" height="28" rx="5" fill="#21262d" stroke="#f85149"/>
+  <text x="390" y="69" text-anchor="middle" fill="#f85149" font-size="10">PostFilter</text>
+  <text x="390" y="100" text-anchor="middle" fill="#6e7681" font-size="9">(preemption)</text>
+  <!-- Score cycle -->
+  <text x="460" y="45" fill="#3fb950" font-size="10" font-weight="700">SCORE CYCLE</text>
+  <line x1="440" y1="64" x2="458" y2="64" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <rect x="460" y="50" width="80" height="28" rx="5" fill="#21262d" stroke="#3fb950"/>
+  <text x="500" y="69" text-anchor="middle" fill="#3fb950" font-size="10">PreScore</text>
+  <line x1="540" y1="64" x2="558" y2="64" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <rect x="560" y="50" width="80" height="28" rx="5" fill="#21262d" stroke="#3fb950"/>
+  <text x="600" y="69" text-anchor="middle" fill="#3fb950" font-size="10">Score</text>
+  <!-- Second row -->
+  <text x="15" y="135" fill="#3fb950" font-size="10" font-weight="700">NORMALIZE</text>
+  <rect x="10" y="140" width="110" height="28" rx="5" fill="#21262d" stroke="#3fb950"/>
+  <text x="65" y="159" text-anchor="middle" fill="#3fb950" font-size="10">NormalizeScore</text>
+  <line x1="120" y1="154" x2="138" y2="154" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <!-- Reserve -->
+  <text x="140" y="135" fill="#d29922" font-size="10" font-weight="700">RESERVE</text>
+  <rect x="140" y="140" width="80" height="28" rx="5" fill="#21262d" stroke="#d29922"/>
+  <text x="180" y="159" text-anchor="middle" fill="#d29922" font-size="10">Reserve</text>
+  <line x1="220" y1="154" x2="238" y2="154" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <!-- Permit -->
+  <text x="240" y="135" fill="#bc8cff" font-size="10" font-weight="700">PERMIT</text>
+  <rect x="240" y="140" width="80" height="28" rx="5" fill="#21262d" stroke="#bc8cff"/>
+  <text x="280" y="159" text-anchor="middle" fill="#bc8cff" font-size="10">Permit</text>
+  <line x1="320" y1="154" x2="338" y2="154" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <!-- Bind cycle -->
+  <text x="340" y="135" fill="#58a6ff" font-size="10" font-weight="700">BIND CYCLE</text>
+  <rect x="340" y="140" width="80" height="28" rx="5" fill="#21262d" stroke="#388bfd"/>
+  <text x="380" y="159" text-anchor="middle" fill="#58a6ff" font-size="10">PreBind</text>
+  <line x1="420" y1="154" x2="438" y2="154" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <rect x="440" y="140" width="80" height="28" rx="5" fill="#21262d" stroke="#388bfd"/>
+  <text x="480" y="159" text-anchor="middle" fill="#58a6ff" font-size="10">Bind</text>
+  <line x1="520" y1="154" x2="538" y2="154" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#af)"/>
+  <rect x="540" y="140" width="90" height="28" rx="5" fill="#21262d" stroke="#388bfd"/>
+  <text x="585" y="159" text-anchor="middle" fill="#58a6ff" font-size="10">PostBind</text>
+  <!-- Error path -->
+  <text x="350" y="210" text-anchor="middle" fill="#8b949e" font-size="10">On Reserve/Permit failure → Unreserve (rollback)</text>
+  <rect x="240" y="220" width="120" height="28" rx="5" fill="#21262d" stroke="#f85149"/>
+  <text x="300" y="239" text-anchor="middle" fill="#f85149" font-size="10">Unreserve (rollback)</text>
+  <!-- Legend -->
+  <rect x="10" y="270" width="10" height="10" fill="none" stroke="#f85149"/>
+  <text x="24" y="280" fill="#8b949e" font-size="9">Filter cycle</text>
+  <rect x="100" y="270" width="10" height="10" fill="none" stroke="#3fb950"/>
+  <text x="114" y="280" fill="#8b949e" font-size="9">Score cycle</text>
+  <rect x="190" y="270" width="10" height="10" fill="none" stroke="#bc8cff"/>
+  <text x="204" y="280" fill="#8b949e" font-size="9">Permit (gang scheduling)</text>
+  <rect x="350" y="270" width="10" height="10" fill="none" stroke="#388bfd"/>
+  <text x="364" y="280" fill="#8b949e" font-size="9">Bind cycle</text>
+</svg>
+
+<table>
+<tr><th>Extension Point</th><th>Called per</th><th>Purpose</th><th>On failure</th></tr>
+<tr><td><code>QueueSort</code></td><td>Pod pair (compare)</td><td>Determines ordering in activeQ heap. Default: by priority then creation time.</td><td>N/A</td></tr>
+<tr><td><code>PreFilter</code></td><td>Pod (once)</td><td>Compute and cache pod-level data (e.g., resource sum, affinity terms). Return error to reject immediately.</td><td>Pod unschedulable</td></tr>
+<tr><td><code>Filter</code></td><td>Pod × Node</td><td>Eliminates nodes that cannot run the Pod. Runs in parallel across nodes.</td><td>Node removed from feasible set</td></tr>
+<tr><td><code>PostFilter</code></td><td>Pod (if Filter left no nodes)</td><td>Last resort — attempt preemption. Default plugin: <code>DefaultPreemption</code>.</td><td>Pod stays unschedulable</td></tr>
+<tr><td><code>PreScore</code></td><td>Pod (once)</td><td>Compute and cache shared scoring state for feasible nodes.</td><td>Pod unschedulable</td></tr>
+<tr><td><code>Score</code></td><td>Pod × feasible Node</td><td>Assign 0–100 score. Runs in parallel. Multiple plugins, weights summed.</td><td>Node score = 0</td></tr>
+<tr><td><code>NormalizeScore</code></td><td>Per plugin, all nodes</td><td>Re-scale plugin's raw scores to 0–100 range before weighting.</td><td>Pod unschedulable</td></tr>
+<tr><td><code>Reserve</code></td><td>Pod + selected node</td><td>Claim resources optimistically (e.g., volume binding). Rollback via Unreserve on failure.</td><td>→ Unreserve</td></tr>
+<tr><td><code>Permit</code></td><td>Pod + selected node</td><td>Approve / deny / wait. Wait is used for gang scheduling (hold until all pods in group are ready to bind).</td><td>→ Unreserve</td></tr>
+<tr><td><code>PreBind</code></td><td>Pod + node</td><td>Perform pre-binding work (e.g., provision and attach volumes).</td><td>→ Unreserve</td></tr>
+<tr><td><code>Bind</code></td><td>Pod + node</td><td>Write the Binding object to kube-apiserver. Default: <code>DefaultBinder</code> (POST /binding).</td><td>→ Unreserve</td></tr>
+<tr><td><code>PostBind</code></td><td>Pod + node</td><td>Informational hook after successful bind. No failure handling.</td><td>N/A</td></tr>
+</table>
+
+<!-- ── 3. Built-in Plugins ── -->
+<h2 id="plugins">Built-in Scheduler Plugins</h2>
+
+<h3 id="filter-plugins">Filter Plugins</h3>
+<div class="component-grid">
+  <div class="component-card">
+    <h4>NodeUnschedulable</h4>
+    <p>Rejects nodes with <code>spec.unschedulable: true</code> (cordoned nodes), unless Pod tolerates the <code>node.kubernetes.io/unschedulable</code> taint.</p>
+  </div>
+  <div class="component-card">
+    <h4>NodeName</h4>
+    <p>Rejects all nodes except <code>spec.nodeName</code> if explicitly set. Short-circuits Filter — only one node evaluated.</p>
+  </div>
+  <div class="component-card">
+    <h4>NodeResourcesFit</h4>
+    <p>Checks allocatable CPU/memory/extended resources ≥ requested. Also enforces <code>resources.limits</code> for resources requiring limits (e.g., hugepages). Supports <code>LeastAllocated</code>, <code>MostAllocated</code>, <code>RequestedToCapacityRatio</code> strategies.</p>
+  </div>
+  <div class="component-card">
+    <h4>NodeAffinity</h4>
+    <p>Enforces <code>spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution</code>. Preferred terms scored in the Score phase.</p>
+  </div>
+  <div class="component-card">
+    <h4>TaintToleration</h4>
+    <p>Rejects nodes whose taints are not tolerated by the Pod's <code>spec.tolerations</code>.</p>
+  </div>
+  <div class="component-card">
+    <h4>InterPodAffinity</h4>
+    <p>Required pod affinity/anti-affinity rules (hard). Checks existing pods' labels on candidate node's topology domain.</p>
+  </div>
+  <div class="component-card">
+    <h4>VolumeBinding</h4>
+    <p>Checks PVC satisfaction: volume zone, node selector, access mode. For <code>WaitForFirstConsumer</code> StorageClass, triggers dynamic provisioning after bind.</p>
+  </div>
+  <div class="component-card">
+    <h4>VolumeRestrictions</h4>
+    <p>Limits number of volumes per node (e.g., AWS EBS: 39, GCE PD: 127). Counts in-use and reserved-but-not-yet-bound volumes.</p>
+  </div>
+  <div class="component-card">
+    <h4>PodTopologySpread</h4>
+    <p>Enforces <code>spec.topologySpreadConstraints</code> with <code>whenUnsatisfiable: DoNotSchedule</code>. Also scores with <code>ScheduleAnyway</code> mode.</p>
+  </div>
+  <div class="component-card">
+    <h4>NodePorts</h4>
+    <p>Rejects nodes that already have a Pod occupying the same <code>hostPort</code>.</p>
+  </div>
+  <div class="component-card">
+    <h4>NodeResourcesBalancedAllocation</h4>
+    <p>Filter + Score plugin. Rejects if balanced allocation would be impossible; scores to minimize CPU/memory imbalance across resources.</p>
+  </div>
+  <div class="component-card">
+    <h4>EBSLimits / GCEPDLimits / AzureDiskLimits</h4>
+    <p>Cloud-specific volume count limits. Replaced by node-level CSI migration in 1.23+.</p>
+  </div>
+</div>
+
+<h3 id="score-plugins">Score Plugins</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>NodeResourcesLeastAllocated (default)</h4>
+    <p>Scores nodes with <em>more</em> free capacity higher. Spreads pods across nodes evenly. Formula: <code>score = (cpu_free/cpu_cap * w_cpu + mem_free/mem_cap * w_mem) / (w_cpu + w_mem) * 100</code>. Default weights: CPU=1, Memory=1.</p>
+  </div>
+  <div class="card">
+    <h4>NodeResourcesMostAllocated (bin-packing)</h4>
+    <p>Scores nodes with <em>less</em> free capacity higher. Used when consolidating workloads to save cost (node autoscaler can drain underutilized nodes). Enable via scheduler profile config.</p>
+  </div>
+  <div class="card">
+    <h4>NodeAffinity (preferred)</h4>
+    <p>Scores nodes matching <code>preferredDuringSchedulingIgnoredDuringExecution</code> rules. Weight multiplied by match count, normalized to 0–100.</p>
+  </div>
+  <div class="card">
+    <h4>InterPodAffinity (preferred)</h4>
+    <p>Scores nodes where preferred affinity/anti-affinity rules are satisfied. Careful: O(pods × nodes) calculation — expensive on large clusters.</p>
+  </div>
+  <div class="card">
+    <h4>ImageLocality</h4>
+    <p>Scores nodes that already have the container image cached. Score proportional to sum of image layer sizes cached on node. Reduces image pull latency for large images.</p>
+  </div>
+  <div class="card">
+    <h4>PodTopologySpread (preferred)</h4>
+    <p>When <code>whenUnsatisfiable: ScheduleAnyway</code>, scores candidate nodes to minimize topology skew. Complementary to the Filter plugin variant.</p>
+  </div>
+</div>
+
+<!-- ── 4. Scheduling Queue ── -->
+<h2 id="queue">Scheduling Queue Internals</h2>
+<p>The scheduler maintains three internal queues that govern when and in what order Pods are evaluated:</p>
+
+<svg width="700" height="180" viewBox="0 0 700 180" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs><marker id="aq" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker></defs>
+  <text x="350" y="22" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Scheduling Queue — Three Sub-queues</text>
+  <!-- activeQ -->
+  <rect x="10" y="40" width="130" height="60" rx="6" fill="#21262d" stroke="#3fb950"/>
+  <text x="75" y="60" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">activeQ</text>
+  <text x="75" y="76" text-anchor="middle" fill="#6e7681" font-size="9">Priority heap</text>
+  <text x="75" y="90" text-anchor="middle" fill="#6e7681" font-size="9">Popped by scheduler goroutines</text>
+  <!-- backoffQ -->
+  <rect x="285" y="40" width="130" height="60" rx="6" fill="#21262d" stroke="#d29922"/>
+  <text x="350" y="60" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">backoffQ</text>
+  <text x="350" y="76" text-anchor="middle" fill="#6e7681" font-size="9">Exp. backoff heap (base 1s, max 10s)</text>
+  <text x="350" y="90" text-anchor="middle" fill="#6e7681" font-size="9">Retry after scheduling failure</text>
+  <!-- unschedulableQ -->
+  <rect x="560" y="40" width="130" height="60" rx="6" fill="#21262d" stroke="#f85149"/>
+  <text x="625" y="60" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">unschedulableQ</text>
+  <text x="625" y="76" text-anchor="middle" fill="#6e7681" font-size="9">Map: key=pod</text>
+  <text x="625" y="90" text-anchor="middle" fill="#6e7681" font-size="9">No node found at all</text>
+  <!-- Arrows -->
+  <line x1="140" y1="70" x2="278" y2="70" stroke="#d29922" stroke-width="1.5" marker-end="url(#aq)"/>
+  <text x="210" y="63" text-anchor="middle" fill="#d29922" font-size="9">filter fail → backoff</text>
+  <line x1="415" y1="70" x2="553" y2="70" stroke="#f85149" stroke-width="1.5" marker-end="url(#aq)"/>
+  <text x="484" y="63" text-anchor="middle" fill="#f85149" font-size="9">no nodes → unschedulable</text>
+  <!-- back arrows bottom -->
+  <line x1="350" y1="100" x2="350" y2="130" stroke="#58a6ff" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="350" y1="130" x2="75" y2="130" stroke="#58a6ff" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="75" y1="130" x2="75" y2="107" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#aq)"/>
+  <text x="210" y="145" text-anchor="middle" fill="#3fb950" font-size="9">backoff expires → activeQ</text>
+  <line x1="625" y1="100" x2="625" y2="155" stroke="#58a6ff" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="625" y1="155" x2="75" y2="155" stroke="#58a6ff" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="75" y1="155" x2="75" y2="107" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#aq)"/>
+  <text x="400" y="168" text-anchor="middle" fill="#8b949e" font-size="9">cluster event (new node, updated pod) triggers re-evaluation → activeQ</text>
+</svg>
+
+<table>
+<tr><th>Queue</th><th>Mechanism</th><th>Move condition</th></tr>
+<tr><td>activeQ</td><td>Max-heap ordered by priority + creation time (via QueueSort plugin)</td><td>New pods, returned from backoffQ/unschedulableQ</td></tr>
+<tr><td>backoffQ</td><td>Min-heap ordered by backoff expiry timestamp. Base: 1s, doubles each failure, max 10s</td><td>Scheduling attempted but failed (Filter rejected by some nodes)</td></tr>
+<tr><td>unschedulableQ</td><td>HashMap, flushed by cluster events (new Node, updated PV, changed Pod labels)</td><td>No feasible node found (all nodes filtered out)</td></tr>
+</table>
+
+<div class="callout note">
+  <div class="callout-title">▶ Cluster Event → unschedulableQ Flush</div>
+  <p>When a new Node registers, or a Pod is deleted (freeing resources), or a PV becomes available, the scheduler identifies which Pods in unschedulableQ might now be schedulable (using registered <em>clusterEventHandlers</em> per plugin) and moves them to activeQ. This avoids busy-waiting and scales well to thousands of pending pods.</p>
+</div>
+
+<!-- ── 5. Two-Phase Deep Dive ── -->
+<h2 id="two-phase">Two-Phase Deep Dive: Filter and Score</h2>
+
+<h3 id="filter-phase">Filter Phase</h3>
+<p>Each Filter plugin's <code>Filter(pod, nodeInfo)</code> method runs for every (pod, feasible_node) pair. Runs are parallelized across nodes (default 16 goroutines). A node is included in the feasible set only if <em>all</em> plugins return success.</p>
+
+<pre><code># See which plugins rejected a pod and why
+kubectl describe pod my-pod | grep -A 20 "Events:"
+# Events will show: "0/5 nodes are available: 2 node(s) had taint, 3 Insufficient memory"
+
+# Count of filter failures per plugin (Prometheus)
+scheduler_framework_extension_point_duration_seconds{extension_point="Filter",status="Error"}
+
+# Enable verbose scheduler logs (very noisy — use only in non-prod)
+# Add to kube-scheduler pod: --v=10</code></pre>
+
+<p>The <code>percentageOfNodesToScore</code> optimization: on clusters with &gt;100 nodes, once enough feasible nodes are found (default: min(50, number_of_nodes) to a max of 100%), the scheduler stops evaluating remaining nodes. This is a heuristic — good enough in practice, can be disabled for precise scheduling.</p>
+
+<pre><code>apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+percentageOfNodesToScore: 0   # 0 = use adaptive default based on cluster size
+profiles:
+- schedulerName: default-scheduler</code></pre>
+
+<h3 id="score-phase">Score Phase</h3>
+<p>Each Score plugin returns 0–100 per feasible node. The final score for each node is the weighted sum: <code>Σ(plugin_weight × normalized_score)</code>. NormalizeScore brings raw scores within a plugin into [0,100] range. The node with the highest final score wins. Ties broken by random selection (to prevent hot nodes).</p>
+
+<pre><code># Example: default score plugin weights
+# (from default-scheduler profile in KubeSchedulerConfiguration)
+plugins:
+  score:
+    enabled:
+    - name: NodeResourcesBalancedAllocation
+      weight: 1
+    - name: ImageLocality
+      weight: 1
+    - name: InterPodAffinity
+      weight: 1
+    - name: NodeResourcesFit       # LeastAllocated strategy
+      weight: 1
+    - name: NodeAffinity
+      weight: 1
+    - name: PodTopologySpread
+      weight: 2                    # higher weight = stronger influence
+    - name: TaintToleration
+      weight: 1</code></pre>
+
+<!-- ── 6. Node Affinity and Taints ── -->
+<h2 id="affinity">Node Affinity, Pod Affinity, Taints and Tolerations</h2>
+
+<h3>Node Affinity</h3>
+<pre><code>spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:   # HARD — Filter
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values: [amd64]
+          - key: node-role/gpu
+            operator: Exists
+      preferredDuringSchedulingIgnoredDuringExecution:  # SOFT — Score
+      - weight: 80
+        preference:
+          matchExpressions:
+          - key: topology.kubernetes.io/zone
+            operator: In
+            values: [us-east-1a]</code></pre>
+
+<h3>Pod Affinity and Anti-Affinity</h3>
+<pre><code>spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:  # HARD anti-affinity
+      - labelSelector:
+          matchLabels:
+            app: my-app
+        topologyKey: kubernetes.io/hostname  # no two pods on same node
+      preferredDuringSchedulingIgnoredDuringExecution:  # SOFT spread across zones
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: my-app
+          topologyKey: topology.kubernetes.io/zone</code></pre>
+
+<div class="callout warn">
+  <div class="callout-title">⚠ Pod Affinity Scalability</div>
+  <p>Pod affinity/anti-affinity rules require examining ALL existing pods to determine which topology domains are occupied. On clusters with tens of thousands of pods this becomes an O(pods × nodes) operation per pending pod. Use <code>PodTopologySpread</code> instead wherever possible — it uses pre-computed per-topology counts and is significantly more efficient.</p>
+</div>
+
+<h3>Taints and Tolerations</h3>
+<pre><code># Taint a node (effect: NoSchedule | PreferNoSchedule | NoExecute)
+kubectl taint nodes worker-1 dedicated=gpu:NoSchedule
+kubectl taint nodes worker-1 node.kubernetes.io/not-ready:NoExecute
+
+# Remove a taint
+kubectl taint nodes worker-1 dedicated=gpu:NoSchedule-
+
+# Pod tolerates the taint
+spec:
+  tolerations:
+  - key: dedicated
+    operator: Equal
+    value: gpu
+    effect: NoSchedule
+  - key: node.kubernetes.io/not-ready   # tolerate node-not-ready for 300s
+    operator: Exists
+    effect: NoExecute
+    tolerationSeconds: 300</code></pre>
+
+<table>
+<tr><th>Effect</th><th>Behavior</th><th>Common use</th></tr>
+<tr><td>NoSchedule</td><td>New pods without toleration not scheduled here</td><td>Dedicated nodes (GPU, spot)</td></tr>
+<tr><td>PreferNoSchedule</td><td>Scheduler tries to avoid, not hard requirement</td><td>Soft node preference</td></tr>
+<tr><td>NoExecute</td><td>Existing pods evicted if not tolerating; new pods rejected</td><td>Node health management (node-lifecycle-controller)</td></tr>
+</table>
+
+<!-- ── 7. Topology Spread Constraints ── -->
+<h2 id="topology-spread">Topology Spread Constraints</h2>
+<p>Introduced in 1.14 (GA 1.19). Replaces complex pod anti-affinity patterns for even distribution. More efficient than InterPodAffinity as it uses pre-aggregated per-topology-domain counts.</p>
+
+<pre><code>spec:
+  topologySpreadConstraints:
+  - maxSkew: 1                         # max allowed difference between any two domains
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule   # hard constraint (Filter)
+    labelSelector:
+      matchLabels:
+        app: my-app
+    matchLabelKeys:                    # k8s 1.27+ — auto-exclude old revisions
+    - pod-template-hash
+  - maxSkew: 2
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway  # soft constraint (Score)
+    labelSelector:
+      matchLabels:
+        app: my-app</code></pre>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>maxSkew</h4>
+    <p>Maximum allowed difference in pod count between any two topology domains. <code>maxSkew: 1</code> means zones can differ by at most 1. Smaller = stricter spread = harder to schedule.</p>
+  </div>
+  <div class="card">
+    <h4>whenUnsatisfiable modes</h4>
+    <p><code>DoNotSchedule</code>: hard filter — pod stays pending if constraint cannot be met. <code>ScheduleAnyway</code>: soft score — scheduler picks the node that minimizes skew increase, but will schedule anywhere.</p>
+  </div>
+  <div class="card">
+    <h4>matchLabelKeys (1.27+)</h4>
+    <p>Automatically includes only pods from the <em>current</em> ReplicaSet revision in skew calculations. Without this, a rolling update temporarily doubles pod count in one zone, causing false "skew exceeded" rejections.</p>
+  </div>
+  <div class="card">
+    <h4>Default constraints</h4>
+    <p>Cluster-wide default <code>topologySpreadConstraints</code> can be set in <code>KubeSchedulerConfiguration.defaultConstraints</code> — applies to all pods that don't set their own constraints.</p>
+  </div>
+</div>
+
+<!-- ── 8. Preemption ── -->
+<h2 id="preemption">Preemption and PriorityClass</h2>
+<p>When no node can fit a pending pod after filtering, the <code>DefaultPreemption</code> plugin (running in the PostFilter extension point) tries to evict lower-priority pods to make room.</p>
+
+<pre><code>apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000000         # 0 = lowest; 1,000,000,000 = max (system-reserved)
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority  # PreemptLowerPriority | Never
+description: "Critical production workloads"
+---
+# Use in pod spec
+spec:
+  priorityClassName: high-priority</code></pre>
+
+<p><strong>Built-in system PriorityClasses:</strong></p>
+<table>
+<tr><th>Name</th><th>Value</th><th>Used by</th></tr>
+<tr><td>system-cluster-critical</td><td>2,000,000,000</td><td>kube-dns, kube-proxy, metrics-server</td></tr>
+<tr><td>system-node-critical</td><td>2,000,001,000</td><td>kube-apiserver, etcd, kube-scheduler (static pods)</td></tr>
+</table>
+
+<h3>Preemption Algorithm</h3>
+<ol>
+  <li>Collect candidate nodes where evicting <em>some</em> pods would make room for the pending pod.</li>
+  <li>For each candidate node: identify the minimum set of pods to evict (lowest priority, fewest disruptions, no PDB violations).</li>
+  <li>Pick the node that minimizes disruption (fewest pods evicted, respect PDB).</li>
+  <li>Evict chosen pods (graceful termination via <code>deletionTimestamp</code>). Pending pod is NOT immediately scheduled — it waits for evicted pods to terminate, then re-enters the scheduling cycle.</li>
+</ol>
+
+<div class="callout warn">
+  <div class="callout-title">⚠ PodDisruptionBudget + Preemption</div>
+  <p>Preemption respects PDBs — it will not evict pods if doing so would violate a PDB's <code>minAvailable</code> or <code>maxUnavailable</code>. However, if the only way to schedule a very high-priority pod is to violate a PDB, the preemption code will still evict (PDB is not a hard blocker for preemption). In 1.28+, the behavior can be tuned with <code>preemptionPolicy: Never</code> on lower-priority classes to protect them from preemption entirely.</p>
+</div>
+
+<!-- ── 9. Scheduler Profiles ── -->
+<h2 id="profiles">Scheduler Profiles and Multiple Schedulers</h2>
+<p>A single <code>kube-scheduler</code> binary can run multiple <em>profiles</em>, each with its own <code>schedulerName</code>, plugin configuration, and plugin weights. Pods opt into a profile via <code>spec.schedulerName</code>.</p>
+
+<pre><code>apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+clientConnection:
+  kubeconfig: /etc/kubernetes/scheduler.conf
+profiles:
+# Profile 1: default balanced scheduler
+- schedulerName: default-scheduler
+  plugins:
+    score:
+      enabled:
+      - name: NodeResourcesFit
+        weight: 1
+      - name: PodTopologySpread
+        weight: 2
+  pluginConfig:
+  - name: NodeResourcesFit
+    args:
+      scoringStrategy:
+        type: LeastAllocated
+        resources:
+        - name: cpu
+          weight: 1
+        - name: memory
+          weight: 1
+
+# Profile 2: bin-packing for batch jobs
+- schedulerName: bin-pack-scheduler
+  plugins:
+    score:
+      enabled:
+      - name: NodeResourcesFit
+        weight: 1
+  pluginConfig:
+  - name: NodeResourcesFit
+    args:
+      scoringStrategy:
+        type: MostAllocated   # pack pods tightly
+        resources:
+        - name: cpu
+          weight: 1
+        - name: memory
+          weight: 1</code></pre>
+
+<pre><code># Pod using the bin-pack profile
+spec:
+  schedulerName: bin-pack-scheduler
+  containers:
+  - name: batch-job
+    image: my-batch:latest</code></pre>
+
+<div class="callout note">
+  <div class="callout-title">▶ Custom Scheduler vs Scheduler Profile</div>
+  <p>Running a completely separate scheduler binary is possible but operationally complex (leader election, RBAC, update coordination). Prefer scheduler profiles within the same binary — same leader election, same informer caches, far simpler to operate. Use a separate binary only when you need fundamentally different scheduling logic (e.g., gang scheduling, custom preemption) not achievable via plugin configuration.</p>
+</div>
+
+<!-- ── 10. Gang Scheduling and the Permit Extension Point ── -->
+<h2 id="gang">Gang Scheduling and the Permit Extension Point</h2>
+<p>Gang scheduling (also called co-scheduling) ensures all pods in a group are scheduled together — or none are. This is critical for ML training jobs (all workers must start simultaneously) and MPI workloads.</p>
+
+<p>The <strong>Permit</strong> extension point enables this: a plugin can return <code>Wait</code> instead of <code>Allow</code>. The pod is tentatively assigned to a node but held in a waiting state until the plugin explicitly allows it (or a timeout expires).</p>
+
+<pre><code># Coscheduling via the scheduling-plugins project (sig-scheduling)
+# https://github.com/kubernetes-sigs/scheduler-plugins
+apiVersion: scheduling.sigs.k8s.io/v1alpha1
+kind: PodGroup
+metadata:
+  name: my-ml-job
+spec:
+  minMember: 4           # all 4 workers must be schedulable before any binds
+  minResources:
+    cpu: "4"
+    memory: 8Gi
+---
+spec:
+  schedulerName: scheduler-plugins-scheduler
+  labels:
+    scheduling.sigs.k8s.io/pod-group: my-ml-job</code></pre>
+
+<p>The Permit plugin tracks how many pods in the group have been tentatively placed. Once <code>minMember</code> is reached, all waiting pods are released to Bind simultaneously. If the timeout expires before all members are placed, waiting pods are rejected (→ Unreserve) and returned to the queue.</p>
+
+<!-- ── 11. Leader Election ── -->
+<h2 id="leader-election">Leader Election</h2>
+<p>In HA setups, multiple kube-scheduler replicas run but only one is active. Leadership is managed via a <code>Lease</code> object in the <code>kube-system</code> namespace. The details are identical to the kube-controller-manager pattern — see <a href="00-control-plane-overview.html#leader-election">00-control-plane-overview.html § Leader Election</a>.</p>
+
+<pre><code># Check current scheduler leader
+kubectl -n kube-system get lease kube-scheduler -o yaml
+# .spec.holderIdentity shows the active scheduler pod
+
+# Scheduler logs showing leader election
+kubectl -n kube-system logs kube-scheduler-master-1 | grep -i "leader"
+# I0115 10:30:00 leaderelection.go:248] attempting to acquire leader lease...
+# I0115 10:30:01 leaderelection.go:258] successfully acquired lease kube-system/kube-scheduler</code></pre>
+
+<!-- ── 12. Configuration Reference ── -->
+<h2 id="config">Configuration Reference</h2>
+
+<pre><code>apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+# Leader election
+leaderElection:
+  leaderElect: true
+  leaseDuration: 15s
+  renewDeadline: 10s
+  retryPeriod: 2s
+  resourceNamespace: kube-system
+  resourceName: kube-scheduler
+
+# API server connection
+clientConnection:
+  kubeconfig: /etc/kubernetes/scheduler.conf
+  qps: 50
+  burst: 100
+
+# Performance tuning
+percentageOfNodesToScore: 0     # 0 = adaptive (recommended)
+parallelism: 16                 # goroutines for filter/score
+
+# Health / metrics
+healthzBindAddress: 0.0.0.0:10259
+metricsBindAddress: 0.0.0.0:10259</code></pre>
+
+<table>
+<tr><th>Flag / Config</th><th>Default</th><th>Purpose</th></tr>
+<tr><td><code>percentageOfNodesToScore</code></td><td>0 (adaptive)</td><td>Stop evaluating nodes once this % is found feasible. 0 = use cluster-size heuristic (50 nodes minimum, scales down for large clusters)</td></tr>
+<tr><td><code>parallelism</code></td><td>16</td><td>Number of goroutines running Filter/Score in parallel</td></tr>
+<tr><td><code>--leader-elect</code></td><td>true</td><td>Enable leader election for HA</td></tr>
+<tr><td><code>--kube-api-qps</code></td><td>50</td><td>Queries per second to kube-apiserver</td></tr>
+<tr><td><code>--kube-api-burst</code></td><td>100</td><td>Burst capacity above QPS limit</td></tr>
+<tr><td><code>--v</code></td><td>2</td><td>Log verbosity. 4+ shows scheduling decisions per pod</td></tr>
+</table>
+
+<!-- ── 13. Metrics and Alerting ── -->
+<h2 id="metrics">Metrics and Alerting</h2>
+
+<pre><code># Scrape scheduler metrics
+curl -sk https://localhost:10259/metrics \
+  --cert /etc/kubernetes/pki/scheduler-client.crt \
+  --key /etc/kubernetes/pki/scheduler-client.key | grep scheduler_
+
+# Key metrics
+scheduler_scheduling_attempt_duration_seconds{result="scheduled"}   # e2e scheduling latency
+scheduler_scheduling_attempt_duration_seconds{result="unschedulable"}
+scheduler_pending_pods{queue="active"}       # pods waiting to be scheduled
+scheduler_pending_pods{queue="backoff"}      # pods in backoff
+scheduler_pending_pods{queue="unschedulable"}# pods with no node found
+scheduler_preemption_attempts_total          # total preemption attempts
+scheduler_preemption_victims                 # total pods evicted by preemption
+scheduler_framework_extension_point_duration_seconds{extension_point="Filter"}
+scheduler_framework_extension_point_duration_seconds{extension_point="Score"}
+scheduler_volume_scheduling_stage_error_reason  # volume binding errors</code></pre>
+
+<details>
+<summary>Prometheus Alerting Rules</summary>
+<div class="details-body">
+<pre><code>groups:
+- name: kube-scheduler
+  rules:
+  - alert: KubeSchedulerDown
+    expr: absent(up{job="kube-scheduler"} == 1)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "kube-scheduler is down"
+      description: "No kube-scheduler instance is up. Pods cannot be scheduled."
+
+  - alert: KubeSchedulerHighPendingPods
+    expr: scheduler_pending_pods{queue="unschedulable"} > 50
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High number of unschedulable pods"
+      description: "{{ $value }} pods have been unschedulable for >15m."
+
+  - alert: KubeSchedulerHighLatency
+    expr: |
+      histogram_quantile(0.99,
+        rate(scheduler_scheduling_attempt_duration_seconds_bucket{result="scheduled"}[5m])
+      ) > 5
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Scheduler p99 latency > 5s"
+      description: "P99 scheduling latency is {{ $value }}s."
+
+  - alert: KubeSchedulerPreemptionHigh
+    expr: rate(scheduler_preemption_victims[5m]) > 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High preemption rate"
+      description: "Scheduler is evicting >10 pods/s. Check PriorityClass assignments."</code></pre>
+</div>
+</details>
+
+<!-- ── 14. Troubleshooting ── -->
+<h2 id="troubleshooting">Troubleshooting Scheduling Issues</h2>
+
+<details>
+<summary>Pod stuck in Pending — "0/N nodes are available"</summary>
+<div class="details-body">
+<pre><code># Full scheduling failure reason
+kubectl describe pod my-pod | grep -A 30 "Events:"
+# Common messages:
+# "0/5 nodes are available: 2 Insufficient cpu, 3 node(s) had taint..."
+# "0/5 nodes are available: 5 node(s) didn't match pod's node affinity/selector"
+# "0/5 nodes are available: 5 pod has unbound immediate PersistentVolumeClaims"
+
+# Check node resources and allocatable
+kubectl describe nodes | grep -A 8 "Allocated resources"
+
+# Check if nodes are cordoned
+kubectl get nodes | grep SchedulingDisabled
+
+# Check taints on nodes
+kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
+
+# Check if the pod's resource requests are too high
+kubectl get pod my-pod -o jsonpath='{.spec.containers[*].resources}'</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Pod stuck in Pending — PVC binding issue</summary>
+<div class="details-body">
+<pre><code># Check PVC status
+kubectl get pvc
+kubectl describe pvc my-pvc
+# Look for: "waiting for first consumer to be created before binding"
+# This is normal for WaitForFirstConsumer StorageClass — PVC binds AFTER scheduler picks node
+
+# Check StorageClass binding mode
+kubectl get storageclass standard -o jsonpath='{.volumeBindingMode}'
+# Immediate = PVC bound before scheduling (may conflict with zone affinity)
+# WaitForFirstConsumer = PVC bound after scheduling (node zone determines PVC zone)
+
+# Volume scheduling logs
+kubectl -n kube-system logs kube-scheduler-master-1 | grep -i "volume"</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Pods not spreading evenly across zones</summary>
+<div class="details-body">
+<pre><code># Check existing topology spread
+kubectl get pods -l app=my-app -o wide | awk '{print $7}' | sort | uniq -c
+
+# Check if topologySpreadConstraints are set
+kubectl get deploy my-deploy -o jsonpath='{.spec.template.spec.topologySpreadConstraints}'
+
+# Check zone labels on nodes
+kubectl get nodes --show-labels | grep topology.kubernetes.io/zone
+
+# If using old pod anti-affinity instead:
+# Migrate to topologySpreadConstraints for better performance and flexibility
+
+# Check scheduler logs for spread scoring
+kubectl -n kube-system logs kube-scheduler-master-1 -v=4 | grep TopologySpread</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Scheduler performance — high latency / slow scheduling</summary>
+<div class="details-body">
+<pre><code># Check scheduling attempt duration
+kubectl get --raw /metrics | grep scheduler_scheduling_attempt_duration
+
+# Common causes of slow scheduling:
+# 1. InterPodAffinity with large pod counts — migrate to topologySpreadConstraints
+# 2. percentageOfNodesToScore too high — reduce for large clusters
+# 3. Too many Score plugins with high weight — profile and trim
+# 4. Custom webhook in Permit extension point — check latency
+
+# Increase parallelism for large clusters
+# In KubeSchedulerConfiguration:
+parallelism: 32  # default 16, increase for 1000+ node clusters
+
+# Check if scheduler leader is healthy
+kubectl -n kube-system get lease kube-scheduler -o yaml | grep holderIdentity</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Preemption not working as expected</summary>
+<div class="details-body">
+<pre><code># Check if priority classes are set correctly
+kubectl get priorityclass
+kubectl get pod high-priority-pod -o jsonpath='{.spec.priority}'
+
+# Check if PDB is blocking preemption
+kubectl get pdb -A
+kubectl describe pdb my-pdb | grep -E "Allowed Disruptions|Status"
+
+# Check scheduler logs for preemption decisions
+kubectl -n kube-system logs kube-scheduler-master-1 | grep -i preempt
+
+# Check if preemptionPolicy is set to Never
+kubectl get priorityclass low-priority -o jsonpath='{.preemptionPolicy}'</code></pre>
+</div>
+</details>
+
+<!-- ── 15. Sequence Diagram ── -->
+<h2 id="sequence">Scheduling Sequence: Pod to Bound</h2>
+
+<svg width="700" height="330" viewBox="0 0 700 330" style="max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:block;margin:.75rem 0">
+  <defs><marker id="aseq" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker></defs>
+  <text x="350" y="20" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Pod Scheduling — Full Sequence</text>
+  <!-- Actors -->
+  <text x="60" y="45" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="700">Scheduler</text>
+  <line x1="60" y1="50" x2="60" y2="320" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="220" y="45" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="700">kube-apiserver</text>
+  <line x1="220" y1="50" x2="220" y2="320" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="400" y="45" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="700">etcd</text>
+  <line x1="400" y1="50" x2="400" y2="320" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="580" y="45" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">kubelet</text>
+  <line x1="580" y1="50" x2="580" y2="320" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- Steps -->
+  <line x1="220" y1="70" x2="70" y2="70" stroke="#3fb950" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="145" y="63" text-anchor="middle" fill="#3fb950" font-size="9">WATCH /pods?fieldSelector=spec.nodeName=</text>
+  <line x1="60" y1="90" x2="210" y2="90" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="135" y="83" text-anchor="middle" fill="#8b949e" font-size="9">1. Dequeue pending pod from activeQ</text>
+  <line x1="60" y1="110" x2="210" y2="110" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="135" y="103" text-anchor="middle" fill="#8b949e" font-size="9">2. GET /nodes (from watchCache RV=0)</text>
+  <line x1="220" y1="125" x2="70" y2="125" stroke="#3fb950" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="145" y="118" text-anchor="middle" fill="#3fb950" font-size="9">200 OK — node list (cached)</text>
+  <text x="60" y="148" text-anchor="middle" fill="#f85149" font-size="9" font-weight="700">Filter Phase</text>
+  <rect x="10" y="152" width="100" height="20" rx="3" fill="rgba(248,81,73,0.1)" stroke="#f85149"/>
+  <text x="60" y="166" text-anchor="middle" fill="#f85149" font-size="9">Run all Filter plugins</text>
+  <text x="60" y="190" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="700">Score Phase</text>
+  <rect x="10" y="194" width="100" height="20" rx="3" fill="rgba(63,185,80,0.1)" stroke="#3fb950"/>
+  <text x="60" y="208" text-anchor="middle" fill="#3fb950" font-size="9">Run Score/Normalize</text>
+  <line x1="60" y1="225" x2="210" y2="225" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="135" y="218" text-anchor="middle" fill="#8b949e" font-size="9">3. POST /namespaces/{ns}/pods/{name}/binding</text>
+  <line x1="220" y1="240" x2="390" y2="240" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="305" y="233" text-anchor="middle" fill="#8b949e" font-size="9">etcd.Put(pod.spec.nodeName = worker-1)</text>
+  <line x1="400" y1="255" x2="230" y2="255" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="315" y="248" text-anchor="middle" fill="#bc8cff" font-size="9">ACK rev=12345</text>
+  <line x1="220" y1="270" x2="70" y2="270" stroke="#3fb950" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="145" y="263" text-anchor="middle" fill="#3fb950" font-size="9">201 Created (binding)</text>
+  <line x1="400" y1="285" x2="570" y2="285" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#aseq)"/>
+  <text x="485" y="278" text-anchor="middle" fill="#bc8cff" font-size="9">WATCH event: pod MODIFIED nodeName=worker-1</text>
+  <line x1="580" y1="300" x2="580" y2="300" stroke="#3fb950"/>
+  <text x="580" y="312" text-anchor="middle" fill="#3fb950" font-size="9">kubelet starts pod</text>
+</svg>
+
+<!-- ── 16. Production Best Practices ── -->
+<h2 id="production">Production Best Practices</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Use PriorityClasses for all workloads</h4>
+    <p>Define at minimum 3 tiers: <code>critical</code> (1M), <code>standard</code> (100K), <code>batch</code> (1K). Set <code>preemptionPolicy: Never</code> on batch to prevent it from evicting standard workloads. Set the cluster's <code>globalDefault: true</code> on <code>standard</code> so unclassified pods get a sane default.</p>
+  </div>
+  <div class="card">
+    <h4>Prefer PodTopologySpread over pod anti-affinity</h4>
+    <p>For spreading replicas across zones/nodes, <code>topologySpreadConstraints</code> is orders of magnitude more efficient than <code>requiredDuringSchedulingIgnoredDuringExecution</code> anti-affinity on clusters with thousands of pods.</p>
+  </div>
+  <div class="card">
+    <h4>Set resource requests on all containers</h4>
+    <p>Without <code>resources.requests</code>, pods are <code>BestEffort</code> class — scheduled anywhere, not accounted for in Filter/Score calculations. This leads to overcommit, OOM kills, and unpredictable scheduling. Every production container must have CPU + memory requests.</p>
+  </div>
+  <div class="card">
+    <h4>Tune percentageOfNodesToScore on large clusters</h4>
+    <p>On 1000+ node clusters, the default adaptive heuristic evaluates only a fraction of nodes. If you have strict affinity requirements, consider raising this value. If you prioritize scheduling throughput, the default is fine.</p>
+  </div>
+  <div class="card">
+    <h4>Use WaitForFirstConsumer StorageClass</h4>
+    <p>For zone-aware storage, set <code>volumeBindingMode: WaitForFirstConsumer</code>. This lets the scheduler pick the node first (respecting topology constraints), then provision the volume in the right zone. <code>Immediate</code> mode creates the PV in a random zone, which can conflict with node affinity.</p>
+  </div>
+  <div class="card">
+    <h4>Node labels for topology awareness</h4>
+    <p>Ensure all nodes have standard topology labels: <code>topology.kubernetes.io/zone</code>, <code>topology.kubernetes.io/region</code>, <code>kubernetes.io/hostname</code>. Cloud providers set these automatically; on-premise clusters need them set explicitly (or use a Node Feature Discovery operator).</p>
+  </div>
+  <div class="card">
+    <h4>Avoid scheduling during node maintenance</h4>
+    <p>Cordon nodes before draining (<code>kubectl cordon</code>). This sets <code>spec.unschedulable: true</code> and adds the <code>node.kubernetes.io/unschedulable</code> taint, preventing the scheduler from placing new pods. Never drain without cordoning first — new pods may arrive on the node while drain is running.</p>
+  </div>
+  <div class="card">
+    <h4>Monitor pending pods</h4>
+    <p>Alert on <code>scheduler_pending_pods{queue="unschedulable"} &gt; 0</code> for more than 5 minutes. This indicates a scheduling failure that won't self-resolve — requires human investigation of node resources, taints, or affinity rules.</p>
+  </div>
+</div>
+
+<div class="nav-footer">
+  <a class="nav-btn" href="02-etcd.html">
+    <span>← Previous</span>
+    etcd
+  </a>
+  <a class="nav-btn next" href="04-kube-controller-manager.html">
+    <span>Next →</span>
+    kube-controller-manager
+  </a>
+</div>
+
+</div><!-- /content-wrap -->
+</main>
+<aside class="toc-panel">
+  <h4>On This Page</h4>
+  <a href="#overview">What kube-scheduler Does</a>
+  <a href="#framework">Scheduling Framework</a>
+  <a href="#plugins">Built-in Plugins</a>
+  <a href="#filter-plugins" class="toc-h3">Filter Plugins</a>
+  <a href="#score-plugins" class="toc-h3">Score Plugins</a>
+  <a href="#queue">Scheduling Queue Internals</a>
+  <a href="#two-phase">Two-Phase Deep Dive</a>
+  <a href="#filter-phase" class="toc-h3">Filter Phase</a>
+  <a href="#score-phase" class="toc-h3">Score Phase</a>
+  <a href="#affinity">Affinity, Taints &amp; Tolerations</a>
+  <a href="#topology-spread">Topology Spread Constraints</a>
+  <a href="#preemption">Preemption &amp; PriorityClass</a>
+  <a href="#profiles">Scheduler Profiles</a>
+  <a href="#gang">Gang Scheduling (Permit)</a>
+  <a href="#leader-election">Leader Election</a>
+  <a href="#config">Configuration Reference</a>
+  <a href="#metrics">Metrics &amp; Alerting</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#sequence">Scheduling Sequence Diagram</a>
+  <a href="#production">Production Best Practices</a>
+</aside>
+</div>
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
+<script>
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  pre.style.position='relative';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('toc-active'));
+      const act=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if(act)act.classList.add('toc-active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+const searchInput=document.getElementById('search-input');
+function clearHighlights(){
+  document.querySelectorAll('mark.search-hl').forEach(m=>{
+    m.replaceWith(document.createTextNode(m.textContent));
+  });
+  document.normalize();
+}
+function highlightText(root,term){
+  if(!term)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false);
+  const nodes=[];let n;
+  while(n=walker.nextNode()){
+    if(n.parentElement.closest('.topbar,.sidebar'))continue;
+    if(n.textContent.toLowerCase().includes(term))nodes.push(n);
+  }
+  nodes.forEach(node=>{
+    const frag=document.createDocumentFragment();
+    const parts=node.textContent.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'));
+    parts.forEach(p=>{
+      if(p.toLowerCase()===term){
+        const m=document.createElement('mark');m.className='search-hl';m.textContent=p;frag.appendChild(m);
+      } else frag.appendChild(document.createTextNode(p));
+    });
+    node.replaceWith(frag);
+  });
+}
+searchInput.addEventListener('input',function(){
+  clearHighlights();
+  const q=this.value.trim().toLowerCase();
+  if(q.length>=2)highlightText(document.getElementById('main-content'),q);
+});
+</script>
+</body>
+</html>

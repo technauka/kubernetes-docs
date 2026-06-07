@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Enforcement | Kubernetes Platform Engineering</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+/* Sidebar */
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px}
+.sidebar-subtitle{font-size:11px;color:var(--text3);margin-top:2px}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px}
+.sidebar-search input:focus{outline:none;border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:6px 16px 4px}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover,.nav-section a.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent);text-decoration:none}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+/* Main */
+main{margin-left:280px;flex:1;padding:40px 48px;max-width:1100px}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px}
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:12px;padding:36px 40px;margin-bottom:40px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.3);color:var(--purple);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:14px}
+.hero h1{font-size:32px;font-weight:800;line-height:1.2;margin-bottom:12px;background:linear-gradient(90deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text2);font-size:16px;max-width:700px;margin-bottom:16px}
+.hero-meta{display:flex;gap:24px;flex-wrap:wrap}
+.hero-meta span{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px}
+/* Sections */
+h2{font-size:22px;font-weight:700;color:var(--text);margin:44px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h2:first-of-type{margin-top:0}
+h3{font-size:17px;font-weight:600;color:var(--text);margin:28px 0 12px}
+h4{font-size:15px;font-weight:600;color:var(--accent);margin:20px 0 8px}
+p{color:var(--text2);margin-bottom:14px}
+/* Code */
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg3);color:var(--text)}
+/* Callouts */
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;display:flex;gap:12px;align-items:flex-start}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3)}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3)}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3)}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3)}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:14px;color:var(--text2)}
+.callout-body strong{color:var(--text)}
+/* Tables */
+.table-wrap{overflow-x:auto;margin:20px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 14px;text-align:left;border-bottom:2px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+/* Cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card h4{margin:0 0 8px;font-size:14px;color:var(--text)}
+.card p{font-size:13px;color:var(--text2);margin:0}
+.card.green{border-top:3px solid var(--green)}
+.card.yellow{border-top:3px solid var(--yellow)}
+.card.red{border-top:3px solid var(--red)}
+.card.purple{border-top:3px solid var(--purple)}
+.card.blue{border-top:3px solid var(--accent)}
+.card.orange{border-top:3px solid var(--orange)}
+/* Two col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:20px 0}
+@media(max-width:800px){.two-col{grid-template-columns:1fr}}
+/* TOC */
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:40px}
+.toc h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin:0 0 12px}
+.toc ol{padding-left:20px}
+.toc li{margin:5px 0}
+.toc a{font-size:13px;color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+/* Arch diagram */
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.8}
+/* Back to top */
+.back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50}
+.back-top.visible{opacity:1}
+.back-top:hover{color:var(--accent)}
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;vertical-align:middle;margin-left:6px}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+/* Tier pills */
+.tier{display:inline-flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.tier span{padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
+/* Wave table */
+.wave-row{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.wave-num{min-width:80px;font-weight:700;font-family:monospace;color:var(--accent)}
+/* Steps */
+.step-list{counter-reset:steps;list-style:none;padding:0;margin:16px 0}
+.step-list li{counter-increment:steps;display:flex;gap:14px;margin-bottom:16px}
+.step-list li::before{content:counter(steps);background:var(--accent);color:#000;font-weight:700;font-size:12px;min-width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-list li p{margin:0;font-size:14px;color:var(--text2)}
+/* Coverage block */
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:48px}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;display:inline-block}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border)}
+@media(max-width:700px){.coverage-body{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.hamburger{display:block}main{margin-left:0;padding:24px 16px}}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">⎈ Kubernetes Docs</div>
+    <div class="sidebar-subtitle">Production-Grade Reference</div>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="00-platform-overview.html">00 · Overview</a>
+      <a href="01-cluster-provisioning.html">01 · Cluster Provisioning</a>
+      <a href="02-gitops.html">02 · GitOps</a>
+      <a href="03-ci-cd-pipelines.html">03 · CI/CD Pipelines</a>
+      <a href="04-developer-portal.html">04 · Developer Portal</a>
+      <a href="05-policy-enforcement.html" class="active">05 · Policy Enforcement</a>
+      <a href="06-multi-tenancy.html">06 · Multi-Tenancy</a>
+      <a href="07-cost-management.html">07 · Cost Management</a>
+      <a href="08-service-catalog.html">08 · Service Catalog</a>
+      <a href="09-secrets-automation.html">09 · Secrets Automation</a>
+      <a href="10-platform-apis.html">10 · Platform APIs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Quick Links</div>
+      <a href="../index.html">← Home</a>
+      <a href="../COVERAGE.html">Coverage Dashboard</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">77 of 91 files generated · 85%</div>
+</aside>
+
+<main id="main">
+
+<div class="hero">
+  <div class="hero-badge">🛡️ Policy Enforcement</div>
+  <h1>Policy Enforcement in Kubernetes</h1>
+  <p>Complete guide to Kubernetes admission control, OPA Gatekeeper, Kyverno, Pod Security Admission, and policy-as-code workflows — ensuring every workload meets security, operational, and compliance standards before it lands in the cluster.</p>
+  <div class="hero-meta">
+    <span>🧩 OPA Gatekeeper</span>
+    <span>🔒 Kyverno</span>
+    <span>🔐 Pod Security Admission</span>
+    <span>⚙️ Admission Webhooks</span>
+    <span>🧪 Policy Testing</span>
+  </div>
+</div>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#admission-control">Admission Control Architecture</a></li>
+    <li><a href="#psa">Pod Security Admission</a></li>
+    <li><a href="#gatekeeper">OPA Gatekeeper</a></li>
+    <li><a href="#kyverno">Kyverno</a></li>
+    <li><a href="#comparison">Gatekeeper vs Kyverno</a></li>
+    <li><a href="#common-policies">Common Policy Library</a></li>
+    <li><a href="#exceptions">Policy Exceptions</a></li>
+    <li><a href="#testing">Policy Testing</a></li>
+    <li><a href="#gitops">Policy as Code in GitOps</a></li>
+    <li><a href="#audit">Audit &amp; Compliance Reporting</a></li>
+    <li><a href="#alerts">Alerting &amp; Monitoring</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="admission-control">Admission Control Architecture</h2>
+
+<p>Every API request in Kubernetes passes through an ordered admission chain before being persisted to etcd. Policy engines hook into this chain as dynamic admission webhooks — they are called synchronously, making them enforceable gates rather than after-the-fact detectors.</p>
+
+<div class="arch-diagram">
+kubectl apply / CI pipeline / GitOps reconciler
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   kube-apiserver                            │
+│                                                             │
+│  1. Authentication   (certificate / OIDC / bearer token)   │
+│  2. Authorization    (RBAC / ABAC / Node)                   │
+│  3. Admission                                               │
+│     ├── Mutating Admission Webhooks  (run in parallel)      │
+│     │       ├── Kyverno mutate webhook                      │
+│     │       ├── Gatekeeper mutation webhook                 │
+│     │       └── cert-manager / linkerd injectors            │
+│     ├── Object Schema Validation                            │
+│     └── Validating Admission Webhooks  (run in parallel)    │
+│             ├── Gatekeeper validating webhook               │
+│             ├── Kyverno validate webhook                    │
+│             └── Pod Security Admission (built-in)           │
+│                                                             │
+│  4. Persist to etcd (only if all webhooks admit)            │
+└─────────────────────────────────────────────────────────────┘
+        │                               │
+        ▼                               ▼
+  ALLOW + audit log              DENY (HTTP 403 back to client)
+</div>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Webhook availability matters.</strong> Validating webhooks with <code>failurePolicy: Fail</code> block all matching requests if the webhook pod is unavailable. Deploy policy engines with <code>podAntiAffinity</code> across zones, set PodDisruptionBudgets, and size replicas to survive zone failure. <code>failurePolicy: Ignore</code> is an escape hatch but removes your guarantees.</div>
+</div>
+
+<h3>Webhook Configuration Anatomy</h3>
+
+<pre><code class="language-yaml"># ValidatingWebhookConfiguration (simplified — Gatekeeper creates this)
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: gatekeeper-validating-webhook-configuration
+webhooks:
+- name: validation.gatekeeper.sh
+  admissionReviewVersions: ["v1"]
+  clientConfig:
+    service:
+      name: gatekeeper-webhook-service
+      namespace: gatekeeper-system
+      path: /v1/admit
+  rules:
+  - apiGroups: ["*"]
+    apiVersions: ["*"]
+    operations: ["CREATE","UPDATE"]
+    resources: ["*"]
+    scope: Namespaced
+  namespaceSelector:
+    matchExpressions:
+    - key: admission.gatekeeper.sh/ignore
+      operator: DoesNotExist
+  failurePolicy: Fail
+  sideEffects: None
+  timeoutSeconds: 10
+  matchPolicy: Equivalent   # catches admission of old API versions too</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Built-in Admission Plugins</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Plugin</th><th>Type</th><th>Purpose</th><th>Enabled by Default</th></tr></thead>
+<tbody>
+<tr><td><code>PodSecurity</code></td><td>Validating</td><td>Enforce Pod Security Standards per namespace</td><td>Yes (1.25+)</td></tr>
+<tr><td><code>LimitRanger</code></td><td>Mutating+Validating</td><td>Apply LimitRange defaults and enforce bounds</td><td>Yes</td></tr>
+<tr><td><code>ResourceQuota</code></td><td>Validating</td><td>Block creation when namespace quota exceeded</td><td>Yes</td></tr>
+<tr><td><code>DefaultStorageClass</code></td><td>Mutating</td><td>Add default StorageClass annotation to PVCs</td><td>Yes</td></tr>
+<tr><td><code>MutatingAdmissionWebhook</code></td><td>Mutating</td><td>Call registered mutating webhooks</td><td>Yes</td></tr>
+<tr><td><code>ValidatingAdmissionWebhook</code></td><td>Validating</td><td>Call registered validating webhooks</td><td>Yes</td></tr>
+<tr><td><code>ValidatingAdmissionPolicy</code></td><td>Validating</td><td>CEL-based in-process policies (1.30 GA)</td><td>Yes (1.30+)</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="psa">Pod Security Admission (PSA)</h2>
+
+<p>PSA is the built-in replacement for the deprecated PodSecurityPolicy. It enforces three hardcoded Pod Security Standards at the namespace level via labels. No CRDs, no external webhook — zero operational overhead.</p>
+
+<h3>The Three Pod Security Standards</h3>
+
+<div class="card-grid">
+  <div class="card green">
+    <h4>Privileged</h4>
+    <p>Completely unrestricted. Allows all host namespaces, privileged containers, any capabilities. Reserved for system-level DaemonSets (CNI, node agents, eBPF tools) in <code>kube-system</code>-equivalent namespaces.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Baseline</h4>
+    <p>Prevents known privilege escalations. Disallows privileged containers, hostPID/hostNetwork/hostIPC, dangerous capabilities (NET_ADMIN, SYS_ADMIN), host path volumes, hostPort. Suitable for most general workloads.</p>
+  </div>
+  <div class="card red">
+    <h4>Restricted</h4>
+    <p>Heavily hardened. Requires <code>runAsNonRoot: true</code>, drops ALL capabilities, allows only <code>NET_BIND_SERVICE</code>, requires <code>seccompProfile: RuntimeDefault</code> or <code>Localhost</code>, disallows all volume types except configMap/secret/projected/emptyDir/csi/persistent. Target for internet-facing services.</p>
+  </div>
+</div>
+
+<h3>PSA Modes</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Mode</th><th>Label Key</th><th>Behavior</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td><code>enforce</code></td><td><code>pod-security.kubernetes.io/enforce</code></td><td>Reject violating pods synchronously</td><td>Production namespaces</td></tr>
+<tr><td><code>audit</code></td><td><code>pod-security.kubernetes.io/audit</code></td><td>Allow but add audit annotation to API audit log</td><td>Monitoring compliance without breakage</td></tr>
+<tr><td><code>warn</code></td><td><code>pod-security.kubernetes.io/warn</code></td><td>Allow but return HTTP warning header to client</td><td>Gradual rollout — warns kubectl users</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Namespace Labeling Examples</h3>
+
+<pre><code class="language-yaml"># Recommended: enforce baseline, warn+audit restricted
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments-api
+  labels:
+    # Reject pods that aren't at least baseline
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
+    # Warn and audit against restricted (see violations without breaking)
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+---
+# Infrastructure namespace — privileged for CNI/monitoring DaemonSets
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    pod-security.kubernetes.io/enforce: privileged</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Labeling Existing Namespaces with Dry-Run</h3>
+
+<pre><code class="language-bash"># Check what would break before enforcing
+kubectl label --dry-run=server --overwrite ns my-app \
+  pod-security.kubernetes.io/enforce=restricted 2>&amp;1 | grep -i warning
+
+# Bulk audit all namespaces against restricted
+kubectl get ns -o name | xargs -I{} kubectl label --dry-run=server \
+  --overwrite {} pod-security.kubernetes.io/audit=restricted 2>&amp;1 | grep Warning</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Compliant Pod securityContext for Restricted</h3>
+
+<pre><code class="language-yaml">spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: app
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="gatekeeper">OPA Gatekeeper</h2>
+
+<p>Gatekeeper extends OPA (Open Policy Agent) into Kubernetes as a set of CRDs. Policies are expressed as <strong>ConstraintTemplates</strong> (Rego logic) and instantiated as <strong>Constraints</strong> (parameters). This two-layer model lets platform teams ship reusable policy libraries while teams configure enforcement parameters.</p>
+
+<div class="arch-diagram">
+ConstraintTemplate             Constraint (instance)
+  name: K8sRequiredLabels        kind: K8sRequiredLabels
+  rego: deny if labels missing   name: require-team-label
+  creates CRD: K8sRequiredLabels params: labels: ["team","env"]
+       │                              │
+       └──────────────────────────────┘
+                       │
+              Gatekeeper admission webhook
+                       │
+              Evaluates Rego against object
+                       │
+             ┌─────────┴──────────┐
+           ALLOW               DENY (with violation message)
+
+Audit controller polls all existing objects → populates
+  status.violations[] on each Constraint (catch pre-existing)
+</div>
+
+<h3>Install Gatekeeper</h3>
+
+<pre><code class="language-bash">helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+helm repo update
+
+helm install gatekeeper gatekeeper/gatekeeper \
+  --namespace gatekeeper-system \
+  --create-namespace \
+  --version 3.17.1 \
+  --set replicas=3 \
+  --set auditInterval=60 \
+  --set auditMatchKindOnly=false \
+  --set constraintViolationsLimit=100 \
+  --set disableMutation=false \
+  --set logDenies=true \
+  --set emitAdmissionEvents=true \
+  --set emitAuditEvents=true</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>ConstraintTemplate: Required Labels</h3>
+
+<pre><code class="language-yaml">apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+  annotations:
+    metadata.gatekeeper.sh/title: "Required Labels"
+    metadata.gatekeeper.sh/description: "Requires specified labels on resources"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8srequiredlabels
+
+      violation[{"msg": msg}] {
+        provided := {label | input.review.object.metadata.labels[label]}
+        required := {label | label := input.parameters.labels[_]}
+        missing  := required - provided
+        count(missing) > 0
+        msg := sprintf("Missing required labels: %v", [missing])
+      }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Constraint: Enforce Labels on Namespaces</h3>
+
+<pre><code class="language-yaml">apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: require-team-env-labels
+spec:
+  enforcementAction: deny     # deny | warn | dryrun
+  match:
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Namespace"]
+    excludedNamespaces:
+    - kube-system
+    - kube-public
+    - gatekeeper-system
+    - cert-manager
+    - argocd
+  parameters:
+    labels: ["team", "env", "cost-center"]</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>ConstraintTemplate: Allowed Image Registries</h3>
+
+<pre><code class="language-yaml">apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sallowedrepos
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAllowedRepos
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            repos:
+              type: array
+              items: {type: string}
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8sallowedrepos
+
+      violation[{"msg": msg}] {
+        container := input_containers[_]
+        not strings.any_prefix_match(container.image, input.parameters.repos)
+        msg := sprintf("Container %q image %q not from allowed registries %v",
+          [container.name, container.image, input.parameters.repos])
+      }
+
+      input_containers[c] {
+        c := input.review.object.spec.containers[_]
+      }
+      input_containers[c] {
+        c := input.review.object.spec.initContainers[_]
+      }
+      input_containers[c] {
+        c := input.review.object.spec.ephemeralContainers[_]
+      }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAllowedRepos
+metadata:
+  name: allowed-image-registries
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+  parameters:
+    repos:
+    - "123456789.dkr.ecr.us-east-1.amazonaws.com/"
+    - "gcr.io/distroless/"
+    - "registry.k8s.io/"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Gatekeeper Mutation</h3>
+
+<pre><code class="language-yaml"># Automatically inject default resource limits
+apiVersion: mutations.gatekeeper.sh/v1
+kind: AssignMetadata
+metadata:
+  name: add-cost-center-label
+spec:
+  match:
+    scope: Namespaced
+    kinds:
+    - apiGroups: ["apps"]
+      kinds: ["Deployment","StatefulSet","DaemonSet"]
+  location: "metadata.labels.cost-center"
+  parameters:
+    assign:
+      value: "platform"
+---
+# Set readOnlyRootFilesystem if not explicitly set
+apiVersion: mutations.gatekeeper.sh/v1
+kind: Assign
+metadata:
+  name: set-readonly-rootfs
+spec:
+  match:
+    scope: Namespaced
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+  location: "spec.containers[name:*].securityContext.readOnlyRootFilesystem"
+  parameters:
+    assign:
+      value: true</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Reading Audit Violations</h3>
+
+<pre><code class="language-bash"># Show all violations across all constraints
+kubectl get constraints -A
+kubectl describe k8srequiredlabels require-team-env-labels
+
+# Structured violation output
+kubectl get k8srequiredlabels require-team-env-labels \
+  -o jsonpath='{.status.violations[*]}' | jq .
+
+# Count by constraint
+kubectl get constraints -o json | jq '
+  .items[] | {
+    constraint: .metadata.name,
+    violations: (.status.violations | length)
+  }'</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="kyverno">Kyverno</h2>
+
+<p>Kyverno is a Kubernetes-native policy engine that uses YAML (with JMESPath expressions) instead of a separate policy language. Policies are <strong>ClusterPolicy</strong> or namespace-scoped <strong>Policy</strong> resources with three rule types: <code>validate</code>, <code>mutate</code>, and <code>generate</code>.</p>
+
+<h3>Install Kyverno</h3>
+
+<pre><code class="language-bash">helm repo add kyverno https://kyverno.github.io/kyverno/
+helm repo update
+
+helm install kyverno kyverno/kyverno \
+  --namespace kyverno \
+  --create-namespace \
+  --version 3.2.6 \
+  --set admissionController.replicas=3 \
+  --set backgroundController.replicas=2 \
+  --set cleanupController.replicas=1 \
+  --set reportsController.replicas=1 \
+  --set admissionController.container.args.enableDeferredLoading=true \
+  --set features.policyExceptions.enabled=true \
+  --set features.globalContext.enabled=true</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>ClusterPolicy: Validate</h3>
+
+<pre><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-pod-probes
+  annotations:
+    policies.kyverno.io/title: Require Liveness and Readiness Probes
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Pods without liveness probes cannot be automatically restarted.
+      Pods without readiness probes receive traffic before they are ready.
+spec:
+  validationFailureAction: Enforce   # Enforce | Audit
+  background: true   # also scan existing resources
+  rules:
+  - name: check-container-probes
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+          operations: ["CREATE","UPDATE"]
+    exclude:
+      any:
+      - resources:
+          namespaces: ["kube-system","monitoring","kyverno","argocd"]
+      - subjects:
+        - kind: ServiceAccount
+          name: "argo-rollouts"
+          namespace: "argo-rollouts"
+    validate:
+      message: "Liveness and readiness probes are required for all containers."
+      foreach:
+      - list: "request.object.spec.containers"
+        deny:
+          conditions:
+            any:
+            - key: "{{ element.livenessProbe }}"
+              operator: Equals
+              value: null
+            - key: "{{ element.readinessProbe }}"
+              operator: Equals
+              value: null</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>ClusterPolicy: Mutate — Inject Default Resources</h3>
+
+<pre><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: add-default-resources
+spec:
+  validationFailureAction: Audit
+  background: false
+  rules:
+  - name: add-resource-defaults
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+          operations: ["CREATE"]
+    mutate:
+      foreach:
+      - list: "request.object.spec.containers[]"
+        patchStrategicMerge:
+          spec:
+            containers:
+            - name: "{{ element.name }}"
+              resources:
+                requests:
+                  cpu: "{{ element.resources.requests.cpu || '100m' }}"
+                  memory: "{{ element.resources.requests.memory || '128Mi' }}"
+                limits:
+                  memory: "{{ element.resources.limits.memory || '256Mi' }}"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>ClusterPolicy: Generate — NetworkPolicy on Namespace Create</h3>
+
+<pre><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-default-network-policy
+spec:
+  rules:
+  - name: generate-deny-all-ingress
+    match:
+      any:
+      - resources:
+          kinds: ["Namespace"]
+          operations: ["CREATE"]
+    exclude:
+      any:
+      - resources:
+          names: ["kube-system","kube-public","kube-node-lease",
+                  "monitoring","kyverno","argocd","cert-manager"]
+    generate:
+      synchronize: true   # keep in sync; delete if namespace deleted
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      name: deny-all-ingress
+      namespace: "{{ request.object.metadata.name }}"
+      data:
+        spec:
+          podSelector: {}
+          policyTypes: ["Ingress"]
+          # No ingress rules = deny all. Teams must add their own allow rules.</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>ClusterPolicy: Verify Image Signatures</h3>
+
+<pre><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signatures
+spec:
+  validationFailureAction: Enforce
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+  - name: verify-cosign-keyless
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+          operations: ["CREATE","UPDATE"]
+    verifyImages:
+    - imageReferences:
+      - "123456789.dkr.ecr.us-east-1.amazonaws.com/*"
+      mutateDigest: true       # replace tag with digest (immutability)
+      verifyDigest: true
+      required: true
+      attestors:
+      - count: 1
+        entries:
+        - keyless:
+            subject: "https://github.com/myorg/myrepo/.github/workflows/ci.yaml@refs/heads/main"
+            issuer: "https://token.actions.githubusercontent.com"
+            rekor:
+              url: https://rekor.sigstore.dev</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>mutateDigest: true</strong> is a security critical feature — it replaces <code>:v1.2.3</code> tags with <code>@sha256:...</code> digests at admission time, preventing tag mutation attacks even after the pod is admitted.</div>
+</div>
+
+<h3>Kyverno CLI — Test Locally</h3>
+
+<pre><code class="language-bash"># Install
+brew install kyverno   # or: curl -sL https://github.com/kyverno/kyverno/releases/...
+
+# Test a policy against resources without a cluster
+kyverno apply policy.yaml --resource pod.yaml
+
+# Test a policy with values (simulating variables)
+kyverno apply policy.yaml --resource pod.yaml \
+  --values-file values.yaml
+
+# Run a full test suite
+kyverno test .    # looks for kyverno-test.yaml in current dir
+
+# Generate policy reports from live cluster
+kyverno report cluster --policy-report-dir ./reports/</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Kyverno Test Manifest</h3>
+
+<pre><code class="language-yaml"># kyverno-test.yaml
+name: require-pod-probes-test
+policies:
+- require-pod-probes.yaml
+resources:
+- good-pod.yaml
+- bad-pod.yaml
+results:
+- policy: require-pod-probes
+  rule: check-container-probes
+  resource: good-pod
+  result: pass
+- policy: require-pod-probes
+  rule: check-container-probes
+  resource: bad-pod
+  result: fail</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="comparison">Gatekeeper vs Kyverno</h2>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Dimension</th><th>OPA Gatekeeper</th><th>Kyverno</th></tr></thead>
+<tbody>
+<tr><td>Policy language</td><td>Rego (OPA's declarative language)</td><td>YAML + JMESPath expressions</td></tr>
+<tr><td>Learning curve</td><td>High (Rego has unique syntax/semantics)</td><td>Low (K8s-native YAML)</td></tr>
+<tr><td>Rule types</td><td>Validate + Mutate (separate CRDs)</td><td>Validate + Mutate + Generate in one ClusterPolicy</td></tr>
+<tr><td>Mutation support</td><td>AssignMetadata, Assign, ModifySet CRDs</td><td>patchStrategicMerge, patchesJSON6902, foreach</td></tr>
+<tr><td>Resource generation</td><td>No native generate</td><td>Yes — generate NetworkPolicy, RBAC, etc. on triggers</td></tr>
+<tr><td>Image verification</td><td>No (use separate Kyverno for this)</td><td>Yes — verifyImages with cosign keyless/key-based</td></tr>
+<tr><td>External data</td><td>OPA external data providers (HTTP cache)</td><td>Global context (K8s resources, API calls)</td></tr>
+<tr><td>Testing tooling</td><td>conftest, opa test</td><td>kyverno test (full test suite with pass/fail)</td></tr>
+<tr><td>Policy Reports</td><td>via status.violations (custom)</td><td>PolicyReport / ClusterPolicyReport (K8s standard CRD)</td></tr>
+<tr><td>Audit mode</td><td>Separate audit controller, enforcementAction: dryrun</td><td>background: true + validationFailureAction: Audit</td></tr>
+<tr><td>Exceptions</td><td>Excluded scopes in match, separate namespace annotations</td><td>PolicyException CRD</td></tr>
+<tr><td>Community adoption</td><td>CNCF graduated; strong enterprise adoption</td><td>CNCF graduated; rapidly growing; preferred for K8s teams</td></tr>
+<tr><td>Best for</td><td>Teams already using OPA/Rego for other policy; complex cross-resource logic</td><td>Teams wanting K8s-native approach; need generate rules; image signing</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>You can run both.</strong> A common pattern: Kyverno handles validate + mutate + generate + image verification; Gatekeeper handles complex Rego-based cross-resource validation (e.g., "no two services with same external hostname"). Ensure webhook timeout budgets don't cascade.</div>
+</div>
+
+<h3>ValidatingAdmissionPolicy (VAP) — Built-in CEL</h3>
+
+<p>Kubernetes 1.30 GA'd <code>ValidatingAdmissionPolicy</code> — lightweight CEL-based validation without an external webhook. Ideal for simple constraints where you don't want another running pod.</p>
+
+<pre><code class="language-yaml">apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-run-as-non-root
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      operations: ["CREATE","UPDATE"]
+      resources: ["pods"]
+  validations:
+  - expression: >-
+      object.spec.securityContext.runAsNonRoot == true ||
+      object.spec.containers.all(c,
+        c.securityContext.runAsNonRoot == true)
+    message: "Pods must set runAsNonRoot: true"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-run-as-non-root-binding
+spec:
+  policyName: require-run-as-non-root
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        enforce-security: "true"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="common-policies">Common Policy Library</h2>
+
+<p>These are the policies every production platform should enforce. Ship them in <code>enforcementAction: dryrun</code> / <code>Audit</code> first to find violations, then graduate to <code>deny</code> / <code>Enforce</code>.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Policy</th><th>Risk Mitigated</th><th>Recommended Action</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Require resource limits &amp; requests</td><td>CPU/memory OOM, node pressure</td><td>Enforce</td><td>Use LimitRange defaults as fallback</td></tr>
+<tr><td>Require liveness + readiness probes</td><td>Traffic to not-ready pods, no auto-restart</td><td>Enforce</td><td>Exclude Jobs and one-shot containers</td></tr>
+<tr><td>Disallow privileged containers</td><td>Node escape, kernel access</td><td>Enforce</td><td>Allow in kube-system with annotation</td></tr>
+<tr><td>Disallow hostPID / hostIPC / hostNetwork</td><td>Process snooping, network sniffing</td><td>Enforce</td><td>Allow for CNI/monitoring DaemonSets</td></tr>
+<tr><td>Disallow hostPath volumes</td><td>Host filesystem read/write</td><td>Enforce</td><td>Allow specific paths for log agents</td></tr>
+<tr><td>Require non-root user</td><td>Container breakout impact</td><td>Enforce</td><td>Set runAsNonRoot + runAsUser ≥ 1000</td></tr>
+<tr><td>Disallow privilege escalation</td><td>setuid binary exploitation</td><td>Enforce</td><td><code>allowPrivilegeEscalation: false</code></td></tr>
+<tr><td>Drop ALL capabilities</td><td>Linux capability abuse</td><td>Enforce</td><td>Allow NET_BIND_SERVICE explicitly</td></tr>
+<tr><td>Require readOnlyRootFilesystem</td><td>Reduce attack surface for malware</td><td>Audit → Enforce</td><td>Many apps need emptyDir for /tmp</td></tr>
+<tr><td>Require seccompProfile: RuntimeDefault</td><td>Syscall surface reduction</td><td>Enforce</td><td>Required for restricted PSS</td></tr>
+<tr><td>Allowed image registries</td><td>Supply chain compromise</td><td>Enforce</td><td>Allowlist internal ECR + distroless</td></tr>
+<tr><td>Require image digest (not tag)</td><td>Tag mutation attacks</td><td>Enforce (via mutateDigest)</td><td>Kyverno verifyImages handles this</td></tr>
+<tr><td>Require cosign signature</td><td>Unsigned / untrusted images</td><td>Enforce</td><td>Gate on specific namespaces first</td></tr>
+<tr><td>Disallow latest tag</td><td>Non-reproducible deployments</td><td>Enforce</td><td>Block pods with image ending in :latest</td></tr>
+<tr><td>Require team + env labels</td><td>Ownership, cost attribution</td><td>Enforce on Namespace/Deployment</td><td>Required for cost chargeback</td></tr>
+<tr><td>Require PodDisruptionBudget</td><td>Accidental zero-replica drain</td><td>Audit</td><td>Complex to enforce — use audit + alert</td></tr>
+<tr><td>Require NetworkPolicy exists</td><td>Unrestricted lateral movement</td><td>Audit → Enforce</td><td>Kyverno generate creates deny-all</td></tr>
+<tr><td>Max replicas without HPA</td><td>Over-provisioning</td><td>Audit</td><td>Warn if replicas &gt; 3 without HPA</td></tr>
+<tr><td>Disallow NodePort services</td><td>Direct node exposure</td><td>Enforce</td><td>Allow ClusterIP + LoadBalancer only</td></tr>
+<tr><td>Require Ingress TLS</td><td>Plaintext traffic</td><td>Enforce</td><td>Check spec.tls is set</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Kyverno: Disallow Latest Tag</h3>
+
+<pre><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: require-image-tag
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+          operations: ["CREATE","UPDATE"]
+    exclude:
+      any:
+      - resources:
+          namespaces: ["kube-system"]
+    validate:
+      message: "Image tag ':latest' or missing tag is not allowed. Use a specific tag or digest."
+      foreach:
+      - list: "request.object.spec.containers"
+        deny:
+          conditions:
+            any:
+            - key: "{{ element.image }}"
+              operator: Equals
+              value: "*:latest"
+            - key: "{{ element.image }}"
+              operator: NotEquals
+              value: "*:*"   # images without any tag</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Kyverno: Require Resource Limits</h3>
+
+<pre><code class="language-yaml">apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-requests-limits
+  annotations:
+    policies.kyverno.io/title: Require Resource Requests and Limits
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: validate-resources
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+          operations: ["CREATE","UPDATE"]
+    exclude:
+      any:
+      - resources:
+          namespaces: ["kube-system","kyverno"]
+    validate:
+      message: "CPU/memory requests and memory limits are required on all containers."
+      foreach:
+      - list: "request.object.spec.containers"
+        deny:
+          conditions:
+            any:
+            - key: "{{ element.resources.requests.cpu || '' }}"
+              operator: Equals
+              value: ""
+            - key: "{{ element.resources.requests.memory || '' }}"
+              operator: Equals
+              value: ""
+            - key: "{{ element.resources.limits.memory || '' }}"
+              operator: Equals
+              value: ""</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="exceptions">Policy Exceptions</h2>
+
+<p>No policy library is perfect — there will always be legitimate exceptions (legacy apps, specialized system components, vendor-provided DaemonSets). Manage these explicitly rather than widening the policy's exclusion scope.</p>
+
+<h3>Kyverno PolicyException</h3>
+
+<pre><code class="language-yaml">apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: datadog-agent-exception
+  namespace: monitoring        # exceptions are namespaced
+spec:
+  exceptions:
+  - policyName: disallow-privileged-containers
+    ruleNames:
+    - check-privileged
+  - policyName: require-requests-limits
+    ruleNames:
+    - validate-resources
+  match:
+    any:
+    - resources:
+        kinds: ["Pod"]
+        namespaces: ["monitoring"]
+        selector:
+          matchLabels:
+            app: datadog-agent
+  # Optional: expiry date to force re-review
+  podSecurity: []</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Gate PolicyException creation.</strong> Use RBAC to allow only the platform team to create PolicyExceptions. Add a Kyverno policy that requires <code>annotations: approved-by: platform-team</code> on every PolicyException. Track all exceptions in a GitOps repo for auditability.</div>
+</div>
+
+<h3>Gatekeeper Exemption via Namespace Annotation</h3>
+
+<pre><code class="language-yaml"># Exclude a namespace from ALL Gatekeeper webhooks
+kubectl label namespace legacy-app \
+  admission.gatekeeper.sh/ignore=no-validation
+
+# Per-constraint: use excludedNamespaces in Constraint spec
+spec:
+  match:
+    excludedNamespaces:
+    - legacy-app
+    - vendor-system</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Exception Tracking in Git</h3>
+
+<pre><code class="language-bash">policy/
+  library/
+    require-probes.yaml
+    disallow-privileged.yaml
+    allowed-registries.yaml
+  constraints/
+    cluster-wide-constraints.yaml
+  exceptions/
+    README.md          # exception registry with justification
+    datadog-agent.yaml
+    legacy-payment-service.yaml   # expires: 2025-12-31, ticket: PLAT-4892
+  tests/
+    require-probes/
+      kyverno-test.yaml
+      good-pod.yaml
+      bad-pod.yaml</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="testing">Policy Testing</h2>
+
+<p>Policy changes must be tested before reaching production. The testing pyramid applies: unit tests (kyverno test / conftest), integration against a Kind cluster, then graduated rollout in audit mode.</p>
+
+<h3>Kyverno Test Suite Structure</h3>
+
+<pre><code class="language-yaml"># tests/require-probes/kyverno-test.yaml
+name: require-probes-tests
+policies:
+- ../../library/require-probes.yaml
+resources:
+- good-pod.yaml
+- bad-pod-no-liveness.yaml
+- bad-pod-no-readiness.yaml
+- excluded-namespace-pod.yaml
+variables: variables.yaml
+results:
+- policy: require-pod-probes
+  rule: check-container-probes
+  resource: good-pod
+  result: pass
+- policy: require-pod-probes
+  rule: check-container-probes
+  resource: bad-pod-no-liveness
+  result: fail
+- policy: require-pod-probes
+  rule: check-container-probes
+  resource: bad-pod-no-readiness
+  result: fail
+- policy: require-pod-probes
+  rule: check-container-probes
+  resource: excluded-namespace-pod  # in kube-system
+  result: skip</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>conftest for Gatekeeper Rego</h3>
+
+<pre><code class="language-bash"># Test Rego policy logic in isolation
+conftest test pod.json \
+  --policy policy/library/required-labels.rego \
+  --namespace k8srequiredlabels
+
+# Test all policies against a manifest directory
+conftest test manifests/ \
+  --policy policy/library/ \
+  --all-namespaces
+
+# Parse K8s YAML to JSON for conftest
+kubectl get pod my-pod -o json | conftest test - \
+  --policy policy/library/required-labels.rego</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>GitHub Actions Policy CI</h3>
+
+<pre><code class="language-yaml">name: Policy Tests
+on:
+  pull_request:
+    paths: ["policy/**"]
+
+jobs:
+  kyverno-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Kyverno CLI
+      run: |
+        curl -sL "https://github.com/kyverno/kyverno/releases/download/v1.12.0/kyverno_1.12.0_linux_amd64.tar.gz" \
+          | tar -xz -C /usr/local/bin kyverno
+    - name: Run Kyverno tests
+      run: kyverno test policy/tests/
+
+  audit-against-kind:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Create Kind cluster
+      uses: helm/kind-action@v1.9.0
+    - name: Install Kyverno
+      run: helm install kyverno kyverno/kyverno -n kyverno --create-namespace --wait
+    - name: Apply policies in Audit mode
+      run: |
+        find policy/library -name "*.yaml" | xargs -I{} \
+          sed 's/validationFailureAction: Enforce/validationFailureAction: Audit/' | \
+          kubectl apply -f -
+    - name: Apply test manifests
+      run: kubectl apply -f policy/tests/fixtures/
+    - name: Check policy reports
+      run: |
+        kubectl get policyreport -A -o json | \
+          jq '.items[].results[] | select(.result=="fail") | .message' | \
+          tee /tmp/violations.txt
+        # Fail CI if unexpected violations
+        [ -s /tmp/violations.txt ] &amp;&amp; exit 1 || true</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Graduated Rollout Strategy</h3>
+
+<ol class="step-list">
+  <li><p><strong>Audit mode cluster-wide</strong> — deploy with <code>validationFailureAction: Audit</code>. Let the audit controller scan all existing resources. Review PolicyReport violations.</p></li>
+  <li><p><strong>Warn mode on new namespaces</strong> — label new namespaces with the PSA <code>warn</code> label. Developers see warnings in kubectl output without failures.</p></li>
+  <li><p><strong>Enforce on non-production first</strong> — flip to <code>Enforce</code> in dev/staging namespaces. Fix violations that surface.</p></li>
+  <li><p><strong>Enforce on production</strong> — after 2-week soak in staging with zero new violations, promote to production. Document timeline in GitOps PR.</p></li>
+  <li><p><strong>Enforce globally</strong> — remove per-namespace overrides. Only named PolicyExceptions remain.</p></li>
+</ol>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="gitops">Policy as Code in GitOps</h2>
+
+<p>Policies must be in Git — not applied ad-hoc. The GitOps loop (see <a href="02-gitops.html">02-gitops.html</a>) ensures policies are version-controlled, reviewed, and automatically reconciled. Drift from approved policy triggers alerts.</p>
+
+<h3>Argo CD Application for Policy</h3>
+
+<pre><code class="language-yaml">apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-policies
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"   # before workloads
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/myorg/platform
+    targetRevision: main
+    path: policy/
+    kustomize:
+      namePrefix: ""
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true    # revert manual policy changes immediately
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Policy Repo Structure</h3>
+
+<pre><code class="language-bash">policy/
+├── kustomization.yaml
+├── library/
+│   ├── security/
+│   │   ├── disallow-privileged.yaml
+│   │   ├── require-non-root.yaml
+│   │   ├── drop-all-capabilities.yaml
+│   │   ├── disallow-host-namespaces.yaml
+│   │   └── require-seccomp.yaml
+│   ├── best-practices/
+│   │   ├── require-probes.yaml
+│   │   ├── require-resource-limits.yaml
+│   │   ├── disallow-latest-tag.yaml
+│   │   └── require-labels.yaml
+│   ├── supply-chain/
+│   │   ├── allowed-registries.yaml
+│   │   └── verify-image-signatures.yaml
+│   └── networking/
+│       ├── disallow-nodeport.yaml
+│       └── require-ingress-tls.yaml
+├── exceptions/
+│   ├── kustomization.yaml
+│   └── datadog-agent.yaml
+└── tests/
+    └── ...
+</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>OPA Policy Bundle for Multi-Cluster</h3>
+
+<pre><code class="language-yaml"># Gatekeeper Config — sync K8s resources into OPA cache
+# (needed for policies that reference other objects)
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: Config
+metadata:
+  name: config
+  namespace: gatekeeper-system
+spec:
+  sync:
+    syncOnly:
+    - group: ""
+      version: "v1"
+      kind: Namespace
+    - group: ""
+      version: "v1"
+      kind: Service
+    - group: "networking.k8s.io"
+      version: "v1"
+      kind: Ingress
+  validation:
+    traces: []</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="audit">Audit &amp; Compliance Reporting</h2>
+
+<h3>Kyverno PolicyReport</h3>
+
+<pre><code class="language-bash"># PolicyReport is namespaced — one per namespace
+kubectl get policyreport -n payments-api -o yaml
+
+# ClusterPolicyReport is cluster-scoped — for non-namespaced resources
+kubectl get clusterpolicyreport -o yaml
+
+# Summary: pass/fail/warn/error counts per policy
+kubectl get policyreport -A \
+  -o jsonpath='{range .items[*]}{.metadata.namespace}: {.summary}{"\n"}{end}'
+
+# Find all failing resources across cluster
+kubectl get policyreport -A -o json | jq '
+  .items[] | .metadata.namespace as $ns |
+  .results[] | select(.result == "fail") | {
+    namespace: $ns,
+    resource: .resources[0].name,
+    policy: .policy,
+    message: .message
+  }'</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Policy Reporter Dashboard</h3>
+
+<pre><code class="language-bash"># Policy Reporter: visualization layer over PolicyReports
+helm install policy-reporter policy-reporter/policy-reporter \
+  --namespace policy-reporter \
+  --create-namespace \
+  --set ui.enabled=true \
+  --set kyvernoPlugin.enabled=true \
+  --set monitoring.enabled=true \  # ServiceMonitor
+  --set target.slack.webhook="https://hooks.slack.com/..."
+  --set target.slack.minimumSeverity="high"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>K8s Audit Logs for Policy Actions</h3>
+
+<pre><code class="language-yaml"># Audit policy on kube-apiserver — log admission denials
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+# Log all admission webhook denials at RequestResponse level
+- level: RequestResponse
+  omitStages: []
+  resources:
+  - group: ""
+    resources: ["pods","deployments"]
+  verbs: ["create","update"]
+  # Filter in SIEM/log pipeline for responseStatus.code=403</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="alerts">Alerting &amp; Monitoring</h2>
+
+<h3>Gatekeeper Prometheus Metrics</h3>
+
+<pre><code class="language-bash"># Key metrics exposed by gatekeeper-controller-manager
+gatekeeper_violations                    # gauge: current audit violations per constraint
+gatekeeper_audit_last_run_time           # gauge: Unix timestamp of last audit
+gatekeeper_audit_duration_seconds        # histogram: audit run duration
+gatekeeper_request_count_total           # counter: webhook requests (admitted/denied)
+gatekeeper_request_duration_seconds      # histogram: webhook latency</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>PrometheusRule</h3>
+
+<pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: policy-enforcement-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: policy.enforcement
+    interval: 60s
+    rules:
+
+    # Kyverno webhook pod health
+    - alert: KyvernoWebhookPodsLow
+      expr: |
+        kube_deployment_status_replicas_available{
+          namespace="kyverno",
+          deployment="kyverno-admission-controller"
+        } < 2
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kyverno admission controller replicas below minimum"
+        description: "Only {{ $value }} replica(s) available. Policy enforcement may be degraded."
+
+    # Gatekeeper audit violations spiking
+    - alert: GatekeeperHighViolations
+      expr: |
+        sum(gatekeeper_violations) by (enforcement_action) > 50
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High number of Gatekeeper violations in audit"
+        description: "{{ $value }} violations detected. Run 'kubectl get constraints -A' to review."
+
+    # Policy webhook latency
+    - alert: PolicyWebhookHighLatency
+      expr: |
+        histogram_quantile(0.99,
+          rate(gatekeeper_request_duration_seconds_bucket[5m])
+        ) > 2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Gatekeeper webhook P99 latency exceeds 2s"
+        description: "High webhook latency may cause timeout-based admission failures."
+
+    # Kyverno background scan stale
+    - alert: KyvernoAuditStale
+      expr: |
+        (time() - kyverno_policy_results_total) > 3600
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Kyverno policy audit not running"
+
+    # New high-severity violations in Kyverno PolicyReport
+    - alert: KyvernoCriticalPolicyViolation
+      expr: |
+        increase(kyverno_policy_results_total{
+          policy_type="validate",
+          status="fail"
+        }[10m]) > 0
+      for: 0m
+      labels:
+        severity: warning
+      annotations:
+        summary: "New Kyverno policy violations detected"
+        description: "Check 'kubectl get policyreport -A' for details."</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Grafana Dashboard Panels</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Panel</th><th>Query</th><th>Visualization</th></tr></thead>
+<tbody>
+<tr><td>Violations by constraint</td><td><code>gatekeeper_violations by (constraint_name)</code></td><td>Bar chart</td></tr>
+<tr><td>Webhook admit/deny ratio</td><td><code>rate(gatekeeper_request_count_total[5m]) by (admission_status)</code></td><td>Stacked area</td></tr>
+<tr><td>P99 webhook latency</td><td><code>histogram_quantile(0.99, rate(gatekeeper_request_duration_seconds_bucket[5m]))</code></td><td>Stat (threshold: &gt;1s yellow, &gt;2s red)</td></tr>
+<tr><td>Kyverno pass/fail trend</td><td><code>kyverno_policy_results_total by (status)</code></td><td>Time series</td></tr>
+<tr><td>Namespace PSS compliance</td><td>Custom query on namespace labels</td><td>Table</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card green">
+    <h4>Audit Before Enforce</h4>
+    <p>Always deploy new policies in Audit/dryrun mode first. Run for at least 2 weeks and fix all violations before flipping to Enforce. New policies in Enforce without audit break existing workloads.</p>
+  </div>
+  <div class="card green">
+    <h4>Policy as Code in GitOps</h4>
+    <p>Store all policies in Git with Argo CD <code>selfHeal: true</code> on the policy Application. Any manual policy change is reverted within 3 minutes — policies can never drift from reviewed state.</p>
+  </div>
+  <div class="card blue">
+    <h4>Sync Waves for Policies</h4>
+    <p>Use Argo CD sync wave <code>-2</code> for policies and <code>-1</code> for Gatekeeper/Kyverno install, so the engine is running before workloads are reconciled. A workload in wave 0 will be validated by already-running webhooks.</p>
+  </div>
+  <div class="card blue">
+    <h4>PodDisruptionBudget on Policy Engine</h4>
+    <p>Set <code>minAvailable: 2</code> PDB on Kyverno/Gatekeeper admission controllers. This prevents node drains from taking down all webhook replicas simultaneously, which would block all pod scheduling.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Minimize Webhook Scope</h4>
+    <p>Use <code>namespaceSelector</code> and <code>objectSelector</code> to minimize what your webhook is called for. A webhook called for every resource in the cluster adds latency proportional to your policy count.</p>
+  </div>
+  <div class="card yellow">
+    <h4>Test Policies in CI</h4>
+    <p>Run <code>kyverno test</code> or <code>conftest</code> in every PR that touches the policy directory. Include both positive (compliant) and negative (violating) fixtures. Aim for &gt;80% branch coverage of Rego rules.</p>
+  </div>
+  <div class="card orange">
+    <h4>Gate PolicyExceptions</h4>
+    <p>Create a Kyverno policy that requires <code>annotations.approved-by: platform-team</code> on every PolicyException. Log all exception creations to your SIEM. Review quarterly and expire by date.</p>
+  </div>
+  <div class="card red">
+    <h4>No Blanket Webhook Ignore</h4>
+    <p>Labeling a namespace <code>admission.gatekeeper.sh/ignore</code> disables ALL Gatekeeper constraints in that namespace. This is an escape hatch, not standard practice. Use named PolicyExceptions or per-constraint exclusions instead.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage: 05 · Policy Enforcement</summary>
+  <ul class="coverage-body">
+    <li>Admission control architecture diagram (authentication → authorization → mutating webhooks → schema validation → validating webhooks → etcd)</li>
+    <li>ValidatingWebhookConfiguration anatomy (clientConfig, rules, namespaceSelector, failurePolicy, matchPolicy: Equivalent)</li>
+    <li>Built-in admission plugins reference table (PodSecurity/LimitRanger/ResourceQuota/DefaultStorageClass/MutatingAdmissionWebhook/ValidatingAdmissionWebhook/ValidatingAdmissionPolicy)</li>
+    <li>Pod Security Standards: Privileged / Baseline / Restricted with allowed/disallowed controls</li>
+    <li>PSA modes: enforce / audit / warn with label keys and behavior differences</li>
+    <li>Namespace labeling examples (enforce baseline + warn/audit restricted dual-mode)</li>
+    <li>kubectl dry-run PSS audit commands (check breakage before enforcing)</li>
+    <li>Compliant Pod securityContext for restricted PSS (runAsNonRoot/runAsUser/fsGroup/seccompProfile/allowPrivilegeEscalation:false/capabilities:drop:ALL/readOnlyRootFilesystem)</li>
+    <li>Gatekeeper architecture (ConstraintTemplate + Constraint two-layer model + audit controller)</li>
+    <li>Gatekeeper Helm install (replicas/auditInterval/logDenies/emitEvents)</li>
+    <li>ConstraintTemplate: K8sRequiredLabels (Rego: provided-required-missing set arithmetic)</li>
+    <li>Constraint: K8sRequiredLabels with enforcementAction/match/excludedNamespaces/parameters</li>
+    <li>ConstraintTemplate: K8sAllowedRepos (all container types: containers/initContainers/ephemeralContainers)</li>
+    <li>Gatekeeper Mutation: AssignMetadata (label injection) + Assign (security context defaults)</li>
+    <li>Reading audit violations with kubectl (describe, jsonpath, jq count by constraint)</li>
+    <li>Kyverno install (4 controllers: admission/background/cleanup/reports; features: policyExceptions/globalContext)</li>
+    <li>Kyverno ClusterPolicy: validate rule (require-pod-probes with foreach, exclude namespaces+serviceaccounts)</li>
+    <li>Kyverno ClusterPolicy: mutate rule (add-default-resources with foreach + patchStrategicMerge + JMESPath defaults)</li>
+    <li>Kyverno ClusterPolicy: generate rule (NetworkPolicy on Namespace CREATE with synchronize:true)</li>
+    <li>Kyverno ClusterPolicy: verifyImages (cosign keyless, mutateDigest:true, verifyDigest, subject regexp, rekor)</li>
+    <li>Kyverno CLI: apply, test, report commands</li>
+    <li>Kyverno test manifest (name/policies/resources/results with pass/fail/skip)</li>
+    <li>Gatekeeper vs Kyverno 13-dimension comparison table</li>
+    <li>ValidatingAdmissionPolicy (CEL, 1.30 GA): require-run-as-non-root + ValidatingAdmissionPolicyBinding</li>
+    <li>Common policy library table: 20 policies with risk, recommended action, notes</li>
+    <li>Kyverno: disallow-latest-tag (foreach deny with wildcard operator)</li>
+    <li>Kyverno: require-requests-limits (foreach deny on missing cpu/memory requests and memory limits)</li>
+    <li>PolicyException CRD: datadog-agent example with policyName+ruleNames+match+expiry pattern</li>
+    <li>Gatekeeper exemption: admission.gatekeeper.sh/ignore label + per-constraint excludedNamespaces</li>
+    <li>Exception tracking in Git (exceptions/ directory with README and dated tickets)</li>
+    <li>Kyverno test suite (kyverno-test.yaml with fixtures + good/bad/excluded resources)</li>
+    <li>conftest for Gatekeeper Rego (test, all-namespaces, parse K8s YAML to JSON)</li>
+    <li>GitHub Actions policy CI (kyverno test + Kind integration test with PolicyReport failure check)</li>
+    <li>Graduated rollout strategy: 5-step progression (audit → warn → enforce non-prod → enforce prod → global)</li>
+    <li>Argo CD Application for policies (sync-wave -2, selfHeal:true, ServerSideApply)</li>
+    <li>Policy repo structure (library/security/best-practices/supply-chain/networking + exceptions + tests)</li>
+    <li>Gatekeeper Config CRD (sync Namespace/Service/Ingress into OPA cache for cross-resource policies)</li>
+    <li>Kyverno PolicyReport and ClusterPolicyReport (get, jsonpath summary, jq fail extraction)</li>
+    <li>Policy Reporter Helm install (ui/kyvernoPlugin/monitoring/Slack target)</li>
+    <li>K8s audit policy for admission denials (RequestResponse level for pod create/update)</li>
+    <li>Gatekeeper Prometheus metrics reference (violations/audit_last_run/request_count/latency)</li>
+    <li>PrometheusRule: KyvernoWebhookPodsLow/GatekeeperHighViolations/PolicyWebhookHighLatency/KyvernoAuditStale/KyvernoCriticalPolicyViolation</li>
+    <li>Grafana dashboard panels for policy (violations/admit-deny ratio/P99 latency/pass-fail trend)</li>
+    <li>8 best practices cards (audit-before-enforce/GitOps selfHeal/sync waves/PDB/minimize scope/CI testing/gate exceptions/no blanket ignore)</li>
+  </ul>
+</details>
+
+</main>
+
+<button class="back-top" id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none'
+  })
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>400)
+})
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button')
+  btn.className='copy-btn'
+  btn.textContent='Copy'
+  btn.onclick=function(){
+    navigator.clipboard.writeText(pre.innerText.replace('Copy\n','').replace('Copy',''))
+    btn.textContent='Copied!'
+    setTimeout(()=>btn.textContent='Copy',2000)
+  }
+  pre.appendChild(btn)
+})
+// TOC observer
+const headings=document.querySelectorAll('h2[id]')
+const tocLinks=document.querySelectorAll('.toc a')
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('toc-active'))
+      const l=document.querySelector(`.toc a[href="#${e.target.id}"]`)
+      if(l)l.classList.add('toc-active')
+    }
+  })
+},{root:document.getElementById('main'),threshold:0.3})
+headings.forEach(h=>obs.observe(h))
+</script>
+</body>
+</html>

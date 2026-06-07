@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DaemonSets — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sidebar-logo{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;}
+.sidebar-search{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;margin-top:10px;}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);text-decoration:none;transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);}
+.nav-section a.active{color:var(--accent);background:var(--bg3);border-left:2px solid var(--accent);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-wrap{width:var(--toc-w);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);}
+.page-header{margin-bottom:32px;}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.breadcrumb a{color:var(--text3);text-decoration:none;}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:12px;}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;font-family:'SFMono-Regular',Consolas,monospace;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;padding:3px 8px;cursor:pointer;}
+.copy-btn:hover{background:var(--bg4);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-weight:700;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.callout-info .callout-title{color:var(--accent);}
+.callout-warn .callout-title{color:var(--yellow);}
+.callout-danger .callout-title{color:var(--red);}
+.callout-success .callout-title{color:var(--green);}
+.callout p{margin:0;font-size:14px;}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin:16px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card-title{font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;}
+.card p{font-size:13px;margin:0;color:var(--text2);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--text2);overflow-x:auto;white-space:pre;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px;}
+.toc-list{list-style:none;margin:0;padding:0;}
+.toc-list li{margin-bottom:2px;}
+.toc-list a{font-size:12px;color:var(--text2);text-decoration:none;display:block;padding:3px 0;border-left:2px solid transparent;padding-left:8px;}
+.toc-list a:hover{color:var(--text);}
+.toc-list a.active{color:var(--accent);border-left-color:var(--accent);}
+.page-nav{display:flex;justify-content:space-between;margin-top:56px;padding-top:20px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;flex-direction:column;gap:4px;color:var(--text2);text-decoration:none;max-width:45%;}
+.page-nav a:hover{color:var(--accent);}
+.page-nav .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.page-nav .nav-title{font-size:14px;font-weight:600;}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;position:sticky;top:0;z-index:99;align-items:center;justify-content:space-between;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:14px;font-weight:600;}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:12px;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.back-top.visible{opacity:1;}
+@media(max-width:1200px){.toc-wrap{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrap{margin-left:0;}.topbar{display:flex;}.main-content{padding:20px 16px;}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="../index.html" class="sidebar-logo">⎈ Kubernetes Docs</a>
+  </div>
+  <input type="text" class="sidebar-search" placeholder="Filter navigation…" id="nav-search">
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html" class="active">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">☰</button>
+  <span class="topbar-title">DaemonSets</span>
+  <button class="theme-btn" id="theme-btn-top">☀</button>
+</div>
+
+<div class="main-wrap">
+<main class="main-content" id="main-content">
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="../index.html">Home</a> › <a href="00-workloads-overview.html">Workloads</a> › DaemonSets
+    </div>
+    <h1>DaemonSets</h1>
+    <div class="page-meta">
+      <span>Section 5.4</span>
+      <span>Node Targeting · RollingUpdate · Host Namespaces · Infrastructure Agents</span>
+      <span>Intermediate–Advanced</span>
+    </div>
+  </div>
+
+  <details class="coverage">
+    <summary>▶ What This Page Covers</summary>
+    <div class="coverage-body">
+      <li>DaemonSet controller mechanics: one pod per eligible node</li>
+      <li>Full annotated DaemonSet spec</li>
+      <li>How the DaemonSet scheduler bypasses the kube-scheduler</li>
+      <li>Node targeting: nodeSelector, nodeAffinity, label-based subset selection</li>
+      <li>Tolerations for control-plane and tainted nodes</li>
+      <li>Default tolerations injected by DaemonSet controller</li>
+      <li>RollingUpdate strategy: maxUnavailable, maxSurge (1.22+)</li>
+      <li>OnDelete strategy: manual update workflow</li>
+      <li>Pod name format and host-based identity</li>
+      <li>hostNetwork, hostPID, hostIPC for infrastructure agents</li>
+      <li>hostPort: direct node port binding without a Service</li>
+      <li>Resource sizing for DaemonSet pods: avoiding node starvation</li>
+      <li>Real-world DaemonSet examples: node-exporter, Fluentd, CNI plugin, CSI node plugin</li>
+      <li>DaemonSet vs Deployment vs static pods</li>
+      <li>Node join/leave lifecycle: automatic pod creation and deletion</li>
+      <li>DaemonSet and node drain behavior</li>
+      <li>Updating node labels to change DaemonSet coverage</li>
+      <li>5 metrics + 4 alerts + 5 runbooks + 8 best practices</li>
+    </div>
+  </details>
+
+  <!-- ============================================================ -->
+  <h2 id="controller-mechanics">Controller Mechanics</h2>
+
+  <p>A DaemonSet ensures exactly <strong>one pod runs on every eligible node</strong> in the cluster. When a new node joins, the controller automatically creates a pod on it. When a node is removed, the pod is garbage-collected. There is no <code>replicas</code> field — the replica count is implicitly the number of eligible nodes.</p>
+
+  <div class="diagram">DaemonSet pod placement:
+
+  Cluster nodes:           DaemonSet "node-exporter" pod placement:
+
+  ┌──────────────┐         ┌──────────────┐
+  │  worker-1    │ ──────► │  node-exporter-worker-1    │
+  │  (linux/amd64)│        └──────────────┘
+  └──────────────┘
+  ┌──────────────┐         ┌──────────────┐
+  │  worker-2    │ ──────► │  node-exporter-worker-2    │
+  │  (linux/amd64)│        └──────────────┘
+  └──────────────┘
+  ┌──────────────┐         ┌──────────────┐
+  │  worker-3    │ ──────► │  node-exporter-worker-3    │
+  │  (linux/arm64)│        └──────────────┘
+  └──────────────┘
+  ┌──────────────┐
+  │  control-    │ ──────► no pod (taint: node-role.kubernetes.io/control-plane:NoSchedule)
+  │  plane-1     │         UNLESS DaemonSet has matching toleration
+  └──────────────┘
+
+  New node joins → DaemonSet controller creates pod immediately
+  Node deleted   → Pod garbage-collected (no finalizer needed)
+  Node cordoned  → Existing pod continues running; new pods not created during drain</div>
+
+  <!-- ============================================================ -->
+  <h2 id="full-spec">Full DaemonSet Spec</h2>
+
+  <pre><code>apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: monitoring
+  labels:
+    app: node-exporter
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter     # IMMUTABLE after creation
+
+  # ── Update strategy ────────────────────────────────────────────
+  updateStrategy:
+    type: RollingUpdate      # RollingUpdate (default) | OnDelete
+    rollingUpdate:
+      maxUnavailable: 1      # default 1; max pods down at once during update
+                             # absolute or percentage of desired count
+      maxSurge: 0            # 1.22+: allow temporary extra pod per node during update
+                             # default 0; set to 1 for zero-downtime agent updates
+
+  # ── Revision history ───────────────────────────────────────────
+  revisionHistoryLimit: 10
+
+  # ── Min ready ──────────────────────────────────────────────────
+  minReadySeconds: 0
+
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      # ── Node targeting ─────────────────────────────────────────
+      nodeSelector:
+        kubernetes.io/os: linux   # only run on Linux nodes (skip Windows)
+
+      # Fine-grained with nodeAffinity:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values: [linux]
+              - key: node.kubernetes.io/instance-type
+                operator: NotIn
+                values: [t3.nano, t3.micro]  # skip under-resourced nodes
+
+      # ── Tolerations ────────────────────────────────────────────
+      tolerations:
+      # Run on control-plane nodes (not added by default)
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      # Run on nodes being drained (not-ready / unreachable)
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 300
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 300
+
+      # ── Host access ────────────────────────────────────────────
+      hostNetwork: false        # true for CNI plugins, network agents
+      hostPID: false            # true for process-level monitoring (e.g., eBPF agents)
+      hostIPC: false
+
+      # ── Priority ───────────────────────────────────────────────
+      priorityClassName: system-node-critical   # ensures scheduling on stressed nodes
+
+      # ── Service account ────────────────────────────────────────
+      serviceAccountName: node-exporter-sa
+
+      # ── Security ───────────────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534        # nobody
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+      - name: node-exporter
+        image: prom/node-exporter:v1.7.0
+        args:
+        - --path.rootfs=/host
+        - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run)($|/)
+        ports:
+        - name: metrics
+          containerPort: 9100
+          hostPort: 9100        # bind directly to node port (optional; use Service instead)
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            memory: "128Mi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: rootfs
+          mountPath: /host
+          readOnly: true
+          mountPropagation: HostToContainer
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: sys
+          mountPath: /host/sys
+          readOnly: true
+
+      volumes:
+      - name: rootfs
+        hostPath:
+          path: /
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+
+      # ── Termination ────────────────────────────────────────────
+      terminationGracePeriodSeconds: 30</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="scheduling">How DaemonSet Scheduling Works</h2>
+
+  <p>DaemonSet pods bypass the normal kube-scheduler queue. The DaemonSet controller sets <code>spec.nodeName</code> directly on the pod, which causes kubelet to pick it up and start it without scheduler involvement. This means DaemonSet pods can be scheduled on nodes that are:</p>
+
+  <ul>
+    <li>Unschedulable (<code>kubectl cordon</code>) — cordoning prevents new scheduler-placed pods but not DaemonSet pods</li>
+    <li>At resource capacity — the controller does not check resource availability before setting <code>nodeName</code></li>
+    <li>Not-ready — DaemonSet pods can start on nodes that haven't yet passed readiness checks</li>
+  </ul>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">DaemonSet Pods Bypass Node Capacity Checks</div>
+    <p>Because the DaemonSet controller bypasses the scheduler, it does not verify that the node has sufficient CPU/memory for the pod's resource requests. On a saturated node, kubelet will still start the DaemonSet pod — but other pods may be evicted to make room based on QoS class. Always set resource <code>requests</code> conservatively on DaemonSet pods, and use <code>priorityClassName: system-node-critical</code> for essential infrastructure agents so they are not evicted.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="node-targeting">Node Targeting</h2>
+
+  <h3>nodeSelector (Simple)</h3>
+
+  <pre><code># Run only on GPU nodes
+spec:
+  template:
+    spec:
+      nodeSelector:
+        accelerator: nvidia-tesla-t4
+
+# Run only on Linux (important in mixed Windows/Linux clusters)
+      nodeSelector:
+        kubernetes.io/os: linux
+
+# Run only on nodes in a specific availability zone
+      nodeSelector:
+        topology.kubernetes.io/zone: us-east-1a</code></pre>
+
+  <h3>nodeAffinity (Complex Expressions)</h3>
+
+  <pre><code>affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        # Must be Linux
+        - key: kubernetes.io/os
+          operator: In
+          values: [linux]
+        # Must NOT be a spot/preemptible node (for critical monitoring agents)
+        - key: cloud.google.com/gke-preemptible
+          operator: DoesNotExist
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+        - key: node-role
+          operator: In
+          values: [worker]   # prefer worker nodes but also run on others</code></pre>
+
+  <h3>Label-Based Opt-In/Opt-Out</h3>
+
+  <pre><code># Opt-in: only run on nodes with a specific label
+nodeSelector:
+  monitoring: "enabled"
+
+# Add the label to specific nodes:
+kubectl label node worker-1 monitoring=enabled
+kubectl label node worker-2 monitoring=enabled
+
+# Remove to stop DaemonSet pod on a node:
+kubectl label node worker-1 monitoring-    # removes the label → pod deleted
+
+# Opt-out: run on all nodes EXCEPT those with a specific label
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: exclude-monitoring
+          operator: DoesNotExist   # run on nodes that do NOT have this label
+
+# Add label to exclude a node:
+kubectl label node worker-3 exclude-monitoring=true  # → pod deleted from worker-3</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="tolerations">Tolerations</h2>
+
+  <h3>Default Tolerations Injected by DaemonSet Controller</h3>
+
+  <p>The DaemonSet controller automatically injects several tolerations into every DaemonSet pod to ensure agent availability during node problems:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Auto-Injected Toleration</th><th>Effect</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>node.kubernetes.io/not-ready:NoExecute</code></td><td>Tolerated for 300s</td><td>Pod survives brief node not-ready periods (network blip)</td></tr>
+        <tr><td><code>node.kubernetes.io/unreachable:NoExecute</code></td><td>Tolerated for 300s</td><td>Pod survives brief node unreachable periods</td></tr>
+        <tr><td><code>node.kubernetes.io/disk-pressure:NoSchedule</code></td><td>Tolerated</td><td>Monitoring agents still run on disk-pressured nodes</td></tr>
+        <tr><td><code>node.kubernetes.io/memory-pressure:NoSchedule</code></td><td>Tolerated</td><td>Monitoring agents still run on memory-pressured nodes</td></tr>
+        <tr><td><code>node.kubernetes.io/pid-pressure:NoSchedule</code></td><td>Tolerated</td><td>Pod starvation doesn't block infrastructure agents</td></tr>
+        <tr><td><code>node.kubernetes.io/unschedulable:NoSchedule</code></td><td>Tolerated</td><td>DaemonSet pods created on cordoned nodes</td></tr>
+        <tr><td><code>node.kubernetes.io/network-unavailable:NoSchedule</code></td><td>Tolerated</td><td>CNI plugin DaemonSets can run before network is ready</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Control-Plane Tolerations</h3>
+
+  <pre><code># Control-plane nodes carry a taint that blocks regular pods:
+# node-role.kubernetes.io/control-plane:NoSchedule (1.24+)
+# node-role.kubernetes.io/master:NoSchedule (deprecated, still present pre-1.24)
+
+# To run a DaemonSet on control-plane nodes (e.g., logging agent, monitoring):
+tolerations:
+- key: node-role.kubernetes.io/control-plane
+  operator: Exists
+  effect: NoSchedule
+- key: node-role.kubernetes.io/master    # for compatibility with older clusters
+  operator: Exists
+  effect: NoSchedule
+
+# Example use cases requiring control-plane coverage:
+# - Audit log collector (reads from /var/log/kubernetes/audit.log)
+# - etcd backup agent
+# - Node-level security scanner
+# - Falco (eBPF syscall monitor)</code></pre>
+
+  <h3>Custom Taint Tolerations</h3>
+
+  <pre><code># Node tainted for GPU workloads only:
+# kubectl taint node gpu-node-1 dedicated=gpu:NoSchedule
+
+# DaemonSet for GPU metrics (DCGM exporter) — must tolerate the GPU taint:
+tolerations:
+- key: dedicated
+  operator: Equal
+  value: gpu
+  effect: NoSchedule
+
+# Tolerate ANY taint (run on ALL nodes regardless of taints):
+tolerations:
+- operator: Exists   # matches any key, value, effect — use with caution</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="update-strategies">Update Strategies</h2>
+
+  <h3>RollingUpdate (Default)</h3>
+
+  <p>DaemonSet RollingUpdate terminates old pods and starts new ones one node at a time (by default). Unlike Deployment, there is no ReplicaSet intermediary — the controller directly manages the per-node pod replacement.</p>
+
+  <pre><code>updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1     # default; one node's pod down at a time
+                          # absolute: 2 = two nodes simultaneously updated
+                          # percentage: "10%" = 10% of nodes simultaneously
+    maxSurge: 0           # default; no extra pod during update
+                          # maxSurge: 1 = create new pod BEFORE deleting old
+                          # requires node to have capacity for two pods briefly</code></pre>
+
+  <div class="diagram">RollingUpdate timeline (10 nodes, maxUnavailable=1, maxSurge=0):
+
+  node-1: [old] → delete old → [new] (wait Ready + minReadySeconds)
+  node-2:                                        → [old] → delete → [new]
+  node-3:                                                              → ...
+  ...
+
+  One node updated at a time; monitoring coverage never drops by more than 1 node.
+
+  With maxUnavailable=3:
+  node-1: [old] → [new]   ┐
+  node-2: [old] → [new]   ├ simultaneously
+  node-3: [old] → [new]   ┘
+  node-4: [old] → [new]   ┐
+  ...                     ├ next batch after above Ready
+  Faster rollout; 3 nodes temporarily without agent coverage.</div>
+
+  <h3>maxSurge for Zero-Downtime Agent Updates</h3>
+
+  <pre><code>updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0   # never remove old pod before new is ready
+    maxSurge: 1         # create new pod alongside old; delete old after new is Ready
+    # Both old and new pod run on same node briefly (double the per-node cost)
+    # Requires node to have capacity for 2× the pod's resource requests temporarily
+    # Essential for: network agents (brief coverage gap is unacceptable),
+    #                security scanners (must not miss any window)</code></pre>
+
+  <h3>OnDelete Strategy</h3>
+
+  <pre><code>updateStrategy:
+  type: OnDelete
+# Pods are only updated when manually deleted
+# Use for: CNI plugins (network disruption during update must be controlled),
+#           critical security agents (manual per-node validation required)
+
+# Workflow:
+# 1. Update DaemonSet spec (kubectl set image or kubectl apply)
+# 2. Manually delete pod on specific node to trigger update:
+kubectl delete pod fluentd-worker-1 -n logging
+# 3. Verify new pod is healthy before proceeding to next node:
+kubectl get pods -n logging -o wide | grep worker-1
+# 4. Continue node by node</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="host-namespaces">Host Namespaces</h2>
+
+  <p>Infrastructure agents often need privileged access to the node. The following patterns cover the most common host-access requirements while keeping the security surface as narrow as possible.</p>
+
+  <h3>hostNetwork for Network Agents</h3>
+
+  <pre><code># CNI plugins, network monitoring agents
+spec:
+  template:
+    spec:
+      hostNetwork: true        # pod uses node's network namespace
+      dnsPolicy: ClusterFirstWithHostNet  # REQUIRED with hostNetwork to still resolve cluster DNS
+
+# Effect: pod sees all node interfaces (eth0, lo, tunnel interfaces)
+# Pod IP is the node IP (not a pod CIDR IP)
+# Port conflicts: if node already uses port 9100, the pod will fail to bind</code></pre>
+
+  <h3>hostPID for Process-Level Agents</h3>
+
+  <pre><code># eBPF-based tracing, process monitoring (Falco, Pixie, Tetragon)
+spec:
+  template:
+    spec:
+      hostPID: true    # pod sees all processes on the node via /proc
+      containers:
+      - name: falco
+        image: falcosecurity/falco:0.37.0
+        securityContext:
+          privileged: true    # required for kernel module / eBPF loading
+        volumeMounts:
+        - name: dev
+          mountPath: /dev
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+      volumes:
+      - name: dev
+        hostPath: {path: /dev}
+      - name: proc
+        hostPath: {path: /proc}</code></pre>
+
+  <h3>hostPath Volume Patterns</h3>
+
+  <pre><code># Log collection (Fluentd, Filebeat, Vector)
+volumes:
+- name: varlog
+  hostPath:
+    path: /var/log
+- name: varlibdockercontainers
+  hostPath:
+    path: /var/lib/docker/containers   # container log symlink targets
+
+# For containerd (runc logs at different path):
+- name: containerd-logs
+  hostPath:
+    path: /var/log/pods
+
+# Node filesystem inspection (node-exporter, security scanners)
+- name: rootfs
+  hostPath:
+    path: /
+    type: Directory   # Directory | File | DirectoryOrCreate | FileOrCreate | Socket</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="hostport">hostPort</h2>
+
+  <p><code>hostPort</code> binds a container port directly to the node's network interface on the same port number. The port is reachable at <code>NODE_IP:PORT</code> without needing a Service. It is an alternative to using <code>hostNetwork: true</code> when only specific ports need to be exposed.</p>
+
+  <pre><code>containers:
+- name: node-exporter
+  ports:
+  - containerPort: 9100
+    hostPort: 9100          # bind to node IP:9100
+    protocol: TCP
+
+# Prometheus scrape config targeting node IPs directly:
+# - targets: ['node-1:9100', 'node-2:9100', ...]
+# OR use a Service of type ClusterIP with targetPort: 9100 (preferred)</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">hostPort Limits Pod Scheduling</div>
+    <p><code>hostPort</code> reserves the port on the node. Only one pod can use a given hostPort per node (enforced by the scheduler). For DaemonSets, this is fine since exactly one pod runs per node. However, mixing hostPort DaemonSet pods with hostPort application pods that request the same port will cause scheduling conflicts. Prefer a <code>ClusterIP</code> Service to expose DaemonSet pod metrics/APIs rather than hostPort.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="real-world-examples">Real-World DaemonSet Examples</h2>
+
+  <h3>Prometheus node-exporter</h3>
+
+  <pre><code># Minimal production-grade node-exporter DaemonSet
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: node-exporter
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: node-exporter
+    spec:
+      hostNetwork: false
+      hostPID: false
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - operator: Exists     # run on all nodes including control-plane
+      priorityClassName: system-cluster-critical
+      serviceAccountName: node-exporter
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+      - name: node-exporter
+        image: prom/node-exporter:v1.7.0
+        args: ["--path.rootfs=/host", "--path.procfs=/host/proc", "--path.sysfs=/host/sys"]
+        ports:
+        - containerPort: 9100
+        resources:
+          requests: {cpu: 50m, memory: 64Mi}
+          limits: {memory: 128Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: root, mountPath: /host, readOnly: true, mountPropagation: HostToContainer}
+        - {name: proc, mountPath: /host/proc, readOnly: true}
+        - {name: sys, mountPath: /host/sys, readOnly: true}
+      volumes:
+      - {name: root, hostPath: {path: /}}
+      - {name: proc, hostPath: {path: /proc}}
+      - {name: sys, hostPath: {path: /sys}}</code></pre>
+
+  <h3>Fluentd Log Collector</h3>
+
+  <pre><code>containers:
+- name: fluentd
+  image: fluent/fluentd-kubernetes-daemonset:v1.16-debian-elasticsearch8-1
+  env:
+  - name: FLUENT_ELASTICSEARCH_HOST
+    value: elasticsearch.logging.svc.cluster.local
+  - name: FLUENT_ELASTICSEARCH_PORT
+    value: "9200"
+  - name: K8S_NODE_NAME      # inject node name for log enrichment
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  resources:
+    requests: {cpu: 100m, memory: 200Mi}
+    limits: {memory: 500Mi}
+  volumeMounts:
+  - name: varlog
+    mountPath: /var/log
+  - name: pods-logs
+    mountPath: /var/log/pods
+    readOnly: true
+  - name: fluentd-config
+    mountPath: /fluentd/etc/fluent.conf
+    subPath: fluent.conf
+volumes:
+- {name: varlog, hostPath: {path: /var/log}}
+- {name: pods-logs, hostPath: {path: /var/log/pods}}
+- {name: fluentd-config, configMap: {name: fluentd-config}}</code></pre>
+
+  <h3>CNI Plugin (Calico node)</h3>
+
+  <pre><code># CNI plugins require hostNetwork + privileged + control-plane tolerations
+spec:
+  template:
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+      - operator: Exists    # run on every node including control-plane
+      priorityClassName: system-node-critical
+      initContainers:
+      - name: install-cni
+        image: calico/cni:v3.27.0
+        command: ["/opt/cni/bin/install"]
+        volumeMounts:
+        - name: cni-bin-dir
+          mountPath: /opt/cni/bin
+        - name: cni-net-dir
+          mountPath: /etc/cni/net.d
+      containers:
+      - name: calico-node
+        image: calico/node:v3.27.0
+        securityContext:
+          privileged: true     # required: manages iptables, routes, network interfaces
+        env:
+        - name: NODENAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: lib-modules
+          mountPath: /lib/modules
+          readOnly: true
+        - name: var-run-calico
+          mountPath: /var/run/calico
+        - name: cni-bin-dir
+          mountPath: /opt/cni/bin
+      volumes:
+      - {name: lib-modules, hostPath: {path: /lib/modules}}
+      - {name: var-run-calico, hostPath: {path: /var/run/calico}}
+      - {name: cni-bin-dir, hostPath: {path: /opt/cni/bin}}
+      - {name: cni-net-dir, hostPath: {path: /etc/cni/net.d}}</code></pre>
+
+  <h3>CSI Node Plugin</h3>
+
+  <pre><code># CSI node plugins run as DaemonSets to provide node-local volume operations
+# (NodeStageVolume, NodePublishVolume, NodeGetVolumeStats)
+containers:
+- name: ebs-plugin
+  image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.28.0
+  args: ["node", "--endpoint=$(CSI_ENDPOINT)", "--logtostderr", "--v=5"]
+  env:
+  - name: CSI_ENDPOINT
+    value: unix:///var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
+  securityContext:
+    privileged: true   # required: mount/unmount block devices, create device nodes
+  volumeMounts:
+  - name: kubelet-dir
+    mountPath: /var/lib/kubelet
+    mountPropagation: Bidirectional  # propagate mounts back to host
+  - name: plugin-dir
+    mountPath: /var/lib/kubelet/plugins/ebs.csi.aws.com/
+  - name: device-dir
+    mountPath: /dev
+- name: node-driver-registrar
+  image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0
+  args:
+  - --csi-address=$(ADDRESS)
+  - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
+volumes:
+- {name: kubelet-dir, hostPath: {path: /var/lib/kubelet, type: Directory}}
+- {name: plugin-dir, hostPath: {path: /var/lib/kubelet/plugins/ebs.csi.aws.com/, type: DirectoryOrCreate}}
+- {name: device-dir, hostPath: {path: /dev, type: Directory}}</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="node-lifecycle">Node Join and Leave Lifecycle</h2>
+
+  <div class="diagram">Node lifecycle and DaemonSet response:
+
+  New node joins cluster:
+  ┌─────────────────────────────────────────────────────────────┐
+  │ 1. Node registers with API server (kubelet --register-node) │
+  │ 2. DaemonSet controller watches Node objects via LIST/WATCH  │
+  │ 3. Controller detects new node matches DaemonSet selector   │
+  │ 4. Controller creates Pod with spec.nodeName = new-node     │
+  │ 5. Kubelet on new-node picks up pod and starts container    │
+  │ Typical latency: 2-10 seconds after node registers          │
+  └─────────────────────────────────────────────────────────────┘
+
+  Node drain / cordon:
+  ┌─────────────────────────────────────────────────────────────┐
+  │ kubectl cordon node-1                                        │
+  │   → node marked Unschedulable                               │
+  │   → existing DaemonSet pod continues running (not evicted)  │
+  │   → new DaemonSet pods CAN still be created (bypass scheduler)│
+  │                                                             │
+  │ kubectl drain node-1                                        │
+  │   → evicts regular pods (respecting PDB)                    │
+  │   → DaemonSet pods NOT evicted by default                   │
+  │   → add --ignore-daemonsets to evict DaemonSet pods too    │
+  │   → add --delete-emptydir-data to delete emptyDir data      │
+  └─────────────────────────────────────────────────────────────┘
+
+  Node removed from cluster:
+  ┌─────────────────────────────────────────────────────────────┐
+  │ Node object deleted → DaemonSet pod garbage collected       │
+  │ No manual cleanup required                                  │
+  └─────────────────────────────────────────────────────────────┘</div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">kubectl drain --ignore-daemonsets</div>
+    <p>Without <code>--ignore-daemonsets</code>, <code>kubectl drain</code> exits with an error if DaemonSet pods are present (which they always are). Always include this flag during node maintenance. DaemonSet pods will be automatically recreated once the node is uncordoned, or on the next node join if the node is replaced. The DaemonSet pods on a draining node are left running during the drain — they are only removed when the node is deleted or when the DaemonSet itself is updated/deleted.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="resource-sizing">Resource Sizing for DaemonSet Pods</h2>
+
+  <p>DaemonSet pods consume resources from <em>every</em> node they run on. Over-provisioning DaemonSet requests reduces the available allocatable resources for application pods cluster-wide. Under-provisioning causes eviction during node pressure.</p>
+
+  <pre><code># Node allocatable = node capacity - system reserved - kubelet reserved - eviction threshold
+# DaemonSet pods consume from allocatable on EVERY node
+
+# Example: 100-node cluster, node-exporter requests 50m CPU / 64Mi memory
+# Total cluster-wide cost: 100 × (50m CPU + 64Mi) = 5000m CPU + 6.4Gi memory
+# This is "hidden tax" that must be accounted for in capacity planning
+
+# Resource sizing guidelines for common agents:
+# node-exporter:    50m CPU / 64Mi memory  (minimal, read-only host metrics)
+# fluentd:          100m CPU / 200Mi        (scales with log volume; add VPA)
+# calico-node:      100m CPU / 256Mi        (network data path; critical path)
+# datadog-agent:    200m CPU / 512Mi        (full observability; significant cost)
+# falco:            100m CPU / 512Mi        (eBPF kernel overhead varies)
+# CSI node plugin:  50m CPU / 128Mi         (per-node volume operations)</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="ds-vs-others">DaemonSet vs Deployment vs Static Pods</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Aspect</th><th>DaemonSet</th><th>Deployment</th><th>Static Pod</th></tr></thead>
+      <tbody>
+        <tr><td>One per node</td><td>Yes (automatic)</td><td>No (replica count)</td><td>Yes (manual per node)</td></tr>
+        <tr><td>Managed by</td><td>DaemonSet controller</td><td>Deployment controller</td><td>kubelet directly</td></tr>
+        <tr><td>API server required</td><td>Yes</td><td>Yes</td><td>No (kubelet reads local file)</td></tr>
+        <tr><td>Auto new-node coverage</td><td>Yes</td><td>No</td><td>No</td></tr>
+        <tr><td>Rolling update</td><td>Yes (RollingUpdate/OnDelete)</td><td>Yes (RollingUpdate/Recreate)</td><td>No (manual file update per node)</td></tr>
+        <tr><td>kubectl visibility</td><td>Yes (appears in <code>kubectl get pods</code>)</td><td>Yes</td><td>Yes (mirror pod in API)</td></tr>
+        <tr><td>Survives API server outage</td><td>No (controller needs API)</td><td>No</td><td>Yes (kubelet manages locally)</td></tr>
+        <tr><td>Use case</td><td>All infrastructure agents</td><td>Stateless applications</td><td>Control-plane components (etcd, apiserver) only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="useful-commands">Operational Commands</h2>
+
+  <pre><code># Check DaemonSet rollout status
+kubectl rollout status ds/node-exporter -n monitoring
+
+# Watch pod replacement during RollingUpdate
+kubectl get pods -n monitoring -l app=node-exporter -o wide -w
+
+# Check desired vs ready vs available counts
+kubectl get ds node-exporter -n monitoring
+# NAME            DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR
+# node-exporter   10        10        9       8            9           kubernetes.io/os=linux
+
+# Force rollout restart (without spec change)
+kubectl rollout restart ds/node-exporter -n monitoring
+
+# Check which nodes have/don't have the DaemonSet pod
+kubectl get nodes -o wide
+kubectl get pods -n monitoring -l app=node-exporter -o wide
+# Compare: any node without a pod = targeting mismatch or toleration missing
+
+# Update image
+kubectl set image ds/node-exporter node-exporter=prom/node-exporter:v1.8.0 -n monitoring
+
+# Rollback
+kubectl rollout undo ds/node-exporter -n monitoring
+
+# Get ControllerRevision history
+kubectl get controllerrevision -n monitoring -l app=node-exporter
+
+# Describe to see events
+kubectl describe ds node-exporter -n monitoring
+
+# Check DaemonSet status fields
+kubectl get ds node-exporter -n monitoring -o jsonpath='{.status}' | jq .
+# {
+#   "currentNumberScheduled": 10,   # nodes where pod is running
+#   "desiredNumberScheduled": 10,   # nodes that should have a pod
+#   "numberAvailable": 9,           # pods passing readiness
+#   "numberMisscheduled": 0,        # pods running on ineligible nodes
+#   "numberReady": 9,
+#   "numberUnavailable": 1,         # pods not yet ready
+#   "updatedNumberScheduled": 8     # pods on latest revision
+# }</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="metrics">Metrics, Alerts, and Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Source</th><th>Alert Condition</th></tr></thead>
+      <tbody>
+        <tr><td><code>kube_daemonset_status_desired_number_scheduled</code></td><td>kube-state-metrics</td><td>Baseline: total eligible nodes</td></tr>
+        <tr><td><code>kube_daemonset_status_number_ready</code></td><td>kube-state-metrics</td><td>&lt; desired for &gt; 5m</td></tr>
+        <tr><td><code>kube_daemonset_status_number_misscheduled</code></td><td>kube-state-metrics</td><td>&gt; 0 (pods on wrong nodes — selector changed?)</td></tr>
+        <tr><td><code>kube_daemonset_status_updated_number_scheduled</code></td><td>kube-state-metrics</td><td>&lt; desired for &gt; 30m → rollout stalled</td></tr>
+        <tr><td><code>kube_daemonset_status_number_unavailable</code></td><td>kube-state-metrics</td><td>&gt; 0 for &gt; 10m (node unreachable or pod crash-looping)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Alerting Rules</h3>
+  <pre><code>groups:
+- name: daemonset-health
+  rules:
+  - alert: DaemonSetNotFullyScheduled
+    expr: |
+      kube_daemonset_status_desired_number_scheduled
+        != kube_daemonset_status_current_number_scheduled
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} not fully scheduled"
+
+  - alert: DaemonSetRolloutStuck
+    expr: |
+      kube_daemonset_status_updated_number_scheduled
+        != kube_daemonset_status_desired_number_scheduled
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      summary: "DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} rollout not complete after 30 minutes"
+
+  - alert: DaemonSetMisscheduled
+    expr: kube_daemonset_status_number_misscheduled > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has pods on ineligible nodes"
+
+  - alert: DaemonSetPodNotReady
+    expr: |
+      kube_daemonset_status_number_unavailable > 0
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has {{ $value }} unavailable pods"</code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">Pod Missing from Node</div>
+      <p>Check: <code>kubectl get ds NAME -n NS</code> — compare <code>DESIRED</code> vs <code>CURRENT</code>. If CURRENT &lt; DESIRED: check node labels match <code>nodeSelector</code>; check taints on missing node (<code>kubectl describe node NAME</code>) and ensure DaemonSet has matching toleration. Check <code>numberMisscheduled</code> — may indicate stale pods on nodes that were relabeled.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Rollout Stuck</div>
+      <p>Check which pod is not updating: compare <code>updatedNumberScheduled</code> vs <code>desiredNumberScheduled</code>. Get pods and check age/image: <code>kubectl get pods -n NS -l app=NAME -o wide</code>. If a pod is stuck NotReady: describe pod for probe failure events. If OnDelete strategy: check if pods were manually deleted. Fix root cause and the controller retries.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Pod CrashLooping on Specific Node</div>
+      <p>Logs: <code>kubectl logs POD -n NS --previous</code>. Common causes for node-specific crashes: hostPath volume doesn't exist on that node (<code>DirectoryOrCreate</code> vs <code>Directory</code>), kernel module not available (eBPF agents), node OS version incompatibility. Check if it's isolated to one node vs all nodes to identify node-specific vs image issues.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Misscheduled Pods</div>
+      <p><code>numberMisscheduled &gt; 0</code> means pods run on nodes they shouldn't. Happens when node labels change after pod creation. The controller will eventually delete misscheduled pods. To force immediate cleanup: delete the misscheduled pods manually (<code>kubectl delete pod NAME</code>). They will not be recreated on that node if it no longer matches.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Node Drain Blocked by DaemonSet</div>
+      <p><code>kubectl drain node-1</code> exits with error about DaemonSet pods. Always use: <code>kubectl drain node-1 --ignore-daemonsets --delete-emptydir-data</code>. The <code>--ignore-daemonsets</code> flag skips DaemonSet pods during eviction. DaemonSet pods remain running until the node is cordoned or deleted; they are not impacted by drain itself.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <ol>
+    <li><strong>Always set <code>priorityClassName: system-node-critical</code> for essential agents</strong> — node-exporter, CNI plugins, CSI node plugins, and security agents must survive node pressure. Without a priority class, these pods can be evicted during CPU/memory pressure, leaving nodes unmonitored or without network. Use <code>system-cluster-critical</code> for cluster-wide critical infrastructure.</li>
+    <li><strong>Use <code>tolerations: [{operator: Exists}]</code> for truly universal agents</strong> — monitoring agents and CNI plugins need to run on every node including control-plane, GPU-tainted, and spot nodes. Enumerate all expected taints or use the catch-all <code>operator: Exists</code> toleration. Missing tolerations are the most common reason a DaemonSet is not fully scheduled.</li>
+    <li><strong>Set <code>nodeSelector: {kubernetes.io/os: linux}</code> in mixed clusters</strong> — Windows nodes cannot run Linux containers. Without the OS selector, the DaemonSet will attempt to schedule Linux images on Windows nodes and fail with an ImagePullBackOff or container runtime error.</li>
+    <li><strong>Keep DaemonSet resource requests conservative but accurate</strong> — DaemonSet pods multiply across every node. A 100-node cluster with a DaemonSet requesting 200m CPU and 512Mi means 20 vCPUs and 50Gi memory reserved cluster-wide for that single DaemonSet. Profile actual usage with VPA recommendations in <code>Off</code> mode before setting final requests.</li>
+    <li><strong>Use <code>maxSurge: 1, maxUnavailable: 0</code> for network-critical agents</strong> — a network agent that goes offline during its own rolling update can cause brief packet loss or missed connections on that node. The surge pattern (create new agent first, then delete old) ensures continuous coverage at the cost of briefly doubling the per-node resource usage.</li>
+    <li><strong>Use <code>OnDelete</code> for CNI plugin updates</strong> — updating a CNI plugin can briefly disrupt network connectivity on the node. <code>OnDelete</code> lets you control timing: schedule maintenance windows, drain workloads from the node first, then delete the old CNI pod to trigger the update, validate connectivity, and proceed to the next node.</li>
+    <li><strong>Inject node identity via Downward API, not hostname lookups</strong> — use <code>spec.nodeName</code> via fieldRef to get the node name rather than relying on <code>hostname</code> or DNS resolution. The node name is stable and available immediately; DNS may not resolve correctly especially during init.</li>
+    <li><strong>Audit DaemonSet pod security contexts regularly</strong> — DaemonSet pods are the most likely to run <code>privileged: true</code> or with <code>hostPID: true</code>. These settings are often necessary (CNI, eBPF agents) but must be the minimum required. Regularly review whether <code>privileged</code> can be replaced with specific capabilities, and whether <code>readOnlyRootFilesystem: true</code> can be applied with explicit writable mounts.</li>
+  </ol>
+
+  <div class="page-nav">
+    <a href="03-statefulsets.html">
+      <span class="nav-label">← Previous</span>
+      <span class="nav-title">StatefulSets</span>
+    </a>
+    <a href="05-jobs-cronjobs.html" style="text-align:right">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">Jobs &amp; CronJobs</span>
+    </a>
+  </div>
+
+</main>
+
+<aside class="toc-wrap">
+  <div class="toc-title">On This Page</div>
+  <ul class="toc-list" id="toc-list">
+    <li><a href="#controller-mechanics">Controller Mechanics</a></li>
+    <li><a href="#full-spec">Full DaemonSet Spec</a></li>
+    <li><a href="#scheduling">How Scheduling Works</a></li>
+    <li><a href="#node-targeting">Node Targeting</a></li>
+    <li><a href="#tolerations">Tolerations</a></li>
+    <li><a href="#update-strategies">Update Strategies</a></li>
+    <li><a href="#host-namespaces">Host Namespaces</a></li>
+    <li><a href="#hostport">hostPort</a></li>
+    <li><a href="#real-world-examples">Real-World Examples</a></li>
+    <li><a href="#node-lifecycle">Node Join/Leave Lifecycle</a></li>
+    <li><a href="#resource-sizing">Resource Sizing</a></li>
+    <li><a href="#ds-vs-others">DaemonSet vs Deployment vs Static Pods</a></li>
+    <li><a href="#useful-commands">Operational Commands</a></li>
+    <li><a href="#metrics">Metrics &amp; Alerts</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ul>
+</aside>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+function toggleTheme(){const t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);localStorage.setItem('k8s-theme',t);}
+document.getElementById('theme-btn-top').addEventListener('click',toggleTheme);
+document.getElementById('hamburger').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{backTop.classList.toggle('visible',main.scrollTop>400);});
+backTop.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code').innerText);
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc-list a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-search').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

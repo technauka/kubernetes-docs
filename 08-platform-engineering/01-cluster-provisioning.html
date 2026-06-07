@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cluster Provisioning — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.07)}
+main{flex:1;overflow-y:auto;padding:0;max-width:960px}
+.content{padding:40px 48px 80px}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:36px}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px}
+.breadcrumb a{color:var(--text3)}
+h1{font-size:32px;font-weight:700;line-height:1.2;margin-bottom:10px}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--text2)}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:14px;color:var(--text2)}
+ul,ol{margin:0 0 14px 20px;color:var(--text2)}
+li{margin-bottom:4px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:'JetBrains Mono','Fira Code',monospace;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;background:var(--bg3);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout strong{display:block;margin-bottom:4px;font-size:13px}
+.callout p{margin:0;font-size:13px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+td{padding:9px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin:0 0 8px;color:var(--text);font-size:14px;text-transform:none;letter-spacing:0}
+.card p{margin:0;font-size:13px}
+.card .tag{margin-top:8px;display:inline-block}
+.section-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:13px;color:var(--text2);transition:all .15s}
+.section-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:0 0 32px;display:inline-block;min-width:280px;max-width:420px}
+.toc-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:18px}
+.toc li{margin-bottom:3px;font-size:13px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;line-height:1}
+.btt{position:fixed;bottom:32px;right:32px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden}
+details.coverage summary{padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;flex-shrink:0}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+.coverage-body li{font-size:12px;color:var(--text2);margin-bottom:2px}
+@media(max-width:768px){.sidebar{display:none;position:fixed;z-index:300;height:100vh}.sidebar.open{display:flex}.topbar{display:flex}.content{padding:24px 20px 60px}.coverage-body{grid-template-columns:1fr}.card-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter…" id="nav-filter"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Overview</a>
+    <a href="../01-getting-started/01-core-concepts.html">Core Concepts</a>
+    <a href="../01-getting-started/02-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/03-kubectl-basics.html">kubectl Basics</a>
+    <a href="../01-getting-started/04-first-deployment.html">First Deployment</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../02-workloads/00-pods.html">Pods</a>
+    <a href="../02-workloads/01-deployments.html">Deployments</a>
+    <a href="../02-workloads/02-statefulsets.html">StatefulSets</a>
+    <a href="../02-workloads/03-daemonsets.html">DaemonSets</a>
+    <a href="../02-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../02-workloads/05-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="../02-workloads/06-vertical-pod-autoscaler.html">VPA</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+    <a href="../03-networking/03-network-policies.html">Network Policies</a>
+    <a href="../03-networking/04-dns.html">DNS</a>
+    <a href="../03-networking/05-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">PV &amp; PVC</a>
+    <a href="../04-storage/02-storage-classes.html">StorageClasses</a>
+    <a href="../04-storage/03-stateful-storage-patterns.html">Stateful Patterns</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="../05-security/00-security-overview.html">Overview</a>
+    <a href="../05-security/01-rbac.html">RBAC</a>
+    <a href="../05-security/02-pod-security.html">Pod Security</a>
+    <a href="../05-security/03-network-security.html">Network Security</a>
+    <a href="../05-security/04-secrets-management.html">Secrets Management</a>
+    <a href="../05-security/05-supply-chain-security.html">Supply Chain</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../06-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../06-configuration/01-resource-management.html">Resources</a>
+    <a href="../06-configuration/02-scheduling.html">Scheduling</a>
+    <a href="../06-configuration/03-helm.html">Helm</a>
+    <a href="../06-configuration/04-kustomize.html">Kustomize</a>
+    <a href="../06-configuration/05-admission-controllers.html">Admission</a>
+    <a href="../06-configuration/06-crd-operators.html">CRDs &amp; Operators</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="../07-observability/00-observability-overview.html">Overview</a>
+    <a href="../07-observability/01-metrics.html">Metrics</a>
+    <a href="../07-observability/02-logging.html">Logging</a>
+    <a href="../07-observability/03-tracing.html">Distributed Tracing</a>
+    <a href="../07-observability/04-events.html">Events</a>
+    <a href="../07-observability/05-dashboards.html">Dashboards</a>
+    <a href="../07-observability/06-alerting.html">Alerting</a>
+    <a href="../07-observability/07-profiling.html">Continuous Profiling</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Platform Engineering</div>
+    <a href="00-platform-overview.html">Overview</a>
+    <a href="01-cluster-provisioning.html" class="active">Cluster Provisioning</a>
+    <a href="02-gitops.html">GitOps</a>
+    <a href="03-ci-cd-pipelines.html">CI/CD Pipelines</a>
+    <a href="04-developer-portal.html">Developer Portal</a>
+    <a href="05-policy-enforcement.html">Policy Enforcement</a>
+    <a href="06-multi-tenancy.html">Multi-Tenancy</a>
+    <a href="07-cost-management.html">Cost Management</a>
+    <a href="08-service-catalog.html">Service Catalog</a>
+    <a href="09-secrets-automation.html">Secrets Automation</a>
+    <a href="10-platform-apis.html">Platform APIs</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Production Operations</div>
+    <a href="../09-production-operations/00-operations-overview.html">Overview</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span style="font-size:14px;font-weight:600;color:var(--text)">Cluster Provisioning</span>
+</div>
+
+<main id="main">
+<div class="content">
+
+<div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-platform-overview.html">Platform Engineering</a> › Cluster Provisioning</div>
+
+<div class="page-header">
+  <h1>Cluster Provisioning</h1>
+  <div class="page-meta">
+    <span>From bootstrap to production-ready fleet</span>
+    <span class="tag">Cluster API</span>
+    <span class="tag">EKS</span>
+    <span class="tag">kubeadm</span>
+    <span class="tag">Karpenter</span>
+    <span class="tag">Upgrades</span>
+  </div>
+</div>
+
+<div class="section-nav">
+  <a href="00-platform-overview.html">← Overview</a>
+  <a href="02-gitops.html">GitOps →</a>
+</div>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#provisioning-options">Provisioning Options</a></li>
+    <li><a href="#managed-kubernetes">Managed Kubernetes (EKS/GKE/AKS)</a></li>
+    <li><a href="#cluster-api">Cluster API (CAPI)</a></li>
+    <li><a href="#kubeadm">kubeadm: Self-Managed Clusters</a></li>
+    <li><a href="#eks-blueprints">EKS Blueprints (Terraform)</a></li>
+    <li><a href="#node-pools">Node Pools &amp; Node Groups</a></li>
+    <li><a href="#karpenter">Karpenter: Node Autoprovisioning</a></li>
+    <li><a href="#cluster-addons">Cluster Add-ons</a></li>
+    <li><a href="#bootstrap-gitops">Bootstrap to GitOps</a></li>
+    <li><a href="#upgrade-strategies">Cluster Upgrade Strategies</a></li>
+    <li><a href="#multi-cluster-fleet">Multi-Cluster Fleet Management</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="provisioning-options">1. Provisioning Options</h2>
+
+<table>
+  <tr><th>Approach</th><th>When to Use</th><th>Control</th><th>Operational Burden</th></tr>
+  <tr>
+    <td><strong>Managed K8s</strong> (EKS, GKE, AKS)</td>
+    <td>Most production workloads; cloud-native orgs</td>
+    <td>Medium (control plane managed by cloud)</td>
+    <td>Low (control plane patches automatic)</td>
+  </tr>
+  <tr>
+    <td><strong>Cluster API</strong></td>
+    <td>Multi-cloud / on-prem fleet; platform teams managing 10+ clusters</td>
+    <td>High (full lifecycle via K8s CRDs)</td>
+    <td>Medium (CAPI controllers to maintain)</td>
+  </tr>
+  <tr>
+    <td><strong>kubeadm</strong></td>
+    <td>On-prem bare metal; air-gapped; custom distributions</td>
+    <td>Full (every component)</td>
+    <td>High (etcd, certs, upgrades manual)</td>
+  </tr>
+  <tr>
+    <td><strong>kOps</strong></td>
+    <td>AWS self-managed clusters (alternative to EKS)</td>
+    <td>High (but AWS-only focused)</td>
+    <td>Medium</td>
+  </tr>
+  <tr>
+    <td><strong>k3s / k0s / RKE2</strong></td>
+    <td>Edge, IoT, dev environments, resource-constrained nodes</td>
+    <td>High</td>
+    <td>Low (single binary, no external etcd required)</td>
+  </tr>
+  <tr>
+    <td><strong>EKS Blueprints / GKE Autopilot</strong></td>
+    <td>Opinionated starting point for cloud-native teams</td>
+    <td>Low–medium (opinionated defaults)</td>
+    <td>Very low</td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="managed-kubernetes">2. Managed Kubernetes (EKS / GKE / AKS)</h2>
+
+<h3>AWS EKS — Key Configuration Decisions</h3>
+
+<pre><code># eks cluster creation via eksctl (most common quickstart)
+eksctl create cluster \
+  --name production \
+  --region us-east-1 \
+  --version 1.30 \
+  --nodegroup-name general \
+  --node-type m6i.2xlarge \
+  --nodes-min 3 \
+  --nodes-max 20 \
+  --managed \
+  --amd64 \
+  --with-oidc \
+  --ssh-access=false \
+  --full-ecr-access \
+  --alb-ingress-access</code></pre>
+
+<h4>EKS Networking Modes</h4>
+
+<table>
+  <tr><th>Mode</th><th>CNI</th><th>IP Source</th><th>Notes</th></tr>
+  <tr><td>VPC CNI (default)</td><td>aws-node (Amazon VPC CNI)</td><td>VPC subnet IPs (1:1 pod:ENI)</td><td>Simple; IP exhaustion risk in small subnets</td></tr>
+  <tr><td>VPC CNI + prefix delegation</td><td>aws-node with ENABLE_PREFIX_DELEGATION=true</td><td>/28 prefix per ENI slot</td><td>16× more IPs per ENI; requires Nitro instances</td></tr>
+  <tr><td>Custom CNI (Cilium/Calico)</td><td>3rd-party CNI installed as DaemonSet</td><td>Overlay or custom CIDR</td><td>Network policy, eBPF, encryption; replace aws-node</td></tr>
+</table>
+
+<pre><code># Enable prefix delegation on existing EKS cluster
+kubectl set env daemonset aws-node \
+  -n kube-system \
+  ENABLE_PREFIX_DELEGATION=true \
+  WARM_PREFIX_TARGET=1 \
+  MINIMUM_IP_TARGET=5</code></pre>
+
+<h4>EKS OIDC for IRSA (IAM Roles for Service Accounts)</h4>
+
+<pre><code># Associate OIDC provider (required for IRSA)
+eksctl utils associate-iam-oidc-provider \
+  --cluster production \
+  --region us-east-1 \
+  --approve
+
+# Create IAM role for a service account
+eksctl create iamserviceaccount \
+  --name pyroscope \
+  --namespace observability \
+  --cluster production \
+  --role-name pyroscope-s3-role \
+  --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess \
+  --approve \
+  --override-existing-serviceaccounts
+
+# The ServiceAccount gets:
+# annotations:
+#   eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/pyroscope-s3-role</code></pre>
+
+<h4>EKS Add-ons (managed by AWS)</h4>
+
+<pre><code># List available add-ons
+aws eks describe-addon-versions --kubernetes-version 1.30
+
+# Install/update EKS managed add-ons
+aws eks create-addon \
+  --cluster-name production \
+  --addon-name vpc-cni \
+  --addon-version v1.18.0-eksbuild.1 \
+  --resolve-conflicts OVERWRITE
+
+# Key managed add-ons:
+# vpc-cni          — AWS VPC CNI plugin
+# coredns          — DNS (auto-updated with cluster)
+# kube-proxy       — per-node kube-proxy DaemonSet
+# aws-ebs-csi-driver   — EBS persistent volumes
+# aws-efs-csi-driver   — EFS persistent volumes
+# aws-load-balancer-controller — ALB/NLB via Ingress/Service</code></pre>
+
+<h3>GKE — Autopilot vs Standard</h3>
+
+<table>
+  <tr><th>Feature</th><th>GKE Standard</th><th>GKE Autopilot</th></tr>
+  <tr><td>Node management</td><td>User manages node pools</td><td>Google manages all nodes</td></tr>
+  <tr><td>Billing</td><td>Per node (even idle)</td><td>Per pod resource request</td></tr>
+  <tr><td>DaemonSets</td><td>Full support</td><td>Limited (GKE-managed only)</td></tr>
+  <tr><td>Node access</td><td>SSH available</td><td>No node access</td></tr>
+  <tr><td>Spot nodes</td><td>Spot node pool</td><td>Spot pods via annotation</td></tr>
+  <tr><td>Best for</td><td>Custom CNI, bare-metal-like control</td><td>Cost-optimised, managed clusters</td></tr>
+</table>
+
+<pre><code># GKE cluster with Workload Identity and private nodes
+gcloud container clusters create production \
+  --region us-central1 \
+  --release-channel regular \
+  --workload-pool=PROJECT_ID.svc.id.goog \
+  --enable-private-nodes \
+  --master-ipv4-cidr 172.16.0.0/28 \
+  --enable-ip-alias \
+  --enable-shielded-nodes \
+  --enable-autoupgrade \
+  --enable-autorepair \
+  --num-nodes 3 \
+  --machine-type n2-standard-4 \
+  --disk-type pd-ssd</code></pre>
+
+<h3>AKS — Azure Kubernetes Service</h3>
+
+<pre><code># AKS cluster with system + user node pools
+az aks create \
+  --resource-group myResourceGroup \
+  --name production \
+  --kubernetes-version 1.30 \
+  --node-count 3 \
+  --node-vm-size Standard_D4s_v3 \
+  --enable-oidc-issuer \
+  --enable-workload-identity \
+  --enable-managed-identity \
+  --network-plugin azure \
+  --network-policy calico \
+  --enable-cluster-autoscaler \
+  --min-count 3 \
+  --max-count 20 \
+  --zones 1 2 3
+
+# Add user node pool (separate from system)
+az aks nodepool add \
+  --resource-group myResourceGroup \
+  --cluster-name production \
+  --name workload \
+  --node-count 3 \
+  --node-vm-size Standard_D8s_v3 \
+  --enable-cluster-autoscaler \
+  --min-count 1 \
+  --max-count 30 \
+  --zones 1 2 3 \
+  --labels workload=general \
+  --mode User</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="cluster-api">3. Cluster API (CAPI)</h2>
+
+<p>Cluster API is a Kubernetes-native framework for declarative cluster lifecycle management. You run a <em>management cluster</em> and define workload clusters as CRDs. CAPI controllers reconcile the desired cluster state, handling creation, scaling, upgrades, and deletion.</p>
+
+<h3>CAPI Architecture</h3>
+
+<pre><code>Management Cluster
+├── CAPI core controllers (cluster-api)
+├── Bootstrap provider (kubeadm, k3s, talos)
+├── Control Plane provider (kubeadm CP, RKE2 CP)
+└── Infrastructure provider (AWS/CAPAS, GCP/CAPG, Azure/CAPZ, vSphere/CAPV)
+
+Object hierarchy:
+  Cluster ──────── owns ──────── MachineDeployment (workers)
+      │                               │
+      ├── KubeadmControlPlane ────── Machine (one per replica)
+      │       │                          │
+      │       └── AWSMachineTemplate     └── AWSMachine (infra)
+      │
+      └── AWSCluster (infra: VPC, subnets, SGs, ELB)</code></pre>
+
+<h3>CAPI Bootstrap (AWS / CAPA)</h3>
+
+<pre><code># Install clusterctl
+curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.7.0/clusterctl-linux-amd64 \
+  -o /usr/local/bin/clusterctl
+chmod +x /usr/local/bin/clusterctl
+
+# Initialize management cluster (runs in existing cluster)
+# AWS credentials via environment or IAM role
+export AWS_REGION=us-east-1
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+
+clusterctl init \
+  --infrastructure aws \
+  --bootstrap kubeadm \
+  --control-plane kubeadm
+
+# Generate workload cluster manifest
+clusterctl generate cluster production \
+  --flavor machinepool \
+  --kubernetes-version v1.30.0 \
+  --control-plane-machine-count=3 \
+  --worker-machine-count=3 \
+  > production-cluster.yaml
+
+kubectl apply -f production-cluster.yaml
+
+# Watch cluster come up
+kubectl get cluster production -w
+clusterctl describe cluster production</code></pre>
+
+<h3>CAPI Cluster YAML (AWS)</h3>
+
+<pre><code>apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: production
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"]
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSCluster
+    name: production
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: production-control-plane
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSCluster
+metadata:
+  name: production
+spec:
+  region: us-east-1
+  sshKeyName: platform-key
+  network:
+    vpc:
+      availabilityZoneUsageLimit: 3
+    subnets:
+      - availabilityZone: us-east-1a
+        cidrBlock: 10.0.1.0/24
+        isPublic: false
+      - availabilityZone: us-east-1b
+        cidrBlock: 10.0.2.0/24
+        isPublic: false
+      - availabilityZone: us-east-1c
+        cidrBlock: 10.0.3.0/24
+        isPublic: false
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: production-control-plane
+spec:
+  replicas: 3
+  version: v1.30.0
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSMachineTemplate
+      name: production-control-plane
+  kubeadmConfigSpec:
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+    clusterConfiguration:
+      apiServer:
+        extraArgs:
+          cloud-provider: external
+          audit-log-path: /var/log/kubernetes/audit.log
+          audit-log-maxage: "30"
+          audit-log-maxbackup: "10"
+          audit-log-maxsize: "100"
+          feature-gates: "ServerSideApply=true"
+      etcd:
+        local:
+          dataDir: /var/lib/etcddisk/etcd
+          extraArgs:
+            quota-backend-bytes: "8589934592"  # 8 GiB
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: production-workers
+spec:
+  clusterName: production
+  replicas: 3
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: production
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/cluster-name: production
+    spec:
+      version: v1.30.0
+      clusterName: production
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: production-workers
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        kind: AWSMachineTemplate
+        name: production-workers</code></pre>
+
+<h3>ClusterClass — Reusable Cluster Templates</h3>
+
+<p>ClusterClass (CAPI v1.2+) lets you define a cluster topology once and instantiate it many times with variable overrides — similar to a Helm chart but for clusters.</p>
+
+<pre><code>apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  name: aws-production-class
+spec:
+  controlPlane:
+    ref:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+      kind: KubeadmControlPlaneTemplate
+      name: aws-kcp-template
+  infrastructure:
+    ref:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSClusterTemplate
+      name: aws-cluster-template
+  workers:
+    machineDeployments:
+      - class: general
+        template:
+          bootstrap:
+            ref:
+              kind: KubeadmConfigTemplate
+              name: aws-worker-bootstrap
+          infrastructure:
+            ref:
+              kind: AWSMachineTemplate
+              name: aws-worker-template
+  variables:
+    - name: region
+      required: true
+      schema:
+        openAPIV3Schema:
+          type: string
+    - name: workerInstanceType
+      required: false
+      schema:
+        openAPIV3Schema:
+          type: string
+          default: m6i.2xlarge
+---
+# Instantiate from ClusterClass:
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: team-a-cluster
+spec:
+  topology:
+    class: aws-production-class
+    version: v1.30.0
+    controlPlane:
+      replicas: 3
+    workers:
+      machineDeployments:
+        - name: general
+          replicas: 5
+    variables:
+      - name: region
+        value: eu-west-1
+      - name: workerInstanceType
+        value: m6i.4xlarge</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="kubeadm">4. kubeadm: Self-Managed Clusters</h2>
+
+<h3>Control Plane Bootstrap</h3>
+
+<pre><code># kubeadm-config.yaml — production control plane configuration
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: v1.30.0
+clusterName: production
+controlPlaneEndpoint: "k8s-api.internal.example.com:6443"  # Load balancer VIP
+networking:
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+  dnsDomain: "cluster.local"
+apiServer:
+  extraArgs:
+    audit-log-path: /var/log/kubernetes/audit.log
+    audit-log-maxage: "30"
+    audit-log-maxbackup: "10"
+    audit-log-maxsize: "100"
+    enable-admission-plugins: >-
+      NodeRestriction,PodSecurity,ResourceQuota,
+      LimitRanger,ServiceAccount,DefaultStorageClass,
+      MutatingAdmissionWebhook,ValidatingAdmissionWebhook
+    oidc-issuer-url: "https://dex.example.com"
+    oidc-client-id: "kubernetes"
+    oidc-username-claim: "email"
+    oidc-groups-claim: "groups"
+  extraVolumes:
+    - name: audit-log
+      hostPath: /var/log/kubernetes
+      mountPath: /var/log/kubernetes
+      pathType: DirectoryOrCreate
+controllerManager:
+  extraArgs:
+    bind-address: "0.0.0.0"
+    node-cidr-mask-size: "24"
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+    extraArgs:
+      quota-backend-bytes: "8589934592"
+      auto-compaction-mode: revision
+      auto-compaction-retention: "1000"
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+nodeRegistration:
+  kubeletExtraArgs:
+    cloud-provider: ""
+    container-runtime-endpoint: unix:///var/run/containerd/containerd.sock</code></pre>
+
+<pre><code># Initialize first control plane node
+kubeadm init --config kubeadm-config.yaml --upload-certs
+
+# Output includes:
+# kubeadm join k8s-api:6443 --token ... --discovery-token-ca-cert-hash sha256:...
+#   --control-plane --certificate-key <key>
+
+# Join additional control plane nodes
+kubeadm join k8s-api.internal.example.com:6443 \
+  --token <token> \
+  --discovery-token-ca-cert-hash sha256:<hash> \
+  --control-plane \
+  --certificate-key <key>
+
+# Join worker nodes
+kubeadm join k8s-api.internal.example.com:6443 \
+  --token <token> \
+  --discovery-token-ca-cert-hash sha256:<hash></code></pre>
+
+<h3>etcd External Cluster (Production Best Practice)</h3>
+
+<pre><code># For large clusters: run etcd separately from control plane
+# Stacked etcd (default): etcd on same nodes as kube-apiserver
+# External etcd (recommended for prod): dedicated etcd nodes
+
+# etcd cluster topology:
+# - Minimum 3 nodes for quorum (tolerate 1 failure)
+# - 5 nodes for higher availability (tolerate 2 failures)
+# - Dedicated SSDs (fsync latency < 10ms critical for etcd)
+# - Never share etcd nodes with any other workload
+
+# kubeadm-config.yaml (external etcd):
+etcd:
+  external:
+    endpoints:
+      - https://etcd-0.internal:2379
+      - https://etcd-1.internal:2379
+      - https://etcd-2.internal:2379
+    caFile: /etc/kubernetes/pki/etcd/ca.crt
+    certFile: /etc/kubernetes/pki/apiserver-etcd-client.crt
+    keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key</code></pre>
+
+<div class="callout callout-warn">
+  <strong>etcd disk performance is critical</strong>
+  <p>etcd writes are synchronous (fsync after every commit). On AWS, use <code>io1</code>/<code>io2</code> EBS volumes with 3000+ IOPS, or NVMe instance store (with replication). On bare metal, dedicated NVMe SSD. Shared network storage (EFS, NFS) will cause etcd leader elections and API server timeouts. Monitor <code>etcd_disk_wal_fsync_duration_seconds</code> — keep p99 &lt; 10ms.</p>
+</div>
+
+<h3>Certificate Management</h3>
+
+<pre><code># Check certificate expiry
+kubeadm certs check-expiration
+
+# Renew all certificates (run on each control plane node)
+kubeadm certs renew all
+
+# Auto-renewal: kubeadm rotates certs on upgrade
+# For manual renewal, add to cron before 1-year expiry:
+0 0 1 * * /usr/bin/kubeadm certs renew all && systemctl restart kubelet</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="eks-blueprints">5. EKS Blueprints (Terraform)</h2>
+
+<p>EKS Blueprints is a Terraform module that provisions an EKS cluster with opinionated add-on management, team RBAC, and GitOps bootstrap in one configuration block.</p>
+
+<pre><code># main.tf
+module "eks_blueprints" {
+  source  = "aws-ia/eks-blueprints/aws"
+  version = "~> 4.32"
+
+  cluster_name    = "production"
+  cluster_version = "1.30"
+
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnets
+
+  # Control plane logging
+  cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
+  # IRSA — required for add-ons
+  enable_irsa = true
+
+  # Managed node groups
+  eks_managed_node_groups = {
+    general = {
+      min_size     = 3
+      max_size     = 20
+      desired_size = 5
+
+      instance_types = ["m6i.2xlarge"]
+      capacity_type  = "ON_DEMAND"
+
+      labels = { workload = "general" }
+
+      # Taint system namespace pods to system node group
+      # (no taint on general = default target)
+    }
+
+    system = {
+      min_size     = 3
+      max_size     = 6
+      desired_size = 3
+
+      instance_types = ["m6i.xlarge"]
+      capacity_type  = "ON_DEMAND"
+
+      labels = { "node.kubernetes.io/purpose" = "system" }
+      taints = [{
+        key    = "node.kubernetes.io/purpose"
+        value  = "system"
+        effect = "NO_SCHEDULE"
+      }]
+    }
+
+    spot = {
+      min_size     = 0
+      max_size     = 50
+      desired_size = 0
+
+      instance_types = ["m6i.2xlarge", "m5.2xlarge", "m5n.2xlarge"]
+      capacity_type  = "SPOT"
+
+      labels = { "node.kubernetes.io/capacity-type" = "spot" }
+      taints = [{
+        key    = "spot"
+        value  = "true"
+        effect = "NO_SCHEDULE"
+      }]
+    }
+  }
+}
+
+# Add-ons module
+module "eks_blueprints_addons" {
+  source  = "aws-ia/eks-blueprints-addons/aws"
+  version = "~> 1.16"
+
+  cluster_name      = module.eks_blueprints.cluster_name
+  cluster_endpoint  = module.eks_blueprints.cluster_endpoint
+  cluster_version   = module.eks_blueprints.cluster_version
+  oidc_provider_arn = module.eks_blueprints.oidc_provider_arn
+
+  # EKS managed add-ons
+  eks_addons = {
+    aws-ebs-csi-driver = {
+      most_recent = true
+      service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
+    }
+    coredns    = { most_recent = true }
+    vpc-cni    = { most_recent = true }
+    kube-proxy = { most_recent = true }
+  }
+
+  # AWS Load Balancer Controller
+  enable_aws_load_balancer_controller = true
+
+  # Cluster Autoscaler (or use Karpenter — see below)
+  enable_cluster_autoscaler = true
+
+  # cert-manager
+  enable_cert_manager = true
+
+  # external-dns
+  enable_external_dns = true
+
+  # Karpenter (if using — disables Cluster Autoscaler)
+  enable_karpenter = false
+
+  # Metrics Server
+  enable_metrics_server = true
+}</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="node-pools">6. Node Pools &amp; Node Groups</h2>
+
+<h3>Node Group Strategy</h3>
+
+<pre><code>Recommended node group topology for production clusters:
+
+┌──────────────────────────────────────────────────────────┐
+│  system node group  (3 nodes, m6i.xlarge, ON_DEMAND)     │
+│  Runs: CoreDNS, kube-proxy, CNI, CSI, ingress controller │
+│  Taint: node.kubernetes.io/purpose=system:NoSchedule     │
+├──────────────────────────────────────────────────────────┤
+│  general node group (3-20 nodes, m6i.2xlarge, ON_DEMAND) │
+│  Runs: most application workloads                        │
+│  No taints — default scheduling target                   │
+├──────────────────────────────────────────────────────────┤
+│  observability node group (3 nodes, m6i.4xlarge)         │
+│  Runs: Prometheus, Loki, Tempo, Grafana (stateful)       │
+│  Taint: workload=observability:NoSchedule                │
+├──────────────────────────────────────────────────────────┤
+│  spot node group (0-50 nodes, mixed instance types)      │
+│  Runs: batch jobs, CI runners, ML training               │
+│  Taint: spot=true:NoSchedule                             │
+├──────────────────────────────────────────────────────────┤
+│  gpu node group (0-10 nodes, p3.2xlarge or g5.xlarge)    │
+│  Runs: GPU workloads, ML inference                       │
+│  Taint: nvidia.com/gpu=present:NoSchedule                │
+└──────────────────────────────────────────────────────────┘</code></pre>
+
+<h3>Node Labels and Taints for Scheduling</h3>
+
+<pre><code># Standard K8s well-known node labels (set automatically by cloud providers)
+kubernetes.io/hostname: worker-node-1
+kubernetes.io/arch: amd64
+kubernetes.io/os: linux
+node.kubernetes.io/instance-type: m6i.2xlarge
+topology.kubernetes.io/zone: us-east-1a
+topology.kubernetes.io/region: us-east-1
+
+# EKS specific
+eks.amazonaws.com/nodegroup: general
+eks.amazonaws.com/capacityType: ON_DEMAND
+
+# Custom labels (set in node group config)
+workload: general
+node.kubernetes.io/purpose: system
+
+# Targeting observability workloads:
+nodeSelector:
+  workload: observability
+tolerations:
+  - key: workload
+    operator: Equal
+    value: observability
+    effect: NoSchedule</code></pre>
+
+<h3>Multi-AZ Distribution for Stateful Workloads</h3>
+
+<pre><code># Force pods across AZs using topologySpreadConstraints
+# (preferred over podAntiAffinity for large StatefulSets)
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app: kafka-broker
+
+# StorageClass with WaitForFirstConsumer (volume follows pod AZ)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-gp3-zone-aware
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer  # Critical for multi-AZ
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+reclaimPolicy: Retain
+allowVolumeExpansion: true</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="karpenter">7. Karpenter: Node Autoprovisioning</h2>
+
+<p>Karpenter replaces the Cluster Autoscaler for node-level scaling. Instead of managing fixed node groups, Karpenter watches for unschedulable pods and provisions exactly the right node type within seconds using <code>NodePool</code> and <code>EC2NodeClass</code> CRDs.</p>
+
+<h3>Karpenter vs Cluster Autoscaler</h3>
+
+<table>
+  <tr><th>Feature</th><th>Cluster Autoscaler</th><th>Karpenter</th></tr>
+  <tr><td>Provisioning speed</td><td>2–5 minutes (new ASG instance)</td><td>~45 seconds (direct EC2 RunInstances API)</td></tr>
+  <tr><td>Instance selection</td><td>Fixed node group instance type</td><td>Flexible: picks optimal from NodePool list</td></tr>
+  <tr><td>Spot handling</td><td>Separate spot ASG; manual fallback config</td><td>Built-in: weighted spot + on-demand fallback</td></tr>
+  <tr><td>Consolidation</td><td>Removes underutilised nodes (basic)</td><td>Disruption consolidation: repack pods onto fewer nodes</td></tr>
+  <tr><td>Node lifecycle</td><td>ASG manages replacement</td><td>Karpenter replaces drifted/old nodes automatically</td></tr>
+  <tr><td>Configuration</td><td>Node group config in cloud console/IaC</td><td>NodePool + NodeClass CRDs in cluster</td></tr>
+</table>
+
+<h3>Karpenter Install (EKS)</h3>
+
+<pre><code># Create IAM role for Karpenter with IRSA
+export CLUSTER_NAME=production
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+export KARPENTER_NAMESPACE=karpenter
+export KARPENTER_VERSION=v0.37.0
+
+# Create node IAM role (used by nodes Karpenter provisions)
+aws iam create-role \
+  --role-name KarpenterNodeRole-${CLUSTER_NAME} \
+  --assume-role-policy-document file://node-trust-policy.json
+
+for policy in \
+  AmazonEKSWorkerNodePolicy \
+  AmazonEKS_CNI_Policy \
+  AmazonEC2ContainerRegistryReadOnly \
+  AmazonSSMManagedInstanceCore; do
+  aws iam attach-role-policy \
+    --role-name KarpenterNodeRole-${CLUSTER_NAME} \
+    --policy-arn arn:aws:iam::aws:policy/${policy}
+done
+
+# Create instance profile
+aws iam create-instance-profile \
+  --instance-profile-name KarpenterNodeInstanceProfile-${CLUSTER_NAME}
+aws iam add-role-to-instance-profile \
+  --instance-profile-name KarpenterNodeInstanceProfile-${CLUSTER_NAME} \
+  --role-name KarpenterNodeRole-${CLUSTER_NAME}
+
+# Install Karpenter via Helm
+helm upgrade --install karpenter oci://public.ecr.aws/karpenter/karpenter \
+  --version ${KARPENTER_VERSION} \
+  --namespace ${KARPENTER_NAMESPACE} \
+  --create-namespace \
+  --set "settings.clusterName=${CLUSTER_NAME}" \
+  --set "settings.interruptionQueue=${CLUSTER_NAME}" \
+  --set controller.resources.requests.cpu=1 \
+  --set controller.resources.requests.memory=1Gi \
+  --set controller.resources.limits.cpu=1 \
+  --set controller.resources.limits.memory=1Gi \
+  --wait</code></pre>
+
+<h3>NodePool and EC2NodeClass</h3>
+
+<pre><code>apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: general
+spec:
+  template:
+    metadata:
+      labels:
+        workload: general
+    spec:
+      nodeClassRef:
+        apiVersion: karpenter.k8s.aws/v1beta1
+        kind: EC2NodeClass
+        name: default
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+        - key: kubernetes.io/os
+          operator: In
+          values: ["linux"]
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["on-demand", "spot"]  # prefer spot, fall back to on-demand
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["c", "m", "r"]
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gt
+          values: ["5"]  # Only 6th gen or newer
+        - key: karpenter.k8s.aws/instance-size
+          operator: NotIn
+          values: ["nano", "micro", "small", "medium", "xlarge"]  # min 2xlarge
+      taints: []
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+    consolidateAfter: 30s
+    # Replace nodes older than 720h (30 days) for security patching
+    expireAfter: 720h
+  limits:
+    cpu: 1000         # max 1000 vCPUs across all NodePool nodes
+    memory: 4000Gi
+---
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: AL2  # Amazon Linux 2 (or Bottlerocket, Ubuntu)
+  role: KarpenterNodeRole-production  # IAM instance profile
+  subnetSelectorTerms:
+    - tags:
+        kubernetes.io/cluster/production: owned
+        karpenter.sh/discovery: production
+  securityGroupSelectorTerms:
+    - tags:
+        kubernetes.io/cluster/production: owned
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 100Gi
+        volumeType: gp3
+        iops: 3000
+        throughput: 125
+        encrypted: true
+  userData: |
+    #!/bin/bash
+    /etc/eks/bootstrap.sh production \
+      --container-runtime containerd \
+      --kubelet-extra-args '--max-pods=110'
+  tags:
+    team: platform
+    managed-by: karpenter</code></pre>
+
+<h3>Spot Interruption Handling</h3>
+
+<pre><code># Karpenter uses EC2 Spot Interruption Notifications via SQS
+# AWS sends 2-minute warning → Karpenter cordons node + triggers Pod Disruption Budget
+
+# Create SQS queue for spot interruptions:
+aws sqs create-queue \
+  --queue-name Karpenter-${CLUSTER_NAME} \
+  --attributes '{
+    "SqsManagedSseEnabled": "true",
+    "MessageRetentionPeriod": "300"
+  }'
+
+# EventBridge rules route interruption events to SQS:
+# - EC2 Spot Instance Interruption Warning
+# - EC2 Instance Rebalance Recommendation
+# - EC2 Instance State-change Notification
+# (set up via CloudFormation template in Karpenter docs)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="cluster-addons">8. Cluster Add-ons</h2>
+
+<p>Every production cluster needs a standard set of add-ons installed immediately after bootstrap. These should be deployed via GitOps (Argo CD or Flux) — not manual Helm installs.</p>
+
+<table>
+  <tr><th>Category</th><th>Add-on</th><th>Purpose</th><th>Install Method</th></tr>
+  <tr><td>Networking</td><td>CNI plugin (Cilium/Calico/VPC CNI)</td><td>Pod networking</td><td>Cluster bootstrap / EKS managed</td></tr>
+  <tr><td>Networking</td><td>CoreDNS</td><td>Service discovery DNS</td><td>kubeadm / EKS managed</td></tr>
+  <tr><td>Networking</td><td>Ingress NGINX / AWS ALB Controller</td><td>HTTP ingress</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Networking</td><td>cert-manager</td><td>TLS certificate automation</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Networking</td><td>external-dns</td><td>DNS record sync from Ingress/Service</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Storage</td><td>EBS CSI Driver / GCE PD CSI</td><td>Cloud block storage</td><td>EKS managed / Helm</td></tr>
+  <tr><td>Storage</td><td>EFS CSI Driver</td><td>Shared file storage (RWX)</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Autoscaling</td><td>Karpenter / Cluster Autoscaler</td><td>Node scaling</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Autoscaling</td><td>Metrics Server</td><td>HPA/VPA resource metrics</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Autoscaling</td><td>KEDA</td><td>Event-driven autoscaling</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Security</td><td>Gatekeeper / Kyverno</td><td>Policy enforcement</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Security</td><td>Falco</td><td>Runtime security (syscall audit)</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Secrets</td><td>External Secrets Operator</td><td>Sync secrets from Vault/AWS SM</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Observability</td><td>kube-prometheus-stack</td><td>Prometheus + Grafana + rules</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Observability</td><td>Loki stack</td><td>Log aggregation</td><td>Helm via Argo CD</td></tr>
+  <tr><td>Observability</td><td>OpenTelemetry Operator</td><td>Tracing infrastructure</td><td>Helm via Argo CD</td></tr>
+</table>
+
+<h3>Add-on Dependency Ordering (Argo CD Sync Waves)</h3>
+
+<pre><code># Use Argo CD sync waves to control add-on installation order.
+# Annotations on Applications or Helm release namespaces:
+
+# Wave -1: CRDs first (cert-manager, Gatekeeper, KEDA, Karpenter)
+# Wave  0: Core networking (CNI config, CoreDNS tuning)
+# Wave  1: Storage (CSI drivers, StorageClasses)
+# Wave  2: Security (Gatekeeper policies, ESO, Falco)
+# Wave  3: Ingress (NGINX, cert-manager issuers, external-dns)
+# Wave  4: Autoscaling (Karpenter NodePools, KEDA ScaledObjects)
+# Wave  5: Observability (Prometheus, Loki, Tempo, Grafana)
+# Wave 10: Application namespaces and workloads
+
+# Example Application annotation:
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="bootstrap-gitops">9. Bootstrap to GitOps</h2>
+
+<p>A newly provisioned cluster must be onboarded to the GitOps system so all future configuration is managed declaratively. The bootstrap process converts a "bare" cluster into a GitOps-managed cluster.</p>
+
+<pre><code># Bootstrap sequence:
+# 1. Cluster created (Terraform / CAPI / eksctl)
+# 2. kubeconfig obtained and merged
+# 3. Argo CD installed (bootstrap — only this one step is imperative)
+# 4. Argo CD pointed at the GitOps repo
+# 5. App-of-apps / ApplicationSet deploys everything else
+
+# Step 3: Install Argo CD (one-time bootstrap)
+kubectl create namespace argocd
+kubectl apply -n argocd \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Step 4: Create root Application pointing at cluster's app-of-apps directory
+kubectl apply -f - &lt;&lt;'EOF'
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/myorg/platform-gitops
+    targetRevision: HEAD
+    path: clusters/production/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+EOF
+
+# Step 5: argocd now syncs all add-ons from Git
+# The apps/ directory contains Application manifests for each add-on</code></pre>
+
+<h3>GitOps Repository Structure for Multi-Cluster</h3>
+
+<pre><code>platform-gitops/
+├── clusters/
+│   ├── production/
+│   │   ├── apps/                     # Argo CD Applications (root app-of-apps)
+│   │   │   ├── cert-manager.yaml
+│   │   │   ├── ingress-nginx.yaml
+│   │   │   ├── karpenter.yaml
+│   │   │   ├── kube-prometheus-stack.yaml
+│   │   │   └── ...
+│   │   └── values/                   # Per-cluster Helm value overrides
+│   │       ├── karpenter-values.yaml
+│   │       └── prometheus-values.yaml
+│   ├── staging/
+│   │   └── apps/
+│   └── dev/
+│       └── apps/
+├── add-ons/                          # Reusable add-on Helm chart wrappers
+│   ├── cert-manager/
+│   ├── ingress-nginx/
+│   └── kube-prometheus-stack/
+└── base/                             # Shared Kustomize bases
+    ├── namespaces/
+    └── rbac/</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="upgrade-strategies">10. Cluster Upgrade Strategies</h2>
+
+<div class="callout callout-warn">
+  <strong>Kubernetes skew policy</strong>
+  <p>Kubernetes supports n-2 version skew between control plane and nodes. Always upgrade control plane first, then node groups. Never skip minor versions (e.g., 1.28 → 1.30 is unsupported; must go 1.28 → 1.29 → 1.30). Check API deprecations before each upgrade — use <code>pluto</code> or <code>kubectl convert</code>.</p>
+</div>
+
+<h3>Pre-Upgrade Checklist</h3>
+
+<pre><code># 1. Check API deprecations with pluto
+pluto detect-all-in-cluster --target-versions k8s=v1.30
+
+# 2. Review release notes and deprecated APIs
+# https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+
+# 3. Check add-on compatibility matrix
+# cert-manager, ingress-nginx, kube-prometheus-stack all have K8s version tables
+
+# 4. Test in non-prod cluster first (same version upgrade path)
+
+# 5. Verify PodDisruptionBudgets allow node drains
+kubectl get pdb -A
+# PDBs with minAvailable=100% or maxUnavailable=0 will block drain!
+
+# 6. Check for pods using deprecated APIs
+kubectl get pods -A -o json | \
+  jq '.items[] | select(.spec.containers[].image | test("k8s.gcr.io")) | .metadata'</code></pre>
+
+<h3>EKS Control Plane Upgrade</h3>
+
+<pre><code># Upgrade EKS control plane (AWS manages etcd and control plane pods)
+aws eks update-cluster-version \
+  --name production \
+  --kubernetes-version 1.30
+
+# Watch upgrade status
+aws eks describe-cluster \
+  --name production \
+  --query 'cluster.status'
+
+# Takes ~15 minutes; API server is briefly unavailable during switchover
+# (kube-proxy and CoreDNS tolerate this; existing pods continue running)</code></pre>
+
+<h3>Node Group Rolling Upgrade</h3>
+
+<pre><code># Option A: Rolling update via eksctl (managed node groups)
+eksctl upgrade nodegroup \
+  --cluster=production \
+  --name=general \
+  --kubernetes-version=1.30
+
+# Option B: Blue/green node group (zero downtime, more control)
+# 1. Create new node group with new K8s version
+eksctl create nodegroup \
+  --cluster production \
+  --name general-v130 \
+  --kubernetes-version 1.30 \
+  --node-type m6i.2xlarge \
+  --nodes-min 3 --nodes-max 20
+
+# 2. Cordon old node group (prevent new scheduling)
+kubectl cordon -l eks.amazonaws.com/nodegroup=general
+
+# 3. Drain old nodes (respects PDBs)
+for node in $(kubectl get nodes -l eks.amazonaws.com/nodegroup=general -o name); do
+  kubectl drain $node \
+    --ignore-daemonsets \
+    --delete-emptydir-data \
+    --timeout=5m \
+    --grace-period=30
+done
+
+# 4. Delete old node group after all pods migrated
+eksctl delete nodegroup \
+  --cluster production \
+  --name general \
+  --drain=false  # Already drained above</code></pre>
+
+<h3>kubeadm Control Plane Upgrade</h3>
+
+<pre><code># On first control plane node:
+# 1. Upgrade kubeadm itself
+apt-get update
+apt-get install -y kubeadm=1.30.0-00
+
+# 2. Verify upgrade plan
+kubeadm upgrade plan
+
+# 3. Apply upgrade (upgrades kube-apiserver, kube-controller-manager, kube-scheduler, etcd)
+kubeadm upgrade apply v1.30.0
+
+# 4. Upgrade kubelet and kubectl on control plane node
+apt-get install -y kubelet=1.30.0-00 kubectl=1.30.0-00
+systemctl daemon-reload
+systemctl restart kubelet
+
+# On additional control plane nodes:
+kubeadm upgrade node
+apt-get install -y kubelet=1.30.0-00 kubectl=1.30.0-00
+systemctl daemon-reload && systemctl restart kubelet
+
+# Worker nodes:
+kubectl drain <worker-node> --ignore-daemonsets --delete-emptydir-data
+# SSH into worker node:
+apt-get install -y kubeadm=1.30.0-00
+kubeadm upgrade node
+apt-get install -y kubelet=1.30.0-00
+systemctl daemon-reload && systemctl restart kubelet
+# Back on control plane:
+kubectl uncordon <worker-node></code></pre>
+
+<h3>Karpenter Node Drift — Automatic Replacement</h3>
+
+<pre><code># Karpenter automatically replaces nodes when:
+# 1. AMI has drifted from EC2NodeClass amiSelector
+# 2. Node has expired (expireAfter in NodePool)
+# 3. Node is underutilised and can be consolidated
+
+# Trigger controlled drift for immediate node replacement:
+kubectl annotate nodepool general \
+  karpenter.sh/nodepool-hash-version=1  # forces re-evaluation
+
+# Check node replacement progress:
+kubectl get nodes -l karpenter.sh/nodepool=general
+kubectl get nodeclaim  # Karpenter's unit of node lifecycle</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="multi-cluster-fleet">11. Multi-Cluster Fleet Management</h2>
+
+<h3>Argo CD ApplicationSets for Fleet-Wide Add-ons</h3>
+
+<pre><code>apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-addons
+  namespace: argocd
+spec:
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            environment: production   # target all production clusters
+  template:
+    metadata:
+      name: "{{name}}-cert-manager"
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/myorg/platform-gitops
+        targetRevision: HEAD
+        path: add-ons/cert-manager
+        helm:
+          valueFiles:
+            - values.yaml
+            - "clusters/{{name}}/values/cert-manager-values.yaml"
+      destination:
+        server: "{{server}}"
+        namespace: cert-manager
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true</code></pre>
+
+<h3>Cluster Registration Pattern</h3>
+
+<pre><code># Register a new cluster with Argo CD management cluster
+argocd cluster add arn:aws:eks:eu-west-1:123456789:cluster/prod-eu \
+  --name prod-eu \
+  --grpc-web
+
+# Label the cluster for ApplicationSet selection
+kubectl label secret prod-eu \
+  -n argocd \
+  environment=production \
+  region=eu-west-1 \
+  tier=workload
+
+# Now ApplicationSets with clusters generator will automatically
+# target this cluster on next reconciliation</code></pre>
+
+<h3>Fleet Configuration Hierarchy</h3>
+
+<pre><code>platform-gitops/
+├── base/                     # All clusters inherit
+│   ├── cert-manager/
+│   ├── gatekeeper/
+│   └── kube-prometheus-stack/
+├── overlays/
+│   ├── production/           # Production-tier overrides (HA, large resources)
+│   ├── staging/              # Staging-tier overrides (smaller, relaxed policies)
+│   └── dev/                  # Dev overrides (single replica, no PDB)
+└── clusters/
+    ├── prod-us-east-1/       # Cluster-specific (region, IRSA ARNs, node types)
+    ├── prod-eu-west-1/
+    └── staging-us-east-1/</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">12. Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>1. Use managed K8s unless you have a reason not to</h4>
+    <p>EKS/GKE/AKS handle etcd backups, control plane upgrades, and API server HA. Self-managed clusters require significant operational expertise — only choose this for air-gap, on-prem, or specific compliance requirements.</p>
+  </div>
+  <div class="card">
+    <h4>2. Separate system and application node groups</h4>
+    <p>Taint a dedicated system node group for DNS, CNI, CSI, and ingress. This prevents noisy application workloads from evicting platform add-ons under pressure.</p>
+  </div>
+  <div class="card">
+    <h4>3. Never skip minor version upgrades</h4>
+    <p>K8s skew policy requires sequential minor version upgrades. Run <code>pluto</code> before each upgrade to find deprecated API usage. Test every upgrade in staging with the same workloads first.</p>
+  </div>
+  <div class="card">
+    <h4>4. Bootstrap clusters to GitOps immediately</h4>
+    <p>Install Argo CD/Flux as the first post-provision step. All add-ons, RBAC, policies, and namespaces should be managed from Git from day one. Manual configuration creates drift that compounds over time.</p>
+  </div>
+  <div class="card">
+    <h4>5. Use ClusterClass or blueprints for consistency</h4>
+    <p>CAPI ClusterClass or EKS Blueprints modules encode organisational standards (audit logging, OIDC, node sizing, add-ons) once and instantiate consistently. Every cluster should be provisioned from the same template.</p>
+  </div>
+  <div class="card">
+    <h4>6. Enable etcd encryption at rest</h4>
+    <p>Configure <code>--encryption-provider-config</code> on kube-apiserver to encrypt Secrets at rest in etcd with AES-GCM or KMS envelope encryption. EKS: enable with <code>encryptionConfig</code> in cluster spec.</p>
+  </div>
+  <div class="card">
+    <h4>7. Use Karpenter over Cluster Autoscaler for new EKS clusters</h4>
+    <p>Karpenter provisions nodes in ~45 seconds vs 2–5 minutes for CA, handles spot interruptions natively, and consolidates underutilised nodes automatically. Only use CA if you need non-AWS provider support.</p>
+  </div>
+  <div class="card">
+    <h4>8. Test node drains with PDB validation before every upgrade</h4>
+    <p>Run <code>kubectl get pdb -A</code> before upgrade and identify any with <code>maxUnavailable=0</code> or <code>minAvailable=100%</code>. These will block node drains and stall upgrades. Fix or temporarily relax them during maintenance windows.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage Checklist</summary>
+  <ul class="coverage-body">
+    <li>Provisioning options comparison table (managed/CAPI/kubeadm/kOps/k3s/blueprints)</li>
+    <li>EKS cluster creation via eksctl with key flags</li>
+    <li>EKS networking modes: VPC CNI, prefix delegation, custom CNI comparison</li>
+    <li>Prefix delegation enablement via kubectl set env</li>
+    <li>OIDC / IRSA setup: eksctl associate-iam-oidc-provider + create iamserviceaccount</li>
+    <li>EKS managed add-ons: describe-addon-versions + create-addon commands</li>
+    <li>GKE Standard vs Autopilot comparison table</li>
+    <li>GKE cluster creation with Workload Identity + private nodes</li>
+    <li>AKS cluster creation with system + user node pools and availability zones</li>
+    <li>CAPI architecture diagram: management cluster / providers / object hierarchy</li>
+    <li>clusterctl init + generate cluster + apply commands</li>
+    <li>Full CAPI Cluster + AWSCluster + KubeadmControlPlane + MachineDeployment YAML</li>
+    <li>ClusterClass CRD for reusable cluster templates + Cluster instance with topology</li>
+    <li>kubeadm ClusterConfiguration YAML (audit log, OIDC, etcd quota, admission plugins)</li>
+    <li>kubeadm init + control plane join + worker join commands</li>
+    <li>External etcd topology (stacked vs external) + etcd disk performance callout</li>
+    <li>Certificate expiry check + renewal commands (kubeadm certs)</li>
+    <li>EKS Blueprints Terraform module (eks_blueprints + eks_blueprints_addons) with ON_DEMAND/Spot/system node groups</li>
+    <li>Node group topology diagram (system/general/observability/spot/GPU)</li>
+    <li>Well-known node labels reference (K8s standard + EKS-specific)</li>
+    <li>topologySpreadConstraints for multi-AZ StatefulSet distribution</li>
+    <li>WaitForFirstConsumer StorageClass for zone-aware volume binding</li>
+    <li>Karpenter vs Cluster Autoscaler comparison table</li>
+    <li>Karpenter IAM setup + Helm install commands</li>
+    <li>NodePool YAML (requirements, disruption, expireAfter, limits)</li>
+    <li>EC2NodeClass YAML (AMI, role, subnet/SG selectors, block device, userData)</li>
+    <li>Spot interruption SQS queue + EventBridge rules setup</li>
+    <li>Cluster add-ons reference table (15 add-ons across 5 categories)</li>
+    <li>Argo CD sync waves for add-on dependency ordering (-1 to 10)</li>
+    <li>Argo CD bootstrap sequence (install → root app → app-of-apps)</li>
+    <li>GitOps repository structure for multi-cluster (clusters/add-ons/base)</li>
+    <li>Pre-upgrade checklist: pluto, API deprecations, PDB check, add-on compat</li>
+    <li>K8s skew policy callout (no version skipping)</li>
+    <li>EKS control plane upgrade (aws eks update-cluster-version)</li>
+    <li>Node group blue/green upgrade (create new NG → cordon → drain → delete old)</li>
+    <li>kubeadm control plane + worker node upgrade commands</li>
+    <li>Karpenter node drift automatic replacement + nodeclaim commands</li>
+    <li>ApplicationSet with clusters generator for fleet-wide add-on deployment</li>
+    <li>Cluster registration with argocd CLI + label for ApplicationSet selection</li>
+    <li>Fleet configuration hierarchy (base/overlays/clusters)</li>
+    <li>8 best practices cards</li>
+  </ul>
+</details>
+
+</div>
+</main>
+
+<button class="btt" id="btt" title="Back to top">↑</button>
+
+<script>
+const sidebar = document.getElementById('sidebar');
+document.getElementById('hamburger').addEventListener('click', () => sidebar.classList.toggle('open'));
+document.getElementById('btt').addEventListener('click', () => document.getElementById('main').scrollTo({top:0,behavior:'smooth'}));
+document.getElementById('main').addEventListener('scroll', function(){
+  document.getElementById('btt').style.display = this.scrollTop > 400 ? 'flex' : 'none';
+});
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn'; btn.textContent = 'copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.innerText.replace(/^copy\n/,''));
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+document.getElementById('nav-filter').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+const tocLinks = document.querySelectorAll('.toc a');
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+}, {root: document.getElementById('main'), rootMargin: '-20% 0px -70% 0px'});
+headings.forEach(h => obs.observe(h));
+</script>
+</body>
+</html>

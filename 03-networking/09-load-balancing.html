@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Load Balancing — Kubernetes Networking</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.sidebar-logo{font-size:15px;font-weight:700;color:var(--accent);text-decoration:none;display:block;margin-bottom:12px;}
+.sidebar-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;}
+.sidebar-filter:focus{border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding:6px 16px 4px;}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);text-decoration:none;border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:90;}
+.hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text2);cursor:pointer;font-size:12px;}
+.theme-btn:hover{color:var(--text);border-color:var(--accent);}
+.content-toc-wrap{display:flex;flex:1;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-panel{width:var(--toc-w);flex-shrink:0;padding:24px 16px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
+.toc-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text3);text-decoration:none;padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover{color:var(--text2);}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-panel a.toc-h3{padding-left:20px;font-size:11px;}
+h1{font-size:34px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+ul,ol{padding-left:24px;color:var(--text2);margin-bottom:14px;}
+li{margin-bottom:4px;font-size:14px;}
+.subtitle{font-size:16px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:12px 0 20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code,h3 code,h4 code{background:var(--bg3);padding:2px 5px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text3);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 12px;text-align:left;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);border-bottom:2px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:12px;}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:14px;}
+.callout-body p,.callout-body ul{font-size:13px;color:var(--text2);margin:0;}
+.callout-body ul{padding-left:18px;margin-top:4px;}
+.callout.info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.3);}
+.callout.warn{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);}
+.callout.danger{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);}
+.callout.success{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.3);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:16px 0 24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card h4{font-size:14px;font-weight:600;color:var(--text);margin:0 0 8px;}
+.card p,.card ul{font-size:13px;color:var(--text2);}
+.card ul{padding-left:16px;margin:0;}
+.card .tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;margin-bottom:6px;}
+.tag-ga{background:rgba(63,185,80,.15);color:var(--green);}
+.tag-beta{background:rgba(210,153,34,.15);color:var(--yellow);}
+.tag-ext{background:rgba(188,140,255,.15);color:var(--purple);}
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:16px 0 24px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.6;}
+.layer-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0 24px;}
+.layer-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;}
+.layer-box h4{font-size:13px;font-weight:600;margin-bottom:6px;}
+.layer-box p{font-size:12px;color:var(--text3);margin:0;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.back-top.visible{display:flex;}
+.nav-footer{display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;border-top:1px solid var(--border);}
+.nav-btn{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 20px;color:var(--text2);text-decoration:none;font-size:13px;transition:all .2s;}
+.nav-btn:hover{color:var(--accent);border-color:var(--accent);}
+.nav-btn small{display:block;font-size:11px;color:var(--text3);margin-bottom:2px;}
+@media(max-width:1200px){.toc-panel{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrap{margin-left:0;}
+  .hamburger{display:block;}
+  .main-content{padding:24px 20px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a class="sidebar-logo" href="../index.html">⎈ Kubernetes Docs</a>
+    <input class="sidebar-filter" id="nav-filter" placeholder="Filter..." type="text"/>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Foundations</div>
+    <a href="../00-foundations/00-introduction.html">Introduction</a>
+    <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../00-foundations/02-kubernetes-components.html">Components</a>
+    <a href="../00-foundations/03-control-loops.html">Control Loops</a>
+    <a href="../00-foundations/04-kubernetes-api-model.html">API Model</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">Overview</a>
+    <a href="../01-control-plane/01-api-server.html">API Server</a>
+    <a href="../01-control-plane/02-etcd.html">etcd</a>
+    <a href="../01-control-plane/03-scheduler.html">Scheduler</a>
+    <a href="../01-control-plane/04-controller-manager.html">Controller Manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">Cloud CCM</a>
+    <a href="../01-control-plane/06-ha-control-plane.html">HA Control Plane</a>
+    <a href="../01-control-plane/07-api-aggregation.html">API Aggregation</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">Overview</a>
+    <a href="../02-node-components/01-kubelet.html">kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime.html">Container Runtime</a>
+    <a href="../02-node-components/04-cri-interface.html">CRI Interface</a>
+    <a href="../02-node-components/05-node-lifecycle.html">Node Lifecycle</a>
+    <a href="../02-node-components/06-node-resource-management.html">Resource Management</a>
+    <a href="../02-node-components/07-windows-worker-nodes.html">Windows Nodes</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="00-networking-overview.html">Overview</a>
+    <a href="01-pod-networking.html">Pod Networking</a>
+    <a href="02-cni-plugins.html">CNI Plugins</a>
+    <a href="03-kube-proxy-internals.html">kube-proxy Internals</a>
+    <a href="04-dns.html">DNS &amp; Service Discovery</a>
+    <a href="05-ingress.html">Ingress</a>
+    <a href="06-gateway-api.html">Gateway API</a>
+    <a href="07-network-policies.html">Network Policies</a>
+    <a href="08-ipv4-ipv6-dual-stack.html">IPv4/IPv6 Dual-Stack</a>
+    <a href="09-load-balancing.html" class="active">Load Balancing</a>
+    <a href="10-service-mesh.html">Service Mesh</a>
+  </div>
+</nav>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger">☰</button>
+    <span class="topbar-title">03 — Networking / Load Balancing</span>
+    <button class="theme-btn" id="theme-toggle">Light Mode</button>
+  </header>
+
+  <div class="content-toc-wrap">
+    <main class="main-content" id="main-content">
+
+      <h1>Load Balancing</h1>
+      <p class="subtitle">Kubernetes load balancing operates at multiple layers simultaneously — from iptables/IPVS ClusterIP distribution inside the cluster to cloud provider L4 NLBs and L7 Ingress controllers at the edge. This page covers every layer, how they interact, and how to tune them for production.</p>
+
+      <details class="coverage">
+        <summary>What This Page Covers</summary>
+        <ul class="coverage-body">
+          <li>Load balancing layer model: L3/L4 kube-proxy, L7 Ingress/Gateway API, cloud LB</li>
+          <li>ClusterIP load balancing: iptables random distribution, IPVS scheduling algorithms</li>
+          <li>Session affinity: ClientIP-based, timeoutSeconds; limitations</li>
+          <li>Service type LoadBalancer: CCM provisioning lifecycle, status.loadBalancer.ingress</li>
+          <li>externalTrafficPolicy: Local vs Cluster — source IP preservation and uneven load tradeoffs</li>
+          <li>internalTrafficPolicy: Local vs Cluster — node-local traffic optimization</li>
+          <li>Topology-Aware Routing (GA 1.27): zone hints, auto vs disabled annotation</li>
+          <li>Traffic Distribution (GA 1.31): preferClose field, replacing topology hints</li>
+          <li>AWS NLB: IP vs Instance target types, cross-zone load balancing, health checks, annotations reference</li>
+          <li>AWS Classic ELB vs NLB vs ALB — when to use each from Kubernetes</li>
+          <li>GCE/GKE: L4 regional vs global LB, BackendConfig CRD, NEGs (Network Endpoint Groups)</li>
+          <li>Azure: Standard Load Balancer, internal LB, annotations</li>
+          <li>MetalLB: BGP mode and L2 mode, IPAddressPool, L2Advertisement, BGPAdvertisement CRDs</li>
+          <li>kube-vip: ARP/BGP, control plane HA and service VIP</li>
+          <li>Cilium LB IPAM: replacing cloud CCM for bare metal</li>
+          <li>NodePort: port range, externalIPs, hairpin mode</li>
+          <li>ECMP and BGP-based load balancing at the network layer</li>
+          <li>Connection draining: terminationGracePeriodSeconds, preStop hooks, EndpointSlice terminating condition</li>
+          <li>Health checks: readiness probes gate endpoint inclusion; custom health check annotations per cloud</li>
+          <li>7 metrics + 4 alerting rules + 5 troubleshooting runbooks</li>
+          <li>8 best practices for production load balancing</li>
+        </ul>
+      </details>
+
+      <!-- 1. LAYER MODEL -->
+      <h2 id="layer-model">Load Balancing Layer Model</h2>
+      <p>Kubernetes load balancing is not a single mechanism — it is a stack of complementary layers, each operating at a different network level:</p>
+
+      <div class="arch-diagram">External Client
+      │
+      ▼
+┌─────────────────────────────────────────────────┐
+│  Layer 4 (L4): Cloud Load Balancer              │  AWS NLB / GCE L4 / Azure SLB
+│  Service type=LoadBalancer                       │  Provisioned by Cloud CCM
+│  Distributes TCP/UDP connections to nodes        │  No TLS termination (NLB passthrough)
+└────────────────────┬────────────────────────────┘
+                     │  to NodePort on any node
+                     ▼
+┌─────────────────────────────────────────────────┐
+│  Layer 4 (L4): kube-proxy (iptables/IPVS)       │  On every node
+│  Service type=ClusterIP / NodePort              │  Virtual IP → real pod IPs
+│  Distributes connections across healthy pods     │  DNAT, SNAT, session affinity
+└────────────────────┬────────────────────────────┘
+                     │  to Pod IP:ContainerPort
+                     ▼
+┌─────────────────────────────────────────────────┐
+│  Layer 7 (L7): Ingress / Gateway API Controller │  NGINX, Traefik, Envoy, etc.
+│  HTTP routing, TLS termination, canary           │  Runs as pods; reached via ClusterIP
+│  Upstream: application pods via ClusterIP        │  or via cloud LB directly (IP mode)
+└─────────────────────────────────────────────────┘</div>
+
+      <p>These layers are independent and composable. A typical production setup uses all three: a cloud NLB → NGINX Ingress (ClusterIP) → application Service (ClusterIP) → pods.</p>
+
+      <!-- 2. CLUSTERIP LB -->
+      <h2 id="clusterip-lb">ClusterIP Load Balancing</h2>
+      <p>ClusterIP is the most common service type. kube-proxy translates a virtual ClusterIP:Port to a real pod IP:Port via DNAT rules. For details on iptables chains and IPVS virtual servers, see <a href="03-kube-proxy-internals.html">03-kube-proxy-internals.html</a>. This section focuses on the load balancing behavior.</p>
+
+      <h3 id="iptables-distribution">iptables: Random Distribution</h3>
+      <p>In iptables mode, kube-proxy uses the <code>statistic</code> iptables module to implement per-connection random load balancing. For a service with N endpoints, the probability for each endpoint is set so that each gets an equal share:</p>
+
+      <pre><code># For a 3-endpoint service (probability math):
+# Rule 1: 1/3 probability  → KUBE-SEP-AAAA (pod-1)
+# Rule 2: 1/2 probability  → KUBE-SEP-BBBB (pod-2)   (of remaining 2/3)
+# Rule 3: 1/1 probability  → KUBE-SEP-CCCC (pod-3)   (all remaining)
+# Net result: each pod gets ~33% of connections
+
+# View the rules for a service:
+sudo iptables -t nat -L KUBE-SVC-XXXXXXXXXXXXXXXXX -n --line-numbers
+# Chain KUBE-SVC-XXXX (1 references)
+# num  target        prot  opt  source    destination
+# 1    KUBE-SEP-AA   all   --   0.0.0.0/0  0.0.0.0/0  statistic mode random probability 0.33333
+# 2    KUBE-SEP-BB   all   --   0.0.0.0/0  0.0.0.0/0  statistic mode random probability 0.50000
+# 3    KUBE-SEP-CC   all   --   0.0.0.0/0  0.0.0.0/0
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>iptables mode is per-connection, not per-request</strong>
+          <p>iptables DNAT is applied at connection establishment. All packets in a TCP connection go to the same pod — there is no request-level load balancing. For HTTP/1.1 with persistent connections or HTTP/2 multiplexing, a single long-lived connection can send thousands of requests to one pod while others are idle. Use HTTP/2-aware proxies (Envoy, NGINX) for per-request load balancing.</p>
+        </div>
+      </div>
+
+      <h3 id="ipvs-algorithms">IPVS: Scheduling Algorithms</h3>
+      <p>IPVS mode provides 7 scheduling algorithms and maintains a proper connection table (not just iptables rules). See <a href="03-kube-proxy-internals.html">03-kube-proxy-internals.html</a> for full IPVS configuration. The scheduler is set globally via <code>KubeProxyConfiguration.ipvs.scheduler</code>:</p>
+
+      <table>
+        <thead><tr><th>Scheduler</th><th>Algorithm</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr><td><code>rr</code></td><td>Round Robin</td><td>Default; uniform request cost; even distribution</td></tr>
+          <tr><td><code>lc</code></td><td>Least Connection</td><td>Variable-cost requests; routes to pod with fewest active connections</td></tr>
+          <tr><td><code>dh</code></td><td>Destination Hashing</td><td>Cache affinity; same destination IP always goes to same backend</td></tr>
+          <tr><td><code>sh</code></td><td>Source Hashing</td><td>Client affinity; same source IP always goes to same backend</td></tr>
+          <tr><td><code>sed</code></td><td>Shortest Expected Delay</td><td>Weighted least-connection variant</td></tr>
+          <tr><td><code>nq</code></td><td>Never Queue</td><td>Always routes to idle server first; SED otherwise</td></tr>
+          <tr><td><code>wrr</code></td><td>Weighted Round Robin</td><td>Heterogeneous node capacity (different pod weights)</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 3. SESSION AFFINITY -->
+      <h2 id="session-affinity">Session Affinity</h2>
+      <p>Kubernetes supports ClientIP-based session affinity — connections from the same source IP always go to the same pod. This is implemented differently per proxy mode:</p>
+
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+  sessionAffinity: ClientIP          # None (default) or ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800          # 3 hours (default); max 86400
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>Session affinity limitations</strong>
+          <ul>
+            <li><strong>Source IP is the node IP for traffic through NodePort/cloud LB</strong> — all traffic from a cloud LB appears to come from a small set of node IPs, causing all sessions to pin to a few pods. Use <code>externalTrafficPolicy: Local</code> to preserve the real client IP (at the cost of uneven distribution).</li>
+            <li><strong>Not HTTP cookie-based</strong> — Kubernetes session affinity is purely L4 IP-based. For cookie-based sticky sessions, use Ingress/Gateway API annotations (nginx: <code>nginx.ingress.kubernetes.io/affinity: cookie</code>).</li>
+            <li><strong>Does not survive pod restarts</strong> — if the pinned pod is replaced, the affinity breaks and clients are redistributed.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 4. EXTERNAL TRAFFIC POLICY -->
+      <h2 id="external-traffic-policy">externalTrafficPolicy</h2>
+      <p>Controls how NodePort and LoadBalancer services handle external traffic at the node level. This is one of the most impactful load balancing settings in production:</p>
+
+      <table>
+        <thead><tr><th>Policy</th><th>Behavior</th><th>Source IP</th><th>Tradeoff</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>Cluster</code> (default)</td>
+            <td>Traffic forwarded to any healthy pod cluster-wide, even on other nodes (extra hop)</td>
+            <td>Lost — SNAT replaces client IP with node IP</td>
+            <td>Even distribution; any node can serve; extra hop possible</td>
+          </tr>
+          <tr>
+            <td><code>Local</code></td>
+            <td>Traffic only forwarded to pods on the receiving node; drops if no local pods</td>
+            <td>Preserved — no SNAT; real client IP visible</td>
+            <td>Uneven distribution if pods not evenly spread; node must have local pod</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: my-lb-service
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local       # preserve client IP; no SNAT
+  selector:
+    app: my-app
+  ports:
+    - port: 443
+      targetPort: 8443
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Health check node port with externalTrafficPolicy: Local</strong>
+          <p>When <code>externalTrafficPolicy: Local</code> is set, kube-proxy allocates a special <code>healthCheckNodePort</code> (default range: 30000–32767). Cloud load balancers use this port to check if a node has ready local pods before sending traffic. Nodes without local pods return HTTP 503, so the LB skips them. AWS NLB, GCE, and Azure all support this automatically.</p>
+        </div>
+      </div>
+
+      <h3 id="internal-traffic-policy">internalTrafficPolicy</h3>
+      <p>Controls how ClusterIP traffic is handled for connections originating <em>inside</em> the cluster:</p>
+
+      <pre><code>spec:
+  internalTrafficPolicy: Local     # route only to pods on same node as client
+                                   # Cluster (default) = any pod anywhere
+</code></pre>
+
+      <p><code>internalTrafficPolicy: Local</code> is useful for node-local caching services (e.g., a per-node cache DaemonSet) — clients always hit the local replica without a network hop. If no local pod exists, the connection is dropped.</p>
+
+      <!-- 5. TOPOLOGY AWARE ROUTING -->
+      <h2 id="topology-aware-routing">Topology-Aware Routing &amp; Traffic Distribution</h2>
+
+      <h3 id="topology-hints">Topology-Aware Routing (GA 1.27)</h3>
+      <p>Topology-Aware Routing uses zone hints on EndpointSlices to prefer in-zone endpoints, reducing cross-zone traffic costs and latency. It is activated per-service with an annotation:</p>
+
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  annotations:
+    service.kubernetes.io/topology-mode: "auto"   # auto | disabled
+spec:
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+<button class="copy-btn">Copy</button></code></pre>
+
+      <p>When set to <code>auto</code>, the EndpointSlice controller adds <code>hints.forZones</code> entries to each endpoint. kube-proxy then prefers endpoints in the same zone as the node. Conditions for auto to activate:</p>
+      <ul>
+        <li>All nodes have the <code>topology.kubernetes.io/zone</code> label set</li>
+        <li>Endpoints are spread proportionally across zones (within 3x ratio)</li>
+        <li>All endpoints are Ready</li>
+        <li>At least 3 zones present</li>
+      </ul>
+
+      <h3 id="traffic-distribution">Traffic Distribution (GA 1.31)</h3>
+      <p>Traffic Distribution replaces Topology-Aware Routing with a cleaner API — <code>spec.trafficDistribution</code> on the Service object itself:</p>
+
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+  trafficDistribution: PreferClose   # prefer topologically close endpoints
+                                     # falls back to global if none available locally
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div class="callout-body">
+          <strong>Use trafficDistribution over topology annotation</strong>
+          <p><code>spec.trafficDistribution: PreferClose</code> (GA 1.31) is the preferred way to express topology preference for new clusters. The annotation <code>service.kubernetes.io/topology-mode: auto</code> continues to work but is considered legacy. <code>PreferClose</code> has safer fallback behavior — it never drops traffic even if zone distribution is uneven.</p>
+        </div>
+      </div>
+
+      <!-- 6. SERVICE TYPE LOADBALANCER -->
+      <h2 id="service-loadbalancer">Service type=LoadBalancer</h2>
+      <p>When you create a Service with <code>type: LoadBalancer</code>, the Cloud Controller Manager (CCM) watches the Service and provisions a cloud load balancer. The provisioned LB address is written back into <code>status.loadBalancer.ingress</code>:</p>
+
+      <pre><code>kubectl get svc my-lb-service -o yaml
+# status:
+#   loadBalancer:
+#     ingress:
+#       - hostname: abc123.us-east-1.elb.amazonaws.com  # AWS NLB
+#       # OR for GCP/Azure:
+#       - ip: 203.0.113.42
+
+# Track provisioning:
+kubectl get events --field-selector involvedObject.name=my-lb-service
+# EnsuredLoadBalancer  → LB provisioned
+# UpdatedLoadBalancer  → LB updated (port change, etc.)
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 7. AWS NLB -->
+      <h2 id="aws-nlb">AWS Network Load Balancer (NLB)</h2>
+      <p>AWS provides three LB types accessible from Kubernetes. The recommended path for TCP/UDP is NLB via the AWS Load Balancer Controller.</p>
+
+      <table>
+        <thead><tr><th>Type</th><th>Layer</th><th>Kubernetes Integration</th><th>Use Case</th></tr></thead>
+        <tbody>
+          <tr><td>Classic ELB</td><td>L4 (TCP) or L7 (HTTP)</td><td>Legacy in-tree CCM; deprecated</td><td>Legacy only; use NLB instead</td></tr>
+          <tr><td>NLB</td><td>L4 (TCP/UDP/TLS)</td><td>AWS Load Balancer Controller OR in-tree CCM</td><td>TCP services, TLS passthrough, static IP</td></tr>
+          <tr><td>ALB</td><td>L7 (HTTP/HTTPS)</td><td>AWS Load Balancer Controller (Ingress)</td><td>HTTP routing — use Ingress, not Service type=LB</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="nlb-target-types">NLB Target Types</h3>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>target-type: instance (default)</h4>
+          <ul>
+            <li>NLB targets: EC2 instances (nodes)</li>
+            <li>Traffic: NLB → NodePort → kube-proxy → pod</li>
+            <li>Source IP: lost (SNAT by kube-proxy)</li>
+            <li>Works with any CNI</li>
+            <li>Extra hop inside cluster</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>target-type: ip (recommended)</h4>
+          <ul>
+            <li>NLB targets: pod IPs directly</li>
+            <li>Traffic: NLB → pod (no kube-proxy hop)</li>
+            <li>Source IP: preserved (NLB delivers real client IP)</li>
+            <li>Requires AWS VPC CNI (pod IP in VPC)</li>
+            <li>No extra hop; lower latency</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 id="nlb-annotations">NLB Annotations Reference</h3>
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: my-nlb
+  annotations:
+    # Controller selection
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"  # ip | instance
+
+    # Scheme
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"  # or internal
+
+    # Cross-zone load balancing (default: false for NLB)
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+    # Connection draining
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: |
+      deregistration_delay.timeout_seconds=30
+
+    # Health check
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "TCP"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+
+    # TLS termination at NLB
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:us-east-1:123:certificate/abc"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+
+    # Access logs
+    service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "my-lb-logs"
+
+    # Dual-stack
+    service.beta.kubernetes.io/aws-load-balancer-ip-address-type: "dualstack"
+
+    # Preserve client IP (requires target-type: ip)
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: |
+      preserve_client_ip.enabled=true
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: my-app
+  ports:
+    - port: 443
+      targetPort: 8443
+      protocol: TCP
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 8. GCE/GKE -->
+      <h2 id="gke-lb">GCE / GKE Load Balancing</h2>
+
+      <h3 id="gke-l4">L4 Regional Load Balancer</h3>
+      <pre><code># Default Service type=LoadBalancer on GKE creates a regional External L4 LB
+# For internal LB (no public IP):
+metadata:
+  annotations:
+    cloud.google.com/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="neg">Network Endpoint Groups (NEGs)</h3>
+      <p>NEGs allow GKE to route directly to pod IPs instead of NodePort, similar to AWS target-type:ip. NEGs are used automatically when:</p>
+      <ul>
+        <li>Using <code>container-native load balancing</code> via BackendConfig</li>
+        <li>Using GKE Ingress (automatically provisions NEG-backed backends)</li>
+        <li>Annotation <code>cloud.google.com/neg: '{"ingress": true}'</code> on the Service</li>
+      </ul>
+
+      <pre><code># Enable NEG for a service:
+metadata:
+  annotations:
+    cloud.google.com/neg: '{"exposed_ports": {"80": {}}}'
+
+# BackendConfig CRD — custom health check, CDN, IAP, timeout:
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: my-backend-config
+spec:
+  healthCheck:
+    checkIntervalSec: 15
+    port: 8080
+    type: HTTP
+    requestPath: /healthz
+  timeoutSec: 30
+  connectionDraining:
+    drainingTimeoutSec: 60
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: true
+      includeProtocol: true
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 9. AZURE -->
+      <h2 id="azure-lb">Azure Load Balancing</h2>
+      <pre><code># External Standard Load Balancer (default):
+spec:
+  type: LoadBalancer
+
+# Internal Load Balancer (no public IP):
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "my-subnet"
+
+# Custom frontend IP (static):
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-ipv4: "10.0.0.100"
+
+# Cross-zone (all availability zones):
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-enable-high-availability-ports: "true"
+
+# Health probe protocol:
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-protocol: "https"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/healthz"
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 10. METALLB -->
+      <h2 id="metallb">MetalLB — Bare Metal Load Balancing</h2>
+      <p>MetalLB gives bare metal clusters (no cloud provider) the ability to provision LoadBalancer services by advertising VIPs via BGP or ARP (L2). It runs as a DaemonSet (<code>speaker</code>) and a Deployment (<code>controller</code>).</p>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>L2 Mode (ARP/NDP)</h4>
+          <ul>
+            <li>One node "owns" the VIP and responds to ARP requests</li>
+            <li>Failover: leader election + gratuitous ARP on takeover (~10s)</li>
+            <li>No ECMP — all traffic to one node (single point of ingress)</li>
+            <li>Works on any network without BGP router support</li>
+            <li>Good for: small clusters, home labs, on-premises without BGP</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>BGP Mode</h4>
+          <ul>
+            <li>All nodes advertise the VIP; router does ECMP across all nodes</li>
+            <li>True equal-cost multi-path distribution</li>
+            <li>Requires BGP-capable ToR/spine router</li>
+            <li>Session per node to router(s); fast failover via BGP withdraw</li>
+            <li>Good for: production bare metal, data center deployments</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>MetalLB v0.13+ CRD Configuration</h3>
+      <pre><code># Step 1: Define an IP address pool
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: production-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 192.168.10.0/24          # IPv4 pool for LB services
+    - fd00:metallb::/120        # IPv6 pool (dual-stack)
+  autoAssign: true              # auto-assign from pool; false = manual annotation
+
+---
+# Step 2a: L2 advertisement
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: l2-advert
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - production-pool
+  nodeSelectors:                # which nodes can own the VIP
+    - matchLabels:
+        kubernetes.io/os: linux
+
+---
+# Step 2b: BGP advertisement (alternative to L2)
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  name: bgp-advert
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - production-pool
+  communities:
+    - 65000:1                   # BGP community tag
+  aggregationLength: 32         # /32 per VIP (not aggregated)
+  localPref: 100
+
+---
+# Step 3: BGP peer configuration
+apiVersion: metallb.io/v1beta2
+kind: BGPPeer
+metadata:
+  name: spine-router
+  namespace: metallb-system
+spec:
+  myASN: 64512                  # MetalLB ASN
+  peerASN: 65001                # Router ASN
+  peerAddress: 192.168.1.1
+  keepaliveTime: 30s
+  holdTime: 90s
+
+---
+# Step 4: Service — MetalLB auto-assigns from pool
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-lb-service
+  annotations:
+    metallb.io/address-pool: "production-pool"   # optional: pin to specific pool
+spec:
+  type: LoadBalancer
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 11. KUBE-VIP -->
+      <h2 id="kube-vip">kube-vip</h2>
+      <p>kube-vip provides both control plane HA (API server VIP) and service LoadBalancer VIPs using ARP (L2) or BGP. It is often used alongside or instead of MetalLB on bare metal clusters.</p>
+
+      <pre><code># kube-vip in BGP mode for services
+# ConfigMap configuration:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-vip
+  namespace: kube-system
+data:
+  config: |
+    localAS: 64512
+    bgpConfig:
+      - peerAddress: 192.168.1.1
+        peerAS: 65001
+        sourceIF: eth0
+    enableServicesElection: true
+    vipInterface: eth0
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 12. NODEPORT -->
+      <h2 id="nodeport">NodePort Deep Dive</h2>
+      <p>NodePort opens a port (default range: 30000–32767) on every node. External traffic to any node's IP on that port reaches the service:</p>
+
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: my-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: my-app
+  ports:
+    - port: 80           # ClusterIP port
+      targetPort: 8080   # Pod container port
+      nodePort: 30080    # explicit NodePort (optional; auto-assigned if omitted)
+
+# Expand NodePort range (kube-apiserver flag):
+# --service-node-port-range=30000-32767  (default)
+# Can widen to include standard ports: --service-node-port-range=80-32767
+# CAUTION: ports below 1024 require root; avoid overlapping system ports
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="external-ips">externalIPs</h3>
+      <p><code>spec.externalIPs</code> binds a service to specific IP addresses that are owned by cluster nodes. Traffic to those IPs is load balanced to pods — without provisioning a cloud LB:</p>
+
+      <pre><code>spec:
+  externalIPs:
+    - 203.0.113.10    # must be an IP on one of the cluster nodes
+  ports:
+    - port: 80
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout danger">
+        <span class="callout-icon">🚨</span>
+        <div class="callout-body">
+          <strong>externalIPs security risk</strong>
+          <p>Any user with permission to create Services can set <code>externalIPs</code> to any IP, including IPs owned by other services in the cluster. This can be used to intercept traffic. Restrict Service creation permissions in multi-tenant clusters, or use a ValidatingWebhook to block arbitrary externalIPs. This is CVE-2020-8554.</p>
+        </div>
+      </div>
+
+      <!-- 13. CONNECTION DRAINING -->
+      <h2 id="connection-draining">Connection Draining</h2>
+      <p>Graceful connection draining ensures in-flight requests complete before a pod is removed from load balancing. Kubernetes implements this through a chain of mechanisms:</p>
+
+      <div class="arch-diagram">Pod deletion triggered (kubectl delete pod / rolling update)
+  │
+  ├─ 1. Pod phase → Terminating
+  ├─ 2. kubelet executes preStop hook (if defined) — blocks SIGTERM
+  ├─ 3. kube-proxy/CNI marks endpoint as "terminating" in EndpointSlice
+  │      (ready:false, serving:true, terminating:true)
+  ├─ 4. Cloud LB drains connections to this backend (deregistration_delay)
+  │      AWS NLB: 30s default connection drain
+  ├─ 5. kubelet sends SIGTERM → app handles shutdown
+  ├─ 6. terminationGracePeriodSeconds countdown begins
+  ├─ 7. After grace period: SIGKILL
+  └─ 8. Pod removed; endpoint removed from EndpointSlice</div>
+
+      <pre><code>spec:
+  terminationGracePeriodSeconds: 60   # total time before SIGKILL; default 30s
+  containers:
+    - name: app
+      lifecycle:
+        preStop:
+          exec:
+            command: ["/bin/sh", "-c", "sleep 5"]   # delay SIGTERM; let LB drain
+
+# Best practice for HTTP servers:
+# preStop sleep >= LB health check interval * unhealthy threshold
+# (ensures LB removes pod from rotation before SIGTERM kills the server)
+
+# Example with AWS NLB (30s drain) + application shutdown:
+# preStop sleep: 5s  (LB health check fails, pod marked unhealthy)
+# terminationGracePeriodSeconds: 65s (5s preStop + 30s LB drain + 30s app shutdown)
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>EndpointSlice terminating condition (GA 1.28)</strong>
+          <p>Since 1.28 (GA), kube-proxy and Gateway API controllers respect the <code>terminating</code> condition on EndpointSlice entries. A terminating pod continues to receive traffic until the LB drain timeout expires, then traffic stops flowing to it even though it's still running. This ensures in-flight requests complete without routing new requests to a shutting-down pod.</p>
+        </div>
+      </div>
+
+      <!-- 14. HEALTH CHECKS -->
+      <h2 id="health-checks">Health Checks and Readiness</h2>
+      <p>A pod is included in Service endpoints only when its readiness probe passes. This is the primary health-check gate for Kubernetes load balancing — no special configuration is needed for in-cluster load balancing.</p>
+
+      <pre><code>spec:
+  containers:
+    - name: app
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 3           # 3 consecutive failures → remove from LB
+        successThreshold: 1           # 1 success → add back to LB
+
+# For cloud LBs, configure custom health checks via annotations:
+# AWS NLB health check:
+service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/healthz"
+service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "HTTP"
+service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
+
+# GKE BackendConfig health check (see GKE section above)
+# Azure health probe:
+service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/healthz"
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 15. ECMP BGP -->
+      <h2 id="ecmp">ECMP and BGP Load Balancing</h2>
+      <p>In data center environments, Equal-Cost Multi-Path (ECMP) routing at the network layer provides load balancing without any Kubernetes-specific configuration. With BGP mode MetalLB or Calico BGP, all nodes advertise the same VIP — the router distributes connections across nodes via ECMP hashing:</p>
+
+      <div class="arch-diagram">Internet/WAN
+    │
+    ▼
+ToR/Spine Router (ECMP hash across all nodes)
+  ├── Node 1 (advertises 203.0.113.0/32 via BGP, ASN 64512)
+  ├── Node 2 (advertises 203.0.113.0/32 via BGP, ASN 64512)
+  └── Node 3 (advertises 203.0.113.0/32 via BGP, ASN 64512)
+
+ECMP hash: per-flow (src IP + dst IP + src port + dst port)
+→ same flow always goes to same node (connection-level affinity)
+→ flows distributed across all nodes that advertise the VIP</div>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>ECMP and connection hashing pitfall</strong>
+          <p>ECMP hashing is typically per-flow (5-tuple hash). When a node fails and is withdrawn from BGP, the ECMP hash table changes — existing connections rehash to different nodes, causing connection resets for ~50% of flows (for a 2-node cluster). This is a fundamental limitation of ECMP. Mitigations: consistent hashing (some routers support it), fast failover (reduce BGP hold-down timer), or connection retry in the application.</p>
+        </div>
+      </div>
+
+      <!-- 16. METRICS -->
+      <h2 id="metrics">Metrics, Alerting &amp; Troubleshooting</h2>
+
+      <h3>Key Metrics</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>Source</th><th>What It Tells You</th></tr></thead>
+        <tbody>
+          <tr><td><code>kube_service_status_load_balancer_ingress</code></td><td>kube-state-metrics</td><td>Count of LB services with a provisioned ingress IP/hostname</td></tr>
+          <tr><td><code>kube_endpoint_address_available</code></td><td>kube-state-metrics</td><td>Ready endpoints per service; drops = pods failing readiness</td></tr>
+          <tr><td><code>kube_endpoint_address_not_ready</code></td><td>kube-state-metrics</td><td>Not-ready endpoints; rises during rolling deployments</td></tr>
+          <tr><td><code>kubeproxy_sync_proxy_rules_duration_seconds</code></td><td>kube-proxy</td><td>Time to sync iptables/IPVS rules; spikes indicate rule explosion</td></tr>
+          <tr><td><code>metallb_bgp_session_up</code></td><td>MetalLB speaker</td><td>BGP session state per peer; 0 = no LB traffic for that node</td></tr>
+          <tr><td><code>metallb_bgp_announced_prefixes_total</code></td><td>MetalLB speaker</td><td>Number of VIPs being advertised; drops = pool exhaustion</td></tr>
+          <tr><td><code>aws_nlb_target_group_unhealthy_host_count</code></td><td>CloudWatch / exporter</td><td>NLB targets failing health checks; should stay near 0</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Alerting Rules</h3>
+      <pre><code># Alert: Service has no ready endpoints
+- alert: ServiceNoReadyEndpoints
+  expr: kube_endpoint_address_available{endpoint!="kubernetes"} == 0
+  for: 2m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Service {{ $labels.endpoint }} has no ready endpoints"
+    description: "All pods may be failing readiness probes"
+
+# Alert: LoadBalancer IP not provisioned
+- alert: LoadBalancerNotProvisioned
+  expr: |
+    kube_service_spec_type{type="LoadBalancer"} unless
+    kube_service_status_load_balancer_ingress > 0
+  for: 10m
+  labels:
+    severity: warning
+  annotations:
+    summary: "LoadBalancer service has no external IP after 10m"
+
+# Alert: MetalLB BGP session down
+- alert: MetalLBBGPSessionDown
+  expr: metallb_bgp_session_up == 0
+  for: 2m
+  labels:
+    severity: critical
+  annotations:
+    summary: "MetalLB BGP session to {{ $labels.peer }} is down"
+
+# Alert: High kube-proxy sync latency
+- alert: KubeProxySyncLatencyHigh
+  expr: |
+    histogram_quantile(0.99,
+      rate(kubeproxy_sync_proxy_rules_duration_seconds_bucket[5m])
+    ) > 5
+  for: 10m
+  labels:
+    severity: warning
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Troubleshooting Runbooks</h3>
+
+      <div class="card-grid" style="grid-template-columns:1fr;">
+        <div class="card">
+          <h4>Runbook 1: LoadBalancer Service Stuck in Pending (no external IP)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check service status
+kubectl get svc my-lb -o wide
+# EXTERNAL-IP: &lt;pending&gt; → CCM has not provisioned the LB yet
+
+# Check CCM logs
+kubectl logs -n kube-system -l component=cloud-controller-manager -f
+
+# Common causes:
+# - CCM not running (check kube-system pods)
+# - IAM permissions missing (AWS: check ec2/elasticloadbalancing permissions)
+# - Subnet missing tag (AWS: kubernetes.io/role/elb: "1")
+# - MetalLB: pool exhausted or L2/BGP advertisement not created
+kubectl get ipaddresspools -n metallb-system
+kubectl get l2advertisements -n metallb-system
+
+# Check events for the service
+kubectl describe svc my-lb | grep -A10 Events</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 2: Traffic Not Reaching Pods (LB IP reachable but 503/504)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Step 1: Check endpoint health
+kubectl get endpoints my-service
+# If empty → no ready pods; check readiness probes
+kubectl describe pod my-pod | grep -A10 "Readiness"
+kubectl get events -n production | grep Readiness
+
+# Step 2: Check with externalTrafficPolicy: Local
+# If Local: no pods on nodes that LB is targeting → all 503
+kubectl get pods -o wide | grep my-app  # are pods spread across nodes?
+kubectl get svc my-service -o jsonpath='{.spec.healthCheckNodePort}'
+curl http://node-ip:HEALTH_CHECK_PORT  # should return 200 if local pods exist
+
+# Step 3: Test ClusterIP directly (bypasses cloud LB)
+kubectl exec debug-pod -- curl http://my-service.namespace.svc.cluster.local/
+# If this works: issue is in cloud LB → node path
+# If this fails: issue is in kube-proxy or pod readiness</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 3: Uneven Load Distribution Across Pods</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check request rate per pod via metrics
+kubectl top pods -l app=my-app
+
+# Causes of uneven distribution:
+# 1. HTTP/2 multiplexing (all requests on one connection → one pod)
+#    Fix: use IPVS lc (least connection) mode or an HTTP/2-aware proxy
+# 2. sessionAffinity: ClientIP with cloud LB source IP clustering
+#    Fix: externalTrafficPolicy: Local, or use IPVS with source hashing disabled
+# 3. Topology-Aware Routing over-concentrating in one zone
+#    kubectl get endpointslices -o yaml | grep -A5 hints
+#    Fix: set trafficDistribution: "" to disable, or add more pods per zone
+
+# Switch kube-proxy to IPVS least-connection mode:
+kubectl edit cm kube-proxy -n kube-system
+# Change: mode: "ipvs", ipvs.scheduler: "lc"
+kubectl rollout restart daemonset kube-proxy -n kube-system</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 4: Connection Drops During Rolling Update</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Symptoms: HTTP 502/503 spikes during deployments
+# Cause: pod removed from LB before finishing in-flight requests
+
+# Fix 1: Add preStop hook to delay SIGTERM
+spec:
+  containers:
+    - lifecycle:
+        preStop:
+          exec:
+            command: ["sleep", "10"]
+
+# Fix 2: Increase terminationGracePeriodSeconds
+spec:
+  terminationGracePeriodSeconds: 60
+
+# Fix 3: AWS NLB — increase connection drain timeout
+service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: |
+  deregistration_delay.timeout_seconds=30
+
+# Fix 4: Ensure maxSurge allows overlap during rollout
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0    # never remove old pod before new pod is ready</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 5: MetalLB BGP Session Down</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check speaker pod logs
+kubectl logs -n metallb-system -l component=speaker | grep -i bgp
+
+# Check BGP peer status
+kubectl exec -n metallb-system speaker-xxxx -- gobgp neighbor
+
+# Common causes:
+# - Router ASN mismatch: check BGPPeer spec.peerASN
+# - MD5 auth mismatch: check BGPPeer spec.password
+# - Firewall blocking TCP 179 between nodes and router
+#   Test: kubectl exec speaker-xxxx -- nc -zv router-ip 179
+# - Router prefix limit exceeded: router rejecting BGP updates
+# - MTU mismatch on the BGP session interface
+
+# Check MetalLB logs for specific error
+kubectl logs -n metallb-system -l app=metallb,component=speaker -f | grep -i "peer\|error\|bgp"</code></pre>
+        </div>
+      </div>
+
+      <!-- 17. BEST PRACTICES -->
+      <h2 id="best-practices">Best Practices</h2>
+      <ol style="padding-left:24px;color:var(--text2);font-size:14px;line-height:2;">
+        <li><strong>Use <code>target-type: ip</code> on AWS (VPC CNI) and NEGs on GKE</strong> — direct pod routing eliminates the extra kube-proxy hop, preserves source IPs, and reduces latency by 30–50% for short-lived connections.</li>
+        <li><strong>Set <code>externalTrafficPolicy: Local</code> only when pods are spread evenly</strong> — uneven pod distribution causes severe load imbalance under Local policy. Pair with <code>topologySpreadConstraints</code> to ensure uniform pod distribution.</li>
+        <li><strong>Configure connection draining for every production service</strong> — add a <code>preStop</code> sleep and set <code>terminationGracePeriodSeconds</code> longer than the LB drain timeout. The formula: <code>terminationGracePeriodSeconds &gt; LB_drain + preStop_sleep + app_shutdown_time</code>.</li>
+        <li><strong>Use IPVS mode with <code>lc</code> or <code>wrr</code> for heterogeneous workloads</strong> — iptables round-robin distributes connections uniformly but ignores pod load. IPVS least-connection routes to the least-loaded pod.</li>
+        <li><strong>Use <code>trafficDistribution: PreferClose</code> for multi-zone cost reduction</strong> — keeping traffic in-zone reduces cross-zone data transfer costs significantly on AWS, GCP, and Azure.</li>
+        <li><strong>Test health check paths under load</strong> — cloud LBs use health checks to decide which nodes receive traffic. If your health check path is slow under load, nodes are falsely marked unhealthy and the LB oscillates.</li>
+        <li><strong>For bare metal: BGP mode MetalLB over L2 mode</strong> — L2 mode has a single-node bottleneck and slower failover. BGP mode provides true ECMP distribution and sub-second failover via BGP withdraw.</li>
+        <li><strong>Restrict <code>externalIPs</code> usage via RBAC or webhook</strong> — <code>externalIPs</code> is a privilege escalation vector (CVE-2020-8554). Use ValidatingWebhookConfiguration to block it in multi-tenant clusters.</li>
+      </ol>
+
+      <div class="nav-footer">
+        <a class="nav-btn" href="08-ipv4-ipv6-dual-stack.html"><small>← Previous</small>IPv4/IPv6 Dual-Stack</a>
+        <a class="nav-btn" href="10-service-mesh.html"><small>Next →</small>Service Mesh</a>
+      </div>
+
+    </main>
+
+    <aside class="toc-panel">
+      <div class="toc-title">On This Page</div>
+      <a href="#layer-model">Layer Model</a>
+      <a href="#clusterip-lb">ClusterIP Load Balancing</a>
+      <a href="#iptables-distribution" class="toc-h3">iptables Distribution</a>
+      <a href="#ipvs-algorithms" class="toc-h3">IPVS Algorithms</a>
+      <a href="#session-affinity">Session Affinity</a>
+      <a href="#external-traffic-policy">externalTrafficPolicy</a>
+      <a href="#internal-traffic-policy" class="toc-h3">internalTrafficPolicy</a>
+      <a href="#topology-aware-routing">Topology-Aware Routing</a>
+      <a href="#topology-hints" class="toc-h3">Topology Hints</a>
+      <a href="#traffic-distribution" class="toc-h3">trafficDistribution</a>
+      <a href="#service-loadbalancer">Service type=LoadBalancer</a>
+      <a href="#aws-nlb">AWS NLB</a>
+      <a href="#nlb-target-types" class="toc-h3">Target Types</a>
+      <a href="#nlb-annotations" class="toc-h3">Annotations Reference</a>
+      <a href="#gke-lb">GCE / GKE</a>
+      <a href="#neg" class="toc-h3">NEGs</a>
+      <a href="#azure-lb">Azure LB</a>
+      <a href="#metallb">MetalLB</a>
+      <a href="#kube-vip">kube-vip</a>
+      <a href="#nodeport">NodePort</a>
+      <a href="#external-ips" class="toc-h3">externalIPs</a>
+      <a href="#connection-draining">Connection Draining</a>
+      <a href="#health-checks">Health Checks</a>
+      <a href="#ecmp">ECMP &amp; BGP</a>
+      <a href="#metrics">Metrics &amp; Troubleshooting</a>
+      <a href="#best-practices">Best Practices</a>
+    </aside>
+  </div>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+const themeBtn=document.getElementById('theme-toggle');
+themeBtn.textContent=saved==='dark'?'Light Mode':'Dark Mode';
+themeBtn.addEventListener('click',()=>{
+  const t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'Light Mode':'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>backTop.classList.toggle('visible',main.scrollTop>400));
+backTop.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    const code=pre.querySelector('code');
+    navigator.clipboard.writeText(code?code.innerText:pre.innerText).then(()=>{
+      btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+    });
+  });
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const a=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

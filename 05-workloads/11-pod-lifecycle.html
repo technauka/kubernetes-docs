@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pod Lifecycle | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.main-content{margin-left:var(--sidebar-w);flex:1;padding:0;overflow-y:auto;height:100vh;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);position:fixed;top:0;right:0;height:100vh;overflow-y:auto;padding:24px 16px;}
+.content-area{max-width:900px;margin:0 auto;padding:40px 48px 80px;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-weight:600;font-size:16px;flex:1;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);cursor:pointer;padding:6px 12px;border-radius:6px;font-size:13px;}
+.back-to-top{position:fixed;bottom:32px;right:calc(var(--toc-w) + 16px);background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50;}
+.back-to-top.visible{opacity:1;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;color:var(--text2);}
+.sidebar-search{margin:12px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:calc(100% - 24px);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:6px 16px 6px 24px;font-size:13px;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover,.nav-section a.active{background:var(--bg3);color:var(--accent);text-decoration:none;}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover,.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);text-decoration:none;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-top:8px;}
+h3{font-size:17px;font-weight:600;margin:32px 0 12px;}
+h4{font-size:15px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{padding-left:24px;margin-bottom:16px;color:var(--text2);}
+li{margin-bottom:4px;}
+.subtitle{font-size:18px;color:var(--text2);margin-bottom:32px;}
+.meta{display:flex;gap:16px;margin-bottom:40px;flex-wrap:wrap;}
+.meta-tag{background:var(--bg3);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--text2);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;margin-bottom:24px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;line-height:1.7;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--text);border:1px solid var(--border);}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:16px 20px;margin-bottom:24px;border-left:4px solid;}
+.callout-warn{background:#d2992218;border-color:var(--yellow);}
+.callout-warn strong{color:var(--yellow);}
+.callout-danger{background:#f8514918;border-color:var(--red);}
+.callout-danger strong{color:var(--red);}
+.callout-info{background:#58a6ff18;border-color:var(--accent);}
+.callout-info strong{color:var(--accent);}
+.callout-success{background:#3fb95018;border-color:var(--green);}
+.callout-success strong{color:var(--green);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.section-divider{border:none;border-top:1px solid var(--border);margin:48px 0;}
+.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;margin-bottom:24px;color:var(--text2);}
+@media(max-width:1200px){.toc-panel{display:none;}.main-content{margin-left:var(--sidebar-w);}.back-to-top{right:16px;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.content-area{padding:24px 20px 60px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">Kubernetes Docs</div>
+  <input class="sidebar-search" id="nav-search" placeholder="Filter navigation..." type="text">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Kubernetes Overview</a>
+    <a href="../01-getting-started/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/02-control-plane-components.html">Control Plane Components</a>
+    <a href="../01-getting-started/03-node-components.html">Node Components</a>
+    <a href="../01-getting-started/04-api-server-deep-dive.html">API Server Deep Dive</a>
+    <a href="../01-getting-started/05-etcd.html">etcd</a>
+    <a href="../01-getting-started/06-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../02-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../02-networking/01-services.html">Services</a>
+    <a href="../02-networking/02-ingress.html">Ingress</a>
+    <a href="../02-networking/03-network-policies.html">Network Policies</a>
+    <a href="../02-networking/04-dns.html">DNS</a>
+    <a href="../02-networking/05-cni-plugins.html">CNI Plugins</a>
+    <a href="../02-networking/06-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../03-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../03-configuration/01-secrets.html">Secrets</a>
+    <a href="../03-configuration/02-resource-quotas.html">Resource Quotas</a>
+    <a href="../03-configuration/03-limit-ranges.html">Limit Ranges</a>
+    <a href="../03-configuration/04-namespaces.html">Namespaces</a>
+    <a href="../03-configuration/05-labels-annotations.html">Labels &amp; Annotations</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">Persistent Volumes</a>
+    <a href="../04-storage/02-storage-classes.html">Storage Classes</a>
+    <a href="../04-storage/03-volume-types.html">Volume Types</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+    <a href="../04-storage/05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="../04-storage/06-stateful-sets-storage.html">StatefulSet Storage</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html" class="active">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="main-content" id="main-content">
+<div class="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span class="topbar-title">Pod Lifecycle</span>
+  <button class="theme-btn" id="theme-btn">Light Mode</button>
+</div>
+
+<div class="content-area">
+
+<details class="coverage">
+  <summary>📋 Page Coverage Checklist</summary>
+  <div class="coverage-body">
+    <li>Pod phases: Pending/Running/Succeeded/Failed/Unknown — exact semantics</li>
+    <li>Pod conditions: PodScheduled, ContainersReady, Initialized, Ready, DisruptionTarget</li>
+    <li>Container states: Waiting/Running/Terminated with all reason codes</li>
+    <li>Init containers: ordered execution, restartPolicy behavior, exit semantics</li>
+    <li>Native sidecar containers (1.33 stable): restartPolicy:Always, ordering, shutdown</li>
+    <li>Probes: startupProbe/livenessProbe/readinessProbe — timing diagram, all 4 mechanisms</li>
+    <li>Probe fields: initialDelaySeconds, periodSeconds, failureThreshold, successThreshold, timeoutSeconds</li>
+    <li>Liveness anti-pattern: external dep check causing cascading restarts</li>
+    <li>restartPolicy: Always/OnFailure/Never — phase interaction table</li>
+    <li>Graceful termination: preStop hook, SIGTERM→SIGKILL sequence, terminationGracePeriodSeconds</li>
+    <li>Pod readiness gates: custom conditions from external controllers (GA 1.26)</li>
+    <li>PostStart/PreStop hooks: exec vs httpGet, blocking semantics, timing</li>
+    <li>Container restart backoff: exponential backoff, CrashLoopBackOff, reset after 10 min success</li>
+    <li>5 metrics + 4 alerting rules + 5 runbooks + 8 best practices</li>
+  </div>
+</details>
+
+<h1>Pod Lifecycle</h1>
+<p class="subtitle">Phases, conditions, probes, init containers, graceful termination, and restart policies</p>
+<div class="meta">
+  <span class="meta-tag">v1/Pod</span>
+  <span class="meta-tag">Core Kubernetes</span>
+  <span class="meta-tag">Platform Engineer</span>
+</div>
+
+<p>Every pod moves through a defined lifecycle from creation to termination. Understanding the exact semantics of each phase, condition, container state, and probe — and how they interact with controllers, load balancers, and autoscalers — is the foundation for building operationally reliable workloads. This page covers the complete lifecycle model that underpins everything from rolling updates to graceful shutdowns.</p>
+
+<!-- ============================================================ -->
+<h2 id="lifecycle-overview">Lifecycle Overview</h2>
+
+<div class="diagram">
+Pod lifecycle from creation to termination:
+
+  API create → Pending (scheduling)
+                 │
+                 ▼
+              Node assigned → Pending (image pull + init containers)
+                 │
+                 ▼
+              Init containers run (sequentially)
+                 │
+                 ▼
+              Running (app containers + startupProbe)
+                 │
+                 ├─ startupProbe passes → livenessProbe + readinessProbe active
+                 │       │
+                 │       ├─ readinessProbe passes → pod.Ready=True → added to Endpoints
+                 │       │
+                 │       └─ livenessProbe fails N times → container SIGKILL → restart
+                 │
+                 ├─ All containers exit 0 → Succeeded
+                 ├─ Any container exits non-0 (no more restarts) → Failed
+                 └─ delete signal → graceful termination sequence
+                       │
+                       ▼
+                    preStop hook → SIGTERM → wait → SIGKILL (at grace period)
+                       │
+                       ▼
+                    Pod removed from Endpoints → Terminated
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pod-phases">Pod Phases</h2>
+
+<p>A pod's <code>status.phase</code> is a high-level summary of where in its lifecycle the pod is. It is a single string set by the kubelet.</p>
+
+<table>
+  <thead><tr><th>Phase</th><th>Meaning</th><th>Containers running?</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Pending</strong></td>
+      <td>Pod accepted by the cluster but not yet running. Covers: waiting for scheduling, image pulling, init containers running, PVC binding.</td>
+      <td>No (or only init containers)</td>
+    </tr>
+    <tr>
+      <td><strong>Running</strong></td>
+      <td>Pod bound to a node and at least one container is running (or starting/restarting).</td>
+      <td>Yes (at least one)</td>
+    </tr>
+    <tr>
+      <td><strong>Succeeded</strong></td>
+      <td>All containers exited with code 0 and will not be restarted. Terminal state.</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td><strong>Failed</strong></td>
+      <td>All containers have terminated; at least one exited with non-zero code or was killed. Terminal state.</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td><strong>Unknown</strong></td>
+      <td>Pod state cannot be determined — typically the node hosting it stopped reporting to the control plane.</td>
+      <td>Unknown</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warn">
+  <strong>Phase is coarse-grained — use conditions for precision</strong><br>
+  A pod in <code>Running</code> phase may have containers in CrashLoopBackOff or failing readiness probes. <code>Running</code> only means at least one container is running or being restarted. For accurate health assessment, read <code>status.conditions</code> (especially <code>Ready</code>) and <code>status.containerStatuses</code>.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pod-conditions">Pod Conditions</h2>
+
+<p>Conditions are structured status fields that provide granular lifecycle state. Each condition has <code>type</code>, <code>status</code> (True/False/Unknown), <code>reason</code>, and <code>message</code>.</p>
+
+<table>
+  <thead><tr><th>Condition type</th><th>True when</th><th>Gate for</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>PodScheduled</code></td>
+      <td>Pod has been assigned to a node</td>
+      <td>Kubelet begins pulling images and starting init containers</td>
+    </tr>
+    <tr>
+      <td><code>Initialized</code></td>
+      <td>All init containers have completed successfully</td>
+      <td>App containers start</td>
+    </tr>
+    <tr>
+      <td><code>ContainersReady</code></td>
+      <td>All app containers are ready (passing readiness probes)</td>
+      <td>Contributes to pod Ready condition</td>
+    </tr>
+    <tr>
+      <td><code>Ready</code></td>
+      <td>Pod is able to serve requests: <code>ContainersReady=True</code> AND all <code>readinessGates</code> satisfied</td>
+      <td>Pod added to Service Endpoints / EndpointSlices</td>
+    </tr>
+    <tr>
+      <td><code>DisruptionTarget</code></td>
+      <td>Pod is being terminated due to a voluntary disruption (drain, preemption, eviction)</td>
+      <td>Informs <code>podFailurePolicy</code> in Jobs (Ignore action)</td>
+    </tr>
+    <tr>
+      <td><code>PodReadyToStartContainers</code></td>
+      <td>Sandbox created and network configured (1.29+)</td>
+      <td>Init containers may start</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># View all pod conditions
+kubectl get pod &lt;pod&gt; -o jsonpath='{.status.conditions}' | jq .
+
+# Quick condition summary
+kubectl describe pod &lt;pod&gt; | grep -A15 "^Conditions:"
+
+# Find all pods not Ready in a namespace
+kubectl get pods -n &lt;namespace&gt; \
+  -o jsonpath='{range .items[?(@.status.conditions[?(@.type=="Ready")].status!="True")]}{.metadata.name}{"\n"}{end}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="container-states">Container States</h2>
+
+<p>Each container within a pod has an independent state captured in <code>status.containerStatuses[].state</code>.</p>
+
+<table>
+  <thead><tr><th>State</th><th>Meaning</th><th>Key sub-fields</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>Waiting</code></td>
+      <td>Container not yet running — waiting for image pull, init containers, or backoff</td>
+      <td><code>reason</code>: ContainerCreating, ImagePullBackOff, ErrImagePull, CrashLoopBackOff, CreateContainerConfigError</td>
+    </tr>
+    <tr>
+      <td><code>Running</code></td>
+      <td>Container executing</td>
+      <td><code>startedAt</code>: timestamp when container started</td>
+    </tr>
+    <tr>
+      <td><code>Terminated</code></td>
+      <td>Container finished (success or failure)</td>
+      <td><code>exitCode</code>, <code>reason</code> (Completed, OOMKilled, Error, ContainerCannotRun), <code>startedAt</code>, <code>finishedAt</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="container-reasons">Common Container Reason Codes</h3>
+
+<table>
+  <thead><tr><th>Reason</th><th>State</th><th>Cause</th></tr></thead>
+  <tbody>
+    <tr><td><code>Completed</code></td><td>Terminated</td><td>Exit code 0 — normal successful exit</td></tr>
+    <tr><td><code>OOMKilled</code></td><td>Terminated</td><td>Exit code 137 — exceeded memory limit</td></tr>
+    <tr><td><code>Error</code></td><td>Terminated</td><td>Non-zero exit code (app error)</td></tr>
+    <tr><td><code>ContainerCannotRun</code></td><td>Terminated</td><td>Container runtime failed to start the container (bad entrypoint, permission error)</td></tr>
+    <tr><td><code>DeadlineExceeded</code></td><td>Terminated</td><td>Job <code>activeDeadlineSeconds</code> expired</td></tr>
+    <tr><td><code>CrashLoopBackOff</code></td><td>Waiting</td><td>Container repeatedly failing — kubelet backing off restarts</td></tr>
+    <tr><td><code>ImagePullBackOff</code></td><td>Waiting</td><td>Container image cannot be pulled — auth failure, image not found</td></tr>
+    <tr><td><code>CreateContainerConfigError</code></td><td>Waiting</td><td>Referenced Secret or ConfigMap does not exist</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># Get current and last container state
+kubectl get pod &lt;pod&gt; -o jsonpath='{range .status.containerStatuses[*]}{.name}: state={.state}, lastState={.lastState}{"\n"}{end}'
+
+# Check exit code and reason
+kubectl get pod &lt;pod&gt; -o jsonpath='{.status.containerStatuses[0].lastState.terminated}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="restart-backoff">Container Restart Backoff</h2>
+
+<p>When a container fails and <code>restartPolicy</code> allows restart, kubelet uses exponential backoff before restarting: 10s → 20s → 40s → 80s → 160s → 300s (capped). The pod shows <code>CrashLoopBackOff</code> in <code>Waiting</code> state during the backoff window.</p>
+
+<div class="diagram">
+CrashLoopBackOff backoff schedule:
+
+  Restart 1: immediate
+  Restart 2: wait 10s
+  Restart 3: wait 20s
+  Restart 4: wait 40s
+  Restart 5: wait 80s
+  Restart 6: wait 160s
+  Restart 7+: wait 300s (5 min, max)
+
+  Reset: if container runs successfully for 10 minutes,
+         backoff counter resets to 0 on next failure
+</div>
+
+<div class="callout callout-info">
+  <strong>CrashLoopBackOff is not a phase — it is a container state reason</strong><br>
+  A pod with a container in CrashLoopBackOff is still in <code>Running</code> phase (kubelet is actively managing it). The pod will never enter <code>Failed</code> phase while kubelet is retrying. To terminate the retry loop, either fix the container or set <code>restartPolicy: Never</code>.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="restart-policy">restartPolicy</h2>
+
+<table>
+  <thead><tr><th>Policy</th><th>Restart on failure?</th><th>Restart on success?</th><th>Use case</th></tr></thead>
+  <tbody>
+    <tr><td><code>Always</code> (default)</td><td>Yes</td><td>Yes — container is always restarted when it exits</td><td>Long-running services (Deployments, DaemonSets)</td></tr>
+    <tr><td><code>OnFailure</code></td><td>Yes (non-zero exit)</td><td>No — container left in Terminated state on exit 0</td><td>Jobs where success = done, failure = retry</td></tr>
+    <tr><td><code>Never</code></td><td>No</td><td>No — pod enters Succeeded/Failed immediately</td><td>One-shot tasks, migration Jobs</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <thead><tr><th>restartPolicy</th><th>All exit 0</th><th>Any exit non-0</th></tr></thead>
+  <tbody>
+    <tr><td><code>Always</code></td><td>Running (restarting)</td><td>Running (restarting)</td></tr>
+    <tr><td><code>OnFailure</code></td><td>Succeeded</td><td>Running (restarting) until backoffLimit</td></tr>
+    <tr><td><code>Never</code></td><td>Succeeded</td><td>Failed</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="init-containers">Init Containers</h2>
+
+<p>Init containers run sequentially before app containers start. Each must complete successfully before the next begins. If an init container fails, it is retried (per <code>restartPolicy</code>) before the pod proceeds.</p>
+
+<div class="diagram">
+Init container execution sequence:
+
+  init-container-1 runs → exits 0
+  init-container-2 runs → exits 0
+  init-container-3 runs → exits non-0 → RETRY (per restartPolicy)
+  init-container-3 runs → exits 0
+  → App containers start (all simultaneously)
+
+  If any init container fails repeatedly: pod stays in Init:CrashLoopBackOff
+  Pod condition Initialized=False until all init containers succeed
+</div>
+
+<pre><code class="language-yaml">spec:
+  initContainers:
+    # Wait for database to be ready
+    - name: wait-for-db
+      image: busybox:1.36
+      command: ['sh', '-c',
+        'until nc -z postgres-svc 5432; do echo waiting; sleep 2; done']
+
+    # Run schema migration
+    - name: migrate
+      image: myapp:v3
+      command: ['./migrate', '--direction=up']
+      env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: url
+
+  containers:
+    - name: app
+      image: myapp:v3</code></pre>
+
+<div class="callout callout-info">
+  <strong>Init containers do not have readiness or liveness probes</strong><br>
+  Only startupProbe is meaningful on init containers (to extend their deadline). Liveness and readiness probes on init containers are silently ignored. An init container that hangs indefinitely will block the pod from starting — use <code>activeDeadlineSeconds</code> on the pod or design init containers to fail fast.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="native-sidecars">Native Sidecar Containers (Stable 1.33)</h2>
+
+<p>A sidecar is an init container with <code>restartPolicy: Always</code>. It starts before app containers (like other init containers) but keeps running alongside them, and is shut down gracefully after app containers exit.</p>
+
+<pre><code class="language-yaml">spec:
+  initContainers:
+    # Native sidecar — starts first, stays running alongside app
+    - name: log-forwarder
+      image: fluent/fluent-bit:3.0
+      restartPolicy: Always           # ← makes this a sidecar container
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+      volumeMounts:
+        - name: varlog
+          mountPath: /var/log/app
+
+    - name: envoy-proxy
+      image: envoyproxy/envoy:v1.28
+      restartPolicy: Always           # ← sidecar
+      ports:
+        - containerPort: 15001
+
+  containers:
+    - name: app
+      image: myapp:v3</code></pre>
+
+<div class="diagram">
+Native sidecar startup and shutdown ordering:
+
+  Startup:
+  sidecar-1 (log-forwarder) starts + readiness probe passes
+  sidecar-2 (envoy-proxy) starts + readiness probe passes
+  app container starts
+
+  Shutdown (pod delete signal):
+  preStop hooks run on all containers simultaneously
+  SIGTERM sent to all containers
+  App container exits
+  → Sidecars receive SIGTERM (triggered by app exit)
+  → Sidecars exit
+  Pod terminates cleanly
+
+  Key difference from regular init containers:
+  Regular init containers: exit before app starts
+  Sidecar init containers: run alongside app, exit after app
+</div>
+
+<div class="callout callout-success">
+  <strong>Sidecars solve the Job termination problem</strong><br>
+  Before native sidecars, running Istio or Datadog alongside a Job prevented the Job from completing (sidecar kept running after the worker exited). With <code>restartPolicy: Always</code> on the sidecar init container, Kubernetes sends SIGTERM to sidecars when the main container exits, enabling clean Job completion. See <a href="05-jobs-cronjobs.html#sidecar-problem">Jobs page</a>.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="probes">Probes</h2>
+
+<p>Kubelet runs three types of probes against containers to determine their health and readiness. They are independent — each has its own timing, threshold, and action when it fails.</p>
+
+<div class="diagram">
+Probe timeline for a newly started container:
+
+  t=0          Container starts
+  t=0..startup initialDelaySeconds: no probes run
+               │
+  startupProbe runs every periodSeconds
+               │
+               ├─ passes → startupProbe disabled, livenessProbe + readinessProbe activate
+               └─ fails failureThreshold times → container SIGKILL (restart)
+
+  After startup passes:
+
+  livenessProbe  (runs every periodSeconds)
+               ├─ passes → container healthy, no action
+               └─ fails failureThreshold times → container SIGKILL
+
+  readinessProbe (runs every periodSeconds)
+               ├─ passes → pod condition Ready=True → in Endpoints
+               └─ fails → pod condition Ready=False → removed from Endpoints (no SIGKILL)
+</div>
+
+<table>
+  <thead><tr><th>Probe</th><th>Failure action</th><th>Success action</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>startupProbe</code></td>
+      <td>After <code>failureThreshold</code> failures: container killed and restarted</td>
+      <td>Probe disabled permanently; liveness + readiness activate</td>
+      <td>One-time startup gate for slow-starting containers (JVM, model loading)</td>
+    </tr>
+    <tr>
+      <td><code>livenessProbe</code></td>
+      <td>After <code>failureThreshold</code> failures: container killed and restarted</td>
+      <td>No action</td>
+      <td>Detect hung/deadlocked containers that should be restarted</td>
+    </tr>
+    <tr>
+      <td><code>readinessProbe</code></td>
+      <td>Pod condition <code>Ready=False</code> → removed from Service Endpoints</td>
+      <td>Pod condition <code>Ready=True</code> → added back to Endpoints</td>
+      <td>Signal when container is ready to receive traffic</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="probe-mechanisms">Probe Mechanisms</h3>
+
+<pre><code class="language-yaml"># 1. httpGet — HTTP GET request; success = 200-399 response
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+    httpHeaders:
+      - name: Custom-Header
+        value: probe
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 3
+  successThreshold: 1
+  timeoutSeconds: 5
+
+# 2. exec — run command in container; success = exit code 0
+readinessProbe:
+  exec:
+    command: ["/bin/sh", "-c", "redis-cli ping | grep PONG"]
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 3
+
+# 3. tcpSocket — TCP connection attempt; success = connection established
+livenessProbe:
+  tcpSocket:
+    port: 5432
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+# 4. grpc — gRPC Health Check Protocol (v1); success = SERVING status
+readinessProbe:
+  grpc:
+    port: 9090
+    service: "liveness"   # gRPC service name (optional)
+  initialDelaySeconds: 10
+  periodSeconds: 5</code></pre>
+
+<h3 id="probe-fields">Probe Timing Fields</h3>
+
+<table>
+  <thead><tr><th>Field</th><th>Default</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>initialDelaySeconds</code></td><td>0</td><td>Seconds to wait after container start before first probe. Use for slow-starting apps if not using startupProbe.</td></tr>
+    <tr><td><code>periodSeconds</code></td><td>10</td><td>How often to run the probe (minimum 1s)</td></tr>
+    <tr><td><code>timeoutSeconds</code></td><td>1</td><td>Seconds to wait for probe response before counting as failure</td></tr>
+    <tr><td><code>successThreshold</code></td><td>1</td><td>Minimum consecutive successes to mark probe as passing (must be 1 for liveness/startup)</td></tr>
+    <tr><td><code>failureThreshold</code></td><td>3</td><td>Consecutive failures before action is taken (restart for liveness/startup; remove from endpoints for readiness)</td></tr>
+    <tr><td><code>terminationGracePeriodSeconds</code></td><td>pod-level default</td><td>Override for liveness/startup probe: grace period before SIGKILL after probe-triggered kill</td></tr>
+  </tbody>
+</table>
+
+<h3 id="startup-probe-pattern">startupProbe: Extending Slow-Start Grace</h3>
+
+<pre><code class="language-yaml"># Pattern: startupProbe gives up to 5 minutes for startup,
+# then hands off to liveness with a 30s timeout window
+startupProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  failureThreshold: 30      # 30 failures × 10s period = 5 minute startup window
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  failureThreshold: 3       # 3 failures × 10s = 30s to detect hung state
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  failureThreshold: 2
+  periodSeconds: 5
+  successThreshold: 1</code></pre>
+
+<div class="callout callout-danger">
+  <strong>Liveness probe anti-pattern: checking external dependencies</strong><br>
+  A liveness probe that calls an upstream service (database, cache, external API) will restart the container when the <em>dependency</em> is down — not when the container itself is broken. This causes cascading restarts across all replicas simultaneously when a shared dependency degrades. Liveness probes must only check the container's own internal health (goroutine liveness, heap state, internal deadlock detection). Dependency health belongs in readiness probes.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="graceful-termination">Graceful Termination</h2>
+
+<p>When a pod is deleted, Kubernetes executes a structured termination sequence designed to drain in-flight requests before killing the process.</p>
+
+<div class="diagram">
+Graceful termination sequence:
+
+  t=0   kubectl delete pod / controller deletes pod
+        │
+        ├─ Endpoints controller removes pod from Service Endpoints
+        │  (kube-proxy updates iptables/ipvs — propagation delay ~1-5s)
+        │
+        ├─ kubelet sends SIGTERM to PID 1 of each container
+        │  AND runs preStop hook (concurrently with SIGTERM)
+        │
+        t=preStop duration: preStop hook runs (blocks SIGTERM delivery until done)
+        │  (If preStop runs, SIGTERM is sent after preStop completes)
+        │
+        t=terminationGracePeriodSeconds (default 30s):
+        │  If container still running → SIGKILL (immediate kill)
+        │
+        t=termination complete: pod removed from API server
+
+  Key timing:
+  - preStop hook + container shutdown must complete within terminationGracePeriodSeconds
+  - iptables propagation happens in parallel — not guaranteed before SIGTERM
+  - Use preStop sleep to absorb iptables propagation delay
+</div>
+
+<pre><code class="language-yaml">spec:
+  terminationGracePeriodSeconds: 60    # Total time before SIGKILL (default: 30)
+
+  containers:
+    - name: app
+      lifecycle:
+        preStop:
+          # Sleep to absorb kube-proxy iptables update propagation (1-5s typical)
+          exec:
+            command: ["/bin/sh", "-c", "sleep 10"]
+
+          # OR: call a shutdown endpoint
+          # httpGet:
+          #   path: /shutdown
+          #   port: 8080</code></pre>
+
+<div class="callout callout-warn">
+  <strong>iptables propagation race condition</strong><br>
+  When a pod is deleted, the Endpoints controller removes the pod from the EndpointSlice, but kube-proxy on each node needs time to update iptables/ipvs rules. New connections may still route to the terminating pod for 1–5 seconds after SIGTERM arrives. The canonical fix is a <code>preStop: sleep 5</code> (or longer), which delays SIGTERM delivery, giving kube-proxy time to drain the pod from the load balancer before the application starts refusing new connections.
+</div>
+
+<pre><code class="language-yaml"># Production-grade graceful termination config
+spec:
+  terminationGracePeriodSeconds: 90   # preStop(10s) + drain(60s) + buffer(20s)
+  containers:
+    - name: app
+      lifecycle:
+        preStop:
+          exec:
+            command: ["/bin/sh", "-c", "sleep 10"]  # Wait for LB drain
+
+        postStart:
+          # Run after container starts (before readiness probe)
+          exec:
+            command: ["/bin/sh", "-c", "./scripts/warm-cache.sh"]</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="lifecycle-hooks">Lifecycle Hooks</h2>
+
+<table>
+  <thead><tr><th>Hook</th><th>When it runs</th><th>Blocks?</th><th>Failure behavior</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>postStart</code></td>
+      <td>After container is created and started (not guaranteed to run before entrypoint)</td>
+      <td>Yes — container stays in <code>ContainerCreating</code> until hook completes or times out</td>
+      <td>Container killed and restarted</td>
+    </tr>
+    <tr>
+      <td><code>preStop</code></td>
+      <td>Before container receives SIGTERM (executed synchronously)</td>
+      <td>Yes — SIGTERM is delayed until hook completes (within grace period)</td>
+      <td>SIGKILL sent immediately; hook failure is logged but not propagated</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warn">
+  <strong>postStart is not guaranteed to run before the entrypoint</strong><br>
+  The <code>postStart</code> hook runs concurrently with the container's entrypoint — there is no guaranteed ordering. For initialization that must complete before the application serves traffic, use an init container instead. Use <code>postStart</code> only for best-effort work (cache warming, metric registration) that doesn't block application startup.
+</div>
+
+<pre><code class="language-yaml">lifecycle:
+  postStart:
+    httpGet:         # Register with service discovery after start
+      path: /register
+      port: 8500     # Consul agent port
+      host: localhost
+
+  preStop:
+    httpGet:         # Deregister before shutdown
+      path: /deregister
+      port: 8500
+      host: localhost</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="readiness-gates">Pod Readiness Gates</h2>
+
+<p>Readiness gates (GA 1.26) add custom conditions to the pod's readiness calculation. A pod is only considered <code>Ready</code> if both all container readiness probes pass AND all readiness gate conditions are <code>True</code>.</p>
+
+<pre><code class="language-yaml">spec:
+  readinessGates:
+    - conditionType: "feature-gates.example.com/canary-approved"
+    - conditionType: "load-balancer.example.com/in-pool"
+
+# An external controller must set these conditions:
+# kubectl patch pod &lt;pod&gt; --type=merge -p '{"status":{"conditions":[
+#   {"type":"feature-gates.example.com/canary-approved","status":"True"}
+# ]}}'</code></pre>
+
+<p>Readiness gates enable external systems to gate traffic routing independently of container health:</p>
+<ul>
+  <li><strong>Canary gates</strong>: progressive delivery controllers hold a pod out of rotation until analysis approves</li>
+  <li><strong>Load balancer registration</strong>: cloud LB controller signals when the pod is registered in the target group</li>
+  <li><strong>Warm-up gates</strong>: custom warm-up controller marks pod ready only after cache pre-population</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="pod-termination-details">Pod Deletion vs Force Delete</h2>
+
+<pre><code class="language-bash"># Normal deletion — graceful (uses terminationGracePeriodSeconds)
+kubectl delete pod &lt;pod&gt; -n &lt;namespace&gt;
+
+# Override grace period (useful when pod is stuck terminating)
+kubectl delete pod &lt;pod&gt; -n &lt;namespace&gt; --grace-period=5
+
+# Force delete — immediately removes from API server WITHOUT waiting for kubelet confirmation
+# WARNING: The pod process may still be running on the node
+kubectl delete pod &lt;pod&gt; -n &lt;namespace&gt; --grace-period=0 --force
+
+# Force delete is dangerous for StatefulSets:
+# The pod identity may be recreated before the old pod has fully stopped,
+# causing two pods with the same identity (split-brain, data corruption)</code></pre>
+
+<div class="callout callout-danger">
+  <strong>Force delete StatefulSet pods only in emergencies</strong><br>
+  Force-deleting a StatefulSet pod removes it from the API immediately, allowing a new pod with the same identity to start. If the old pod is still running (kubelet temporarily unreachable, not crashed), two pods will have the same network identity and claim the same PVC — causing data corruption in databases and split-brain in consensus systems. Only force-delete when you have confirmed the node is truly dead and the old pod cannot be running.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="full-lifecycle-yaml">Complete Lifecycle Configuration</h2>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Pod
+spec:
+  terminationGracePeriodSeconds: 90
+
+  # Readiness gate from external controller
+  readinessGates:
+    - conditionType: "platform.example.com/warmed-up"
+
+  initContainers:
+    # Native sidecar (runs alongside app containers)
+    - name: log-agent
+      image: fluent/fluent-bit:3.0
+      restartPolicy: Always
+
+    # Classic init container (runs before app, then exits)
+    - name: db-migrate
+      image: myapp:v3
+      command: ["./migrate", "--up"]
+
+  containers:
+    - name: app
+      image: myapp:v3
+      ports:
+        - containerPort: 8080
+
+      # Startup: up to 5 min for JVM to warm up
+      startupProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8080
+        failureThreshold: 30
+        periodSeconds: 10
+
+      # Liveness: internal deadlock detection only
+      livenessProbe:
+        httpGet:
+          path: /actuator/health/liveness
+          port: 8080
+        periodSeconds: 10
+        failureThreshold: 3
+
+      # Readiness: ready to accept traffic
+      readinessProbe:
+        httpGet:
+          path: /actuator/health/readiness
+          port: 8080
+        periodSeconds: 5
+        failureThreshold: 2
+        successThreshold: 1
+
+      # Lifecycle hooks
+      lifecycle:
+        postStart:
+          exec:
+            command: ["/bin/sh", "-c", "echo started >> /tmp/lifecycle.log"]
+        preStop:
+          exec:
+            command: ["/bin/sh", "-c", "sleep 10 && /app/shutdown.sh"]
+
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2
+          memory: 2Gi</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Labels</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>kube_pod_status_phase</code></td><td><code>phase</code>, <code>pod</code>, <code>namespace</code></td><td>Count pods in each phase — watch for rising Pending/Failed</td></tr>
+    <tr><td><code>kube_pod_container_status_restarts_total</code></td><td><code>container</code>, <code>pod</code>, <code>namespace</code></td><td>Cumulative restarts — high rate = CrashLoopBackOff</td></tr>
+    <tr><td><code>kube_pod_container_status_ready</code></td><td><code>container</code>, <code>pod</code></td><td>Binary readiness — 0 = not ready (removed from endpoints)</td></tr>
+    <tr><td><code>kube_pod_status_ready</code></td><td><code>condition</code>, <code>pod</code>, <code>namespace</code></td><td>Pod-level Ready condition</td></tr>
+    <tr><td><code>kubelet_pod_start_duration_seconds</code></td><td><code>quantile</code></td><td>Pod start latency — includes image pull + init containers</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Alerting Rules</h2>
+
+<pre><code class="language-yaml">groups:
+  - name: pod-lifecycle
+    rules:
+      # Container restart rate high (CrashLoopBackOff indicator)
+      - alert: ContainerHighRestartRate
+        expr: |
+          rate(kube_pod_container_status_restarts_total[15m]) * 60 > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} restarting >6/hr"
+
+      # Pod stuck in Pending for > 5 minutes
+      - alert: PodLongPending
+        expr: kube_pod_status_phase{phase="Pending"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} stuck in Pending"
+
+      # Pod stuck in Failed phase
+      - alert: PodFailed
+        expr: kube_pod_status_phase{phase="Failed"} == 1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is in Failed phase"
+
+      # Container not ready for extended period
+      - alert: ContainerNotReady
+        expr: kube_pod_container_status_ready == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} not ready for 10m"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="runbooks">Runbooks</h2>
+
+<h3>Pod Stuck in Pending</h3>
+<pre><code class="language-bash"># Check events for scheduling failure reason
+kubectl describe pod &lt;pod&gt; -n &lt;namespace&gt; | grep -A20 Events
+
+# Common: insufficient resources → check node allocatable
+kubectl describe nodes | grep -A5 "Allocatable:\|Allocated resources:"
+
+# Common: image pull error → check image name and registry credentials
+kubectl get pod &lt;pod&gt; -o jsonpath='{.spec.containers[*].image}'
+kubectl get events -n &lt;namespace&gt; --field-selector reason=Failed | grep ImagePull
+
+# Common: PVC not bound → check StorageClass and PV availability
+kubectl get pvc -n &lt;namespace&gt;
+kubectl describe pvc &lt;pvc-name&gt; -n &lt;namespace&gt;</code></pre>
+
+<h3>Container in CrashLoopBackOff</h3>
+<pre><code class="language-bash"># Get current logs (if container is running)
+kubectl logs &lt;pod&gt; -n &lt;namespace&gt; -c &lt;container&gt;
+
+# Get logs from previous container instance
+kubectl logs &lt;pod&gt; -n &lt;namespace&gt; -c &lt;container&gt; --previous
+
+# Get exit code and reason
+kubectl describe pod &lt;pod&gt; -n &lt;namespace&gt; | grep -A5 "Last State"
+
+# Common: OOMKilled → increase memory limit
+kubectl set resources deployment &lt;name&gt; --limits=memory=2Gi -n &lt;namespace&gt;
+
+# Common: bad entrypoint → check image CMD/entrypoint
+kubectl get pod &lt;pod&gt; -o jsonpath='{.spec.containers[*].command} {.spec.containers[*].args}'
+
+# Common: missing Secret/ConfigMap (CreateContainerConfigError)
+kubectl get pod &lt;pod&gt; -o yaml | grep -A5 "envFrom\|secretRef\|configMapRef"
+kubectl get secret &lt;secret-name&gt; -n &lt;namespace&gt;</code></pre>
+
+<h3>Pod Not Becoming Ready (Readiness Probe Failing)</h3>
+<pre><code class="language-bash"># Check readiness probe config
+kubectl describe pod &lt;pod&gt; -n &lt;namespace&gt; | grep -A10 "Readiness:"
+
+# Run readiness check manually inside the container
+kubectl exec &lt;pod&gt; -n &lt;namespace&gt; -- curl -s http://localhost:8080/ready
+
+# Check if app is actually listening
+kubectl exec &lt;pod&gt; -n &lt;namespace&gt; -- ss -tlnp
+
+# Check if it's a readiness gate blocking (not the container probe)
+kubectl get pod &lt;pod&gt; -n &lt;namespace&gt; -o jsonpath='{.status.conditions}' | \
+  jq '.[] | select(.type != "Ready" and .status != "True")'</code></pre>
+
+<h3>Pod Stuck in Terminating</h3>
+<pre><code class="language-bash"># Check if finalizers are blocking deletion
+kubectl get pod &lt;pod&gt; -n &lt;namespace&gt; -o jsonpath='{.metadata.finalizers}'
+
+# Remove finalizer (if stuck)
+kubectl patch pod &lt;pod&gt; -n &lt;namespace&gt; -p '{"metadata":{"finalizers":[]}}' --type=merge
+
+# Check if preStop hook is hanging
+kubectl describe pod &lt;pod&gt; -n &lt;namespace&gt; | grep -A5 "PreStop\|terminationGrace"
+
+# Force delete if node is dead (StatefulSet — confirm old pod is truly gone first)
+kubectl delete pod &lt;pod&gt; -n &lt;namespace&gt; --grace-period=0 --force</code></pre>
+
+<h3>Liveness Probe Causing Cascading Restarts</h3>
+<pre><code class="language-bash"># Check restart pattern — all replicas restarting simultaneously?
+kubectl get pods -n &lt;namespace&gt; -l app=&lt;app&gt; \
+  -o custom-columns=NAME:.metadata.name,RESTARTS:.status.containerStatuses[0].restartCount,AGE:.status.startTime
+
+# Check liveness probe config
+kubectl describe pods -n &lt;namespace&gt; -l app=&lt;app&gt; | grep -A10 "Liveness:"
+
+# If probe checks external dependency, change to internal health only
+# Temporary mitigation: increase failureThreshold to reduce restart rate
+kubectl patch deployment &lt;name&gt; -n &lt;namespace&gt; --type=json -p='[{
+  "op":"replace",
+  "path":"/spec/template/spec/containers/0/livenessProbe/failureThreshold",
+  "value":10
+}]'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Use startupProbe for slow-starting applications</strong> — set <code>failureThreshold × periodSeconds</code> to cover your worst-case startup time. This prevents liveness probe failures during startup without requiring a dangerously high <code>initialDelaySeconds</code> on the liveness probe.</li>
+  <li><strong>Liveness probes must check only internal state</strong> — never check database connectivity, upstream services, or external dependencies in a liveness probe. Failures cascade across all replicas simultaneously when a shared dependency degrades. Dependency health belongs in readiness probes.</li>
+  <li><strong>Add a preStop sleep to absorb kube-proxy propagation delay</strong> — <code>preStop: exec: sleep 5</code> (or 10 for high-traffic services) gives kube-proxy time to update iptables before the application stops accepting connections, preventing connection resets on in-flight requests.</li>
+  <li><strong>Set <code>terminationGracePeriodSeconds</code> to cover preStop + drain time</strong> — formula: <code>preStop duration + max request duration + buffer ≤ terminationGracePeriodSeconds</code>. The default 30s is often too short for services with long-running requests.</li>
+  <li><strong>Use native sidecar containers (1.33) for Jobs with injected sidecars</strong> — Istio, Datadog, and Vault Agent injected sidecars previously blocked Job completion. Upgrading to native sidecars (<code>restartPolicy: Always</code> in initContainers) resolves this cleanly.</li>
+  <li><strong>Set <code>readinessProbe.successThreshold: 1</code> for all non-startup probes</strong> — the default is 1, but higher values require the probe to pass multiple consecutive times before marking the pod ready, which slows down rolling updates. Only increase if you need debouncing.</li>
+  <li><strong>Never force-delete StatefulSet pods without confirming the node is truly dead</strong> — force deletion removes the pod from the API immediately, allowing a replacement to start with the same identity. If the original pod is still running (temporary network partition), two pods will share the same PVC and network identity — causing data corruption.</li>
+  <li><strong>Use readiness gates for external traffic management coordination</strong> — if a progressive delivery controller (Argo Rollouts, Flagger) or cloud load balancer controller needs to signal readiness independently of container health, readiness gates provide the correct integration point without hacking probes.</li>
+</ol>
+
+</div><!-- content-area -->
+<button class="back-to-top" id="back-to-top">↑ Top</button>
+</div><!-- main-content -->
+
+<nav class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#lifecycle-overview">Lifecycle Overview</a>
+  <a href="#pod-phases">Pod Phases</a>
+  <a href="#pod-conditions">Pod Conditions</a>
+  <a href="#container-states">Container States</a>
+  <a href="#container-reasons">Reason Codes</a>
+  <a href="#restart-backoff">Restart Backoff</a>
+  <a href="#restart-policy">restartPolicy</a>
+  <a href="#init-containers">Init Containers</a>
+  <a href="#native-sidecars">Native Sidecars (1.33)</a>
+  <a href="#probes">Probes</a>
+  <a href="#probe-mechanisms">Probe Mechanisms</a>
+  <a href="#probe-fields">Probe Timing Fields</a>
+  <a href="#startup-probe-pattern">startupProbe Pattern</a>
+  <a href="#graceful-termination">Graceful Termination</a>
+  <a href="#lifecycle-hooks">Lifecycle Hooks</a>
+  <a href="#readiness-gates">Readiness Gates</a>
+  <a href="#pod-termination-details">Force Delete</a>
+  <a href="#full-lifecycle-yaml">Full Config YAML</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#alerts">Alerting Rules</a>
+  <a href="#runbooks">Runbooks</a>
+  <a href="#best-practices">Best Practices</a>
+</nav>
+</div><!-- layout -->
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => btt.classList.toggle('visible', main.scrollTop > 400));
+btt.addEventListener('click', () => main.scrollTo({top: 0, behavior: 'smooth'}));
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText || pre.innerText);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+const tocLinks = document.querySelectorAll('.toc-panel a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, {root: main, threshold: 0.2});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+document.getElementById('nav-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

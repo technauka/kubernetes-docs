@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horizontal Pod Autoscaler | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar.closed{transform:translateX(-100%);}
+.main-content{margin-left:var(--sidebar-w);flex:1;padding:0;overflow-y:auto;height:100vh;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);position:fixed;top:0;right:0;height:100vh;overflow-y:auto;padding:24px 16px;}
+.content-area{max-width:900px;margin:0 auto;padding:40px 48px 80px;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-weight:600;font-size:16px;flex:1;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);cursor:pointer;padding:6px 12px;border-radius:6px;font-size:13px;}
+.back-to-top{position:fixed;bottom:32px;right:calc(var(--toc-w) + 16px);background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50;}
+.back-to-top.visible{opacity:1;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;color:var(--text2);}
+.sidebar-search{margin:12px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:calc(100% - 24px);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:6px 16px 6px 24px;font-size:13px;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover,.nav-section a.active{background:var(--bg3);color:var(--accent);text-decoration:none;}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover,.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);text-decoration:none;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-top:8px;}
+h3{font-size:17px;font-weight:600;margin:32px 0 12px;}
+h4{font-size:15px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{padding-left:24px;margin-bottom:16px;color:var(--text2);}
+li{margin-bottom:4px;}
+.subtitle{font-size:18px;color:var(--text2);margin-bottom:32px;}
+.meta{display:flex;gap:16px;margin-bottom:40px;flex-wrap:wrap;}
+.meta-tag{background:var(--bg3);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--text2);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;margin-bottom:24px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;line-height:1.7;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--text);border:1px solid var(--border);}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:16px 20px;margin-bottom:24px;border-left:4px solid;}
+.callout-warn{background:#d2992218;border-color:var(--yellow);}
+.callout-warn strong{color:var(--yellow);}
+.callout-danger{background:#f8514918;border-color:var(--red);}
+.callout-danger strong{color:var(--red);}
+.callout-info{background:#58a6ff18;border-color:var(--accent);}
+.callout-info strong{color:var(--accent);}
+.callout-success{background:#3fb95018;border-color:var(--green);}
+.callout-success strong{color:var(--green);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:32px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 8px;color:var(--text);}
+.card p{font-size:13px;margin:0;color:var(--text2);}
+.card .card-tag{display:inline-block;background:var(--bg3);border-radius:12px;padding:2px 10px;font-size:11px;margin-bottom:10px;color:var(--accent);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.section-divider{border:none;border-top:1px solid var(--border);margin:48px 0;}
+.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;margin-bottom:24px;color:var(--text2);}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-green{background:#3fb95022;color:var(--green);border:1px solid var(--green);}
+.badge-blue{background:#58a6ff22;color:var(--accent);border:1px solid var(--accent);}
+.badge-purple{background:#bc8cff22;color:var(--purple);border:1px solid var(--purple);}
+@media(max-width:1200px){.toc-panel{display:none;}.main-content{margin-left:var(--sidebar-w);}.back-to-top{right:16px;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.content-area{padding:24px 20px 60px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">Kubernetes Docs</div>
+  <input class="sidebar-search" id="nav-search" placeholder="Filter navigation..." type="text">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Kubernetes Overview</a>
+    <a href="../01-getting-started/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/02-control-plane-components.html">Control Plane Components</a>
+    <a href="../01-getting-started/03-node-components.html">Node Components</a>
+    <a href="../01-getting-started/04-api-server-deep-dive.html">API Server Deep Dive</a>
+    <a href="../01-getting-started/05-etcd.html">etcd</a>
+    <a href="../01-getting-started/06-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../02-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../02-networking/01-services.html">Services</a>
+    <a href="../02-networking/02-ingress.html">Ingress</a>
+    <a href="../02-networking/03-network-policies.html">Network Policies</a>
+    <a href="../02-networking/04-dns.html">DNS</a>
+    <a href="../02-networking/05-cni-plugins.html">CNI Plugins</a>
+    <a href="../02-networking/06-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../03-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../03-configuration/01-secrets.html">Secrets</a>
+    <a href="../03-configuration/02-resource-quotas.html">Resource Quotas</a>
+    <a href="../03-configuration/03-limit-ranges.html">Limit Ranges</a>
+    <a href="../03-configuration/04-namespaces.html">Namespaces</a>
+    <a href="../03-configuration/05-labels-annotations.html">Labels &amp; Annotations</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">Persistent Volumes</a>
+    <a href="../04-storage/02-storage-classes.html">Storage Classes</a>
+    <a href="../04-storage/03-volume-types.html">Volume Types</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+    <a href="../04-storage/05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="../04-storage/06-stateful-sets-storage.html">StatefulSet Storage</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html" class="active">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main-content" id="main-content">
+<div class="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span class="topbar-title">Horizontal Pod Autoscaler</span>
+  <button class="theme-btn" id="theme-btn">Light Mode</button>
+</div>
+
+<div class="content-area">
+
+<details class="coverage">
+  <summary>📋 Page Coverage Checklist</summary>
+  <div class="coverage-body">
+    <li>HPA v2 API (autoscaling/v2, GA 1.23): full metric type taxonomy</li>
+    <li>Control loop: metrics pipeline, sync period, desiredReplicas formula</li>
+    <li>Resource metric type: CPU and memory targeting with utilization vs average value</li>
+    <li>ContainerResource metric type: per-container CPU/memory targeting</li>
+    <li>Pods metric type: custom per-pod metrics (e.g., requests-per-second)</li>
+    <li>Object metric type: metrics from a single Kubernetes object</li>
+    <li>External metric type: metrics from outside the cluster (cloud queues, etc.)</li>
+    <li>Scaling behavior: scaleUp/scaleDown policies, stabilizationWindowSeconds, selectPolicy</li>
+    <li>Flap prevention: scale-down stabilization window (300s default)</li>
+    <li>Deployment spec.replicas ownership conflict with SSA</li>
+    <li>HPA status fields: currentReplicas, desiredReplicas, conditions, currentMetrics</li>
+    <li>Prometheus Adapter: custom.metrics.k8s.io API registration, SeriesQuery/MetricNameRules</li>
+    <li>KEDA: ScaledObject, external scalers (RabbitMQ, SQS, Kafka, Cron, Prometheus)</li>
+    <li>HPA + VPA conflict and resolution strategies</li>
+    <li>Scale-to-zero with KEDA; wakeup latency considerations</li>
+    <li>5 metrics + 4 alerting rules + 5 runbooks + 8 best practices</li>
+  </div>
+</details>
+
+<h1>Horizontal Pod Autoscaler</h1>
+<p class="subtitle">Scale workload replicas automatically based on resource utilization and custom metrics</p>
+<div class="meta">
+  <span class="meta-tag">autoscaling/v2</span>
+  <span class="meta-tag">GA 1.23</span>
+  <span class="meta-tag">Platform Engineer</span>
+</div>
+
+<p>The Horizontal Pod Autoscaler (HPA) adjusts the <code>replicas</code> field of a scalable workload (Deployment, StatefulSet, ReplicaSet, or any resource implementing the <code>scale</code> subresource) in response to observed metrics. It operates as a control loop in <code>kube-controller-manager</code>, periodically comparing current metric values against targets and computing a new desired replica count. The <code>autoscaling/v2</code> API (GA since 1.23) supports multiple metric sources, fine-grained scaling behavior, and per-container metrics.</p>
+
+<!-- ============================================================ -->
+<h2 id="control-loop">Control Loop &amp; Metrics Pipeline</h2>
+
+<div class="diagram">
+HPA control loop (default sync period: 15s)
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │  HPA Controller (kube-controller-manager)                    │
+  │                                                              │
+  │  1. Fetch current metrics for each metric source:           │
+  │     ├─ Resource metrics  → metrics-server (metrics.k8s.io)  │
+  │     ├─ Custom metrics    → Prometheus Adapter               │
+  │     │                      (custom.metrics.k8s.io)          │
+  │     └─ External metrics  → Adapter (external.metrics.k8s.io)│
+  │                                                              │
+  │  2. For each metric source compute:                         │
+  │     desiredReplicas = ceil(currentReplicas                   │
+  │                       × currentMetricValue / targetValue)    │
+  │                                                              │
+  │  3. Take the MAXIMUM desired replicas across all metrics     │
+  │     (any metric can drive scale-up)                          │
+  │                                                              │
+  │  4. Clamp to [minReplicas, maxReplicas]                     │
+  │                                                              │
+  │  5. Apply scaling behavior constraints                       │
+  │     (stabilization window, rate limits)                      │
+  │                                                              │
+  │  6. If desiredReplicas ≠ currentReplicas → update .replicas  │
+  └──────────────────────────────────────────────────────────────┘
+
+  metrics-server aggregates kubelet /metrics/resource every 60s
+  Prometheus Adapter bridges Prometheus → custom.metrics.k8s.io
+</div>
+
+<h3 id="formula">Replica Calculation Formula</h3>
+
+<p>For a <strong>utilization</strong> target (percentage of requests):</p>
+<pre><code class="language-text">desiredReplicas = ceil(currentReplicas × (currentUtilization / targetUtilization))</code></pre>
+
+<p>For an <strong>average value</strong> target:</p>
+<pre><code class="language-text">desiredReplicas = ceil(currentReplicas × (totalMetricValue / (targetAverageValue × currentReplicas)))
+                = ceil(totalMetricValue / targetAverageValue)</code></pre>
+
+<p>Pods in non-Ready state (Pending, Terminating, or recently started) are excluded from metric averaging to avoid false scale-ups during rollouts.</p>
+
+<div class="callout callout-warn">
+  <strong>Missing metrics = optimistic default</strong><br>
+  If metric data is unavailable for a pod (e.g., pod just started, metrics-server lag), that pod's metric is assumed to be at 100% of target for scale-up calculations and 0% for scale-down. This prevents premature scale-down during rollouts. If <em>all</em> pods' metrics are unavailable, the HPA takes no action (neither scales up nor down).
+</div>
+
+<!-- ============================================================ -->
+<h2 id="hpa-spec">HPA Spec — Full Reference</h2>
+
+<pre><code class="language-yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-server-hpa
+  namespace: production
+spec:
+  # --- Target workload ---
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-server
+
+  # --- Replica bounds ---
+  minReplicas: 3          # Never scale below this (default: 1)
+  maxReplicas: 50         # Hard ceiling
+
+  # --- Metrics (evaluated independently; max desired wins) ---
+  metrics:
+    # 1. CPU utilization (% of requests)
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70     # Target 70% of CPU requests across all pods
+
+    # 2. Memory — use AverageValue, not Utilization (memory doesn't release fast)
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: AverageValue
+          averageValue: 800Mi        # Target 800Mi average per pod
+
+    # 3. Per-container CPU (ContainerResource — GA 1.20)
+    - type: ContainerResource
+      containerResource:
+        name: cpu
+        container: proxy-sidecar    # Scale based on sidecar, not main container
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+    # 4. Custom metric from Pods (per-pod, summed across replicas)
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "500"        # 500 RPS per pod target
+
+    # 5. Custom metric from Object (single source, e.g., Ingress)
+    - type: Object
+      object:
+        metric:
+          name: ingress_requests_per_second
+        describedObject:
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          name: api-ingress
+        target:
+          type: Value
+          value: "10000"            # Total 10k RPS on this Ingress
+
+    # 6. External metric (cloud queue, external system)
+    - type: External
+      external:
+        metric:
+          name: sqs_messages_visible
+          selector:
+            matchLabels:
+              queue: api-job-queue
+        target:
+          type: AverageValue
+          averageValue: "30"        # 30 messages per worker pod
+
+  # --- Scaling behavior ---
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0      # Scale up immediately (no dampening)
+      policies:
+        - type: Pods
+          value: 4                        # Add at most 4 pods per period
+          periodSeconds: 60
+        - type: Percent
+          value: 100                      # Or double replicas per period
+          periodSeconds: 60
+      selectPolicy: Max                   # Use whichever policy allows more pods
+
+    scaleDown:
+      stabilizationWindowSeconds: 300    # Wait 5 min of consistently low metrics
+      policies:
+        - type: Pods
+          value: 2                        # Remove at most 2 pods per period
+          periodSeconds: 60
+        - type: Percent
+          value: 10                       # Or 10% of replicas per period
+          periodSeconds: 60
+      selectPolicy: Min                   # Use whichever policy removes fewer pods</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="metric-types">Metric Types in Detail</h2>
+
+<h3 id="resource-metric">Resource Metrics</h3>
+
+<p>Resource metrics use the <code>metrics.k8s.io</code> API provided by <strong>metrics-server</strong>. Metrics-server scrapes kubelet summary APIs every 60 seconds and serves rolling averages.</p>
+
+<table>
+  <thead><tr><th>Target type</th><th>Formula</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>Utilization</code></td>
+      <td><code>currentCPU / requests.cpu × 100</code></td>
+      <td>CPU — pods must have CPU requests set</td>
+    </tr>
+    <tr>
+      <td><code>AverageValue</code></td>
+      <td>Total metric value across pods / replica count</td>
+      <td>Memory, custom per-pod metrics</td>
+    </tr>
+    <tr>
+      <td><code>Value</code></td>
+      <td>Raw single value (Object/External only)</td>
+      <td>Queue depth, global counters</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-danger">
+  <strong>Memory autoscaling anti-pattern</strong><br>
+  Using <code>Utilization</code> target for memory is misleading: a JVM heap that is 90% allocated but not under GC pressure will trigger scale-up even if the application is healthy. Prefer <code>AverageValue</code> with a generous headroom above the working set. Also note that scaling down does not reclaim memory already allocated by JVM/Go runtime — the pod must be restarted. Scale-down stabilization window (300s default) is critical for memory-based scaling.
+</div>
+
+<h3 id="container-resource">ContainerResource (GA 1.20)</h3>
+
+<p>When pods run multiple containers, <code>Resource</code> metrics aggregate all containers. <code>ContainerResource</code> targets a specific container, enabling independent scaling decisions:</p>
+
+<pre><code class="language-yaml">- type: ContainerResource
+  containerResource:
+    name: memory
+    container: app               # Only consider the app container's memory
+    target:
+      type: AverageValue
+      averageValue: 512Mi</code></pre>
+
+<p>This is essential when a heavyweight sidecar (Istio Envoy, Datadog agent) consumes disproportionate resources — you don't want sidecar resource usage to drive scaling of the main application.</p>
+
+<h3 id="pods-metric">Pods Metric</h3>
+
+<p>The <code>Pods</code> metric type reads from <code>custom.metrics.k8s.io</code> and averages the named metric across all pods selected by the HPA's target. The Prometheus Adapter or a custom adapter must serve this API.</p>
+
+<pre><code class="language-yaml">- type: Pods
+  pods:
+    metric:
+      name: http_requests_per_second
+      selector:                       # Optional: filter by label on the metric series
+        matchLabels:
+          route: /api/v2
+    target:
+      type: AverageValue
+      averageValue: "1000"           # 1000 req/s per pod</code></pre>
+
+<h3 id="object-metric">Object Metric</h3>
+
+<p>The <code>Object</code> type reads a single metric value from a specific Kubernetes object. Common use: total request rate on an Ingress, queue depth on a Kafka topic CRD.</p>
+
+<pre><code class="language-yaml">- type: Object
+  object:
+    metric:
+      name: nginx_ingress_requests_per_second
+    describedObject:
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      name: frontend-ingress
+    target:
+      type: Value
+      value: "5000"          # Total RPS on the Ingress drives replica count</code></pre>
+
+<h3 id="external-metric">External Metric</h3>
+
+<p>External metrics come from systems outside the cluster (cloud queues, monitoring systems). An adapter must bridge the external system to <code>external.metrics.k8s.io</code>.</p>
+
+<pre><code class="language-yaml">- type: External
+  external:
+    metric:
+      name: aws_sqs_approximate_number_of_messages_visible
+      selector:
+        matchLabels:
+          queue_name: payment-jobs
+    target:
+      type: AverageValue
+      averageValue: "10"     # 10 messages per worker pod ideal</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="scaling-behavior">Scaling Behavior</h2>
+
+<p>The <code>behavior</code> block controls <em>how fast</em> scaling happens, independently for scale-up and scale-down. Without this, the HPA scales up and down at full speed, which can cause flapping.</p>
+
+<div class="diagram">
+Scaling behavior policies — selectPolicy determines which applies:
+
+  scaleUp policies (selectPolicy: Max → most aggressive)
+  ┌────────────────────────────────────────┐
+  │ Policy A: +4 pods per 60s              │
+  │ Policy B: +100% pods per 60s           │
+  │ selectPolicy: Max → uses B if B > A    │
+  └────────────────────────────────────────┘
+
+  scaleDown policies (selectPolicy: Min → most conservative)
+  ┌────────────────────────────────────────┐
+  │ Policy A: -2 pods per 60s             │
+  │ Policy B: -10% pods per 60s           │
+  │ selectPolicy: Min → uses whichever     │
+  │             removes fewer pods         │
+  └────────────────────────────────────────┘
+
+  stabilizationWindowSeconds:
+  └─ HPA tracks desiredReplicas over this window
+     and takes the MAX (for scale-down) of all
+     computed values → prevents flapping on
+     transient metric spikes/dips
+</div>
+
+<table>
+  <thead><tr><th>Field</th><th>Default (scale-up)</th><th>Default (scale-down)</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>stabilizationWindowSeconds</code></td><td>0</td><td>300</td><td>Seconds to look back; use max desired replicas seen in window</td></tr>
+    <tr><td><code>selectPolicy</code></td><td><code>Max</code></td><td><code>Min</code></td><td>Which policy to apply when multiple policies conflict</td></tr>
+    <tr><td><code>policies[].type</code></td><td>—</td><td>—</td><td><code>Pods</code> (absolute) or <code>Percent</code> (relative)</td></tr>
+    <tr><td><code>policies[].value</code></td><td>—</td><td>—</td><td>Max change allowed per period</td></tr>
+    <tr><td><code>policies[].periodSeconds</code></td><td>—</td><td>—</td><td>Time window for the policy (max 1800s)</td></tr>
+  </tbody>
+</table>
+
+<h3 id="disable-scaledown">Disabling Scale-Down</h3>
+
+<pre><code class="language-yaml">behavior:
+  scaleDown:
+    selectPolicy: Disabled    # Never scale down (scale-up only HPA)</code></pre>
+
+<p>Useful for workloads where scale-down is disruptive (e.g., stateful-ish services with warm caches) or when you want manual control over scale-down.</p>
+
+<!-- ============================================================ -->
+<h2 id="spec-replicas">Deployment spec.replicas and Server-Side Apply</h2>
+
+<p>A common misconfiguration: your CI pipeline applies the Deployment manifest on every deploy, overwriting <code>spec.replicas</code> back to the value in your Git repo (e.g., 3), undoing what HPA set (e.g., 15). This causes a momentary replica crash on every deployment.</p>
+
+<div class="callout callout-danger">
+  <strong>Omit spec.replicas when using HPA</strong><br>
+  Remove <code>spec.replicas</code> from your Deployment manifest entirely (or set it only on first apply). Once HPA is managing replicas, it owns that field. If using <strong>Server-Side Apply (SSA)</strong>, the HPA manager claims the <code>replicas</code> field; a subsequent kubectl apply from a different field manager will conflict. Use <code>kubectl apply --server-side --force-conflicts</code> only if you intentionally want to reclaim ownership — not on every deploy.
+</div>
+
+<pre><code class="language-bash"># Check which manager owns spec.replicas
+kubectl get deployment api-server -o json | \
+  jq '.metadata.managedFields[] | select(.fieldsV1."f:spec"."f:replicas" != null) | .manager'
+
+# Correct SSA-based workflow: strip replicas from manifests
+# In your Deployment YAML:
+spec:
+  # replicas: 3   ← DELETE THIS LINE; HPA owns it
+  selector:
+    matchLabels:
+      app: api-server</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="hpa-status">HPA Status</h2>
+
+<pre><code class="language-bash">kubectl get hpa api-server-hpa -n production
+# NAME             REFERENCE              TARGETS         MINPODS  MAXPODS  REPLICAS
+# api-server-hpa   Deployment/api-server  72%/70%, 800Mi  3        50       8
+
+kubectl describe hpa api-server-hpa -n production</code></pre>
+
+<table>
+  <thead><tr><th>Status field</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>status.currentReplicas</code></td><td>Replicas currently managed by the target</td></tr>
+    <tr><td><code>status.desiredReplicas</code></td><td>Replicas computed by the last HPA evaluation</td></tr>
+    <tr><td><code>status.currentMetrics</code></td><td>Last observed value for each metric source</td></tr>
+    <tr><td><code>status.lastScaleTime</code></td><td>Timestamp of last replica change</td></tr>
+    <tr><td><code>status.conditions[].type: AbleToScale</code></td><td>Can the HPA currently scale? (False if backoff active)</td></tr>
+    <tr><td><code>status.conditions[].type: ScalingActive</code></td><td>Is HPA actively watching metrics?</td></tr>
+    <tr><td><code>status.conditions[].type: ScalingLimited</code></td><td>Desired exceeds maxReplicas or violates behavior policy</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># Watch HPA in real time
+kubectl get hpa -n production -w
+
+# Get conditions (why isn't it scaling?)
+kubectl get hpa api-server-hpa -o jsonpath='{.status.conditions}' | jq .
+
+# Events show recent scale decisions
+kubectl describe hpa api-server-hpa | grep -A30 Events</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="prometheus-adapter">Prometheus Adapter</h2>
+
+<p>To use application-level metrics (request rate, queue depth, error rate) as HPA targets, you need a metrics adapter that translates Prometheus queries into the <code>custom.metrics.k8s.io</code> API. The <strong>Prometheus Adapter</strong> is the most common open-source solution.</p>
+
+<div class="diagram">
+Prometheus Adapter architecture:
+
+  Application pods → expose /metrics
+       │
+       ▼
+  Prometheus scrapes /metrics every 15s
+       │
+       ▼
+  Prometheus Adapter (runs as Deployment)
+  ├─ Queries Prometheus for registered metric rules
+  ├─ Serves custom.metrics.k8s.io/v1beta1 API
+  └─ Registered as APIService in kube-aggregator
+       │
+       ▼
+  HPA controller calls custom.metrics.k8s.io
+  └─ Fetches e.g. http_requests_per_second{namespace="prod",pod=~"api-.*"}
+</div>
+
+<pre><code class="language-yaml"># Prometheus Adapter ConfigMap — metric rules
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: adapter-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    rules:
+      # HTTP requests per second per pod
+      - seriesQuery: 'http_requests_total{namespace!="",pod!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^http_requests_total$"
+          as: "http_requests_per_second"
+        metricsQuery: |
+          sum(rate(http_requests_total{<<.LabelMatchers>>}[2m])) by (<<.GroupBy>>)
+
+      # Queue depth per pod (custom application metric)
+      - seriesQuery: 'worker_queue_depth{namespace!="",pod!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^worker_queue_depth$"
+          as: "worker_queue_depth"
+        metricsQuery: 'avg(worker_queue_depth{<<.LabelMatchers>>}) by (<<.GroupBy>>)'
+
+      # Ingress RPS (Object metric — scoped to Ingress)
+      - seriesQuery: 'nginx_ingress_controller_requests{namespace!="",ingress!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            ingress: {group: "networking.k8s.io", resource: "ingress"}
+        name:
+          as: "nginx_ingress_requests_per_second"
+        metricsQuery: |
+          sum(rate(nginx_ingress_controller_requests{<<.LabelMatchers>>}[2m])) by (<<.GroupBy>>)</code></pre>
+
+<pre><code class="language-bash"># Verify custom metrics are available
+kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1" | jq .
+
+# Check a specific metric
+kubectl get --raw \
+  "/apis/custom.metrics.k8s.io/v1beta1/namespaces/production/pods/*/http_requests_per_second" \
+  | jq .
+
+# List all registered custom metrics
+kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1" | jq '.resources[].name'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="keda">KEDA — Kubernetes Event-Driven Autoscaling</h2>
+
+<p>KEDA extends HPA with a rich library of built-in scalers and adds scale-to-zero capability. It deploys a metrics adapter and manages HPA objects on your behalf via the <code>ScaledObject</code> CRD.</p>
+
+<div class="diagram">
+KEDA architecture:
+
+  KEDA Operator (watches ScaledObjects)
+       │
+       ├─ Creates/manages HPA for the target workload
+       ├─ Runs scaler goroutines that poll external sources
+       └─ Feeds values into custom.metrics.k8s.io
+
+  External systems ──► KEDA scalers ──► HPA ──► Deployment replicas
+
+  Scale-to-zero: KEDA manages replicas=0 directly
+  (HPA minimum is 1; KEDA bypasses HPA for the 0↔1 transition)
+</div>
+
+<pre><code class="language-yaml">apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-worker-scaler
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-worker
+
+  # Replica bounds
+  minReplicaCount: 0          # Scale to zero when idle
+  maxReplicaCount: 100
+
+  # Cooldown periods
+  pollingInterval: 15         # Check trigger every 15s
+  cooldownPeriod: 300         # Wait 300s before scaling to zero
+
+  # Advanced scaling behavior (passed to managed HPA)
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 60
+
+  triggers:
+    # SQS queue depth
+    - type: aws-sqs-queue
+      authenticationRef:
+        name: keda-sqs-auth
+      metadata:
+        queueURL: https://sqs.us-east-1.amazonaws.com/123456789/api-jobs
+        queueLength: "10"           # 10 messages per worker pod
+        awsRegion: us-east-1
+
+    # Kafka consumer lag
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka-svc.platform:9092
+        consumerGroup: api-worker-group
+        topic: api-events
+        lagThreshold: "50"          # 50 messages lag per pod
+
+    # Prometheus metric
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus-svc.monitoring:9090
+        metricName: http_requests_per_second
+        threshold: "500"
+        query: |
+          sum(rate(http_requests_total{app="api-worker"}[2m]))
+
+    # Cron-based pre-scaling
+    - type: cron
+      metadata:
+        timezone: America/New_York
+        start: "0 8 * * 1-5"        # Scale up at 8am weekdays
+        end: "0 20 * * 1-5"         # Scale down at 8pm weekdays
+        desiredReplicas: "10"        # Pre-scale to 10 during business hours</code></pre>
+
+<h3 id="keda-authentication">KEDA TriggerAuthentication</h3>
+
+<pre><code class="language-yaml">apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-sqs-auth
+  namespace: production
+spec:
+  podIdentity:
+    provider: aws              # Use IRSA (IAM Roles for Service Accounts)
+  # Or use secretTargetRef:
+  # secretTargetRef:
+  #   - parameter: awsAccessKeyID
+  #     name: aws-credentials
+  #     key: access-key-id
+  #   - parameter: awsSecretAccessKey
+  #     name: aws-credentials
+  #     key: secret-access-key</code></pre>
+
+<h3 id="scale-to-zero">Scale-to-Zero Considerations</h3>
+
+<div class="callout callout-warn">
+  <strong>Cold start latency on wake-up</strong><br>
+  When scaling from 0→1, the first request that arrives is queued by KEDA while the pod starts. For workloads with slow startup (JVM, ML model loading), this can mean 30–120 seconds of latency for the first request after idle. Mitigations: (1) set <code>minReplicaCount: 1</code> during business hours using the cron trigger; (2) use fast-starting runtimes; (3) set <code>readinessProbe</code> so traffic is only sent after the pod is truly ready.
+</div>
+
+<pre><code class="language-bash"># Check KEDA ScaledObject status
+kubectl get scaledobject api-worker-scaler -n production
+kubectl describe scaledobject api-worker-scaler -n production
+
+# View the HPA KEDA created
+kubectl get hpa -n production -l "scaledobject.keda.sh/name=api-worker-scaler"
+
+# Check KEDA operator logs
+kubectl logs -n keda -l app=keda-operator --tail=50</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="hpa-vpa">HPA + VPA Interaction</h2>
+
+<p>HPA and VPA both modify pod-level resources but in different dimensions: HPA changes replica count, VPA changes container resource requests. Running both simultaneously on the same workload with the same metric (e.g., CPU) causes conflict:</p>
+
+<div class="diagram">
+Conflict scenario:
+
+  VPA sees high CPU → recommends higher requests → restarts pods with new requests
+  HPA sees high CPU utilization → scales out replicas
+  VPA sees new higher requests → utilization drops → HPA scales back in
+  VPA sees lower utilization → downsizes requests → cycle repeats
+
+Recommended combinations:
+  ┌──────────────────────────────────────────────────────┐
+  │ HPA on CPU/memory   + VPA in Off mode (advisor only) │
+  │ HPA on custom/ext   + VPA on CPU/memory (no conflict)│
+  │ VPA only            + no HPA                         │
+  └──────────────────────────────────────────────────────┘
+</div>
+
+<p>The safest production pattern when you need both: use HPA for custom/external metrics (request rate, queue depth) and VPA for right-sizing CPU/memory requests. Set <code>VPA.spec.updatePolicy.updateMode: "Off"</code> on workloads where HPA is managing replicas based on CPU/memory.</p>
+
+<!-- ============================================================ -->
+<h2 id="common-patterns">Common HPA Patterns</h2>
+
+<h3 id="pattern-rps">Pattern: Request-Rate Scaling</h3>
+
+<pre><code class="language-yaml"># Scale based on total RPS via Ingress Object metric
+metrics:
+  - type: Object
+    object:
+      metric:
+        name: nginx_ingress_requests_per_second
+      describedObject:
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        name: api-ingress
+      target:
+        type: Value
+        value: "2000"        # 2000 RPS total → N replicas
+# With 3 pods at 2000 RPS each, desiredReplicas = totalRPS / 2000
+# e.g., 10000 RPS → ceil(10000/2000) = 5 pods</code></pre>
+
+<h3 id="pattern-queue">Pattern: Queue-Depth Scaling (without KEDA)</h3>
+
+<pre><code class="language-yaml"># Worker reads queue depth via Custom Metric (Prometheus Adapter)
+metrics:
+  - type: External
+    external:
+      metric:
+        name: redis_list_length
+        selector:
+          matchLabels:
+            list_name: job-queue
+      target:
+        type: AverageValue
+        averageValue: "20"     # 20 items per worker pod
+behavior:
+  scaleDown:
+    stabilizationWindowSeconds: 600  # Don't scale down while queue drains
+    policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 120           # Remove 1 pod every 2 min max</code></pre>
+
+<h3 id="pattern-conservative">Pattern: Conservative Scale-Down for Stateful-ish Services</h3>
+
+<pre><code class="language-yaml">behavior:
+  scaleUp:
+    stabilizationWindowSeconds: 0
+    policies:
+      - type: Percent
+        value: 50              # Scale up by 50% at most per period
+        periodSeconds: 60
+  scaleDown:
+    stabilizationWindowSeconds: 900   # 15 min window before scaling down
+    policies:
+      - type: Percent
+        value: 5               # Remove at most 5% of pods per period
+        periodSeconds: 300     # Once every 5 minutes</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Labels</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>kube_horizontalpodautoscaler_status_current_replicas</code></td><td><code>hpa</code>, <code>namespace</code></td><td>Current replica count managed by HPA</td></tr>
+    <tr><td><code>kube_horizontalpodautoscaler_status_desired_replicas</code></td><td><code>hpa</code>, <code>namespace</code></td><td>Desired replica count from last evaluation</td></tr>
+    <tr><td><code>kube_horizontalpodautoscaler_spec_max_replicas</code></td><td><code>hpa</code>, <code>namespace</code></td><td>Configured maxReplicas ceiling</td></tr>
+    <tr><td><code>kube_horizontalpodautoscaler_spec_min_replicas</code></td><td><code>hpa</code>, <code>namespace</code></td><td>Configured minReplicas floor</td></tr>
+    <tr><td><code>kube_horizontalpodautoscaler_status_condition</code></td><td><code>condition</code>, <code>status</code></td><td>HPA condition health (AbleToScale, ScalingActive, ScalingLimited)</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Alerting Rules</h2>
+
+<pre><code class="language-yaml">groups:
+  - name: hpa
+    rules:
+      # HPA at max replicas — may need to raise ceiling
+      - alert: HPAAtMaxReplicas
+        expr: |
+          kube_horizontalpodautoscaler_status_current_replicas
+          == kube_horizontalpodautoscaler_spec_max_replicas
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HPA {{ $labels.namespace }}/{{ $labels.hpa }} at maxReplicas for 15m"
+          description: "Consider raising maxReplicas or optimizing the workload"
+
+      # HPA unable to scale (metric unavailable)
+      - alert: HPAScalingInactive
+        expr: |
+          kube_horizontalpodautoscaler_status_condition{
+            condition="ScalingActive",status="false"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HPA {{ $labels.hpa }} in {{ $labels.namespace }} is not scaling"
+
+      # Desired replicas oscillating (flapping)
+      - alert: HPAFlapping
+        expr: |
+          changes(kube_horizontalpodautoscaler_status_desired_replicas[30m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HPA {{ $labels.hpa }} is flapping (>5 changes in 30m)"
+
+      # HPA at minReplicas for extended period (possible over-provisioning)
+      - alert: HPAAtMinReplicasLong
+        expr: |
+          kube_horizontalpodautoscaler_status_current_replicas
+          == kube_horizontalpodautoscaler_spec_min_replicas
+        for: 72h
+        labels:
+          severity: info
+        annotations:
+          summary: "HPA {{ $labels.hpa }} has been at minReplicas for 3 days — review minReplicas"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="runbooks">Runbooks</h2>
+
+<h3>HPA Not Scaling Despite High Load</h3>
+<pre><code class="language-bash"># 1. Check HPA conditions
+kubectl describe hpa &lt;name&gt; -n &lt;namespace&gt; | grep -A5 Conditions
+
+# 2. Verify metrics are available
+kubectl get --raw "/apis/metrics.k8s.io/v1beta1/namespaces/&lt;ns&gt;/pods" | jq .
+kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1" | jq .
+
+# 3. Check metrics-server is running
+kubectl get deployment metrics-server -n kube-system
+
+# 4. Verify pods have resource requests (required for Utilization target)
+kubectl get pods -n &lt;namespace&gt; -o json | \
+  jq '.items[].spec.containers[].resources.requests'
+
+# 5. Check if at maxReplicas ceiling
+kubectl get hpa &lt;name&gt; -o jsonpath='{.spec.maxReplicas} {.status.currentReplicas}'</code></pre>
+
+<h3>HPA Flapping / Oscillating</h3>
+<pre><code class="language-bash"># Check scale events
+kubectl describe hpa &lt;name&gt; -n &lt;namespace&gt; | grep -A30 Events
+
+# Increase stabilization window to reduce flapping
+kubectl patch hpa &lt;name&gt; -n &lt;namespace&gt; --type=merge -p '{
+  "spec": {
+    "behavior": {
+      "scaleDown": {"stabilizationWindowSeconds": 600},
+      "scaleUp":   {"stabilizationWindowSeconds": 30}
+    }
+  }
+}'</code></pre>
+
+<h3>Custom Metrics Returning Errors</h3>
+<pre><code class="language-bash"># Test custom metrics API directly
+kubectl get --raw \
+  "/apis/custom.metrics.k8s.io/v1beta1/namespaces/&lt;ns&gt;/pods/*/&lt;metric-name&gt;"
+
+# Check Prometheus Adapter logs
+kubectl logs -n monitoring -l app.kubernetes.io/name=prometheus-adapter --tail=100
+
+# Verify Prometheus query returns data
+curl -G prometheus-svc.monitoring:9090/api/v1/query \
+  --data-urlencode 'query=sum(rate(http_requests_total[2m])) by (pod)'</code></pre>
+
+<h3>HPA Spec.Replicas Conflict (GitOps Override)</h3>
+<pre><code class="language-bash"># Check which field manager owns replicas
+kubectl get deployment &lt;name&gt; -o json | \
+  jq '.metadata.managedFields[] | {manager, fields: .fieldsV1."f:spec"."f:replicas"} |
+      select(.fields != null)'
+
+# Remove replicas from manifest (GitOps fix)
+# In Deployment YAML, delete the spec.replicas line
+# Then re-apply without spec.replicas
+
+# Force-release ownership if needed (SSA)
+kubectl apply --server-side --force-conflicts -f deployment.yaml</code></pre>
+
+<h3>KEDA ScaledObject Not Scaling</h3>
+<pre><code class="language-bash"># Check ScaledObject status
+kubectl describe scaledobject &lt;name&gt; -n &lt;namespace&gt;
+
+# Check KEDA operator logs
+kubectl logs -n keda -l app=keda-operator --tail=100 | grep ERROR
+
+# Verify trigger authentication
+kubectl describe triggerauthentication &lt;auth-name&gt; -n &lt;namespace&gt;
+
+# Check the HPA KEDA manages
+kubectl get hpa -n &lt;namespace&gt; -l "scaledobject.keda.sh/name=&lt;name&gt;"
+kubectl describe hpa -n &lt;namespace&gt; -l "scaledobject.keda.sh/name=&lt;name&gt;"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Always set CPU requests</strong> — HPA's <code>Utilization</code> target divides current CPU by <code>requests.cpu</code>. Without requests, utilization is undefined and HPA falls back to raw value or skips the metric.</li>
+  <li><strong>Prefer custom/external metrics over CPU for latency-sensitive services</strong> — CPU utilization lags behind request rate spikes. A metric like <code>http_requests_per_second</code> reacts faster to traffic surges.</li>
+  <li><strong>Remove <code>spec.replicas</code> from Deployment manifests managed by HPA</strong> — prevent GitOps pipelines from overriding the replica count on every deploy.</li>
+  <li><strong>Set a meaningful <code>minReplicas</code></strong> — <code>minReplicas: 1</code> means a single point of failure during deployments. For HA, use at least 2; for critical paths, 3 (spread across zones).</li>
+  <li><strong>Tune scale-down conservatively</strong> — default 300s stabilization window is often too short for services with warm caches or sticky connections. 600–900s is safer for stateful-ish services.</li>
+  <li><strong>Use KEDA for scale-to-zero and event-driven workloads</strong> — native HPA minimum is 1 replica. KEDA handles the 0↔1 transition and provides richer trigger sources out of the box.</li>
+  <li><strong>Test autoscaling in staging under realistic load</strong> — run load tests that ramp up and sustain traffic; verify the HPA correctly computes desired replicas, the behavior policies don't block needed scale-up, and scale-down doesn't happen during momentary lulls in the ramp.</li>
+  <li><strong>Monitor <code>ScalingLimited</code> condition continuously</strong> — when HPA is constrained by <code>maxReplicas</code> under real traffic, it means your ceiling is too low or the workload needs right-sizing. Alert on this and review periodically.</li>
+</ol>
+
+</div><!-- content-area -->
+<button class="back-to-top" id="back-to-top">↑ Top</button>
+</div><!-- main-content -->
+
+<!-- TOC -->
+<nav class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#control-loop">Control Loop &amp; Pipeline</a>
+  <a href="#formula">Replica Formula</a>
+  <a href="#hpa-spec">HPA Spec</a>
+  <a href="#metric-types">Metric Types</a>
+  <a href="#resource-metric">Resource Metrics</a>
+  <a href="#container-resource">ContainerResource</a>
+  <a href="#pods-metric">Pods Metric</a>
+  <a href="#object-metric">Object Metric</a>
+  <a href="#external-metric">External Metric</a>
+  <a href="#scaling-behavior">Scaling Behavior</a>
+  <a href="#disable-scaledown">Disable Scale-Down</a>
+  <a href="#spec-replicas">spec.replicas Conflict</a>
+  <a href="#hpa-status">HPA Status</a>
+  <a href="#prometheus-adapter">Prometheus Adapter</a>
+  <a href="#keda">KEDA</a>
+  <a href="#scale-to-zero">Scale-to-Zero</a>
+  <a href="#hpa-vpa">HPA + VPA</a>
+  <a href="#common-patterns">Common Patterns</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#alerts">Alerting Rules</a>
+  <a href="#runbooks">Runbooks</a>
+  <a href="#best-practices">Best Practices</a>
+</nav>
+</div><!-- layout -->
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => {
+  btt.classList.toggle('visible', main.scrollTop > 400);
+});
+btt.addEventListener('click', () => main.scrollTo({top: 0, behavior: 'smooth'}));
+
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText || pre.innerText);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+
+const tocLinks = document.querySelectorAll('.toc-panel a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, {root: main, threshold: 0.2});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+
+document.getElementById('nav-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>RBAC Flow | Kubernetes Docs</title>
+<style>
+:root{--sidebar-w:280px;--toc-w:240px;--font-mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--border2:#21262d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#1f6feb;--accent3:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--orange:#d18616;--purple:#bc8cff;--cyan:#39d353;--pink:#f778ba;--code-bg:#161b22;--code-border:#30363d;--tag-bg:#1f6feb33;--tag-text:#58a6ff;--warn-bg:#3d2b00;--warn-border:#d29922;--note-bg:#0d2137;--note-border:#1f6feb;--danger-bg:#3d0000;--danger-border:#f85149;--success-bg:#0d2b0d;--success-border:#3fb950;--table-head:#21262d;--table-stripe:#161b22;--scrollbar:#30363d;--scrollbar-thumb:#484f58}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--border2:#eaeef2;--text:#1f2328;--text2:#636c76;--text3:#9198a1;--accent:#0969da;--accent2:#0969da;--accent3:#218bff;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--orange:#bc4c00;--purple:#8250df;--cyan:#0550ae;--pink:#bf3989;--code-bg:#f6f8fa;--code-border:#d0d7de;--tag-bg:#ddf4ff;--tag-text:#0969da;--warn-bg:#fff8c5;--warn-border:#d4a72c;--note-bg:#ddf4ff;--note-border:#54aeff;--danger-bg:#ffebe9;--danger-border:#ff8182;--success-bg:#dafbe1;--success-border:#4ac26b;--table-head:#f6f8fa;--table-stripe:#f6f8fa;--scrollbar:#d0d7de;--scrollbar-thumb:#9198a1}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;display:flex;flex-direction:column;min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--scrollbar)}::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:3px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+code{font-family:var(--font-mono);font-size:0.85em;background:var(--code-bg);border:1px solid var(--code-border);border-radius:4px;padding:0.1em 0.35em}
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;padding:1.2rem;overflow-x:auto;position:relative;margin:1rem 0}
+pre code{background:none;border:none;padding:0;font-size:0.82em;line-height:1.6}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:5px;font-size:0.75em;cursor:pointer;opacity:0.7;transition:opacity .2s}.copy-btn:hover{opacity:1}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:1rem}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;display:none;padding:4px}
+.topbar-logo{font-weight:700;font-size:1.05rem;color:var(--text)}.topbar-logo span{color:var(--accent)}
+.breadcrumb{display:flex;align-items:center;gap:0.4rem;font-size:0.82em;color:var(--text2)}.breadcrumb a{color:var(--text2)}.breadcrumb a:hover{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:0.7rem}
+.search-wrap{position:relative}
+#search-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:0.3rem 0.7rem 0.3rem 2rem;font-size:0.82em;width:200px;outline:none}
+#search-input:focus{border-color:var(--accent)}
+.search-wrap::before{content:'⌕';position:absolute;left:0.5rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:1rem;pointer-events:none}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:0.82em}
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);flex-shrink:0;transition:transform .25s}
+.sidebar-search{padding:0.7rem;border-bottom:1px solid var(--border)}
+#sidebar-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:0.3rem 0.6rem;font-size:0.8em;outline:none}
+.sidebar nav{padding:0.5rem 0}
+.nav-section{margin:0.3rem 0}
+.nav-section-title{padding:0.45rem 1rem;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)}
+.nav-section a{display:flex;align-items:center;padding:0.32rem 1rem 0.32rem 1.4rem;font-size:0.83em;color:var(--text2);gap:0.5rem;border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--tag-bg);font-weight:600}
+.nav-section a .num{color:var(--text3);font-size:0.78em;min-width:1.6em}
+.main-content{flex:1;overflow-y:auto;padding:2rem 2.5rem;max-width:calc(100% - var(--toc-w));min-width:0}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);flex-shrink:0;padding:1rem 0}
+.toc-title{font-size:0.75em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:0 1rem 0.5rem}
+.toc-panel a{display:block;font-size:0.8em;color:var(--text2);padding:0.25rem 1rem;border-left:2px solid transparent;transition:all .15s}
+.toc-panel a:hover{color:var(--text);text-decoration:none}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent)}
+.toc-panel a.toc-h3{padding-left:1.8rem;font-size:0.75em}
+.page-header{margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.file-meta{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem}
+.tag{background:var(--tag-bg);color:var(--tag-text);border:1px solid var(--accent2);border-radius:12px;padding:0.2rem 0.7rem;font-size:0.75em;font-family:var(--font-mono)}
+h1{font-size:1.9rem;font-weight:700;margin-bottom:0.5rem;color:var(--text)}
+h2{font-size:1.3rem;font-weight:700;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:1.08rem;font-weight:700;margin:2rem 0 0.8rem;color:var(--text)}
+h4{font-size:0.95rem;font-weight:700;margin:1.5rem 0 0.6rem;color:var(--text2)}
+p{margin:0.7rem 0}ul,ol{margin:0.7rem 0 0.7rem 1.5rem}li{margin:0.25rem 0}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85em}
+th{background:var(--table-head);padding:0.6rem 0.8rem;text-align:left;font-weight:600;border:1px solid var(--border)}
+td{padding:0.5rem 0.8rem;border:1px solid var(--border);vertical-align:top}
+tr:nth-child(even){background:var(--table-stripe)}
+.callout{border-radius:8px;padding:1rem 1.2rem;margin:1.2rem 0;border-left:3px solid}
+.callout.warn{background:var(--warn-bg);border-color:var(--yellow)}.callout.note{background:var(--note-bg);border-color:var(--accent)}.callout.danger{background:var(--danger-bg);border-color:var(--red)}.callout.success{background:var(--success-bg);border-color:var(--green)}
+.callout-title{font-weight:700;margin-bottom:0.4rem;font-size:0.88em;text-transform:uppercase;letter-spacing:0.05em}
+.callout.warn .callout-title{color:var(--yellow)}.callout.note .callout-title{color:var(--accent)}.callout.danger .callout-title{color:var(--red)}.callout.success .callout-title{color:var(--green)}
+.nav-footer{display:flex;gap:1rem;margin:3rem 0 1rem;padding-top:2rem;border-top:1px solid var(--border)}
+.nav-btn{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;cursor:pointer;transition:all .2s;color:var(--text);text-align:left}
+.nav-btn:hover{border-color:var(--accent);background:var(--bg3);text-decoration:none}
+.nav-btn.next{text-align:right}
+.nav-btn .label{font-size:0.75em;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.3rem}
+.nav-btn .title{font-size:0.9em;font-weight:600;color:var(--accent)}
+.back-to-top{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--accent2);color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:1.1rem;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4);z-index:200}
+.back-to-top.visible{display:flex}
+.search-hl{background:var(--yellow);color:#000;border-radius:2px}
+details{margin:0.8rem 0}
+details>summary{cursor:pointer;padding:0.6rem 0.8rem;background:var(--bg3);border:1px solid var(--border);border-radius:6px;font-weight:600;font-size:0.88em;list-style:none;display:flex;align-items:center;gap:0.5rem}
+details>summary::before{content:'▶';font-size:0.7em;transition:transform .2s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>summary::-webkit-details-marker{display:none}
+details .details-body{padding:1rem;background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:1rem 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin:1rem 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.2rem}
+.card h4{margin-top:0;color:var(--accent)}
+@media(max-width:1200px){.toc-panel{display:none}}
+@media(max-width:768px){.hamburger{display:flex}.sidebar{position:fixed;left:0;top:52px;z-index:50;transform:translateX(-100%);height:calc(100vh - 52px)}.sidebar.open{transform:translateX(0)}.main-content{max-width:100%;padding:1.2rem}.grid-2,.grid-3{grid-template-columns:1fr}#search-input{width:130px}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger">&#9776;</button>
+    <span class="topbar-logo"><span>K8s</span> Docs</span>
+    <nav class="breadcrumb">
+      <a href="../COVERAGE.html">Home</a><span>›</span>
+      <a href="00-overview.html">API Flows</a><span>›</span>
+      <span>RBAC Flow</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap"><input id="search-input" type="search" placeholder="Search…" autocomplete="off"/></div>
+    <button class="theme-btn" id="theme-btn">☀ Light</button>
+  </div>
+</div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="../01-control-plane/00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="../01-control-plane/01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="../01-control-plane/02-etcd.html"><span class="num">02</span>etcd</a>
+      <a href="../01-control-plane/03-kube-scheduler.html"><span class="num">03</span>kube-scheduler</a>
+      <a href="../01-control-plane/04-kube-controller-manager.html"><span class="num">04</span>kube-controller-manager</a>
+      <a href="../01-control-plane/05-cloud-controller-manager.html"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="../01-control-plane/06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="../01-control-plane/07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html"><span class="num">02</span>kube-proxy</a>
+      <a href="../02-node-components/03-container-runtime.html"><span class="num">03</span>Container Runtime</a>
+      <a href="../02-node-components/04-cri-interface.html"><span class="num">04</span>CRI Interface</a>
+      <a href="../02-node-components/05-node-lifecycle.html"><span class="num">05</span>Node Lifecycle</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="../03-networking/00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="../03-networking/01-pod-networking.html"><span class="num">01</span>Pod Networking</a>
+      <a href="../03-networking/02-cni-plugins.html"><span class="num">02</span>CNI Plugins</a>
+      <a href="../03-networking/04-dns.html"><span class="num">04</span>DNS</a>
+      <a href="../03-networking/05-ingress.html"><span class="num">05</span>Ingress</a>
+      <a href="../03-networking/07-network-policies.html"><span class="num">07</span>Network Policies</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-csi-drivers.html"><span class="num">04</span>CSI Drivers</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods.html"><span class="num">01</span>Pods</a>
+      <a href="../05-workloads/02-deployments.html"><span class="num">02</span>Deployments</a>
+      <a href="../05-workloads/03-statefulsets.html"><span class="num">03</span>StatefulSets</a>
+      <a href="../05-workloads/05-jobs-cronjobs.html"><span class="num">05</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/06-horizontal-pod-autoscaler.html"><span class="num">06</span>HPA</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-rbac.html"><span class="num">01</span>RBAC</a>
+      <a href="../06-security/02-pod-security.html"><span class="num">02</span>Pod Security</a>
+      <a href="../06-security/04-secrets-management.html"><span class="num">04</span>Secrets Management</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics.html"><span class="num">01</span>Metrics</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Tracing</a>
+      <a href="../07-observability/06-alerting.html"><span class="num">06</span>Alerting</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/02-gitops.html"><span class="num">02</span>GitOps</a>
+      <a href="../08-platform-engineering/03-ci-cd-pipelines.html"><span class="num">03</span>CI/CD Pipelines</a>
+      <a href="../08-platform-engineering/05-policy-enforcement.html"><span class="num">05</span>Policy Enforcement</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/09-incident-response.html"><span class="num">09</span>Incident Response</a>
+      <a href="../09-production-operations/10-sre-practices.html"><span class="num">10</span>SRE Practices</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-workflows-overview.html"><span class="num">00</span>Overview</a>
+      <a href="../10-team-workflows/01-local-development.html"><span class="num">01</span>Local Development</a>
+      <a href="../10-team-workflows/02-ci-cd-pipelines.html"><span class="num">02</span>CI/CD Pipelines</a>
+      <a href="../10-team-workflows/03-helm.html"><span class="num">03</span>Helm</a>
+      <a href="../10-team-workflows/04-kustomize.html"><span class="num">04</span>Kustomize</a>
+      <a href="../10-team-workflows/05-testing-strategies.html"><span class="num">05</span>Testing Strategies</a>
+      <a href="../10-team-workflows/06-progressive-delivery.html"><span class="num">06</span>Progressive Delivery</a>
+      <a href="../10-team-workflows/07-developer-self-service.html"><span class="num">07</span>Developer Self-Service</a>
+      <a href="../10-team-workflows/08-runbooks.html"><span class="num">08</span>Runbooks</a>
+      <a href="../10-team-workflows/09-on-call.html"><span class="num">09</span>On-Call</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows &amp; Diagrams</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-overview.html"><span class="num">00</span>Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-service-account-token.html"><span class="num">02</span>Service Account Token</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-admission-flow.html"><span class="num">03</span>Admission Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-scheduler-flow.html"><span class="num">04</span>Scheduler Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-rolling-update-flow.html"><span class="num">05</span>Rolling Update Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-hpa-flow.html"><span class="num">06</span>HPA Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-csi-flow.html"><span class="num">07</span>CSI Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-network-policy-flow.html"><span class="num">08</span>Network Policy Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-rbac-flow.html" class="active"><span class="num">09</span>RBAC Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-garbage-collection.html"><span class="num">10</span>Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-leader-election.html"><span class="num">11</span>Leader Election</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-webhook-flow.html"><span class="num">12</span>Webhook Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-cni-setup-flow.html"><span class="num">13</span>CNI Setup Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-volume-attach-flow.html"><span class="num">14</span>Volume Attach Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-network-issues.html"><span class="num">02</span>Network Issues</a>
+      <a href="../12-troubleshooting/03-storage-issues.html"><span class="num">03</span>Storage Issues</a>
+      <a href="../12-troubleshooting/04-performance-issues.html"><span class="num">04</span>Performance Issues</a>
+      <a href="../12-troubleshooting/05-control-plane-issues.html"><span class="num">05</span>Control Plane Issues</a>
+      <a href="../12-troubleshooting/06-node-issues.html"><span class="num">06</span>Node Issues</a>
+      <a href="../12-troubleshooting/07-security-issues.html"><span class="num">07</span>Security Issues</a>
+      <a href="../12-troubleshooting/08-dns-issues.html"><span class="num">08</span>DNS Issues</a>
+      <a href="../12-troubleshooting/09-ingress-issues.html"><span class="num">09</span>Ingress Issues</a>
+      <a href="../12-troubleshooting/10-etcd-issues.html"><span class="num">10</span>etcd Issues</a>
+    </div>
+  </nav>
+</aside>
+
+<main class="main-content" id="main-content">
+
+<div class="page-header">
+  <div class="file-meta">
+    <span class="tag">Section 11</span>
+  </div>
+  <h1>RBAC Flow</h1>
+</div>
+
+<h2 id="overview">Overview</h2>
+<p>Traces every step of a kubectl request through authentication, authorization (RBAC), and audit logging — from the TLS handshake to the API server returning a response.</p>
+<h2 id="rbac-architecture">RBAC Architecture</h2>
+<pre><code>Every API request passes through:
+
+  1. Authentication    — WHO is making the request?
+  2. Authorization     — are they ALLOWED to do this?
+  3. Admission         — should the request be mutated/validated?
+  4. etcd              — persist the object
+
+RBAC is the default authorization mode.
+Multiple authorizers can run in sequence (RBAC + Node + Webhook).</code></pre>
+<pre><code>                    API Server
+                        │
+              ┌─────────▼──────────┐
+              │   Authentication    │
+              │  ┌──────────────┐  │
+              │  │ x509 client  │  │  ← kubectl (kubeconfig cert)
+              │  │ Bearer token │  │  ← ServiceAccount JWT
+              │  │ OIDC token   │  │  ← SSO / IRSA
+              │  │ Webhook      │  │  ← external authn
+              │  └──────────────┘  │
+              └─────────┬──────────┘
+                        │ UserInfo{username, groups}
+              ┌─────────▼──────────┐
+              │   Authorization     │
+              │  RBAC authorizer   │
+              │  Node authorizer   │
+              │  Webhook authorizer│
+              └─────────┬──────────┘
+                        │ Allow / Deny
+              ┌─────────▼──────────┐
+              │   Admission Chain  │
+              └─────────┬──────────┘
+                        │
+                      etcd</code></pre>
+<h2 id="full-rbac-authorization-sequence">Full RBAC Authorization Sequence</h2>
+<pre><code>kubectl           API Server        RBAC Authorizer      etcd        Audit Log
+   │                  │                   │               │              │
+   │─GET pods────────►│                   │               │              │
+   │  (Bearer token   │                   │               │              │
+   │   or cert)       │                   │               │              │
+   │                  │                   │               │              │
+   │           ┌──── Authentication ────┐ │               │              │
+   │           │ Validate token/cert    │ │               │              │
+   │           │ Extract:               │ │               │              │
+   │           │   username: alice      │ │               │              │
+   │           │   groups:              │ │               │              │
+   │           │     [dev-team,         │ │               │              │
+   │           │      system:authenticated] │             │              │
+   │           └────────────────────────┘ │               │              │
+   │                  │                   │               │              │
+   │                  │──Authorize?───────►               │              │
+   │                  │  verb: get        │               │              │
+   │                  │  resource: pods   │               │              │
+   │                  │  namespace: prod  │               │              │
+   │                  │  user: alice      │               │              │
+   │                  │  groups: [dev-team]               │              │
+   │                  │                   │               │              │
+   │                  │           ┌───── RBAC evaluation ──────────────┐ │
+   │                  │           │                                    │ │
+   │                  │           │  1. Find all RoleBindings /        │ │
+   │                  │           │     ClusterRoleBindings that       │ │
+   │                  │           │     match subject alice or         │ │
+   │                  │           │     group dev-team                 │ │
+   │                  │           │                                    │ │
+   │                  │           │  2. For each binding, look up      │ │
+   │                  │           │     the referenced Role /          │ │
+   │                  │           │     ClusterRole                    │ │
+   │                  │           │                                    │ │
+   │                  │           │  3. Check: does any rule in any    │ │
+   │                  │           │     referenced role allow:         │ │
+   │                  │           │     verbs=[get], resources=[pods]  │ │
+   │                  │           │     namespace=production?          │ │
+   │                  │           │                                    │ │
+   │                  │           │  4. First Allow wins (no Deny)     │ │
+   │                  │           │                                    │ │
+   │                  │           └────────────────────────────────────┘ │
+   │                  │◄── Allow ─────────│               │              │
+   │                  │                   │               │              │
+   │                  │──GET pods ───────────────────────►│              │
+   │                  │◄── pod list ──────────────────────│              │
+   │◄── 200 pod list──│                   │               │              │
+   │                  │                   │               │              │
+   │                  │──────────────────────────────────────────────────►
+   │                  │  audit: {user:alice, verb:get,    │              │
+   │                  │   resource:pods, ns:production,   │              │
+   │                  │   response:200}                    │              │</code></pre>
+<h2 id="rbac-object-model">RBAC Object Model</h2>
+<pre><code>ClusterRole / Role
+  └── Rules: [{apiGroups, resources, verbs}]
+
+ClusterRoleBinding / RoleBinding
+  └── subjects: [{kind, name, namespace}]
+  └── roleRef: {kind, name}
+
+Scope:
+  ClusterRole     — cluster-wide or used across namespaces
+  Role            — single namespace only
+  ClusterRoleBinding — grants ClusterRole cluster-wide
+  RoleBinding     — grants Role or ClusterRole in ONE namespace</code></pre>
+<h2 id="rbac-rules-verb-and-resource-reference">RBAC Rules — Verb and Resource Reference</h2>
+<pre><code class="language-yaml"># Role — read-only access to pods and logs in one namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader
+  namespace: production
+rules:
+- apiGroups: [&quot;&quot;]            # &quot;&quot; = core API group
+  resources: [&quot;pods&quot;]
+  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;]
+- apiGroups: [&quot;&quot;]
+  resources: [&quot;pods/log&quot;]    # subresource — separate rule needed
+  verbs: [&quot;get&quot;]
+- apiGroups: [&quot;apps&quot;]
+  resources: [&quot;deployments&quot;, &quot;replicasets&quot;]
+  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;]
+
+---
+# ClusterRole — read metrics across all namespaces
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metrics-reader
+rules:
+- apiGroups: [&quot;metrics.k8s.io&quot;]
+  resources: [&quot;pods&quot;, &quot;nodes&quot;]
+  verbs: [&quot;get&quot;, &quot;list&quot;]
+- nonResourceURLs: [&quot;/metrics&quot;, &quot;/healthz&quot;]
+  verbs: [&quot;get&quot;]
+
+---
+# RoleBinding — bind pod-reader to alice in production
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: alice-pod-reader
+  namespace: production
+subjects:
+- kind: User
+  name: alice                # matches x509 CN or OIDC sub
+  apiGroup: rbac.authorization.k8s.io
+- kind: Group
+  name: dev-team             # matches x509 O or OIDC group claim
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ClusterRoleBinding — grant admin to ops-team cluster-wide
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ops-team-admin
+subjects:
+- kind: Group
+  name: ops-team
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io</code></pre>
+<h2 id="serviceaccount-rbac-flow">ServiceAccount RBAC Flow</h2>
+<pre><code>Pod running with serviceAccountName: payments-api
+  │
+  │  Mounted: /var/run/secrets/kubernetes.io/serviceaccount/token
+  │           (projected ServiceAccount token, audience=kubernetes)
+  │
+  ▼
+API request from pod:
+  Authorization: Bearer &lt;JWT&gt;
+  │
+  ▼
+API Server authentication:
+  Validates JWT signature against cluster CA
+  Extracts:
+    username: system:serviceaccount:production:payments-api
+    groups:   [system:serviceaccounts, system:serviceaccounts:production]
+  │
+  ▼
+RBAC check:
+  Looks for RoleBinding / ClusterRoleBinding where:
+    subject.kind = ServiceAccount
+    subject.name = payments-api
+    subject.namespace = production</code></pre>
+<pre><code class="language-yaml"># Give payments-api SA read access to ConfigMaps/Secrets it needs
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: payments-api-config-reader
+  namespace: production
+rules:
+- apiGroups: [&quot;&quot;]
+  resources: [&quot;configmaps&quot;]
+  resourceNames: [&quot;payments-config&quot;, &quot;feature-flags&quot;]  # scoped to specific objects
+  verbs: [&quot;get&quot;, &quot;watch&quot;]
+- apiGroups: [&quot;&quot;]
+  resources: [&quot;secrets&quot;]
+  resourceNames: [&quot;payments-db-creds&quot;]
+  verbs: [&quot;get&quot;]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: payments-api-config-reader
+  namespace: production
+subjects:
+- kind: ServiceAccount
+  name: payments-api
+  namespace: production
+roleRef:
+  kind: Role
+  name: payments-api-config-reader
+  apiGroup: rbac.authorization.k8s.io</code></pre>
+<h2 id="built-in-clusterroles">Built-in ClusterRoles</h2>
+<table>
+<tr><th>ClusterRole</th><th>Who should use it</th><th>Grants</th></tr>
+<tr><td><code>cluster-admin</code></td><td>Break-glass only</td><td>Full access to everything</td></tr>
+<tr><td><code>admin</code></td><td>Namespace owners</td><td>Full namespace control, no RBAC write</td></tr>
+<tr><td><code>edit</code></td><td>Developers</td><td>CRUD on most resources, no RBAC</td></tr>
+<tr><td><code>view</code></td><td>Read-only users</td><td>GET/LIST/WATCH on non-sensitive resources</td></tr>
+<tr><td><code>system:node</code></td><td>kubelets</td><td>Node-specific pod/PV operations</td></tr>
+<tr><td><code>system:kube-scheduler</code></td><td>scheduler</td><td>Pod/Node read, binding write</td></tr>
+<tr><td><code>system:kube-controller-manager</code></td><td>controller-manager</td><td>Wide read+write for reconciliation</td></tr>
+</table>
+<h2 id="audit-logging">Audit Logging</h2>
+<pre><code class="language-yaml"># Audit policy — /etc/kubernetes/audit-policy.yaml (kube-apiserver flag)
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+# Log all changes to RBAC objects (Metadata + RequestResponse)
+- level: RequestResponse
+  resources:
+  - group: rbac.authorization.k8s.io
+    resources: [&quot;roles&quot;, &quot;rolebindings&quot;, &quot;clusterroles&quot;, &quot;clusterrolebindings&quot;]
+
+# Log secret reads (who is reading secrets)
+- level: Metadata
+  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;]
+  resources:
+  - group: &quot;&quot;
+    resources: [&quot;secrets&quot;]
+
+# Log exec/attach/portforward (high-risk subresources)
+- level: RequestResponse
+  resources:
+  - group: &quot;&quot;
+    resources: [&quot;pods/exec&quot;, &quot;pods/attach&quot;, &quot;pods/portforward&quot;]
+
+# Skip health check noise
+- level: None
+  users: [&quot;system:kube-proxy&quot;]
+  verbs: [&quot;watch&quot;]
+  resources:
+  - group: &quot;&quot;
+    resources: [&quot;endpoints&quot;, &quot;services&quot;]
+
+# Default — metadata only for everything else
+- level: Metadata</code></pre>
+<pre><code>Audit log entry (JSON):
+{
+  &quot;kind&quot;: &quot;Event&quot;,
+  &quot;apiVersion&quot;: &quot;audit.k8s.io/v1&quot;,
+  &quot;level&quot;: &quot;Metadata&quot;,
+  &quot;auditID&quot;: &quot;...&quot;,
+  &quot;stage&quot;: &quot;ResponseComplete&quot;,
+  &quot;requestURI&quot;: &quot;/api/v1/namespaces/production/secrets/payments-db-creds&quot;,
+  &quot;verb&quot;: &quot;get&quot;,
+  &quot;user&quot;: {
+    &quot;username&quot;: &quot;alice&quot;,
+    &quot;groups&quot;: [&quot;dev-team&quot;, &quot;system:authenticated&quot;]
+  },
+  &quot;sourceIPs&quot;: [&quot;10.0.0.15&quot;],
+  &quot;responseStatus&quot;: {&quot;code&quot;: 200},
+  &quot;requestReceivedTimestamp&quot;: &quot;...&quot;,
+  &quot;annotations&quot;: {
+    &quot;authorization.k8s.io/decision&quot;: &quot;allow&quot;,
+    &quot;authorization.k8s.io/reason&quot;: &quot;RBAC: allowed by RoleBinding \&quot;alice-pod-reader\&quot; of Role \&quot;pod-reader\&quot; to User \&quot;alice\&quot;&quot;
+  }
+}</code></pre>
+<h2 id="rbac-debugging">RBAC Debugging</h2>
+<pre><code class="language-bash"># Check if alice can get pods in production
+kubectl auth can-i get pods --namespace production --as alice
+
+# Check via group
+kubectl auth can-i get pods --namespace production \
+  --as alice --as-group dev-team
+
+# Check ServiceAccount permissions
+kubectl auth can-i get secrets \
+  --namespace production \
+  --as system:serviceaccount:production:payments-api
+
+# List all permissions for a subject (requires kubectl 1.26+)
+kubectl auth whoami   # shows your current identity
+
+# Find all RoleBindings for a user
+kubectl get rolebindings,clusterrolebindings -A -o json | \
+  jq &#x27;.items[] | select(.subjects[]?.name==&quot;alice&quot;) | {kind:.kind, name:.metadata.name, ns:.metadata.namespace}&#x27;
+
+# Show what a ClusterRole actually grants
+kubectl describe clusterrole edit | grep -A3 &quot;pods&quot;
+
+# Audit: who accessed secrets recently
+# (requires audit log access)
+grep &#x27;&quot;secrets&quot;&#x27; /var/log/kubernetes/audit.log | \
+  jq &#x27;select(.verb==&quot;get&quot;) | {user:.user.username, time:.requestReceivedTimestamp}&#x27;
+
+# Check RBAC for operator / controller SAs
+kubectl get clusterrolebindings -o json | \
+  jq &#x27;.items[] | select(.subjects[]?.namespace==&quot;kube-system&quot;) | .metadata.name&#x27;</code></pre>
+<h2 id="common-rbac-mistakes">Common RBAC Mistakes</h2>
+<pre><code>Mistake: granting cluster-admin to service accounts
+  Fix: use least-privilege Roles with resourceNames where possible
+
+Mistake: binding to User &quot;system:anonymous&quot;
+  Fix: disable anonymous auth (--anonymous-auth=false on API server)
+
+Mistake: RoleBinding referencing ClusterRole grants cluster-wide access
+  Reality: RoleBinding + ClusterRole = access scoped to the binding&#x27;s NAMESPACE only
+  For cluster-wide: use ClusterRoleBinding
+
+Mistake: wildcard verbs on sensitive resources
+  Bad:  verbs: [&quot;*&quot;]  resources: [&quot;secrets&quot;]
+  Good: verbs: [&quot;get&quot;] resources: [&quot;secrets&quot;] resourceNames: [&quot;specific-secret&quot;]
+
+Mistake: forgetting pods/exec is a separate subresource
+  If you want to block kubectl exec, you must explicitly deny pods/exec</code></pre>
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="./03-admission-flow.html">03 — Admission Flow</a> — RBAC check runs before admission</li>
+<li><a href="../06-security/02-rbac.html">02 — RBAC</a> — RBAC design reference</li>
+<li><a href="./02-service-account-token.html">02 — Service Account Token</a> — how SAs authenticate</li>
+</ul>
+
+<div class="nav-footer">
+  <a href="08-network-policy-flow.html" class="nav-btn">
+    <div class="label">← Previous</div>
+    <div class="title">Network Policy Flow</div>
+  </a>
+  <a href="10-garbage-collection.html" class="nav-btn next">
+    <div class="label">Next →</div>
+    <div class="title">Garbage Collection</div>
+  </a>
+</div>
+
+</main>
+
+<aside class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#overview">Overview</a>
+  <a href="#rbac-architecture">RBAC Architecture</a>
+  <a href="#full-rbac-authorization-sequence">Full RBAC Authorization Sequence</a>
+  <a href="#rbac-object-model">RBAC Object Model</a>
+  <a href="#rbac-rules-verb-and-resource-reference">RBAC Rules — Verb and Resource Reference</a>
+  <a href="#serviceaccount-rbac-flow">ServiceAccount RBAC Flow</a>
+  <a href="#built-in-clusterroles">Built-in ClusterRoles</a>
+  <a href="#audit-logging">Audit Logging</a>
+  <a href="#rbac-debugging">RBAC Debugging</a>
+  <a href="#common-rbac-mistakes">Common RBAC Mistakes</a>
+  <a href="#related">Related</a>
+</aside>
+</div>
+
+<button class="back-to-top" id="back-to-top">↑</button>
+
+<script>
+
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');btn.className='copy-btn';btn.textContent='Copy';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});
+});
+const tocLinks=[...document.querySelectorAll('.toc-panel a')];
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){tocLinks.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);if(a)a.classList.add('active');}});
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h=>obs.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';});
+});
+const si=document.getElementById('search-input');
+si.addEventListener('input',function(){
+  document.querySelectorAll('.search-hl').forEach(m=>{m.outerHTML=m.textContent;});
+  const q=this.value.trim();if(!q)return;
+  const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  function walk(n){if(n.nodeType===3){if(n.textContent.match(re)){const s=document.createElement('span');s.innerHTML=n.textContent.replace(re,m=>`<mark class="search-hl">${m}</mark>`);n.parentNode.replaceChild(s,n);}}else if(n.nodeType===1&&!['SCRIPT','STYLE','MARK','BUTTON','INPUT'].includes(n.tagName)){[...n.childNodes].forEach(walk);}}
+  walk(document.getElementById('main-content'));
+});
+
+</script>
+</body>
+</html>

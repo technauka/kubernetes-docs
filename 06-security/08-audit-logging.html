@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Logging | Kubernetes Documentation</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#30363d;
+  --border:#30363d; --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --accent:#58a6ff; --accent2:#388bfd; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --orange:#d18616; --code-bg:#161b22;
+}
+[data-theme="light"] {
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eaeef2; --bg4:#d0d7de;
+  --border:#d0d7de; --text:#24292f; --text2:#57606a; --text3:#6e7781;
+  --accent:#0969da; --accent2:#0550ae; --green:#1a7f37; --yellow:#9a6700;
+  --red:#cf222e; --purple:#8250df; --orange:#953800; --code-bg:#f6f8fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-filter{padding:12px 16px;border-bottom:1px solid var(--border);}
+.sidebar-filter input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;}
+.sidebar-filter input:focus{outline:none;border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+
+.main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
+.page-header{margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.breadcrumb{font-size:13px;color:var(--text3);margin-bottom:12px;}
+.breadcrumb a{color:var(--text3);}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;margin-bottom:12px;}
+.page-desc{font-size:16px;color:var(--text2);line-height:1.6;}
+.meta-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.tag{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--text2);}
+.tag.adv{border-color:var(--red);color:var(--red);}
+.tag.int{border-color:var(--yellow);color:var(--yellow);}
+
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{margin:0 0 16px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'SF Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+.copy-btn:hover{color:var(--text);}
+
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid;}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.warning{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-size:13px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.callout.danger .callout-title{color:var(--red);}
+.callout.warning .callout-title{color:var(--yellow);}
+.callout.info .callout-title{color:var(--accent);}
+.callout.success .callout-title{color:var(--green);}
+.callout p{margin-bottom:0;font-size:14px;}
+
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);border-bottom:1px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 10px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card.danger{border-color:var(--red);}
+.card.warning{border-color:var(--yellow);}
+.card.success{border-color:var(--green);}
+.card.info{border-color:var(--accent);}
+
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'SF Mono','Fira Code',monospace;font-size:13px;line-height:1.8;overflow-x:auto;}
+.diagram .box{display:inline-block;border:1px solid var(--border);padding:4px 12px;border-radius:4px;background:var(--bg3);}
+.diagram .box.red{border-color:var(--red);color:var(--red);}
+.diagram .box.green{border-color:var(--green);color:var(--green);}
+.diagram .box.blue{border-color:var(--accent);color:var(--accent);}
+.diagram .box.yellow{border-color:var(--yellow);color:var(--yellow);}
+.diagram .box.purple{border-color:var(--purple);color:var(--purple);}
+.diagram .arrow{color:var(--text3);}
+
+.steps{display:flex;flex-direction:column;gap:0;margin:20px 0;}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step-num{width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.step-num.green{background:var(--green);}
+.step-num.yellow{background:var(--yellow);}
+.step-content h4{margin:0 0 4px;font-size:14px;color:var(--text);}
+.step-content p{margin:0;font-size:13px;}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge.red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge.green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge.yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge.blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge.purple{background:rgba(188,140,255,.15);color:var(--purple);}
+
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden;}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;border-top:1px solid var(--border);}
+.coverage-body li{font-size:13px;color:var(--text2);}
+
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:32px;}
+.toc-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{font-size:13px;margin-bottom:4px;}
+.toc a{color:var(--text2);}
+.toc a:hover{color:var(--accent);}
+.toc a.active{color:var(--accent);}
+
+.toolbar{position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:100;}
+.toolbar button{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+.toolbar button:hover{color:var(--text);border-color:var(--text3);}
+.back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;}
+.back-to-top.visible{opacity:1;}
+
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;}
+@media(max-width:768px){
+  .hamburger{display:block;}
+  .sidebar{position:fixed;left:-280px;top:0;z-index:150;transition:left .25s;}
+  .sidebar.open{left:0;}
+  .main{padding:24px 20px;}
+}
+
+.k{color:#ff7b72;} .s{color:#a5d6ff;} .c{color:#8b949e;font-style:italic;} .n{color:#ffa657;} .cm{color:#3fb950;}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">K8s <span>Docs</span></div>
+  </div>
+  <div class="sidebar-filter">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="00-security-overview.html">Security Overview</a>
+    <a href="01-rbac.html">RBAC</a>
+    <a href="02-pod-security.html">Pod Security</a>
+    <a href="03-network-policies.html">Network Policies</a>
+    <a href="04-secrets-management.html">Secrets Management</a>
+    <a href="05-service-accounts.html">Service Accounts</a>
+    <a href="06-admission-controllers.html">Admission Controllers</a>
+    <a href="07-image-security.html">Image Security</a>
+    <a href="08-audit-logging.html" class="active">Audit Logging</a>
+    <a href="09-encryption-at-rest.html">Encryption at Rest</a>
+    <a href="10-supply-chain-security.html">Supply Chain Security</a>
+    <a href="11-compliance.html">Compliance</a>
+  </div>
+</nav>
+
+<main class="main" id="main">
+  <div class="toolbar">
+    <button onclick="toggleTheme()">Theme</button>
+  </div>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-security-overview.html">Security</a> › Audit Logging</div>
+    <h1>Audit Logging</h1>
+    <p class="page-desc">Kubernetes API server audit logging: policy levels, stages, backends, log format, noise reduction, SIEM integration, and forensic query patterns for security investigation and compliance.</p>
+    <div class="meta-tags">
+      <span class="tag adv">Advanced</span>
+      <span class="tag">Security</span>
+      <span class="tag">Observability</span>
+      <span class="tag">Compliance</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">On This Page</div>
+    <ol>
+      <li><a href="#overview">Audit Logging Overview</a></li>
+      <li><a href="#policy-levels">Policy Levels &amp; Stages</a></li>
+      <li><a href="#audit-policy">Writing Audit Policies</a></li>
+      <li><a href="#backends">Audit Backends</a></li>
+      <li><a href="#event-format">Audit Event Format</a></li>
+      <li><a href="#noise-reduction">Noise Reduction</a></li>
+      <li><a href="#siem-integration">SIEM Integration</a></li>
+      <li><a href="#forensic-queries">Forensic Query Patterns</a></li>
+      <li><a href="#dynamic-audit">Dynamic Audit Webhooks</a></li>
+      <li><a href="#compliance">Compliance Requirements</a></li>
+      <li><a href="#observability">Metrics, Alerts &amp; Runbooks</a></li>
+      <li><a href="#best-practices">Best Practices</a></li>
+    </ol>
+  </div>
+
+  <details class="coverage">
+    <summary>Coverage Checklist</summary>
+    <ul class="coverage-body">
+      <li>Audit logging architecture: kube-apiserver only</li>
+      <li>4 policy levels: None/Metadata/Request/RequestResponse</li>
+      <li>4 audit stages: RequestReceived/ResponseStarted/ResponseComplete/Panic</li>
+      <li>AuditPolicy YAML: rules, verbs, resources, namespaces, users</li>
+      <li>omitStages and omitManagedFields</li>
+      <li>Log backend: file rotation, path, maxAge, maxBackups</li>
+      <li>Webhook backend: config, batchType, throttle, truncate</li>
+      <li>Audit event JSON: all fields documented</li>
+      <li>Noise reduction: system components, health checks, watch events</li>
+      <li>Production policy: tiered rules pattern</li>
+      <li>SIEM: Fluentd/Fluent Bit → Elasticsearch, Splunk, Loki</li>
+      <li>Falco audit rules via webhook</li>
+      <li>Forensic queries: secret access, exec, privilege escalation</li>
+      <li>jq query patterns for log analysis</li>
+      <li>Dynamic audit webhooks (auditregistration.k8s.io)</li>
+      <li>Compliance: PCI DSS, SOC 2, CIS requirements</li>
+      <li>5 metrics, 4 alerts, 5 runbooks, 8 best practices</li>
+    </ul>
+  </details>
+
+  <!-- ───── OVERVIEW ───── -->
+  <h2 id="overview">Audit Logging Overview</h2>
+
+  <p>Kubernetes audit logging records every request processed by the API server — who made the request, what they requested, and what the outcome was. It is the authoritative trail for security investigation, compliance, and forensics.</p>
+
+  <div class="callout info">
+    <div class="callout-title">API Server Only</div>
+    <p>Kubernetes audit logs only capture activity that goes through the API server. Direct kubelet API calls (port 10250), container runtime operations, and in-process activity within pods are not captured here. Use Falco for syscall-level runtime visibility alongside audit logs.</p>
+  </div>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── Request lifecycle through the audit subsystem ────────────────────</span>
+<br>
+<br><span class="box blue">Client</span>
+<br>  │   (kubectl / controller / service account / external)
+<br>  │
+<br>  ▼
+<br><span class="box">kube-apiserver</span>
+<br>  │
+<br>  ├── <span style="color:var(--accent)">Stage: RequestReceived</span>  ← logged as soon as request arrives
+<br>  │
+<br>  ├── AuthN + AuthZ + Admission
+<br>  │
+<br>  ├── <span style="color:var(--accent)">Stage: ResponseStarted</span>   ← for long-running responses (watch, exec)
+<br>  │
+<br>  ├── Handler executes (etcd read/write)
+<br>  │
+<br>  └── <span style="color:var(--accent)">Stage: ResponseComplete</span>  ← most important; includes response code
+<br>      <span style="color:var(--red)">Stage: Panic</span>              ← if handler panics
+<br>
+<br>        │                         │
+<br>        ▼                         ▼
+<br><span class="box green">Log Backend</span>             <span class="box purple">Webhook Backend</span>
+<br>(local file)              (external audit sink)
+  </div>
+
+  <h3>What Audit Logs Answer</h3>
+
+  <div class="card-grid">
+    <div class="card info">
+      <h4>Who accessed what?</h4>
+      <p>Track which user, service account, or node read a Secret, ConfigMap, or other sensitive resource.</p>
+    </div>
+    <div class="card info">
+      <h4>What changed and when?</h4>
+      <p>Full timeline of creates, updates, deletes to any resource, including the request body at RequestResponse level.</p>
+    </div>
+    <div class="card info">
+      <h4>Failed authentication attempts</h4>
+      <p>Unauthorized (401) and Forbidden (403) responses indicate credential probing or misconfigured RBAC.</p>
+    </div>
+    <div class="card info">
+      <h4>Privilege escalation paths</h4>
+      <p>Track creation of ClusterRoleBindings, ServiceAccounts, and impersonation attempts.</p>
+    </div>
+  </div>
+
+  <!-- ───── POLICY LEVELS & STAGES ───── -->
+  <h2 id="policy-levels">Policy Levels &amp; Stages</h2>
+
+  <h3>Audit Levels</h3>
+
+  <p>Each audit rule assigns a level that controls how much detail is recorded. Higher levels capture more data but increase log volume and API server overhead.</p>
+
+  <table>
+    <thead><tr><th>Level</th><th>What Is Logged</th><th>Overhead</th><th>Use For</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>None</code></td>
+        <td>Nothing — request is not logged at all</td>
+        <td>Zero</td>
+        <td>High-volume noise: health checks, metrics scrapes, leader election</td>
+      </tr>
+      <tr>
+        <td><code>Metadata</code></td>
+        <td>Request metadata only: user, timestamp, resource, verb, response code. No request or response body.</td>
+        <td>Low</td>
+        <td>Most resources: read operations, watch events</td>
+      </tr>
+      <tr>
+        <td><code>Request</code></td>
+        <td>Metadata + request body (but not response body)</td>
+        <td>Medium</td>
+        <td>Writes to important resources where you need to see what was submitted</td>
+      </tr>
+      <tr>
+        <td><code>RequestResponse</code></td>
+        <td>Metadata + request body + response body</td>
+        <td>High</td>
+        <td>Secrets, RBAC changes, exec, portforward — highest-value forensic data</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <div class="callout-title">RequestResponse for Secrets Contains the Secret Value</div>
+    <p>Logging Secrets at <code>RequestResponse</code> level includes the base64-encoded secret data in the log. Ensure your log pipeline encrypts logs at rest and restricts access to the audit log backend. This is often a compliance requirement violation if left unprotected.</p>
+  </div>
+
+  <h3>Audit Stages</h3>
+
+  <table>
+    <thead><tr><th>Stage</th><th>When Emitted</th><th>Response Code Available?</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td><code>RequestReceived</code></td><td>Immediately on arrival, before AuthN/AuthZ</td><td>No</td><td>Detecting requests that crash the handler</td></tr>
+      <tr><td><code>ResponseStarted</code></td><td>After headers sent, before body</td><td>Yes</td><td>Long-running: watch, exec, port-forward</td></tr>
+      <tr><td><code>ResponseComplete</code></td><td>After full response sent</td><td>Yes</td><td>Standard request completion — the primary stage to capture</td></tr>
+      <tr><td><code>Panic</code></td><td>On handler panic (500)</td><td>Yes (500)</td><td>Bug detection and intrusion via panic exploitation</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-title">omitStages for Watch Connections</div>
+    <p>Watch requests emit <code>ResponseStarted</code> when the watch begins and <code>ResponseComplete</code> when it closes — but also emit one event per change notification. Set <code>omitStages: [ResponseStarted]</code> globally to eliminate watch startup noise while keeping completion events.</p>
+  </div>
+
+  <!-- ───── AUDIT POLICY ───── -->
+  <h2 id="audit-policy">Writing Audit Policies</h2>
+
+  <p>The audit policy is a YAML file passed to the API server via <code>--audit-policy-file</code>. Rules are evaluated in order; the first matching rule determines the level. If no rule matches, the request is not logged.</p>
+
+  <h3>Minimal Policy (Baseline)</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="k">apiVersion</span>: <span class="s">audit.k8s.io/v1</span>
+<span class="k">kind</span>: <span class="s">Policy</span>
+
+<span class="c"># Omit ResponseStarted for watch-type long-running requests</span>
+<span class="k">omitStages</span>:
+- <span class="s">RequestReceived</span>
+
+<span class="k">rules</span>:
+<span class="c"># Rule 1: Don't log read-only requests from system components</span>
+- <span class="k">level</span>: <span class="s">None</span>
+  <span class="k">users</span>:
+  - <span class="s">system:kube-scheduler</span>
+  - <span class="s">system:kube-proxy</span>
+  - <span class="s">system:apiserver</span>
+  - <span class="s">system:kube-controller-manager</span>
+  - <span class="s">system:serviceaccount:kube-system:endpoint-controller</span>
+  <span class="k">verbs</span>: [<span class="s">get</span>, <span class="s">watch</span>, <span class="s">list</span>]
+
+<span class="c"># Rule 2: Don't log health/readiness probes</span>
+- <span class="k">level</span>: <span class="s">None</span>
+  <span class="k">nonResourceURLs</span>:
+  - <span class="s">/healthz*</span>
+  - <span class="s">/readyz*</span>
+  - <span class="s">/livez*</span>
+  - <span class="s">/version</span>
+  - <span class="s">/swagger*</span>
+  - <span class="s">/openapi*</span>
+
+<span class="c"># Rule 3: Don't log metrics scrape</span>
+- <span class="k">level</span>: <span class="s">None</span>
+  <span class="k">nonResourceURLs</span>:
+  - <span class="s">/metrics</span>
+  - <span class="s">/metrics/cadvisor</span>
+
+<span class="c"># Rule 4: Full detail for secrets (no response body — value excluded)</span>
+- <span class="k">level</span>: <span class="s">Request</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">""</span>
+    <span class="k">resources</span>: [<span class="s">secrets</span>, <span class="s">configmaps</span>, <span class="s">serviceaccounts/token</span>]
+
+<span class="c"># Rule 5: Full detail for RBAC changes</span>
+- <span class="k">level</span>: <span class="s">RequestResponse</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">rbac.authorization.k8s.io</span>
+    <span class="k">resources</span>: [<span class="s">roles</span>, <span class="s">clusterroles</span>, <span class="s">rolebindings</span>, <span class="s">clusterrolebindings</span>]
+
+<span class="c"># Rule 6: Log exec/attach/portforward at Request level (captures command args)</span>
+- <span class="k">level</span>: <span class="s">Request</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">""</span>
+    <span class="k">resources</span>: [<span class="s">pods/exec</span>, <span class="s">pods/attach</span>, <span class="s">pods/portforward</span>]
+
+<span class="c"># Rule 7: Metadata for most other resources</span>
+- <span class="k">level</span>: <span class="s">Metadata</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">""</span>
+  - <span class="k">group</span>: <span class="s">apps</span>
+  - <span class="k">group</span>: <span class="s">batch</span>
+  - <span class="k">group</span>: <span class="s">networking.k8s.io</span>
+  - <span class="k">group</span>: <span class="s">policy</span>
+  - <span class="k">group</span>: <span class="s">storage.k8s.io</span></code></pre>
+
+  <h3>Production Policy (Tiered)</h3>
+
+  <p>A production policy uses a tiered approach: suppress noise aggressively, capture sensitive operations in full, and use <code>Metadata</code> as the safe default for everything else.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="k">apiVersion</span>: <span class="s">audit.k8s.io/v1</span>
+<span class="k">kind</span>: <span class="s">Policy</span>
+<span class="k">omitStages</span>:
+- <span class="s">RequestReceived</span>
+<span class="k">omitManagedFields</span>: <span class="s">true</span>   <span class="c"># Removes managedFields from request/response bodies</span>
+
+<span class="k">rules</span>:
+
+<span class="c"># ── TIER 0: Complete suppression (high volume, no security value) ────</span>
+
+- <span class="k">level</span>: <span class="s">None</span>
+  <span class="k">userGroups</span>: [<span class="s">system:nodes</span>]
+  <span class="k">verbs</span>: [<span class="s">get</span>, <span class="s">watch</span>, <span class="s">list</span>]
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">""</span>
+    <span class="k">resources</span>: [<span class="s">endpoints</span>, <span class="s">services</span>, <span class="s">pods</span>, <span class="s">nodes</span>]
+
+- <span class="k">level</span>: <span class="s">None</span>
+  <span class="k">nonResourceURLs</span>: [<span class="s">/healthz*</span>, <span class="s">/readyz*</span>, <span class="s">/livez*</span>, <span class="s">/version</span>, <span class="s">/metrics*</span>]
+
+<span class="c"># Suppress leader election coordination (very high volume, no security value)</span>
+- <span class="k">level</span>: <span class="s">None</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">coordination.k8s.io</span>
+    <span class="k">resources</span>: [<span class="s">leases</span>]
+
+<span class="c"># Suppress event updates (informational only, not security relevant)</span>
+- <span class="k">level</span>: <span class="s">None</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">""</span>
+    <span class="k">resources</span>: [<span class="s">events</span>]
+
+<span class="c"># ── TIER 1: RequestResponse — highest security value ─────────────────</span>
+
+<span class="c"># RBAC mutations — full request+response for privilege escalation detection</span>
+- <span class="k">level</span>: <span class="s">RequestResponse</span>
+  <span class="k">verbs</span>: [<span class="s">create</span>, <span class="s">update</span>, <span class="s">patch</span>, <span class="s">delete</span>]
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">rbac.authorization.k8s.io</span>
+    <span class="k">resources</span>:
+    - <span class="s">roles</span>
+    - <span class="s">clusterroles</span>
+    - <span class="s">rolebindings</span>
+    - <span class="s">clusterrolebindings</span>
+
+<span class="c"># ServiceAccount token creation and SA mutations</span>
+- <span class="k">level</span>: <span class="s">RequestResponse</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">""</span>
+    <span class="k">resources</span>: [<span class="s">serviceaccounts</span>, <span class="s">serviceaccounts/token</span>]
+
+<span class="c"># Pod exec/attach — captures command run (command in URI params)</span>
+- <span class="k">level</span>: <span class="s">Request</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">""</span>
+    <span class="k">resources</span>: [<span class="s">pods/exec</span>, <span class="s">pods/attach</span>, <span class="s">pods/portforward</span>]
+
+<span class="c"># ── TIER 2: Request — important writes ───────────────────────────────</span>
+
+<span class="c"># Secret reads and writes (NOT RequestResponse — would log secret values)</span>
+- <span class="k">level</span>: <span class="s">Request</span>
+  <span class="k">verbs</span>: [<span class="s">get</span>, <span class="s">list</span>, <span class="s">create</span>, <span class="s">update</span>, <span class="s">patch</span>, <span class="s">delete</span>]
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">""</span>
+    <span class="k">resources</span>: [<span class="s">secrets</span>]
+
+<span class="c"># Admission webhook configurations — changes here affect all cluster security</span>
+- <span class="k">level</span>: <span class="s">RequestResponse</span>
+  <span class="k">resources</span>:
+  - <span class="k">group</span>: <span class="s">admissionregistration.k8s.io</span>
+    <span class="k">resources</span>: [<span class="s">mutatingwebhookconfigurations</span>, <span class="s">validatingwebhookconfigurations</span>]
+
+<span class="c"># ── TIER 3: Metadata — default for everything else ───────────────────</span>
+- <span class="k">level</span>: <span class="s">Metadata</span></code></pre>
+
+  <h3>API Server Flags</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># kube-apiserver flags for audit logging</span>
+--audit-log-path=/var/log/kubernetes/audit/audit.log
+--audit-log-maxage=30          <span class="c"># Days to retain rotated log files</span>
+--audit-log-maxbackup=10       <span class="c"># Max number of old log files to keep</span>
+--audit-log-maxsize=100        <span class="c"># Max size in MB before rotation</span>
+--audit-log-compress           <span class="c"># Compress rotated files with gzip</span>
+--audit-policy-file=/etc/kubernetes/audit-policy.yaml
+--audit-log-format=json        <span class="c"># json (default) or legacy (text)</span></code></pre>
+
+  <!-- ───── BACKENDS ───── -->
+  <h2 id="backends">Audit Backends</h2>
+
+  <h3>Log Backend</h3>
+
+  <p>The log backend writes audit events to a file on the API server node in JSON Lines format (one JSON object per line). This is the simplest setup and suitable for environments with a log collection agent (Fluentd, Fluent Bit, Filebeat) on the node.</p>
+
+  <table>
+    <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>--audit-log-path</code></td><td>—</td><td>File path; required to enable log backend. Use <code>-</code> for stdout.</td></tr>
+      <tr><td><code>--audit-log-maxage</code></td><td>0</td><td>Max days to retain rotated files (0 = unlimited)</td></tr>
+      <tr><td><code>--audit-log-maxbackup</code></td><td>0</td><td>Max number of rotated backup files (0 = unlimited)</td></tr>
+      <tr><td><code>--audit-log-maxsize</code></td><td>100</td><td>Max size in megabytes before rotation</td></tr>
+      <tr><td><code>--audit-log-compress</code></td><td>false</td><td>gzip compress rotated files</td></tr>
+      <tr><td><code>--audit-log-format</code></td><td>json</td><td><code>json</code> (structured) or <code>legacy</code> (text)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Webhook Backend</h3>
+
+  <p>The webhook backend sends audit events to an external HTTP endpoint in batches. Used when you want real-time delivery to a SIEM or an audit aggregator without first writing to disk.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># webhook-audit-config.yaml — kubeconfig-format endpoint configuration</span>
+<span class="k">apiVersion</span>: <span class="s">v1</span>
+<span class="k">kind</span>: <span class="s">Config</span>
+<span class="k">clusters</span>:
+- <span class="k">name</span>: <span class="s">audit-webhook</span>
+  <span class="k">cluster</span>:
+    <span class="k">server</span>: <span class="s">https://audit-sink.internal:8888/audit</span>
+    <span class="k">certificate-authority</span>: <span class="s">/etc/kubernetes/audit-webhook-ca.crt</span>
+<span class="k">contexts</span>:
+- <span class="k">name</span>: <span class="s">webhook</span>
+  <span class="k">context</span>:
+    <span class="k">cluster</span>: <span class="s">audit-webhook</span>
+    <span class="k">user</span>: <span class="s">""</span>
+<span class="k">current-context</span>: <span class="s">webhook</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># API server flags for webhook backend</span>
+--audit-webhook-config-file=/etc/kubernetes/webhook-audit-config.yaml
+--audit-webhook-mode=batch          <span class="c"># batch (default) or blocking</span>
+--audit-webhook-batch-max-size=400  <span class="c"># Events per batch</span>
+--audit-webhook-batch-max-wait=30s  <span class="c"># Max time before sending incomplete batch</span>
+--audit-webhook-initial-backoff=10s <span class="c"># Initial retry delay</span>
+--audit-webhook-truncate-enabled    <span class="c"># Truncate oversized events instead of dropping</span>
+--audit-webhook-truncate-max-event-size=10485760  <span class="c"># 10MB max event</span></code></pre>
+
+  <div class="callout danger">
+    <div class="callout-title">Webhook Mode: blocking vs batch</div>
+    <p><code>batch</code> mode (default) is asynchronous — the API server does not wait for the webhook to confirm receipt. Events can be dropped if the webhook is down and the buffer fills. <code>blocking</code> mode makes every request wait for the webhook to respond before the API server returns — this adds latency to every API call and should only be used if you can guarantee sub-millisecond webhook response times.</p>
+  </div>
+
+  <!-- ───── EVENT FORMAT ───── -->
+  <h2 id="event-format">Audit Event Format</h2>
+
+  <p>Each audit event is a JSON object with a well-defined schema. Understanding the fields is essential for writing effective SIEM queries and Falco rules.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>{
+  <span class="s">"kind"</span>: <span class="s">"Event"</span>,
+  <span class="s">"apiVersion"</span>: <span class="s">"audit.k8s.io/v1"</span>,
+
+  <span class="c">// Unique ID for this event (UUID)</span>
+  <span class="s">"auditID"</span>: <span class="s">"f23a4b56-1234-5678-abcd-000000000001"</span>,
+
+  <span class="c">// Which stage this event was emitted from</span>
+  <span class="s">"stage"</span>: <span class="s">"ResponseComplete"</span>,
+
+  <span class="c">// The full request URI</span>
+  <span class="s">"requestURI"</span>: <span class="s">"/api/v1/namespaces/production/secrets/db-password"</span>,
+
+  <span class="c">// HTTP verb</span>
+  <span class="s">"verb"</span>: <span class="s">"get"</span>,
+
+  <span class="c">// Authenticated user information</span>
+  <span class="s">"user"</span>: {
+    <span class="s">"username"</span>: <span class="s">"system:serviceaccount:production:myapp"</span>,
+    <span class="s">"uid"</span>: <span class="s">"abc123"</span>,
+    <span class="s">"groups"</span>: [<span class="s">"system:serviceaccounts"</span>, <span class="s">"system:serviceaccounts:production"</span>]
+  },
+
+  <span class="c">// If request was made via impersonation</span>
+  <span class="s">"impersonatedUser"</span>: {
+    <span class="s">"username"</span>: <span class="s">"admin@example.com"</span>
+  },
+
+  <span class="c">// Source IPs (first is original, rest are proxies)</span>
+  <span class="s">"sourceIPs"</span>: [<span class="s">"10.244.1.5"</span>, <span class="s">"192.168.1.100"</span>],
+
+  <span class="c">// User-Agent of the client</span>
+  <span class="s">"userAgent"</span>: <span class="s">"kubectl/v1.29.0 (linux/amd64)"</span>,
+
+  <span class="c">// What resource was accessed</span>
+  <span class="s">"objectRef"</span>: {
+    <span class="s">"resource"</span>: <span class="s">"secrets"</span>,
+    <span class="s">"namespace"</span>: <span class="s">"production"</span>,
+    <span class="s">"name"</span>: <span class="s">"db-password"</span>,
+    <span class="s">"apiVersion"</span>: <span class="s">"v1"</span>
+  },
+
+  <span class="c">// HTTP response code</span>
+  <span class="s">"responseStatus"</span>: {
+    <span class="s">"code"</span>: <span class="n">200</span>
+  },
+
+  <span class="c">// Request body (if level=Request or RequestResponse)</span>
+  <span class="s">"requestObject"</span>: { <span class="s">"..."</span>: <span class="s">"..."</span> },
+
+  <span class="c">// Response body (if level=RequestResponse)</span>
+  <span class="s">"responseObject"</span>: { <span class="s">"..."</span>: <span class="s">"..."</span> },
+
+  <span class="c">// Timestamps</span>
+  <span class="s">"requestReceivedTimestamp"</span>: <span class="s">"2024-01-15T10:30:00.000000Z"</span>,
+  <span class="s">"stageTimestamp"</span>: <span class="s">"2024-01-15T10:30:00.005000Z"</span>,
+
+  <span class="c">// Annotations added by admission plugins</span>
+  <span class="s">"annotations"</span>: {
+    <span class="s">"authorization.k8s.io/decision"</span>: <span class="s">"allow"</span>,
+    <span class="s">"authorization.k8s.io/reason"</span>: <span class="s">"RBAC: allowed by ClusterRoleBinding..."</span>
+  }
+}</code></pre>
+
+  <!-- ───── NOISE REDUCTION ───── -->
+  <h2 id="noise-reduction">Noise Reduction</h2>
+
+  <p>An untuned audit policy on a production cluster can generate hundreds of megabytes of logs per hour. Most of this is noise. The goal is to capture high-value events without drowning the pipeline.</p>
+
+  <h3>High-Volume Low-Value Sources</h3>
+
+  <table>
+    <thead><tr><th>Source</th><th>Why It's Noisy</th><th>Recommendation</th></tr></thead>
+    <tbody>
+      <tr><td>kube-controller-manager</td><td>Constantly lists/watches almost all resources</td><td><code>None</code> for system:kube-controller-manager reads</td></tr>
+      <tr><td>kube-scheduler</td><td>Lists pods and nodes constantly</td><td><code>None</code> for system:kube-scheduler reads</td></tr>
+      <tr><td>kube-proxy / CNI</td><td>Watches endpoints, services, nodes</td><td><code>None</code> for these system components</td></tr>
+      <tr><td>Lease updates</td><td>Leader election emits update every 2–5s per component</td><td><code>None</code> for coordination.k8s.io/leases</td></tr>
+      <tr><td>Watch events</td><td>Each change to a watched resource emits a log entry at ResponseStarted</td><td><code>omitStages: [ResponseStarted]</code> globally</td></tr>
+      <tr><td>Health checks</td><td>/healthz, /readyz hit every few seconds from load balancers</td><td><code>None</code> for nonResourceURLs matching /health*</td></tr>
+      <tr><td>Metrics scrapes</td><td>Prometheus scrapes /metrics every 15–30s</td><td><code>None</code> for nonResourceURLs matching /metrics*</td></tr>
+      <tr><td>Events resource</td><td>High churn; informational only</td><td><code>None</code> for core/events</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Volume Estimation</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Estimate audit log volume before deploying (dry-run with --audit-log-path=-)</span>
+<span class="c"># Then count events per second during normal operation:</span>
+
+<span class="c"># Count events per minute from audit log</span>
+tail -f /var/log/kubernetes/audit/audit.log | \
+  jq -r '.stageTimestamp' | \
+  awk -F: '{print $1":"$2}' | uniq -c
+
+<span class="c"># Top users by event count (last 1000 events)</span>
+tail -1000 /var/log/kubernetes/audit/audit.log | \
+  jq -r '.user.username' | sort | uniq -c | sort -rn | head -20
+
+<span class="c"># Top resources by event count</span>
+tail -1000 /var/log/kubernetes/audit/audit.log | \
+  jq -r '.objectRef.resource // "non-resource"' | sort | uniq -c | sort -rn | head -20</code></pre>
+
+  <!-- ───── SIEM INTEGRATION ───── -->
+  <h2 id="siem-integration">SIEM Integration</h2>
+
+  <div class="diagram">
+<span class="box green">kube-apiserver</span>
+<br>  │
+<br>  ├── <span class="box">audit.log</span> (JSON Lines on node)
+<br>  │       │
+<br>  │   <span class="box blue">Fluent Bit DaemonSet</span>
+<br>  │   (tail /var/log/kubernetes/audit/audit.log)
+<br>  │       │
+<br>  │       ├──▶ <span class="box purple">Elasticsearch / OpenSearch</span>  (Kibana dashboards)
+<br>  │       ├──▶ <span class="box yellow">Splunk HEC</span>                  (Splunk SIEM)
+<br>  │       └──▶ <span class="box">Loki</span>                         (Grafana dashboards)
+<br>  │
+<br>  └── <span class="box">Webhook backend</span>
+<br>          │
+<br>          └──▶ <span class="box purple">Falco gRPC / HTTP sink</span>       (real-time alerting)
+  </div>
+
+  <h3>Fluent Bit Configuration for Audit Logs</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># fluent-bit-configmap.yaml</span>
+<span class="k">apiVersion</span>: <span class="s">v1</span>
+<span class="k">kind</span>: <span class="s">ConfigMap</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">fluent-bit-config</span>
+  <span class="k">namespace</span>: <span class="s">logging</span>
+<span class="k">data</span>:
+  <span class="k">fluent-bit.conf</span>: |
+    [SERVICE]
+        Flush         5
+        Log_Level     info
+        Parsers_File  parsers.conf
+
+    <span class="c"># Read audit log file — must be on control plane node</span>
+    [INPUT]
+        Name              tail
+        Tag               kube.audit
+        Path              /var/log/kubernetes/audit/audit.log
+        Parser            json
+        DB                /var/log/flb_kube_audit.db
+        Mem_Buf_Limit     50MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+
+    <span class="c"># Add cluster metadata</span>
+    [FILTER]
+        Name  record_modifier
+        Match kube.audit
+        Record cluster ${CLUSTER_NAME}
+        Record environment ${ENVIRONMENT}
+
+    <span class="c"># Forward to Elasticsearch</span>
+    [OUTPUT]
+        Name  es
+        Match kube.audit
+        Host  elasticsearch.logging.svc.cluster.local
+        Port  9200
+        Index k8s-audit
+        Type  _doc
+        Logstash_Format On
+        Logstash_Prefix k8s-audit</code></pre>
+
+  <h3>Elasticsearch Query Examples</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Elasticsearch: find all secret reads in the last hour</span>
+GET k8s-audit-*/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "term": { "objectRef.resource": "secrets" } },
+        { "term": { "verb": "get" } },
+        { "range": { "stageTimestamp": { "gte": "now-1h" } } }
+      ],
+      "must_not": [
+        { "term": { "user.username": "system:serviceaccount:kube-system:cert-manager" } }
+      ]
+    }
+  }
+}</code></pre>
+
+  <!-- ───── FORENSIC QUERIES ───── -->
+  <h2 id="forensic-queries">Forensic Query Patterns</h2>
+
+  <p>These <code>jq</code> patterns work against raw audit log files and translate directly to SIEM queries.</p>
+
+  <h3>Secret Access Investigation</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># All users who read any secret in the last 24h</span>
+cat audit.log | jq -r '
+  select(.objectRef.resource == "secrets") |
+  select(.verb == "get") |
+  select(.responseStatus.code == 200) |
+  [.stageTimestamp, .user.username, .objectRef.namespace, .objectRef.name] |
+  @tsv
+'
+
+<span class="c"># Secrets read by service accounts outside their own namespace</span>
+cat audit.log | jq -r '
+  select(.objectRef.resource == "secrets") |
+  select(.verb == "get") |
+  select(.user.username | startswith("system:serviceaccount:")) |
+  select(
+    (.user.username | split(":")[3]) !=
+    (.objectRef.namespace // "cluster-scoped")
+  ) |
+  [.stageTimestamp, .user.username, .objectRef.namespace, .objectRef.name] |
+  @tsv
+'</code></pre>
+
+  <h3>Privilege Escalation Detection</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># New ClusterRoleBindings created (potential privilege escalation)</span>
+cat audit.log | jq -r '
+  select(.objectRef.resource == "clusterrolebindings") |
+  select(.verb == "create") |
+  select(.responseStatus.code == 201) |
+  [.stageTimestamp, .user.username, .objectRef.name,
+   (.requestObject.roleRef.name // "unknown")] |
+  @tsv
+'
+
+<span class="c"># Any binding to cluster-admin role</span>
+cat audit.log | jq -r '
+  select(.objectRef.resource | test("rolebinding")) |
+  select(.verb == "create") |
+  select(.requestObject.roleRef.name == "cluster-admin") |
+  [.stageTimestamp, .user.username, .objectRef.namespace // "cluster",
+   .objectRef.name, (.requestObject.subjects[0].name // "unknown")] |
+  @tsv
+'</code></pre>
+
+  <h3>Pod Exec Investigation</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># All exec sessions (command in URI params)</span>
+cat audit.log | jq -r '
+  select(.objectRef.subresource == "exec") |
+  [.stageTimestamp, .user.username, .objectRef.namespace,
+   .objectRef.name, .requestURI] |
+  @tsv
+'
+
+<span class="c"># Exec by humans (non-service-accounts) — should be rare in prod</span>
+cat audit.log | jq -r '
+  select(.objectRef.subresource == "exec") |
+  select(.user.username | startswith("system:serviceaccount") | not) |
+  [.stageTimestamp, .user.username, .objectRef.namespace,
+   .objectRef.name, .requestURI] |
+  @tsv
+'</code></pre>
+
+  <h3>Unauthorized Access Patterns</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># All 403 Forbidden responses — RBAC denials</span>
+cat audit.log | jq -r '
+  select(.responseStatus.code == 403) |
+  [.stageTimestamp, .user.username, .verb,
+   .objectRef.resource, .objectRef.namespace, .objectRef.name] |
+  @tsv
+'
+
+<span class="c"># Top users by 403 count (credential probing detection)</span>
+cat audit.log | jq -r '
+  select(.responseStatus.code == 403) |
+  .user.username
+' | sort | uniq -c | sort -rn | head -10
+
+<span class="c"># 401 Unauthorized (authentication failures)</span>
+cat audit.log | jq -r '
+  select(.responseStatus.code == 401) |
+  [.stageTimestamp, .user.username, .sourceIPs[0], .requestURI] |
+  @tsv
+'</code></pre>
+
+  <h3>Node and Kubelet Activity</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Nodes accessing other nodes' resources (NodeRestriction violation)</span>
+cat audit.log | jq -r '
+  select(.user.groups[] == "system:nodes") |
+  select(.user.username != ("system:node:" + .objectRef.name)) |
+  select(.objectRef.resource == "nodes") |
+  [.stageTimestamp, .user.username, .verb, .objectRef.name] |
+  @tsv
+'</code></pre>
+
+  <!-- ───── DYNAMIC AUDIT ───── -->
+  <h2 id="dynamic-audit">Dynamic Audit Webhooks</h2>
+
+  <p>Dynamic audit webhooks (auditregistration.k8s.io) allow configuring audit sinks via Kubernetes API objects without restarting the API server. This feature is alpha/beta in older versions — check availability in your cluster version.</p>
+
+  <div class="callout warning">
+    <div class="callout-title">Dynamic Audit Sink Availability</div>
+    <p>The <code>AuditSink</code> API was introduced in 1.13 as alpha and has been deprecated. In modern clusters (1.25+), prefer configuring the static webhook backend at API server startup. Dynamic audit webhook registration via the API is no longer the recommended path.</p>
+  </div>
+
+  <h3>Falco as an Audit Sink</h3>
+
+  <p>Falco can receive Kubernetes audit events via webhook and apply its rule engine to detect security-relevant patterns in real time.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Configure audit webhook to send to Falco's audit endpoint</span>
+<span class="c"># webhook-audit-config.yaml</span>
+<span class="k">clusters</span>:
+- <span class="k">name</span>: <span class="s">falco</span>
+  <span class="k">cluster</span>:
+    <span class="k">server</span>: <span class="s">http://falco.falco-system.svc.cluster.local:8765/k8s-audit</span>
+<span class="k">contexts</span>:
+- <span class="k">name</span>: <span class="s">falco</span>
+  <span class="k">context</span>:
+    <span class="k">cluster</span>: <span class="s">falco</span>
+    <span class="k">user</span>: <span class="s">""</span>
+<span class="k">current-context</span>: <span class="s">falco</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Falco rule triggered by audit event: detect anonymous kubectl access</span>
+- <span class="k">rule</span>: K8s Anonymous Request
+  <span class="k">desc</span>: Detect requests from system:anonymous or system:unauthenticated
+  <span class="k">condition</span>: >
+    ka.user.name in ("system:anonymous", "system:unauthenticated")
+  <span class="k">output</span>: >
+    Anonymous request to API server
+    (user=%ka.user.name verb=%ka.verb uri=%ka.uri
+     response=%ka.response.code sourceip=%ka.source.ip)
+  <span class="k">priority</span>: CRITICAL
+  <span class="k">source</span>: k8s_audit
+
+- <span class="k">rule</span>: K8s ClusterAdmin Binding Created
+  <span class="k">desc</span>: Detect creation of ClusterRoleBindings granting cluster-admin
+  <span class="k">condition</span>: >
+    ka.verb = "create" and
+    ka.target.resource = "clusterrolebindings" and
+    ka.req.binding.role = "cluster-admin"
+  <span class="k">output</span>: >
+    cluster-admin ClusterRoleBinding created
+    (user=%ka.user.name binding=%ka.target.name subject=%ka.req.binding.subjects)
+  <span class="k">priority</span>: CRITICAL
+  <span class="k">source</span>: k8s_audit
+
+- <span class="k">rule</span>: K8s Secret Access
+  <span class="k">desc</span>: Detect reads of Kubernetes Secrets
+  <span class="k">condition</span>: >
+    ka.target.resource = "secrets" and
+    ka.verb in ("get", "list") and
+    not ka.user.name startswith "system:serviceaccount:kube-system:"
+  <span class="k">output</span>: >
+    Kubernetes Secret accessed
+    (user=%ka.user.name secret=%ka.target.name ns=%ka.target.namespace)
+  <span class="k">priority</span>: WARNING
+  <span class="k">source</span>: k8s_audit</code></pre>
+
+  <!-- ───── COMPLIANCE ───── -->
+  <h2 id="compliance">Compliance Requirements</h2>
+
+  <table>
+    <thead><tr><th>Framework</th><th>Requirement</th><th>Kubernetes Audit Coverage</th></tr></thead>
+    <tbody>
+      <tr><td><strong>PCI DSS 10</strong></td><td>Log all access to cardholder data, all auth attempts, privileged actions</td><td>Secrets access at Request level; 403/401 logging; RBAC change logging</td></tr>
+      <tr><td><strong>SOC 2 CC6.1</strong></td><td>Logical access controls, monitoring of access</td><td>All read/write to sensitive resources; user activity timeline</td></tr>
+      <tr><td><strong>HIPAA § 164.312(b)</strong></td><td>Audit controls: record and examine activity on systems with ePHI</td><td>Full audit trail for any namespace containing ePHI workloads</td></tr>
+      <tr><td><strong>CIS Benchmark 3.2.1</strong></td><td>Ensure audit log enabled</td><td><code>--audit-log-path</code> and <code>--audit-policy-file</code> must be set</td></tr>
+      <tr><td><strong>CIS Benchmark 3.2.2</strong></td><td>Ensure audit policy covers required events</td><td>Policy must include secrets, RBAC, exec, auth failures</td></tr>
+      <tr><td><strong>NIST 800-53 AU-2</strong></td><td>Audit event logging</td><td>All authentication, authorization, and privileged actions</td></tr>
+      <tr><td><strong>ISO 27001 A.12.4</strong></td><td>Event logging and protection of log information</td><td>Immutable log storage; log access controls</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-title">Retention Requirements</div>
+    <p>Most compliance frameworks require 1 year minimum log retention with 90 days readily accessible. Plan your log storage accordingly: a busy cluster at Metadata level for most resources generates ~50–200GB/month. Use compressed cold storage (S3 Glacier, GCS Nearline) for logs older than 90 days.</p>
+  </div>
+
+  <h3>Audit Log Integrity</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Audit logs must be protected from modification</span>
+<span class="c"># Ship to immutable append-only storage immediately:</span>
+
+<span class="c"># 1. S3 Object Lock (compliance mode)</span>
+aws s3api put-object-lock-configuration \
+  --bucket k8s-audit-logs \
+  --object-lock-configuration '{"ObjectLockEnabled":"Enabled","Rule":{"DefaultRetention":{"Mode":"COMPLIANCE","Years":1}}}'
+
+<span class="c"># 2. Restrict who can access audit logs via RBAC</span>
+<span class="c"># Audit logs should NOT be readable by workload service accounts</span>
+
+<span class="c"># 3. WORM storage at OS level (if keeping on-disk)</span>
+<span class="c"># chattr +a /var/log/kubernetes/audit/audit.log  (append-only)</span></code></pre>
+
+  <!-- ───── OBSERVABILITY ───── -->
+  <h2 id="observability">Metrics, Alerts &amp; Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Source</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>apiserver_audit_event_total</code></td><td>kube-apiserver</td><td>Total audit events generated (by level)</td></tr>
+      <tr><td><code>apiserver_audit_requests_rejected_total</code></td><td>kube-apiserver</td><td>Events dropped due to backend overflow</td></tr>
+      <tr><td><code>apiserver_audit_level_total</code></td><td>kube-apiserver</td><td>Events per audit level (None/Metadata/Request/RequestResponse)</td></tr>
+      <tr><td><code>falco_events_total</code></td><td>Falco</td><td>Falco events triggered by k8s_audit rules</td></tr>
+      <tr><td><code>log_storage_bytes_total</code></td><td>Node exporter</td><td>Audit log disk usage</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Alerts</h3>
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Alert: Audit events being dropped</span>
+- <span class="k">alert</span>: <span class="s">AuditEventsDropped</span>
+  <span class="k">expr</span>: <span class="s">increase(apiserver_audit_requests_rejected_total[5m]) > 0</span>
+  <span class="k">for</span>: <span class="s">1m</span>
+  <span class="k">severity</span>: <span class="s">critical</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Audit events being dropped — compliance gap"</span>
+
+<span class="c"># Alert: High rate of 403 responses (potential attack probe)</span>
+- <span class="k">alert</span>: <span class="s">HighForbiddenRate</span>
+  <span class="k">expr</span>: >
+    sum(rate(apiserver_request_total{code="403"}[5m])) > 10
+  <span class="k">for</span>: <span class="s">5m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"High rate of 403 responses — possible RBAC probing"</span>
+
+<span class="c"># Alert: cluster-admin binding created</span>
+- <span class="k">alert</span>: <span class="s">ClusterAdminBindingCreated</span>
+  <span class="k">expr</span>: <span class="s">increase(falco_events_total{rule="K8s ClusterAdmin Binding Created"}[5m]) > 0</span>
+  <span class="k">for</span>: <span class="s">0m</span>
+  <span class="k">severity</span>: <span class="s">critical</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"cluster-admin ClusterRoleBinding created — immediate investigation required"</span>
+
+<span class="c"># Alert: Audit log file not growing (logging broken)</span>
+- <span class="k">alert</span>: <span class="s">AuditLogStale</span>
+  <span class="k">expr</span>: <span class="s">rate(apiserver_audit_event_total[5m]) == 0</span>
+  <span class="k">for</span>: <span class="s">10m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"No audit events generated in 10 minutes — audit logging may be broken"</span></code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Audit Events Being Dropped</h4>
+      <p>1. Check <code>apiserver_audit_requests_rejected_total</code> for trend<br>2. Check webhook backend latency and availability<br>3. Increase <code>--audit-webhook-batch-max-size</code> or reduce policy verbosity<br>4. If log backend: check disk space on control plane node</p>
+    </div>
+    <div class="card">
+      <h4>Secret Accessed Unexpectedly</h4>
+      <p>1. Query audit log: who accessed the secret and when<br>2. Check if access was from expected service account<br>3. If unexpected: rotate the secret immediately<br>4. Check if pod was compromised (Falco events, exec history)</p>
+    </div>
+    <div class="card">
+      <h4>cluster-admin Binding Alert</h4>
+      <p>1. Identify who created it: <code>jq</code> query on audit log<br>2. Determine if authorized (planned infra change vs incident)<br>3. If unauthorized: delete binding, investigate originating pod/user<br>4. Review RBAC for how the creator had permission to create the binding</p>
+    </div>
+    <div class="card">
+      <h4>High 403 Rate</h4>
+      <p>1. Identify source: top users/IPs by 403 count<br>2. Determine if misconfigured app (wrong SA permissions) vs attack<br>3. For misconfigured app: fix RBAC<br>4. For attack: block source IP at ingress/firewall level</p>
+    </div>
+    <div class="card">
+      <h4>Audit Log Pipeline Failure</h4>
+      <p>1. Check Fluent Bit pod health: <code>kubectl logs -n logging fluent-bit-xxx</code><br>2. Verify audit log file is being written on control plane<br>3. Check Elasticsearch/SIEM receiver is accepting connections<br>4. Verify TLS certificates for webhook backend haven't expired</p>
+    </div>
+  </div>
+
+  <!-- ───── BEST PRACTICES ───── -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num green">1</div>
+      <div class="step-content">
+        <h4>Always set an audit policy — never use the default (no policy = no logging)</h4>
+        <p>A missing <code>--audit-policy-file</code> flag means nothing is logged. The absence of audit logs is a compliance failure and makes incident investigation impossible.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">2</div>
+      <div class="step-content">
+        <h4>Use tiered rules: None → Metadata → Request → RequestResponse</h4>
+        <p>Start with aggressive noise suppression, escalate to higher levels only for security-sensitive resources. A flat "log everything at RequestResponse" policy will generate terabytes of data and obscure the signals you need.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h4>Never log secrets at RequestResponse level</h4>
+        <p>The response body of a secret read contains base64-encoded secret data. Log secrets at <code>Request</code> level (captures who accessed what without exposing the value) or <code>Metadata</code> level if only access patterns matter.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
+      <div class="step-content">
+        <h4>Ship logs to immutable external storage immediately</h4>
+        <p>Audit logs on the control plane node can be deleted by a cluster administrator. Stream to an external SIEM or object storage with Object Lock enabled before an attacker can cover their tracks.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">5</div>
+      <div class="step-content">
+        <h4>Alert on audit event drops</h4>
+        <p>Dropped audit events are a compliance gap. Monitor <code>apiserver_audit_requests_rejected_total</code> and treat any non-zero value as a critical alert requiring immediate investigation.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">6</div>
+      <div class="step-content">
+        <h4>Add Falco as a webhook audit sink for real-time alerting</h4>
+        <p>File-based audit logs are useful for investigation but not for real-time detection. Route audit events to Falco via webhook backend to trigger alerts within seconds of suspicious activity.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">7</div>
+      <div class="step-content">
+        <h4>Include authorization annotations in your policy</h4>
+        <p>The <code>authorization.k8s.io/decision</code> annotation in audit events records whether access was allowed or denied. Capturing this at Metadata level for all resources costs almost nothing but enables powerful RBAC misconfiguration analysis.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">8</div>
+      <div class="step-content">
+        <h4>Set omitManagedFields: true</h4>
+        <p>Managed fields metadata in request/response bodies can be extremely verbose (often larger than the actual object). Setting <code>omitManagedFields: true</code> in the audit policy reduces log size by 30–60% with no loss of security-relevant information.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="back-to-top" id="back-to-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+</main>
+
+<script>
+function toggleTheme(){
+  const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  if(t !== 'dark') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('k8s-theme', t);
+}
+(function(){
+  const t = localStorage.getItem('k8s-theme');
+  if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+})();
+
+function copyCode(btn){
+  const pre = btn.parentElement;
+  const code = pre.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display = a.textContent.toLowerCase().includes(v.toLowerCase()) ? '' : 'none';
+  });
+}
+
+const main = document.getElementById('main');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{
+  btt.classList.toggle('visible', main.scrollTop > 400);
+});
+
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    const id = e.target.id;
+    const link = document.querySelector(`.toc a[href="#${id}"]`);
+    if(link) link.classList.toggle('active', e.isIntersecting);
+  });
+},{root: main, rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('h2[id]').forEach(h=>observer.observe(h));
+</script>
+</body>
+</html>

@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gateway API — Kubernetes Networking</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;min-height:100vh;}
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.sidebar-logo{font-size:15px;font-weight:700;color:var(--accent);text-decoration:none;display:block;margin-bottom:12px;}
+.sidebar-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;}
+.sidebar-filter:focus{border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding:6px 16px 4px;}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);text-decoration:none;border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+/* Main */
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:90;}
+.hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text2);cursor:pointer;font-size:12px;}
+.theme-btn:hover{color:var(--text);border-color:var(--accent);}
+.content-toc-wrap{display:flex;flex:1;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+/* TOC */
+.toc-panel{width:var(--toc-w);flex-shrink:0;padding:24px 16px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
+.toc-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text3);text-decoration:none;padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover{color:var(--text2);}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-panel a.toc-h3{padding-left:20px;font-size:11px;}
+/* Typography */
+h1{font-size:34px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.subtitle{font-size:16px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+/* Coverage block */
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+/* Code */
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:12px 0 20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code{background:var(--bg3);padding:2px 5px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text3);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 12px;text-align:left;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);border-bottom:2px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+/* Callouts */
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:12px;}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:14px;}
+.callout-body p,.callout-body ul{font-size:13px;color:var(--text2);margin:0;}
+.callout-body ul{padding-left:18px;margin-top:4px;}
+.callout.info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.3);}
+.callout.warn{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);}
+.callout.danger{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);}
+.callout.success{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.3);}
+/* Cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:16px 0 24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card h4{font-size:14px;font-weight:600;color:var(--text);margin:0 0 8px;}
+.card p,.card ul{font-size:13px;color:var(--text2);}
+.card ul{padding-left:16px;margin:0;}
+.card .tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;margin-bottom:6px;}
+.tag-ga{background:rgba(63,185,80,.15);color:var(--green);}
+.tag-beta{background:rgba(210,153,34,.15);color:var(--yellow);}
+.tag-alpha{background:rgba(248,81,73,.15);color:var(--red);}
+/* Role separation visual */
+.role-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0 24px;}
+.role-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.role-box.infra{border-top:3px solid var(--accent);}
+.role-box.app{border-top:3px solid var(--green);}
+.role-box h4{font-size:13px;font-weight:600;margin-bottom:8px;}
+.role-box ul{font-size:12px;color:var(--text2);padding-left:16px;}
+/* Resource hierarchy SVG placeholder */
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:16px 0 24px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;}
+/* Back to top */
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.back-top.visible{display:flex;}
+/* Nav footer */
+.nav-footer{display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;border-top:1px solid var(--border);}
+.nav-btn{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 20px;color:var(--text2);text-decoration:none;font-size:13px;transition:all .2s;}
+.nav-btn:hover{color:var(--accent);border-color:var(--accent);}
+.nav-btn small{display:block;font-size:11px;color:var(--text3);margin-bottom:2px;}
+/* Responsive */
+@media(max-width:1200px){.toc-panel{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrap{margin-left:0;}
+  .hamburger{display:block;}
+  .main-content{padding:24px 20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a class="sidebar-logo" href="../index.html">⎈ Kubernetes Docs</a>
+    <input class="sidebar-filter" id="nav-filter" placeholder="Filter..." type="text"/>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Foundations</div>
+    <a href="../00-foundations/00-introduction.html">Introduction</a>
+    <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../00-foundations/02-kubernetes-components.html">Components</a>
+    <a href="../00-foundations/03-control-loops.html">Control Loops</a>
+    <a href="../00-foundations/04-kubernetes-api-model.html">API Model</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">Overview</a>
+    <a href="../01-control-plane/01-api-server.html">API Server</a>
+    <a href="../01-control-plane/02-etcd.html">etcd</a>
+    <a href="../01-control-plane/03-scheduler.html">Scheduler</a>
+    <a href="../01-control-plane/04-controller-manager.html">Controller Manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">Cloud CCM</a>
+    <a href="../01-control-plane/06-ha-control-plane.html">HA Control Plane</a>
+    <a href="../01-control-plane/07-api-aggregation.html">API Aggregation</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">Overview</a>
+    <a href="../02-node-components/01-kubelet.html">kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime.html">Container Runtime</a>
+    <a href="../02-node-components/04-cri-interface.html">CRI Interface</a>
+    <a href="../02-node-components/05-node-lifecycle.html">Node Lifecycle</a>
+    <a href="../02-node-components/06-node-resource-management.html">Resource Management</a>
+    <a href="../02-node-components/07-windows-worker-nodes.html">Windows Nodes</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="00-networking-overview.html">Overview</a>
+    <a href="01-pod-networking.html">Pod Networking</a>
+    <a href="02-cni-plugins.html">CNI Plugins</a>
+    <a href="03-kube-proxy-internals.html">kube-proxy Internals</a>
+    <a href="04-dns.html">DNS &amp; Service Discovery</a>
+    <a href="05-ingress.html">Ingress</a>
+    <a href="06-gateway-api.html" class="active">Gateway API</a>
+    <a href="07-network-policies.html">Network Policies</a>
+    <a href="08-ipv4-ipv6-dual-stack.html">IPv4/IPv6 Dual-Stack</a>
+    <a href="09-load-balancing.html">Load Balancing</a>
+    <a href="10-service-mesh.html">Service Mesh</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger">☰</button>
+    <span class="topbar-title">03 — Networking / Gateway API</span>
+    <button class="theme-btn" id="theme-toggle">Light Mode</button>
+  </header>
+
+  <div class="content-toc-wrap">
+    <main class="main-content" id="main-content">
+
+      <h1>Gateway API</h1>
+      <p class="subtitle">The next-generation Kubernetes ingress API — expressive, extensible, and role-oriented. Gateway API replaces Ingress for advanced traffic management while preserving a clean separation between infrastructure operators and application developers.</p>
+
+      <!-- COVERAGE BLOCK -->
+      <details class="coverage">
+        <summary>What This Page Covers</summary>
+        <ul class="coverage-body">
+          <li>Gateway API resource model: GatewayClass, Gateway, HTTPRoute, GRPCRoute, TCPRoute, UDPRoute, TLSRoute, ReferenceGrant</li>
+          <li>Role-based design: infrastructure owner vs application developer separation</li>
+          <li>HTTPRoute: matches (host/path/header/query/method), filters, backendRefs, weights</li>
+          <li>Traffic splitting and canary with HTTPRoute weights</li>
+          <li>Header-based routing, URL rewriting, request/response header modification</li>
+          <li>RequestMirror filter for shadow traffic</li>
+          <li>ReferenceGrant: cross-namespace routing security model</li>
+          <li>BackendTLSPolicy: mTLS to backends, certificate validation</li>
+          <li>GRPCRoute: method/service matching, gRPC-specific semantics</li>
+          <li>TCPRoute and UDPRoute for L4 load balancing</li>
+          <li>TLSRoute: passthrough and terminate modes</li>
+          <li>ParentReference: multi-gateway listener binding</li>
+          <li>Controller implementations: Cilium, Contour, NGINX Gateway Fabric, Istio, Envoy Gateway, Traefik</li>
+          <li>Status conditions on Gateway and Route resources</li>
+          <li>Migration from Ingress to Gateway API patterns</li>
+          <li>Conformance profiles and implementation tiers (Core/Extended/Implementation-specific)</li>
+          <li>7 metrics + 4 alerting rules + 5 troubleshooting runbooks</li>
+          <li>Best practices: shared gateways, namespace isolation, policy attachment</li>
+        </ul>
+      </details>
+
+      <!-- 1. OVERVIEW -->
+      <h2 id="overview">Why Gateway API Exists</h2>
+      <p>Ingress (covered in <a href="05-ingress.html">05-ingress.html</a>) was never designed for the routing complexity modern platforms require. It lacks native support for traffic splitting, header-based routing, protocol awareness, and cross-namespace delegation. Every controller vendor ended up encoding these capabilities as proprietary annotations — creating a fragmented ecosystem where NGINX annotations don't work on Traefik, and vice versa.</p>
+
+      <p>Gateway API is a SIG-Network project that became GA in Kubernetes 1.31. It solves these problems by:</p>
+      <ul style="margin:0 0 16px;padding-left:24px;color:var(--text2);font-size:14px;">
+        <li style="margin-bottom:6px;"><strong>Expressiveness</strong> — traffic splitting, header routing, request mirroring, URL rewriting are first-class API concepts, not annotations.</li>
+        <li style="margin-bottom:6px;"><strong>Extensibility</strong> — a well-defined extension points model via policy attachment (BackendTLSPolicy, etc.).</li>
+        <li style="margin-bottom:6px;"><strong>Role separation</strong> — GatewayClass/Gateway owned by infra team; HTTPRoute owned by app team. Cross-namespace safely controlled by ReferenceGrant.</li>
+        <li style="margin-bottom:6px;"><strong>Portability</strong> — Core conformance is standardized; moving between controllers requires minimal manifest changes.</li>
+      </ul>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>API Version Status</strong>
+          <p><code>GatewayClass</code>, <code>Gateway</code>, and <code>HTTPRoute</code> are <strong>v1 (GA)</strong> since gateway.networking.k8s.io/v1. <code>GRPCRoute</code> is v1 (GA) since 1.31. <code>TCPRoute</code>, <code>UDPRoute</code>, <code>TLSRoute</code>, and <code>BackendTLSPolicy</code> remain in <strong>v1alpha2</strong>. <code>ReferenceGrant</code> is v1beta1.</p>
+        </div>
+      </div>
+
+      <!-- 2. RESOURCE MODEL -->
+      <h2 id="resource-model">Resource Model</h2>
+      <p>Gateway API introduces a hierarchy of resources, each scoped to a different concern and owned by a different persona:</p>
+
+      <div class="arch-diagram">Cluster Scope                    Namespace Scope
+━━━━━━━━━━━━━━━━                    ━━━━━━━━━━━━━━━━
+GatewayClass                        HTTPRoute ─────────┐
+  (infra team defines)              GRPCRoute           ├── backendRef → Service (same ns)
+  controller: cilium.io/gateway     TCPRoute            │                  or cross-ns + ReferenceGrant
+                                    UDPRoute            │
+Namespace: gateway-infra            TLSRoute            │
+  Gateway                           ReferenceGrant ─────┘
+    parentRef → GatewayClass        BackendTLSPolicy
+    listeners:
+      - name: https
+        port: 443
+        protocol: HTTPS
+        tls:
+          certificateRefs: [Secret]
+        allowedRoutes:
+          namespaces:
+            from: Selector
+            selector:
+              matchLabels:
+                gateway-access: "true"</div>
+
+      <h3 id="gatewayclass">GatewayClass</h3>
+      <p>GatewayClass is cluster-scoped. It identifies which controller implementation handles Gateways that reference this class — analogous to IngressClass but richer:</p>
+
+      <pre><code>apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: cilium
+spec:
+  controllerName: io.cilium/gateway-controller
+  description: "Cilium Gateway API implementation"
+  parametersRef:                    # optional: controller-specific config CRD
+    group: cilium.io
+    kind: CiliumGatewayConfig
+    name: default
+    namespace: kube-system
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="gateway">Gateway</h3>
+      <p>A Gateway represents a deployment of a load-balancing infrastructure (e.g., a provisioned cloud LB or an Envoy Deployment). It is typically owned by the infrastructure team and lives in a shared namespace:</p>
+
+      <pre><code>apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: prod-gateway
+  namespace: gateway-infra
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gateway-access: "true"    # only namespaces with this label
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate                  # Terminate | Passthrough
+        certificateRefs:
+          - name: prod-tls-secret
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: All                      # or: Same | Selector
+    - name: grpc-tls
+      port: 8443
+      protocol: HTTPS                    # HTTPS for gRPC-TLS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: grpc-tls-secret
+<button class="copy-btn">Copy</button></code></pre>
+
+      <p>After provisioning, the Gateway controller writes status conditions:</p>
+      <pre><code>kubectl get gateway prod-gateway -n gateway-infra -o yaml
+# status:
+#   addresses:
+#     - type: IPAddress
+#       value: 203.0.113.42
+#   conditions:
+#     - type: Accepted
+#       status: "True"
+#     - type: Programmed
+#       status: "True"
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 3. ROLE SEPARATION -->
+      <h2 id="role-separation">Role Separation</h2>
+      <p>This is Gateway API's most important design principle. Three distinct personas each own different resources:</p>
+
+      <div class="role-row">
+        <div class="role-box infra">
+          <h4>Infrastructure Owner</h4>
+          <ul>
+            <li>Creates GatewayClass (cluster-scoped)</li>
+            <li>Deploys and manages Gateway objects</li>
+            <li>Controls which namespaces can attach routes via <code>allowedRoutes</code></li>
+            <li>Manages TLS certificates on listeners</li>
+            <li>Owns: <code>kube-system</code>, <code>gateway-infra</code> namespaces</li>
+          </ul>
+        </div>
+        <div class="role-box app">
+          <h4>Application Developer</h4>
+          <ul>
+            <li>Creates HTTPRoute/GRPCRoute in their own namespace</li>
+            <li>References a Gateway via <code>parentRef</code></li>
+            <li>Defines routing rules, traffic splitting, header manipulation</li>
+            <li>Cannot modify Gateway or GatewayClass</li>
+            <li>For cross-namespace backend refs, needs ReferenceGrant approval</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="role-row">
+        <div class="role-box" style="border-top:3px solid var(--purple);">
+          <h4>Cluster Operator (optional 3rd persona)</h4>
+          <ul>
+            <li>Attaches policy resources (BackendTLSPolicy, etc.) to infra</li>
+            <li>Manages cross-namespace ReferenceGrant approvals</li>
+            <li>Owns cluster-wide security posture for routing</li>
+          </ul>
+        </div>
+        <div class="role-box" style="border-top:3px solid var(--yellow);">
+          <h4>Namespace Label Required</h4>
+          <ul>
+            <li>For <code>from: Selector</code>, the application namespace needs the label</li>
+            <li><code>kubectl label namespace my-app gateway-access=true</code></li>
+            <li>Without it, HTTPRoute attachment is rejected (status shows <code>NotAllowedByListeners</code>)</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 4. HTTPROUTE -->
+      <h2 id="httproute">HTTPRoute — Full Reference</h2>
+      <p>HTTPRoute is the workhorse of Gateway API. It expresses HTTP/HTTPS routing rules with first-class support for path matching, header matching, traffic splitting, and request/response transformation.</p>
+
+      <h3 id="httproute-basic">Basic Routing</h3>
+      <pre><code>apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: store-route
+  namespace: my-app                  # app developer's namespace
+spec:
+  parentRefs:
+    - name: prod-gateway
+      namespace: gateway-infra       # must match Gateway namespace
+      sectionName: https             # bind to specific listener by name
+  hostnames:
+    - "store.example.com"
+    - "*.example.com"                # wildcard hostnames supported
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix         # Exact | PathPrefix | RegularExpression
+            value: /api
+          headers:
+            - name: X-Version
+              type: Exact            # Exact | RegularExpression
+              value: "v2"
+      backendRefs:
+        - name: api-v2-svc
+          port: 8080
+          weight: 100
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: frontend-svc
+          port: 80
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="traffic-splitting">Traffic Splitting (Canary / Blue-Green)</h3>
+      <p>Unlike Ingress canary which requires two Ingress objects, Gateway API handles it in a single HTTPRoute with <code>weight</code> fields on <code>backendRefs</code>:</p>
+
+      <pre><code>apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: canary-route
+  namespace: my-app
+spec:
+  parentRefs:
+    - name: prod-gateway
+      namespace: gateway-infra
+  hostnames: ["app.example.com"]
+  rules:
+    - backendRefs:
+        - name: app-stable
+          port: 80
+          weight: 90        # 90% traffic to stable
+        - name: app-canary
+          port: 80
+          weight: 10        # 10% traffic to canary
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Weight Semantics</strong>
+          <p>Weights are proportional — they don't need to sum to 100. <code>weight: 90, weight: 10</code> is equivalent to <code>weight: 9, weight: 1</code>. A weight of 0 means no traffic is sent to that backend (useful to drain a backend).</p>
+        </div>
+      </div>
+
+      <h3 id="header-routing">Header-Based Routing</h3>
+      <pre><code>rules:
+  # Route internal users to canary based on header
+  - matches:
+      - headers:
+          - name: X-Canary-User
+            type: Exact
+            value: "true"
+    backendRefs:
+      - name: app-canary
+        port: 80
+
+  # Route by query parameter
+  - matches:
+      - queryParams:
+          - name: debug
+            type: Exact
+            value: "1"
+    backendRefs:
+      - name: app-debug
+        port: 80
+
+  # Method-based routing
+  - matches:
+      - method: POST
+        path:
+          type: PathPrefix
+          value: /api/write
+    backendRefs:
+      - name: write-service
+        port: 8080
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="filters">HTTPRoute Filters</h3>
+      <p>Filters transform requests and responses inline. Multiple filters can be applied per rule or per backendRef:</p>
+
+      <table>
+        <thead><tr><th>Filter Type</th><th>Scope</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>RequestHeaderModifier</code></td><td>rule / backend</td><td>Add, set, or remove request headers before forwarding</td></tr>
+          <tr><td><code>ResponseHeaderModifier</code></td><td>rule / backend</td><td>Add, set, or remove response headers</td></tr>
+          <tr><td><code>RequestRedirect</code></td><td>rule</td><td>Return 301/302/307/308 redirect (scheme, hostname, path, statusCode)</td></tr>
+          <tr><td><code>URLRewrite</code></td><td>rule / backend</td><td>Rewrite hostname and/or path before forwarding (ReplacePrefixMatch)</td></tr>
+          <tr><td><code>RequestMirror</code></td><td>rule</td><td>Shadow copy of request to a second backend (fire-and-forget)</td></tr>
+          <tr><td><code>ExtensionRef</code></td><td>rule / backend</td><td>Controller-specific extension (e.g., rate limiting policy)</td></tr>
+        </tbody>
+      </table>
+
+      <pre><code>rules:
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /api
+    filters:
+      # Strip /api prefix before forwarding
+      - type: URLRewrite
+        urlRewrite:
+          path:
+            type: ReplacePrefixMatch
+            replacePrefixMatch: /      # /api/users → /users
+
+      # Add tracing header
+      - type: RequestHeaderModifier
+        requestHeaderModifier:
+          add:
+            - name: X-Forwarded-Prefix
+              value: /api
+          remove:
+            - X-Internal-Debug
+
+      # Shadow 10% to mirror service (fire-and-forget, response ignored)
+      - type: RequestMirror
+        requestMirror:
+          backendRef:
+            name: shadow-service
+            port: 80
+
+    backendRefs:
+      - name: api-service
+        port: 8080
+
+  # HTTPS redirect on HTTP listener
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /
+    filters:
+      - type: RequestRedirect
+        requestRedirect:
+          scheme: https
+          statusCode: 301
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 5. REFERENCEGRANT -->
+      <h2 id="referencegrant">ReferenceGrant — Cross-Namespace Security</h2>
+      <p>By default, HTTPRoute can only reference backends (<code>backendRef</code>) in the same namespace. Cross-namespace references require explicit approval from the target namespace via a <code>ReferenceGrant</code> object. This prevents a compromised application namespace from routing traffic to services in other namespaces.</p>
+
+      <pre><code># In the TARGET namespace (where the Service lives)
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-store-to-payments
+  namespace: payments             # the namespace being accessed
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: store            # the namespace making the reference
+  to:
+    - group: ""
+      kind: Service
+      name: payment-svc           # optional: restrict to specific service name
+                                  # omit to allow any Service in this namespace
+<button class="copy-btn">Copy</button></code></pre>
+
+      <p>The same mechanism protects Gateway TLS certificates. A Gateway referencing a Secret in another namespace also needs a ReferenceGrant from that Secret's namespace.</p>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>ReferenceGrant is in the destination namespace</strong>
+          <p>The <code>from</code> field specifies who is allowed to reference, and the grant lives in the namespace being referenced. The namespace owner grants access — never the requester. This ensures namespace owners retain control over their resources.</p>
+        </div>
+      </div>
+
+      <!-- 6. GRPCROUTE -->
+      <h2 id="grpcroute">GRPCRoute</h2>
+      <p>GRPCRoute (GA in v1.31) provides gRPC-aware routing with service and method matching. Unlike HTTPRoute with gRPC, it understands gRPC framing natively:</p>
+
+      <pre><code>apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: grpc-route
+  namespace: my-app
+spec:
+  parentRefs:
+    - name: prod-gateway
+      namespace: gateway-infra
+      sectionName: grpc-tls
+  hostnames: ["grpc.example.com"]
+  rules:
+    - matches:
+        - method:
+            type: Exact                # Exact | RegularExpression
+            service: com.example.UserService
+            method: GetUser            # omit to match all methods in service
+      backendRefs:
+        - name: user-service-grpc
+          port: 9090
+          weight: 80
+        - name: user-service-grpc-v2
+          port: 9090
+          weight: 20
+    - matches:
+        - method:
+            service: com.example.AdminService  # match all AdminService RPCs
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: X-Admin-Route
+                value: "true"
+      backendRefs:
+        - name: admin-service-grpc
+          port: 9090
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 7. L4 ROUTES -->
+      <h2 id="l4-routes">L4 Routes: TCPRoute, UDPRoute, TLSRoute</h2>
+      <p>These resources are still in <code>v1alpha2</code> but are widely used for non-HTTP load balancing:</p>
+
+      <h3 id="tcproute">TCPRoute</h3>
+      <pre><code>apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: postgres-route
+  namespace: database
+spec:
+  parentRefs:
+    - name: prod-gateway
+      namespace: gateway-infra
+      sectionName: postgres         # listener: port 5432, protocol TCP
+  rules:
+    - backendRefs:
+        - name: postgres-primary
+          port: 5432
+          weight: 100
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="tlsroute">TLSRoute (Passthrough)</h3>
+      <pre><code>apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: db-tls-passthrough
+  namespace: database
+spec:
+  parentRefs:
+    - name: prod-gateway
+      namespace: gateway-infra
+      sectionName: db-tls           # listener: port 5433, protocol TLS, mode Passthrough
+  hostnames:
+    - "db.internal.example.com"
+  rules:
+    - backendRefs:
+        - name: postgres-tls
+          port: 5432
+<button class="copy-btn">Copy</button></code></pre>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>TLSRoute vs HTTPS listener</strong>
+          <p><strong>TLSRoute</strong> is for <em>passthrough</em> mode — the Gateway forwards encrypted TLS without decrypting it (SNI-based routing). The <em>backend</em> handles TLS termination. Use this for databases, MQTT brokers, or any service requiring end-to-end encryption. For standard HTTPS termination at the gateway, use an HTTPRoute with an HTTPS listener.</p>
+        </div>
+      </div>
+
+      <!-- 8. BACKENDTLSPOLICY -->
+      <h2 id="backendtlspolicy">BackendTLSPolicy — mTLS to Backends</h2>
+      <p>BackendTLSPolicy (v1alpha3) configures TLS from the Gateway to the backend service — independent of whether the client connection is TLS or plain HTTP. This enables mTLS or one-way TLS for all traffic within the cluster:</p>
+
+      <pre><code>apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: api-backend-tls
+  namespace: my-app
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: api-service             # applies to this Service's port 8443
+      namespace: my-app
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: backend-ca-cert       # CA that signed the backend's certificate
+    hostname: api.internal          # SNI hostname for cert verification
+    wellKnownCACertificates: System  # alternative: use system CA bundle
+<button class="copy-btn">Copy</button></code></pre>
+
+      <p>BackendTLSPolicy follows the <strong>direct policy attachment</strong> model — it attaches directly to a Service, not to a route. This means any route (HTTPRoute, GRPCRoute) that references that Service will automatically use TLS when BackendTLSPolicy is present.</p>
+
+      <!-- 9. PARENTREFERENCE -->
+      <h2 id="parentref">ParentReference — Multi-Listener Binding</h2>
+      <p>An HTTPRoute can bind to multiple Gateways or multiple listeners on the same Gateway. Each <code>parentRef</code> entry can specify an optional <code>sectionName</code> (listener name) and <code>port</code>:</p>
+
+      <pre><code>spec:
+  parentRefs:
+    # Bind to HTTPS listener on prod gateway
+    - name: prod-gateway
+      namespace: gateway-infra
+      sectionName: https
+      port: 443
+
+    # Also bind to staging gateway (different namespace)
+    - name: staging-gateway
+      namespace: staging-infra
+      sectionName: https
+      port: 443
+<button class="copy-btn">Copy</button></code></pre>
+
+      <p>Route status is per-parentRef — each attachment reports its own <code>Accepted</code> and <code>ResolvedRefs</code> conditions:</p>
+      <pre><code>kubectl get httproute store-route -n my-app -o jsonpath='{.status.parents}'
+# [
+#   {
+#     "parentRef": {"name":"prod-gateway","namespace":"gateway-infra","sectionName":"https"},
+#     "conditions": [
+#       {"type":"Accepted","status":"True","reason":"Accepted"},
+#       {"type":"ResolvedRefs","status":"True","reason":"ResolvedRefs"}
+#     ]
+#   }
+# ]
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 10. STATUS CONDITIONS -->
+      <h2 id="status-conditions">Status Conditions Reference</h2>
+
+      <h3>Gateway Conditions</h3>
+      <table>
+        <thead><tr><th>Condition</th><th>True Meaning</th><th>False / Unknown Causes</th></tr></thead>
+        <tbody>
+          <tr><td><code>Accepted</code></td><td>GatewayClass exists, controller is running</td><td>GatewayClass not found; no controller</td></tr>
+          <tr><td><code>Programmed</code></td><td>Gateway is ready to route (LB provisioned, listeners up)</td><td>LB provisioning failed; cert missing</td></tr>
+          <tr><td><code>Ready</code></td><td>Deprecated alias for Programmed (v0.8+)</td><td>Use Programmed instead</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Listener Conditions</h3>
+      <table>
+        <thead><tr><th>Condition</th><th>True Meaning</th><th>Common False Reasons</th></tr></thead>
+        <tbody>
+          <tr><td><code>Accepted</code></td><td>Listener config is valid</td><td>Unsupported protocol; conflicting port</td></tr>
+          <tr><td><code>Programmed</code></td><td>Listener is accepting connections</td><td>TLS cert missing; port conflict</td></tr>
+          <tr><td><code>ResolvedRefs</code></td><td>All certificate refs resolved</td><td>Secret not found; ReferenceGrant missing</td></tr>
+          <tr><td><code>Conflicted</code></td><td>No conflict with other listeners</td><td>Duplicate hostname+port combination</td></tr>
+        </tbody>
+      </table>
+
+      <h3>HTTPRoute Conditions</h3>
+      <table>
+        <thead><tr><th>Condition</th><th>True Meaning</th><th>Common False Reasons</th></tr></thead>
+        <tbody>
+          <tr><td><code>Accepted</code></td><td>Route is attached to the gateway listener</td><td>NotAllowedByListeners; NoMatchingParent; NoMatchingListenerHostname</td></tr>
+          <tr><td><code>ResolvedRefs</code></td><td>All backendRefs found</td><td>BackendNotFound; InvalidKind; RefNotPermitted (needs ReferenceGrant)</td></tr>
+          <tr><td><code>PartiallyInvalid</code></td><td>Some rules invalid but others work</td><td>Conflicting match rules within the route</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 11. CONTROLLER IMPLEMENTATIONS -->
+      <h2 id="implementations">Controller Implementations</h2>
+
+      <div class="card-grid">
+        <div class="card">
+          <span class="tag tag-ga">Production Ready</span>
+          <h4>Cilium Gateway API</h4>
+          <ul>
+            <li>Controller: <code>io.cilium/gateway-controller</code></li>
+            <li>Implements HTTPRoute, GRPCRoute, TLSRoute, TCPRoute, UDPRoute</li>
+            <li>Integrated with Cilium Network Policies</li>
+            <li>No Envoy dependency required (uses eBPF for L4)</li>
+            <li>Install: <code>--set gatewayAPI.enabled=true</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag tag-ga">Production Ready</span>
+          <h4>Envoy Gateway</h4>
+          <ul>
+            <li>Controller: <code>gateway.envoyproxy.io/gatewayclass-controller</code></li>
+            <li>CNCF project; Envoy as data plane</li>
+            <li>Full Core + Extended conformance</li>
+            <li>HTTPRoute, GRPCRoute, TCPRoute, UDPRoute, TLSRoute</li>
+            <li>BackendTLSPolicy, ClientTrafficPolicy, BackendTrafficPolicy</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag tag-ga">Production Ready</span>
+          <h4>NGINX Gateway Fabric</h4>
+          <ul>
+            <li>Controller: <code>gateway.nginx.org/nginx-gateway-controller</code></li>
+            <li>nginxinc official Gateway API impl (not kubernetes/ingress-nginx)</li>
+            <li>Core conformance; HTTPRoute, GRPCRoute</li>
+            <li>NginxProxy CRD for nginx.conf tuning</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag tag-ga">Production Ready</span>
+          <h4>Istio</h4>
+          <ul>
+            <li>Controller: <code>istio.io/gateway-controller</code></li>
+            <li>Uses existing Envoy-based infrastructure</li>
+            <li>Gateway API as first-class alternative to VirtualService/Gateway</li>
+            <li>Recommended for new Istio installations</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag tag-ga">Production Ready</span>
+          <h4>Contour</h4>
+          <ul>
+            <li>Controller: <code>projectcontour.io/gateway-controller</code></li>
+            <li>Envoy data plane; strong TLS support</li>
+            <li>HTTPRoute, GRPCRoute, TLSRoute, TCPRoute</li>
+            <li>ContourDeployment CRD for provisioner config</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag tag-ga">Production Ready</span>
+          <h4>Traefik</h4>
+          <ul>
+            <li>Controller: <code>traefik.io/gateway-controller</code></li>
+            <li>Gateway API alongside IngressRoute CRDs</li>
+            <li>HTTPRoute Core + most Extended features</li>
+            <li>Middleware attachment via ExtensionRef</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 id="conformance">Conformance Profiles</h3>
+      <p>Gateway API defines three tiers of conformance. Check an implementation's conformance report before choosing:</p>
+
+      <table>
+        <thead><tr><th>Tier</th><th>Features Required</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Core</strong></td><td>Basic HTTPRoute path/header matching, TLS termination, basic filters</td><td>All conformant implementations must pass these tests</td></tr>
+          <tr><td><strong>Extended</strong></td><td>Traffic splitting, URLRewrite, RequestMirror, timeout, retry, RegExp matching</td><td>Optional but increasingly expected for production use</td></tr>
+          <tr><td><strong>Implementation-Specific</strong></td><td>ExtensionRef filters, controller-specific CRDs</td><td>Documented via individual implementation; not portable</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 12. INSTALL & SETUP -->
+      <h2 id="install">Installation</h2>
+      <p>Gateway API CRDs are not bundled with Kubernetes — install them separately. Two channels available:</p>
+
+      <pre><code># Standard channel (stable: GatewayClass, Gateway, HTTPRoute, GRPCRoute, ReferenceGrant)
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+
+# Experimental channel (adds TCPRoute, UDPRoute, TLSRoute, BackendTLSPolicy, etc.)
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+
+# Verify CRDs installed
+kubectl get crd | grep gateway.networking.k8s.io
+<button class="copy-btn">Copy</button></code></pre>
+
+      <p>Then install your chosen controller. Example with Envoy Gateway:</p>
+      <pre><code>helm install eg oci://docker.io/envoyproxy/gateway-helm \
+  --version v1.1.0 \
+  --namespace envoy-gateway-system \
+  --create-namespace
+
+# Verify
+kubectl get pods -n envoy-gateway-system
+kubectl get gatewayclass
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 13. MIGRATION FROM INGRESS -->
+      <h2 id="migration">Migration from Ingress</h2>
+      <p>Most NGINX Ingress configurations map directly to HTTPRoute equivalents. Key differences:</p>
+
+      <table>
+        <thead><tr><th>Ingress Pattern</th><th>Gateway API Equivalent</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Ingress <code>host + path rules</code></td><td>HTTPRoute <code>hostnames + rules.matches</code></td><td>Direct equivalent; path type mapping</td></tr>
+          <tr><td><code>nginx.ingress.kubernetes.io/rewrite-target</code></td><td>HTTPRoute <code>URLRewrite filter</code></td><td>No annotation; first-class filter</td></tr>
+          <tr><td>Canary Ingress (<code>canary-weight: 10</code>)</td><td>HTTPRoute <code>backendRef weight: 10</code></td><td>Single route instead of two objects</td></tr>
+          <tr><td><code>nginx.ingress.kubernetes.io/ssl-redirect: true</code></td><td>HTTPRoute <code>RequestRedirect filter</code> on HTTP listener</td><td>Explicit scheme redirect</td></tr>
+          <tr><td>IngressClass <code>default annotation</code></td><td>GatewayClass used by default Gateway</td><td>More explicit; no annotation needed</td></tr>
+          <tr><td><code>nginx.ingress.kubernetes.io/limit-rps</code></td><td>ExtensionRef to controller-specific RateLimit policy</td><td>Not yet standardized in Core</td></tr>
+          <tr><td>cert-manager <code>Ingress annotation</code></td><td>cert-manager <code>Gateway + HTTPRoute annotation</code></td><td>cert-manager v1.14+ supports Gateway API</td></tr>
+          <tr><td><code>auth-url</code> annotation</td><td>ExtensionRef to auth filter (controller-specific)</td><td>Envoy Gateway has EnvoyPatchPolicy</td></tr>
+        </tbody>
+      </table>
+
+      <h3>cert-manager with Gateway API</h3>
+      <pre><code># cert-manager v1.14+ supports Gateway API natively
+# Annotation on Gateway resource:
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: prod-gateway
+  namespace: gateway-infra
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod   # same as Ingress
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: https
+      port: 443
+      protocol: HTTPS
+      hostname: "*.example.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-tls     # cert-manager creates this Secret
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 14. ADVANCED PATTERNS -->
+      <h2 id="advanced">Advanced Patterns</h2>
+
+      <h3 id="shared-gateway">Shared Gateway Multi-Tenancy</h3>
+      <p>A single Gateway can serve hundreds of application teams. Each team creates HTTPRoutes in their namespace pointing at the shared Gateway. The Gateway's <code>allowedRoutes</code> controls which namespaces can attach:</p>
+
+      <pre><code># Infrastructure team creates one Gateway per environment
+# Gateway in: gateway-infra namespace
+# App teams create HTTPRoutes in their own namespaces
+
+# Team A: namespace "team-a" (has label gateway-access: "true")
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: team-a-app
+  namespace: team-a
+spec:
+  parentRefs:
+    - name: prod-gateway
+      namespace: gateway-infra
+  hostnames: ["app-a.company.com"]
+  rules:
+    - backendRefs:
+        - name: app-a-svc
+          port: 80
+
+# Team B: namespace "team-b"
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: team-b-app
+  namespace: team-b
+spec:
+  parentRefs:
+    - name: prod-gateway
+      namespace: gateway-infra
+  hostnames: ["app-b.company.com"]
+  rules:
+    - backendRefs:
+        - name: app-b-svc
+          port: 80
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="timeout-retry">Timeouts and Retries (Extended)</h3>
+      <pre><code>rules:
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /api
+    timeouts:
+      request: 30s              # total request timeout (client → backend)
+      backendRequest: 10s       # per-attempt timeout to backend
+    retry:                      # Extended conformance
+      codes: [503, 504]         # retry on these status codes
+      attempts: 3
+      backoff: 250ms
+    backendRefs:
+      - name: api-service
+        port: 8080
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="session-persistence">Session Persistence (Extended)</h3>
+      <pre><code>rules:
+  - backendRefs:
+      - name: session-app
+        port: 80
+    sessionPersistence:
+      sessionName: "shop-session"
+      absoluteTimeout: 1h
+      idleTimeout: 30m
+      type: Cookie              # Cookie | Header
+      cookieConfig:
+        lifetimeType: Session   # Session | Permanent
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 15. INGRESS VS GATEWAY API -->
+      <h2 id="comparison">Ingress vs Gateway API Comparison</h2>
+      <p>For a more complete Ingress reference, see <a href="05-ingress.html">05-ingress.html</a>. This table focuses on the architectural tradeoffs:</p>
+
+      <table>
+        <thead><tr><th>Dimension</th><th>Ingress</th><th>Gateway API</th></tr></thead>
+        <tbody>
+          <tr><td>API stability</td><td>networking.k8s.io/v1 (GA)</td><td>gateway.networking.k8s.io/v1 (GA for HTTPRoute)</td></tr>
+          <tr><td>Traffic splitting</td><td>Two Ingress objects + annotations</td><td>Native: single HTTPRoute with weights</td></tr>
+          <tr><td>Header routing</td><td>Annotation (implementation-specific)</td><td>Native: HTTPRoute matches.headers</td></tr>
+          <tr><td>URL rewriting</td><td>nginx: rewrite-target annotation</td><td>Native: URLRewrite filter</td></tr>
+          <tr><td>Role separation</td><td>None (all in one Ingress object)</td><td>GatewayClass/Gateway vs HTTPRoute</td></tr>
+          <tr><td>Cross-namespace</td><td>Not supported natively</td><td>ReferenceGrant</td></tr>
+          <tr><td>L4 routing</td><td>Not supported</td><td>TCPRoute, UDPRoute, TLSRoute</td></tr>
+          <tr><td>gRPC</td><td>Implementation-specific (usually works)</td><td>Native: GRPCRoute</td></tr>
+          <tr><td>TLS to backends</td><td>Annotation-based</td><td>BackendTLSPolicy</td></tr>
+          <tr><td>Portability</td><td>Low (annotations are implementation-specific)</td><td>High (Core conformance is standardized)</td></tr>
+          <tr><td>Complexity</td><td>Low for basic use cases</td><td>Higher initial setup; less operational complexity over time</td></tr>
+          <tr><td>Ecosystem maturity</td><td>Extremely mature (5+ years)</td><td>Mature; all major controllers support it (2024+)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div class="callout-body">
+          <strong>When to choose Gateway API</strong>
+          <ul>
+            <li>You need traffic splitting, header routing, or request mirroring natively</li>
+            <li>Multiple teams share a cluster and need strong routing isolation</li>
+            <li>You need L4 (TCP/UDP) routing alongside HTTP</li>
+            <li>You're starting a new cluster — Gateway API is the forward path</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>When to keep Ingress</strong>
+          <ul>
+            <li>Existing clusters with stable Ingress configurations and no plans to migrate</li>
+            <li>Simple HTTP routing without splitting or header matching</li>
+            <li>Using a controller that doesn't yet have full Gateway API conformance</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 16. METRICS -->
+      <h2 id="metrics">Metrics, Alerting &amp; Troubleshooting</h2>
+
+      <h3>Key Metrics to Watch</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>Source</th><th>What It Tells You</th></tr></thead>
+        <tbody>
+          <tr><td><code>gateway_api_gateway_programmed_count</code></td><td>Controller</td><td>Number of Gateways in Programmed state; drop = infra problem</td></tr>
+          <tr><td><code>gateway_api_httproute_accepted_count</code></td><td>Controller</td><td>Routes successfully attached; watch for drops after deployment</td></tr>
+          <tr><td><code>envoy_cluster_upstream_rq_total</code></td><td>Envoy / Cilium proxy</td><td>Total requests to each backend cluster</td></tr>
+          <tr><td><code>envoy_cluster_upstream_rq_time_bucket</code></td><td>Envoy proxy</td><td>Backend response latency histogram</td></tr>
+          <tr><td><code>envoy_http_downstream_rq_5xx</code></td><td>Envoy proxy</td><td>5xx rate at the gateway — spikes indicate backend failures</td></tr>
+          <tr><td><code>envoy_http_downstream_cx_active</code></td><td>Envoy proxy</td><td>Active connections; high values may indicate connection leak</td></tr>
+          <tr><td><code>nginx_ingress_controller_requests</code></td><td>NGINX GF</td><td>Request rate per host/status (if using NGINX Gateway Fabric)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Alerting Rules</h3>
+      <pre><code># Alert: HTTPRoute not accepted
+- alert: HTTPRouteNotAccepted
+  expr: |
+    kube_httproute_status_conditions{condition="Accepted",status="False"} > 0
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "HTTPRoute {{ $labels.name }} in {{ $labels.namespace }} is not accepted"
+
+# Alert: Gateway not programmed
+- alert: GatewayNotProgrammed
+  expr: |
+    kube_gateway_status_conditions{condition="Programmed",status="False"} > 0
+  for: 10m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Gateway {{ $labels.name }} is not programmed"
+
+# Alert: High error rate through gateway
+- alert: GatewayHighErrorRate
+  expr: |
+    rate(envoy_http_downstream_rq_5xx[5m]) /
+    rate(envoy_http_downstream_rq_total[5m]) > 0.05
+  for: 5m
+  labels:
+    severity: warning
+
+# Alert: Backend response latency P99 > 2s
+- alert: GatewayBackendHighLatency
+  expr: |
+    histogram_quantile(0.99,
+      rate(envoy_cluster_upstream_rq_time_bucket[5m])
+    ) > 2000
+  for: 10m
+  labels:
+    severity: warning
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Troubleshooting Runbooks</h3>
+
+      <div class="card-grid" style="grid-template-columns:1fr;">
+        <div class="card">
+          <h4>Runbook 1: HTTPRoute Not Accepted</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check route status
+kubectl get httproute my-route -n my-app -o yaml | grep -A20 status
+
+# Common reasons and fixes:
+# NotAllowedByListeners → namespace missing gateway-access label
+kubectl label namespace my-app gateway-access=true
+
+# NoMatchingListenerHostname → route hostname doesn't match listener hostname
+# NoMatchingParent → Gateway name/namespace/sectionName is wrong
+# RefNotPermitted → ReferenceGrant missing for cross-namespace backendRef</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 2: Gateway Not Programmed / No Address</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check gateway status
+kubectl get gateway prod-gateway -n gateway-infra -o yaml
+
+# Check controller pod logs
+kubectl logs -n envoy-gateway-system -l app=gateway-helm -f
+
+# Common causes:
+# - GatewayClass controller not running
+# - TLS certificate Secret missing or in wrong namespace + no ReferenceGrant
+# - Cloud LB provisioning failure (check controller events)
+kubectl describe gateway prod-gateway -n gateway-infra</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 3: ResolvedRefs False (backendRef not found)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check route status for ResolvedRefs condition
+kubectl get httproute my-route -n my-app -o jsonpath='{.status.parents[*].conditions}'
+
+# BackendNotFound: Service doesn't exist or wrong name/port
+kubectl get svc api-service -n my-app
+
+# RefNotPermitted: cross-namespace backendRef without ReferenceGrant
+# Create ReferenceGrant in the target namespace:
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-my-app
+  namespace: target-namespace
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: my-app
+  to:
+    - group: ""
+      kind: Service
+EOF</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 4: Traffic Splitting Not Working (all traffic to one backend)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Verify HTTPRoute has correct weights
+kubectl get httproute canary-route -n my-app -o jsonpath='{.spec.rules[*].backendRefs}'
+
+# Check both services have ready endpoints
+kubectl get endpointslices -n my-app
+
+# Check if controller supports traffic splitting (Extended conformance)
+kubectl get gatewayclass cilium -o yaml | grep -i conformance
+
+# Generate test traffic and measure split
+for i in $(seq 1 100); do curl -s https://app.example.com/ -o /dev/null -w "%{http_code}\n"; done</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 5: 502 Bad Gateway (backend connection refused)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># 502 usually means gateway can't reach backend
+# Check pod readiness
+kubectl get pods -n my-app -l app=api-service
+
+# Check if Service has endpoints
+kubectl get endpoints api-service -n my-app
+
+# If BackendTLSPolicy is configured: verify backend is serving TLS on the right port
+kubectl exec -n my-app deploy/api-service -- openssl s_server -help 2>&1 | head
+
+# Check if port matches between Service.spec.ports and BackendTLSPolicy targetRef
+kubectl describe backendtlspolicy api-backend-tls -n my-app</code></pre>
+        </div>
+      </div>
+
+      <!-- 17. BEST PRACTICES -->
+      <h2 id="best-practices">Best Practices</h2>
+      <ol style="padding-left:24px;color:var(--text2);font-size:14px;line-height:2;">
+        <li><strong>Use shared Gateways, not per-team Gateways</strong> — one Gateway per environment tier (prod/staging) reduces cloud LB cost and simplifies certificate management. Use <code>allowedRoutes.namespaces</code> for isolation.</li>
+        <li><strong>Always specify <code>sectionName</code> in parentRef</strong> — binding to a specific listener by name prevents surprise attachments when new listeners are added.</li>
+        <li><strong>Put ReferenceGrants in the namespace being accessed</strong> — as a namespace owner, review and approve ReferenceGrant objects to maintain security boundaries.</li>
+        <li><strong>Use BackendTLSPolicy for internal mTLS</strong> — don't rely on unencrypted pod-to-pod traffic for sensitive services.</li>
+        <li><strong>Set explicit hostnames on HTTPRoutes</strong> — avoiding wildcard hostnames (<code>*</code>) prevents accidental traffic capture from other routes.</li>
+        <li><strong>Monitor status conditions in CI/CD</strong> — after deploying an HTTPRoute, verify <code>Accepted: True</code> and <code>ResolvedRefs: True</code> before marking deployment successful.</li>
+        <li><strong>Use traffic splitting for zero-downtime deploys</strong> — shift from weight:0/100 → 10/90 → 50/50 → 100/0 instead of hard cutover.</li>
+        <li><strong>Install experimental CRDs only if you need them</strong> — TCPRoute/UDPRoute are alpha; standard-install.yaml is safer for production unless you explicitly need L4 routing.</li>
+      </ol>
+
+      <!-- NAV FOOTER -->
+      <div class="nav-footer">
+        <a class="nav-btn" href="05-ingress.html"><small>← Previous</small>Ingress</a>
+        <a class="nav-btn" href="07-network-policies.html"><small>Next →</small>Network Policies</a>
+      </div>
+
+    </main>
+
+    <!-- TOC -->
+    <aside class="toc-panel">
+      <div class="toc-title">On This Page</div>
+      <a href="#overview">Why Gateway API Exists</a>
+      <a href="#resource-model">Resource Model</a>
+      <a href="#gatewayclass" class="toc-h3">GatewayClass</a>
+      <a href="#gateway" class="toc-h3">Gateway</a>
+      <a href="#role-separation">Role Separation</a>
+      <a href="#httproute">HTTPRoute</a>
+      <a href="#httproute-basic" class="toc-h3">Basic Routing</a>
+      <a href="#traffic-splitting" class="toc-h3">Traffic Splitting</a>
+      <a href="#header-routing" class="toc-h3">Header Routing</a>
+      <a href="#filters" class="toc-h3">Filters</a>
+      <a href="#referencegrant">ReferenceGrant</a>
+      <a href="#grpcroute">GRPCRoute</a>
+      <a href="#l4-routes">TCPRoute / UDPRoute / TLSRoute</a>
+      <a href="#backendtlspolicy">BackendTLSPolicy</a>
+      <a href="#parentref">ParentReference</a>
+      <a href="#status-conditions">Status Conditions</a>
+      <a href="#implementations">Controller Implementations</a>
+      <a href="#conformance" class="toc-h3">Conformance Profiles</a>
+      <a href="#install">Installation</a>
+      <a href="#migration">Migration from Ingress</a>
+      <a href="#advanced">Advanced Patterns</a>
+      <a href="#comparison">Ingress vs Gateway API</a>
+      <a href="#metrics">Metrics &amp; Troubleshooting</a>
+      <a href="#best-practices">Best Practices</a>
+    </aside>
+  </div>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+// Theme
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+const themeBtn=document.getElementById('theme-toggle');
+themeBtn.textContent=saved==='dark'?'Light Mode':'Dark Mode';
+themeBtn.addEventListener('click',()=>{
+  const t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'Light Mode':'Dark Mode';
+});
+
+// Hamburger
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// Back to top — scroll on main-content element
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{
+  backTop.classList.toggle('visible',main.scrollTop>400);
+});
+backTop.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+
+// Copy buttons
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';
+  btn.textContent='Copy';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    const code=pre.querySelector('code');
+    navigator.clipboard.writeText(code?code.innerText:pre.innerText).then(()=>{
+      btn.textContent='Copied!';
+      setTimeout(()=>btn.textContent='Copy',2000);
+    });
+  });
+});
+
+// TOC active state via IntersectionObserver
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+
+// Sidebar filter
+document.getElementById('nav-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

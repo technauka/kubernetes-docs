@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Service Mesh — Kubernetes Networking</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.sidebar-logo{font-size:15px;font-weight:700;color:var(--accent);text-decoration:none;display:block;margin-bottom:12px;}
+.sidebar-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;}
+.sidebar-filter:focus{border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding:6px 16px 4px;}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);text-decoration:none;border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:90;}
+.hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+.theme-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text2);cursor:pointer;font-size:12px;}
+.theme-btn:hover{color:var(--text);border-color:var(--accent);}
+.content-toc-wrap{display:flex;flex:1;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-panel{width:var(--toc-w);flex-shrink:0;padding:24px 16px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
+.toc-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text3);text-decoration:none;padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover{color:var(--text2);}
+.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-panel a.toc-h3{padding-left:20px;font-size:11px;}
+h1{font-size:34px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+ul,ol{padding-left:24px;color:var(--text2);margin-bottom:14px;}
+li{margin-bottom:4px;font-size:14px;}
+.subtitle{font-size:16px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:12px 0 20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code,h3 code,h4 code{background:var(--bg3);padding:2px 5px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text3);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 12px;text-align:left;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);border-bottom:2px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:12px;}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:14px;}
+.callout-body p,.callout-body ul{font-size:13px;color:var(--text2);margin:0;}
+.callout-body ul{padding-left:18px;margin-top:4px;}
+.callout.info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.3);}
+.callout.warn{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);}
+.callout.danger{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);}
+.callout.success{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.3);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:16px 0 24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card h4{font-size:14px;font-weight:600;color:var(--text);margin:0 0 8px;}
+.card p,.card ul{font-size:13px;color:var(--text2);}
+.card ul{padding-left:16px;margin:0;}
+.card .tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;margin-bottom:6px;}
+.tag-ga{background:rgba(63,185,80,.15);color:var(--green);}
+.tag-beta{background:rgba(210,153,34,.15);color:var(--yellow);}
+.tag-ext{background:rgba(188,140,255,.15);color:var(--purple);}
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:16px 0 24px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.6;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0 24px;}
+.two-col-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.two-col-box h4{font-size:13px;font-weight:600;margin-bottom:8px;}
+.two-col-box.istio{border-top:3px solid var(--accent);}
+.two-col-box.linkerd{border-top:3px solid var(--green);}
+.two-col-box.cilium{border-top:3px solid var(--purple);}
+.two-col-box.ambient{border-top:3px solid var(--yellow);}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.back-top.visible{display:flex;}
+.nav-footer{display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;border-top:1px solid var(--border);}
+.nav-btn{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 20px;color:var(--text2);text-decoration:none;font-size:13px;transition:all .2s;}
+.nav-btn:hover{color:var(--accent);border-color:var(--accent);}
+.nav-btn small{display:block;font-size:11px;color:var(--text3);margin-bottom:2px;}
+@media(max-width:1200px){.toc-panel{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrap{margin-left:0;}
+  .hamburger{display:block;}
+  .main-content{padding:24px 20px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a class="sidebar-logo" href="../index.html">⎈ Kubernetes Docs</a>
+    <input class="sidebar-filter" id="nav-filter" placeholder="Filter..." type="text"/>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Foundations</div>
+    <a href="../00-foundations/00-introduction.html">Introduction</a>
+    <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../00-foundations/02-kubernetes-components.html">Components</a>
+    <a href="../00-foundations/03-control-loops.html">Control Loops</a>
+    <a href="../00-foundations/04-kubernetes-api-model.html">API Model</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">Overview</a>
+    <a href="../01-control-plane/01-api-server.html">API Server</a>
+    <a href="../01-control-plane/02-etcd.html">etcd</a>
+    <a href="../01-control-plane/03-scheduler.html">Scheduler</a>
+    <a href="../01-control-plane/04-controller-manager.html">Controller Manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">Cloud CCM</a>
+    <a href="../01-control-plane/06-ha-control-plane.html">HA Control Plane</a>
+    <a href="../01-control-plane/07-api-aggregation.html">API Aggregation</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">Overview</a>
+    <a href="../02-node-components/01-kubelet.html">kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime.html">Container Runtime</a>
+    <a href="../02-node-components/04-cri-interface.html">CRI Interface</a>
+    <a href="../02-node-components/05-node-lifecycle.html">Node Lifecycle</a>
+    <a href="../02-node-components/06-node-resource-management.html">Resource Management</a>
+    <a href="../02-node-components/07-windows-worker-nodes.html">Windows Nodes</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="00-networking-overview.html">Overview</a>
+    <a href="01-pod-networking.html">Pod Networking</a>
+    <a href="02-cni-plugins.html">CNI Plugins</a>
+    <a href="03-kube-proxy-internals.html">kube-proxy Internals</a>
+    <a href="04-dns.html">DNS &amp; Service Discovery</a>
+    <a href="05-ingress.html">Ingress</a>
+    <a href="06-gateway-api.html">Gateway API</a>
+    <a href="07-network-policies.html">Network Policies</a>
+    <a href="08-ipv4-ipv6-dual-stack.html">IPv4/IPv6 Dual-Stack</a>
+    <a href="09-load-balancing.html">Load Balancing</a>
+    <a href="10-service-mesh.html" class="active">Service Mesh</a>
+  </div>
+</nav>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger">☰</button>
+    <span class="topbar-title">03 — Networking / Service Mesh</span>
+    <button class="theme-btn" id="theme-toggle">Light Mode</button>
+  </header>
+
+  <div class="content-toc-wrap">
+    <main class="main-content" id="main-content">
+
+      <h1>Service Mesh</h1>
+      <p class="subtitle">A service mesh moves cross-cutting concerns — mutual TLS, observability, retries, circuit breaking, traffic splitting — out of application code and into a dedicated infrastructure layer. This page covers sidecar and sidecarless architectures, Istio, Linkerd, Cilium service mesh, SPIFFE/SPIRE identity, and production patterns.</p>
+
+      <details class="coverage">
+        <summary>What This Page Covers</summary>
+        <ul class="coverage-body">
+          <li>What a service mesh is; problems it solves without code changes</li>
+          <li>Sidecar vs sidecarless (ambient) architecture comparison</li>
+          <li>Istio architecture: istiod (Pilot+Citadel+Galley merged), Envoy data plane</li>
+          <li>Istio CRDs: VirtualService, DestinationRule, Gateway, ServiceEntry, Sidecar</li>
+          <li>Istio security: PeerAuthentication (STRICT/PERMISSIVE mTLS), AuthorizationPolicy (ALLOW/DENY/AUDIT/CUSTOM)</li>
+          <li>Istio traffic management: retries, timeouts, circuit breaking (outlier detection), fault injection, traffic mirroring</li>
+          <li>Istio observability: Prometheus metrics, Kiali topology, Jaeger/Zipkin tracing, access logs</li>
+          <li>Istio ambient mode: ztunnel (L4 per-node), waypoint proxy (L7 per-namespace/SA)</li>
+          <li>Istio multi-cluster: single/multiple control planes, east-west gateway, flat network vs gateway topologies</li>
+          <li>Linkerd: Rust-based linkerd2-proxy, zero-config mTLS, ServiceProfile CRD, retries, timeouts, traffic splitting</li>
+          <li>Cilium service mesh: eBPF-based L4 mesh, optional Envoy sidecar for L7, Hubble observability</li>
+          <li>Consul Connect: service intentions, transparent proxy, mesh gateways</li>
+          <li>SPIFFE/SPIRE: SVIDs, X.509 and JWT formats, workload attestation, trust bundles</li>
+          <li>Traffic management patterns: canary, blue/green, A/B testing, dark launch (mirroring)</li>
+          <li>mTLS migration: PERMISSIVE → STRICT phase rollout</li>
+          <li>Service mesh vs NetworkPolicy: complementary, not alternatives</li>
+          <li>Mesh vs Gateway API: GatewayClass for mesh use cases (GAMMA)</li>
+          <li>8 metrics + 4 alerting rules + 5 troubleshooting runbooks</li>
+          <li>9 best practices for production service mesh operation</li>
+        </ul>
+      </details>
+
+      <!-- 1. WHAT IS A SERVICE MESH -->
+      <h2 id="what-is">What a Service Mesh Is — and Is Not</h2>
+      <p>A service mesh is an infrastructure layer that intercepts all network traffic between services and applies policy, observability, and reliability logic — without any changes to application code. It solves problems that are otherwise duplicated in every service:</p>
+
+      <table>
+        <thead><tr><th>Problem</th><th>Without Mesh</th><th>With Mesh</th></tr></thead>
+        <tbody>
+          <tr><td>Mutual TLS between services</td><td>Each app implements TLS with certificate rotation</td><td>Automatic; zero-code-change; cert rotation transparent</td></tr>
+          <tr><td>Service-to-service authorization</td><td>Application-level API keys or shared secrets</td><td>Identity-based (SPIFFE SVID); cryptographically verified</td></tr>
+          <tr><td>Retries, timeouts, circuit breaking</td><td>Each SDK/library re-implements per language</td><td>Uniform policy in mesh proxy; language-agnostic</td></tr>
+          <tr><td>Distributed tracing</td><td>Manual instrumentation in every service</td><td>Automatic trace context propagation (B3/W3C headers)</td></tr>
+          <tr><td>Traffic splitting / canary</td><td>Separate deployments with DNS trickery</td><td>Weighted routing at proxy layer; no DNS change needed</td></tr>
+          <tr><td>Observability (RED metrics)</td><td>Each service must expose /metrics</td><td>Proxy generates request rate, error rate, duration per route</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>A service mesh is not a replacement for NetworkPolicy</strong>
+          <p>NetworkPolicy operates at L3/L4 (IP + port) and is enforced in the kernel by the CNI. Service mesh policies operate at L7 (HTTP, gRPC) in a user-space proxy. They are complementary: NetworkPolicy provides coarse-grained firewall rules; service mesh provides fine-grained identity-based authorization and traffic management. Run both in production.</p>
+        </div>
+      </div>
+
+      <!-- 2. ARCHITECTURE MODELS -->
+      <h2 id="architecture">Sidecar vs Sidecarless Architecture</h2>
+
+      <div class="two-col">
+        <div class="two-col-box istio">
+          <h4>Sidecar Model (Istio, Linkerd)</h4>
+          <ul style="font-size:13px;color:var(--text2);padding-left:16px;">
+            <li>Proxy injected as extra container in every pod</li>
+            <li>iptables rules redirect all traffic through proxy</li>
+            <li>Full L7 visibility per pod</li>
+            <li>Pod startup overhead (~100ms), resource overhead (~50Mi RAM, ~0.05 CPU per sidecar)</li>
+            <li>Requires pod restart to inject/upgrade proxy</li>
+            <li>Isolation: per-pod failure domain</li>
+          </ul>
+        </div>
+        <div class="two-col-box ambient">
+          <h4>Sidecarless / Ambient (Istio Ambient, Cilium)</h4>
+          <ul style="font-size:13px;color:var(--text2);padding-left:16px;">
+            <li>No sidecar injected; no pod restart needed</li>
+            <li>L4 proxy (ztunnel/eBPF) runs per node</li>
+            <li>L7 proxy (waypoint) runs per namespace or SA — only when needed</li>
+            <li>Lower resource overhead; better for large clusters</li>
+            <li>Gradual adoption: enroll namespace without restarting pods</li>
+            <li>Blast radius: node-level failure affects all pods on node (ztunnel)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="arch-diagram">SIDECAR MODEL (Istio / Linkerd)
+─────────────────────────────────────────────────────
+Pod A                              Pod B
+┌──────────────────────┐          ┌──────────────────────┐
+│ app-container        │          │ app-container        │
+│ ┌──────────────────┐ │  mTLS    │ ┌──────────────────┐ │
+│ │ Envoy sidecar    │─┼──────────┼─│ Envoy sidecar    │ │
+│ │ (istio-proxy)    │ │          │ │ (istio-proxy)    │ │
+│ └──────────────────┘ │          │ └──────────────────┘ │
+└──────────────────────┘          └──────────────────────┘
+         ↑ iptables REDIRECT (port 15001/15006)
+         │
+    istiod (control plane): pushes xDS config to all proxies
+
+AMBIENT MODEL (Istio Ambient)
+─────────────────────────────────────────────────────
+Node
+┌──────────────────────────────────────────────────────┐
+│  ztunnel (per-node DaemonSet)  ← L4 only: mTLS, authz│
+│  ┌─────────────┐   ┌─────────────┐                   │
+│  │   Pod A     │   │   Pod B     │                   │
+│  │  app only   │   │  app only   │  ← no sidecar!    │
+│  └─────────────┘   └─────────────┘                   │
+└──────────────────────────────────────────────────────┘
+         │ L7 needed?
+         ▼
+Waypoint proxy (per-namespace Deployment) ← L7: VirtualService, AuthzPolicy HTTP</div>
+
+      <!-- 3. ISTIO -->
+      <h2 id="istio">Istio</h2>
+      <p>Istio is the most feature-rich service mesh for Kubernetes. Since version 1.5, all control plane components (Pilot, Citadel, Galley, Mixer) merged into a single binary: <strong>istiod</strong>.</p>
+
+      <h3 id="istio-control-plane">Control Plane Components</h3>
+      <div class="card-grid">
+        <div class="card">
+          <h4>istiod</h4>
+          <ul>
+            <li><strong>Pilot</strong> — xDS server; pushes route/cluster/listener config to Envoy proxies</li>
+            <li><strong>Citadel</strong> — CA; issues SPIFFE X.509 SVIDs to workloads; rotates certs automatically (~24h TTL)</li>
+            <li><strong>Galley</strong> — config validation and distribution; validates Istio CRDs</li>
+            <li>Port 15010 (gRPC xDS), 15012 (secure xDS), 15014 (control plane metrics), 8080 (debug)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Envoy Data Plane</h4>
+          <ul>
+            <li>istio-proxy sidecar: Envoy + Istio agent</li>
+            <li>Intercepts traffic via iptables REDIRECT (init container sets rules)</li>
+            <li>Port 15001 (outbound), 15006 (inbound), 15090 (Prometheus metrics), 15000 (admin)</li>
+            <li>xDS: LDS/RDS/CDS/EDS pushed from istiod; no polling</li>
+            <li>Cert refresh from istiod via SDS (Secret Discovery Service)</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 id="istio-install">Installation</h3>
+      <pre><code># Install via istioctl (recommended)
+istioctl install --set profile=default    # minimal | default | demo | empty
+
+# Verify installation
+istioctl verify-install
+kubectl get pods -n istio-system
+
+# Enable sidecar injection for a namespace
+kubectl label namespace production istio-injection=enabled
+
+# Manual injection (without label):
+istioctl kube-inject -f deployment.yaml | kubectl apply -f -
+
+# Check proxy status across all pods
+istioctl proxy-status
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 4. ISTIO CRDs -->
+      <h2 id="istio-crds">Istio CRDs — Traffic Management</h2>
+
+      <h3 id="virtualservice">VirtualService</h3>
+      <p>VirtualService defines traffic routing rules for services within the mesh. It intercepts requests to a service's hostname and applies routing logic before the request reaches any pod:</p>
+
+      <pre><code>apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: reviews-vs
+  namespace: production
+spec:
+  hosts:
+    - reviews                    # short name = reviews.production.svc.cluster.local
+    - reviews.example.com        # external hostname (when paired with Istio Gateway)
+  gateways:
+    - mesh                       # "mesh" = all sidecars in mesh
+    - production/my-gateway      # also apply to external traffic via this Gateway
+  http:
+    # Canary: 10% to v2, 90% to v1
+    - match:
+        - headers:
+            x-canary:
+              exact: "true"       # header-based routing to canary
+      route:
+        - destination:
+            host: reviews
+            subset: v2
+    # Weight-based split
+    - route:
+        - destination:
+            host: reviews
+            subset: v1
+          weight: 90
+        - destination:
+            host: reviews
+            subset: v2
+          weight: 10
+      timeout: 10s
+      retries:
+        attempts: 3
+        perTryTimeout: 3s
+        retryOn: "gateway-error,connect-failure,retriable-4xx"
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="destinationrule">DestinationRule</h3>
+      <p>DestinationRule defines subsets (for canary routing) and traffic policies applied <em>after</em> routing (load balancing, circuit breaking, TLS settings to upstream):</p>
+
+      <pre><code>apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: reviews-dr
+  namespace: production
+spec:
+  host: reviews
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN           # ROUND_ROBIN | LEAST_CONN | RANDOM | PASSTHROUGH
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 30ms
+      http:
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+    outlierDetection:              # circuit breaker
+      consecutiveGatewayErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50       # never eject more than 50% of hosts
+      minHealthPercent: 50
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+      trafficPolicy:               # per-subset override
+        loadBalancer:
+          simple: ROUND_ROBIN
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="istio-gateway">Istio Gateway (vs Kubernetes Ingress)</h3>
+      <p>Istio Gateway manages inbound/outbound traffic at the mesh boundary. It configures the Istio ingress gateway pods (Envoy) — not to be confused with Kubernetes Gateway API GatewayClass:</p>
+
+      <pre><code>apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: my-gateway
+  namespace: production
+spec:
+  selector:
+    istio: ingressgateway            # targets the istio-ingressgateway pods
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE                 # SIMPLE | MUTUAL | PASSTHROUGH | AUTO_PASSTHROUGH
+        credentialName: my-tls-cert  # references a Secret
+      hosts:
+        - "*.example.com"
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*.example.com"
+      tls:
+        httpsRedirect: true
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="serviceentry">ServiceEntry — External Services</h3>
+      <p>ServiceEntry adds external services to Istio's service registry, enabling traffic policies, mTLS, and observability for egress traffic:</p>
+
+      <pre><code>apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: stripe-api
+  namespace: production
+spec:
+  hosts:
+    - api.stripe.com
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  location: MESH_EXTERNAL           # MESH_EXTERNAL | MESH_INTERNAL
+  resolution: DNS
+---
+# Block all external traffic except explicit ServiceEntries:
+# Set outboundTrafficPolicy: REGISTRY_ONLY in MeshConfig
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  meshConfig:
+    outboundTrafficPolicy:
+      mode: REGISTRY_ONLY           # default: ALLOW_ANY
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 5. ISTIO SECURITY -->
+      <h2 id="istio-security">Istio Security</h2>
+
+      <h3 id="peer-authentication">PeerAuthentication — mTLS Policy</h3>
+      <pre><code># Namespace-wide STRICT mTLS (all traffic must be mTLS)
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: production
+spec:
+  mtls:
+    mode: STRICT                   # STRICT | PERMISSIVE | DISABLE
+
+# Port-level exception (useful during migration):
+spec:
+  selector:
+    matchLabels:
+      app: legacy-app
+  mtls:
+    mode: PERMISSIVE               # namespace STRICT, but this app accepts plaintext
+  portLevelMtls:
+    8080:
+      mode: DISABLE                # specific port allows plaintext
+
+# Mesh-wide STRICT (applies to all namespaces):
+metadata:
+  name: default
+  namespace: istio-system          # root namespace = mesh-wide policy
+spec:
+  mtls:
+    mode: STRICT
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="authorization-policy">AuthorizationPolicy</h3>
+      <p>AuthorizationPolicy enforces access control at the sidecar level using service identity (SPIFFE) and request attributes. Four actions: <code>ALLOW</code>, <code>DENY</code>, <code>AUDIT</code>, <code>CUSTOM</code> (external auth):</p>
+
+      <pre><code># Allow only frontend service to call reviews on GET /api/*
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: reviews-authz
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: reviews
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              # SPIFFE identity: cluster.local/ns/production/sa/frontend
+              - "cluster.local/ns/production/sa/frontend"
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/api/*"]
+      when:
+        - key: request.headers[x-api-version]
+          values: ["v1", "v2"]
+
+---
+# Deny all except explicitly allowed (default deny):
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all
+  namespace: production
+spec:
+  {}                               # empty spec = deny all
+
+---
+# JWT-based authorization
+spec:
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["https://accounts.google.com/*"]
+      when:
+        - key: request.auth.claims[role]
+          values: ["admin"]
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 6. TRAFFIC MANAGEMENT -->
+      <h2 id="traffic-management">Traffic Management Patterns</h2>
+
+      <h3 id="fault-injection">Fault Injection</h3>
+      <p>Fault injection deliberately introduces delays and errors to test system resilience — chaos engineering at the proxy layer without modifying application code:</p>
+
+      <pre><code>apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ratings-fault
+  namespace: production
+spec:
+  hosts: [ratings]
+  http:
+    - match:
+        - headers:
+            x-test-user:
+              exact: "chaos"       # only inject for specific test header
+      fault:
+        delay:
+          percentage:
+            value: 50              # 50% of requests get a 5s delay
+          fixedDelay: 5s
+        abort:
+          percentage:
+            value: 10              # 10% of requests get HTTP 503
+          httpStatus: 503
+      route:
+        - destination:
+            host: ratings
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="traffic-mirroring">Traffic Mirroring (Dark Launch)</h3>
+      <p>Mirror a percentage of live traffic to a shadow service — requests are duplicated, responses from the mirror are ignored. Ideal for testing new versions under real traffic without user impact:</p>
+
+      <pre><code>spec:
+  http:
+    - route:
+        - destination:
+            host: product-service
+            subset: v1
+          weight: 100
+      mirror:
+        host: product-service
+        subset: v2             # shadow target; receives copy of every request
+      mirrorPercentage:
+        value: 100.0           # mirror 100% of traffic (can be lower, e.g. 10.0)
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3 id="circuit-breaking">Circuit Breaking (Outlier Detection)</h3>
+      <p>Defined in DestinationRule's <code>outlierDetection</code> (see earlier). When a host accumulates consecutive errors, it is ejected from the load balancing pool for a backoff period:</p>
+
+      <pre><code># Full outlier detection example:
+outlierDetection:
+  splitExternalLocalOriginErrors: true    # separate local-origin errors from upstream
+  consecutiveLocalOriginFailures: 3       # 3 connection failures → eject
+  consecutiveGatewayErrors: 5             # 5 5xx responses → eject
+  consecutive5xxErrors: 5
+  interval: 10s                           # check window
+  baseEjectionTime: 30s                   # first ejection duration
+  maxEjectionPercent: 33                  # max % of hosts ejectable at once
+  minHealthPercent: 50                    # stop ejecting if fewer than 50% healthy
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 7. ISTIO AMBIENT -->
+      <h2 id="istio-ambient">Istio Ambient Mode</h2>
+      <p>Ambient mode (GA in Istio 1.24) removes sidecars entirely. Traffic is intercepted at the node level by <strong>ztunnel</strong> (a per-node Rust DaemonSet) for L4, and optionally by <strong>waypoint proxies</strong> (per-namespace or per-ServiceAccount Envoy Deployments) for L7.</p>
+
+      <div class="arch-diagram">Enrollment: kubectl label namespace production istio.io/dataplane-mode=ambient
+
+L4 layer (always present):
+  ztunnel DaemonSet (one per node, Rust)
+  → HBONE tunnel (HTTP/2 CONNECT, port 15008) between nodes
+  → Enforces: mTLS, L4 AuthorizationPolicy, traffic metrics
+
+L7 layer (optional, per-namespace or per-SA):
+  waypoint Deployment (Envoy, auto-scaled)
+  → Enforces: HTTP routing (VirtualService), L7 AuthorizationPolicy, fault injection
+  → Only for traffic destined to the waypoint's service account
+
+kubectl get waypoint -n production       # list waypoints
+istioctl waypoint apply --enroll-namespace  # create namespace waypoint
+istioctl waypoint apply --name sa-waypoint --for service-account  # SA waypoint</div>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div class="callout-body">
+          <strong>Ambient mode advantages for large clusters</strong>
+          <ul>
+            <li>No pod restart needed to enroll — just label the namespace</li>
+            <li>~100x less memory overhead vs per-pod sidecars (1 ztunnel per node vs N sidecars per N pods)</li>
+            <li>Rolling upgrades: upgrade ztunnel without touching application pods</li>
+            <li>L7 features are opt-in: only namespaces that need HTTP-level policy pay the waypoint cost</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 8. ISTIO OBSERVABILITY -->
+      <h2 id="istio-observability">Istio Observability</h2>
+
+      <h3>Standard Metrics (Envoy → Prometheus)</h3>
+      <p>Every Envoy sidecar/ztunnel exposes metrics at <code>:15090/metrics</code>. Istio also generates higher-level metrics via Telemetry API:</p>
+
+      <pre><code># Key Istio metrics:
+# Request rate:
+sum(rate(istio_requests_total[5m])) by (destination_service, response_code)
+
+# P99 latency:
+histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le, destination_service))
+
+# Error rate:
+sum(rate(istio_requests_total{response_code=~"5.."}[5m])) by (destination_service)
+/
+sum(rate(istio_requests_total[5m])) by (destination_service)
+
+# Connection count (TCP):
+sum(istio_tcp_connections_opened_total) by (destination_service)
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Telemetry API — Custom Metrics &amp; Access Logs</h3>
+      <pre><code>apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: custom-metrics
+  namespace: production
+spec:
+  metrics:
+    - providers:
+        - name: prometheus
+      overrides:
+        - match:
+            metric: REQUEST_COUNT
+          tagOverrides:
+            request_id:
+              value: "request.headers['x-request-id'] | 'unknown'"
+  accessLogging:
+    - providers:
+        - name: envoy             # built-in envoy access log
+      filter:
+        expression: "response.code >= 400"   # only log errors
+  tracing:
+    - providers:
+        - name: jaeger
+      randomSamplingPercentage: 1.0          # 1% sampling
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 9. ISTIO MULTICLUSTER -->
+      <h2 id="istio-multicluster">Istio Multi-Cluster</h2>
+
+      <table>
+        <thead><tr><th>Topology</th><th>Control Planes</th><th>Network</th><th>Use Case</th></tr></thead>
+        <tbody>
+          <tr><td>Single primary</td><td>1 (manages all clusters)</td><td>Flat (pods reach each other directly)</td><td>Dev/staging; tight coupling acceptable</td></tr>
+          <tr><td>Primary-remote</td><td>1 primary, remotes have no istiod</td><td>Flat</td><td>Central control; reduced resource use on small clusters</td></tr>
+          <tr><td>Multi-primary</td><td>1 per cluster (replicated config)</td><td>Flat or gateway</td><td>HA; independent failure domains; recommended for prod</td></tr>
+          <tr><td>Multi-primary + gateway</td><td>1 per cluster</td><td>East-west gateway per cluster</td><td>Non-flat networks; clusters in different VPCs/clouds</td></tr>
+        </tbody>
+      </table>
+
+      <pre><code># East-west gateway (for non-flat multi-cluster)
+# Exposes services on port 15443 (TLS SNI-based routing)
+# Install east-west gateway:
+istioctl install -f east-west-gateway.yaml --context=cluster1
+istioctl install -f east-west-gateway.yaml --context=cluster2
+
+# Expose services across clusters:
+kubectl apply -f expose-services.yaml --context=cluster1
+# ServiceEntry auto-created by Istio to reach remote cluster services
+
+# Cross-cluster load balancing:
+# ServiceEntry in cluster1 → VirtualService routes to both clusters
+# Istio automatically generates cross-cluster endpoints from remote control plane
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 10. LINKERD -->
+      <h2 id="linkerd">Linkerd</h2>
+      <p>Linkerd is a CNCF graduated project focused on simplicity and minimal resource overhead. Its data plane proxy (<strong>linkerd2-proxy</strong>) is written in Rust — approximately 10x smaller memory footprint than Envoy.</p>
+
+      <div class="two-col">
+        <div class="two-col-box linkerd">
+          <h4>Linkerd Key Properties</h4>
+          <ul style="font-size:13px;color:var(--text2);padding-left:16px;">
+            <li>Proxy: Rust linkerd2-proxy (~10Mi RAM vs ~50Mi Envoy)</li>
+            <li>Automatic mTLS with zero configuration</li>
+            <li>No CRDs required for basic use (just <code>linkerd inject</code>)</li>
+            <li>Control plane: destination, identity, proxy-injector</li>
+            <li>ServiceProfile CRD for per-route metrics and retries</li>
+            <li>Traffic splitting via SMI (TrafficSplit) or HTTPRoute</li>
+          </ul>
+        </div>
+        <div class="two-col-box" style="border-top:3px solid var(--red);">
+          <h4>Linkerd Limitations</h4>
+          <ul style="font-size:13px;color:var(--text2);padding-left:16px;">
+            <li>Less feature-rich than Istio (no fault injection, limited circuit breaking)</li>
+            <li>No ambient/sidecarless mode (as of 2025)</li>
+            <li>Smaller ecosystem of integrations</li>
+            <li>ServiceProfile requires manual route definition</li>
+          </ul>
+        </div>
+      </div>
+
+      <pre><code># Install Linkerd
+linkerd install --crds | kubectl apply -f -
+linkerd install | kubectl apply -f -
+linkerd check
+
+# Inject sidecar into a namespace (annotation-based auto-inject):
+kubectl annotate namespace production linkerd.io/inject=enabled
+
+# Or inject manually:
+kubectl get deploy -n production -o yaml | linkerd inject - | kubectl apply -f -
+
+# ServiceProfile — per-route metrics and retry policy:
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: reviews.production.svc.cluster.local
+  namespace: production
+spec:
+  routes:
+    - name: GET /api/reviews
+      condition:
+        method: GET
+        pathRegex: /api/reviews.*
+      responseClasses:
+        - condition:
+            status:
+              min: 500
+          isFailure: true        # treat 5xx as failure for retry decisions
+      isRetryable: true
+      timeout: 5000ms            # per-route timeout
+    - name: POST /api/reviews
+      condition:
+        method: POST
+        pathRegex: /api/reviews
+      isRetryable: false         # do not retry non-idempotent writes
+
+# Traffic splitting (Gateway API HTTPRoute):
+# Linkerd 2.14+ supports HTTPRoute for traffic splitting
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: reviews-split
+  namespace: production
+  annotations:
+    linkerd.io/inject: enabled
+spec:
+  parentRefs:
+    - name: reviews
+      kind: Service
+      group: core
+  rules:
+    - backendRefs:
+        - name: reviews-v1
+          port: 80
+          weight: 90
+        - name: reviews-v2
+          port: 80
+          weight: 10
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 11. CILIUM SERVICE MESH -->
+      <h2 id="cilium-mesh">Cilium Service Mesh</h2>
+      <p>Cilium can operate as a service mesh using eBPF for L4 (no sidecar needed) and optionally deploying a per-node Envoy proxy for L7 features. This gives a sidecarless mesh with kernel-level performance:</p>
+
+      <div class="two-col-box cilium" style="margin:16px 0 24px;">
+        <h4>Cilium Service Mesh Modes</h4>
+        <ul style="font-size:13px;color:var(--text2);padding-left:16px;margin-top:8px;">
+          <li><strong>eBPF-only (L4)</strong>: mTLS via eBPF + SPIFFE; mutual auth without any proxy; lowest overhead</li>
+          <li><strong>Envoy per-node (L7)</strong>: one Envoy DaemonSet per node; handles HTTP/gRPC routing, retries, circuit breaking; no per-pod sidecar</li>
+          <li><strong>Sidecar compatible</strong>: can run alongside Istio or Linkerd sidecars as CNI</li>
+        </ul>
+      </div>
+
+      <pre><code>helm upgrade cilium cilium/cilium \
+  --set serviceMesh.enabled=true \
+  --set envoy.enabled=true \              # per-node Envoy for L7
+  --set kubeProxyReplacement=true \
+  --set authentication.mutual.spire.enabled=true \   # SPIFFE/SPIRE integration
+  --set authentication.mutual.spire.install.enabled=true
+
+# CiliumEnvoyConfig — configure per-node Envoy:
+apiVersion: cilium.io/v2
+kind: CiliumEnvoyConfig
+metadata:
+  name: http-policy
+  namespace: production
+spec:
+  services:
+    - name: reviews
+      namespace: production
+  resources:
+    - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
+      # ... full Envoy xDS config
+<button class="copy-btn">Copy</button></code></pre>
+
+      <!-- 12. SPIFFE/SPIRE -->
+      <h2 id="spiffe">SPIFFE / SPIRE — Workload Identity</h2>
+      <p>SPIFFE (Secure Production Identity Framework For Everyone) defines a standard for workload identity. SPIRE is the reference implementation. Istio's CA, Linkerd's identity service, and Cilium's auth mode all implement or integrate with SPIFFE.</p>
+
+      <div class="arch-diagram">SPIFFE Identity (SVID — SPIFFE Verifiable Identity Document)
+───────────────────────────────────────────────────────────────
+Format: spiffe://&lt;trust-domain&gt;/ns/&lt;namespace&gt;/sa/&lt;service-account&gt;
+Example: spiffe://cluster.local/ns/production/sa/checkout-service
+
+Two SVID types:
+  X.509 SVID — TLS certificate with SPIFFE URI in SAN field
+              → used for mTLS between services
+  JWT SVID   — short-lived JWT token with SPIFFE subject
+              → used for HTTP bearer token auth
+
+SPIRE Architecture:
+  SPIRE Server (control plane)
+    → stores registration entries (workload selectors → SPIFFE IDs)
+    → signs SVIDs with trust bundle
+  SPIRE Agent (DaemonSet on each node)
+    → attests workload identity (k8s: pod UID, SA, namespace)
+    → serves SVIDs to workloads via Workload API (Unix socket)
+
+Istio integration:
+  istiod acts as SPIRE-compatible CA
+  Envoy fetches SVIDs via SDS from Istio agent (no SPIRE server needed)
+  Or: external SPIRE + Istio CA integration for cross-cluster identity</div>
+
+      <!-- 13. MTLS MIGRATION -->
+      <h2 id="mtls-migration">mTLS Migration: PERMISSIVE → STRICT</h2>
+      <p>Migrating to STRICT mTLS without downtime requires a phased approach. All services must be enrolled in the mesh before flipping to STRICT — otherwise plaintext services are rejected:</p>
+
+      <div class="arch-diagram">Phase 1: Install mesh, set PERMISSIVE globally
+  → Mesh accepts both mTLS and plaintext
+  → No service disruption
+
+Phase 2: Enroll namespaces gradually
+  kubectl label namespace team-a istio-injection=enabled
+  kubectl rollout restart deployment -n team-a
+  → Verify all pods have sidecars: istioctl proxy-status
+
+Phase 3: Monitor traffic for plaintext
+  kubectl exec -n istio-system deploy/istiod -- \
+    pilot-agent request GET stats | grep ssl.handshake
+  # Or in Kiali: Services → check mTLS lock icon
+
+Phase 4: Switch to STRICT per-namespace
+  kubectl apply -f - &lt;&lt;EOF
+  apiVersion: security.istio.io/v1beta1
+  kind: PeerAuthentication
+  metadata:
+    name: default
+    namespace: team-a
+  spec:
+    mtls:
+      mode: STRICT
+  EOF
+  → Any plaintext caller now gets: RBAC: access denied
+
+Phase 5: Mesh-wide STRICT
+  Apply PeerAuthentication in istio-system namespace
+  → Verify with: istioctl authn tls-check [pod] [service]</div>
+
+      <!-- 14. COMPARISON TABLE -->
+      <h2 id="comparison">Service Mesh Comparison</h2>
+
+      <table>
+        <thead><tr><th>Dimension</th><th>Istio (Sidecar)</th><th>Istio Ambient</th><th>Linkerd</th><th>Cilium Mesh</th></tr></thead>
+        <tbody>
+          <tr><td>Data plane</td><td>Envoy per pod</td><td>ztunnel + waypoint</td><td>linkerd2-proxy per pod</td><td>eBPF + optional Envoy per node</td></tr>
+          <tr><td>Memory overhead</td><td>~50Mi per pod</td><td>~1 ztunnel per node</td><td>~10Mi per pod</td><td>Minimal (eBPF in kernel)</td></tr>
+          <tr><td>Automatic mTLS</td><td>Yes (PERMISSIVE default)</td><td>Yes (L4 via ztunnel)</td><td>Yes (always on)</td><td>Yes (eBPF + SPIFFE)</td></tr>
+          <tr><td>L7 traffic management</td><td>Full (VirtualService/DR)</td><td>Yes (via waypoint)</td><td>Limited (ServiceProfile)</td><td>Via CiliumEnvoyConfig</td></tr>
+          <tr><td>Circuit breaking</td><td>Yes (outlier detection)</td><td>Yes (via waypoint)</td><td>Limited</td><td>Via Envoy config</td></tr>
+          <tr><td>Fault injection</td><td>Yes</td><td>Yes (via waypoint)</td><td>No</td><td>No</td></tr>
+          <tr><td>Observability</td><td>Full (Kiali, Jaeger, Prometheus)</td><td>Full</td><td>Good (Viz dashboard)</td><td>Hubble (eBPF-native)</td></tr>
+          <tr><td>Multi-cluster</td><td>Mature (4 topologies)</td><td>Maturing</td><td>Yes (multicluster extension)</td><td>Cluster Mesh (up to 255)</td></tr>
+          <tr><td>Pod restart needed</td><td>Yes (inject sidecar)</td><td>No</td><td>Yes (inject sidecar)</td><td>No</td></tr>
+          <tr><td>Learning curve</td><td>High (many CRDs)</td><td>Medium</td><td>Low</td><td>Medium</td></tr>
+          <tr><td>CNCF status</td><td>Graduated</td><td>Graduated</td><td>Graduated</td><td>Graduated</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 15. MESH VS NETWORKPOLICY -->
+      <h2 id="mesh-vs-netpol">Service Mesh vs NetworkPolicy</h2>
+
+      <table>
+        <thead><tr><th>Dimension</th><th>NetworkPolicy</th><th>Service Mesh AuthorizationPolicy</th></tr></thead>
+        <tbody>
+          <tr><td>Layer</td><td>L3/L4 (IP + port)</td><td>L7 (HTTP method, path, JWT, headers)</td></tr>
+          <tr><td>Identity</td><td>Pod label + namespace label</td><td>SPIFFE workload identity (cryptographic)</td></tr>
+          <tr><td>Enforcement</td><td>Kernel (CNI eBPF/iptables)</td><td>User-space proxy (Envoy sidecar)</td></tr>
+          <tr><td>Overhead</td><td>Near-zero (kernel)</td><td>Proxy CPU/RAM per pod</td></tr>
+          <tr><td>Bypass risk</td><td>Cannot bypass (kernel enforced)</td><td>Can bypass if sidecar injection skipped</td></tr>
+          <tr><td>mTLS</td><td>No</td><td>Yes (automatic cert rotation)</td></tr>
+          <tr><td>External traffic</td><td>ipBlock for external CIDRs</td><td>ServiceEntry + AuthorizationPolicy</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Defense in depth: use both</strong>
+          <p>NetworkPolicy at the kernel level blocks traffic that completely bypasses the mesh (e.g., a compromised pod that disables its sidecar). AuthorizationPolicy enforces L7 access control that NetworkPolicy cannot express. Running both layers provides defense in depth — an attacker must defeat both the CNI enforcement and the service mesh identity verification.</p>
+        </div>
+      </div>
+
+      <!-- 16. GAMMA -->
+      <h2 id="gamma">GAMMA — Gateway API for Mesh</h2>
+      <p>GAMMA (Gateway API for Mesh Management and Administration) extends Gateway API to the east-west (service-to-service) mesh use case. Instead of creating Istio-specific VirtualService CRDs, services can use standard HTTPRoute to control mesh traffic:</p>
+
+      <pre><code># HTTPRoute for mesh traffic (parentRef = Service, not Gateway)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: reviews-mesh-route
+  namespace: production
+spec:
+  parentRefs:
+    - group: ""
+      kind: Service
+      name: reviews              # parentRef is a Service = mesh traffic routing
+      port: 80
+  rules:
+    - backendRefs:
+        - name: reviews-v1
+          port: 80
+          weight: 90
+        - name: reviews-v2
+          port: 80
+          weight: 10
+<button class="copy-btn">Copy</button></code></pre>
+
+      <p>Istio 1.16+ supports GAMMA HTTPRoute for mesh routing. Linkerd 2.14+ also supports it via the smi-adaptor. This enables portable mesh config that works across implementations.</p>
+
+      <!-- 17. METRICS -->
+      <h2 id="metrics">Metrics, Alerting &amp; Troubleshooting</h2>
+
+      <h3>Key Metrics (Istio / Prometheus)</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>Description</th><th>Alert Threshold</th></tr></thead>
+        <tbody>
+          <tr><td><code>istio_requests_total</code></td><td>Total requests by source/destination/response_code</td><td>rate spike or drop</td></tr>
+          <tr><td><code>istio_request_duration_milliseconds</code></td><td>Request latency histogram</td><td>P99 &gt; SLO</td></tr>
+          <tr><td><code>envoy_cluster_upstream_rq_pending_overflow</code></td><td>Requests rejected by circuit breaker</td><td>&gt; 0 for 5m</td></tr>
+          <tr><td><code>envoy_cluster_ejections_active</code></td><td>Actively ejected hosts (outlier detection)</td><td>&gt; 0 sustained</td></tr>
+          <tr><td><code>istio_tcp_connections_opened_total</code></td><td>TCP connections through mesh</td><td>rate anomaly</td></tr>
+          <tr><td><code>pilot_xds_push_errors</code></td><td>istiod xDS push failures</td><td>&gt; 0</td></tr>
+          <tr><td><code>pilot_proxy_convergence_time</code></td><td>Time for config to reach all proxies</td><td>P99 &gt; 30s</td></tr>
+          <tr><td><code>linkerd_request_errors_total</code></td><td>Linkerd request errors per route</td><td>error rate &gt; 1%</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Alerting Rules</h3>
+      <pre><code># High error rate for a destination service
+- alert: MeshServiceHighErrorRate
+  expr: |
+    sum(rate(istio_requests_total{response_code=~"5.."}[5m])) by (destination_service_name)
+    /
+    sum(rate(istio_requests_total[5m])) by (destination_service_name) > 0.05
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Service {{ $labels.destination_service_name }} error rate > 5%"
+
+# P99 latency SLO breach
+- alert: MeshServiceHighLatency
+  expr: |
+    histogram_quantile(0.99,
+      sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le, destination_service_name)
+    ) > 2000
+  for: 10m
+  labels:
+    severity: warning
+
+# Circuit breaker tripping
+- alert: MeshCircuitBreakerOpen
+  expr: increase(envoy_cluster_upstream_rq_pending_overflow[5m]) > 0
+  for: 2m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Circuit breaker opened for {{ $labels.envoy_cluster_name }}"
+
+# istiod xDS push errors
+- alert: IstiodXDSPushErrors
+  expr: rate(pilot_xds_push_errors[5m]) > 0
+  for: 5m
+  labels:
+    severity: warning
+<button class="copy-btn">Copy</button></code></pre>
+
+      <h3>Troubleshooting Runbooks</h3>
+      <div class="card-grid" style="grid-template-columns:1fr;">
+        <div class="card">
+          <h4>Runbook 1: RBAC: access denied (mTLS / AuthorizationPolicy)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check if source has a sidecar (must be enrolled in mesh)
+istioctl proxy-status | grep &lt;source-pod&gt;
+
+# Check AuthorizationPolicy applying to destination
+kubectl get authorizationpolicy -n &lt;dest-namespace&gt;
+
+# Debug auth decision
+istioctl x authz check &lt;dest-pod&gt; -n &lt;dest-namespace&gt;
+
+# Check if PeerAuthentication is STRICT but source has no sidecar
+istioctl authn tls-check &lt;source-pod&gt; &lt;dest-service&gt;.&lt;ns&gt;.svc.cluster.local
+
+# View real-time access log for denied requests
+kubectl logs &lt;dest-pod&gt; -c istio-proxy | grep "RBAC"</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 2: VirtualService Routing Not Applied</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check VirtualService is valid
+istioctl analyze -n &lt;namespace&gt;
+
+# Verify proxy has received the config
+istioctl proxy-config routes &lt;pod&gt; -n &lt;namespace&gt;
+# Look for the route matching your VirtualService
+
+# Check DestinationRule subsets exist
+istioctl proxy-config cluster &lt;pod&gt; -n &lt;namespace&gt; | grep &lt;service&gt;
+# Subsets should appear as separate clusters
+
+# Common issues:
+# - hosts field doesn't match service FQDN or short name scope
+# - gateways field is missing "mesh" for in-cluster routing
+# - DestinationRule subset labels don't match pod labels
+kubectl get pods -l version=v2 -n &lt;namespace&gt;  # verify subset pods exist</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 3: Sidecar Injection Not Happening</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check namespace label
+kubectl get namespace &lt;ns&gt; --show-labels | grep istio-injection
+
+# Check MutatingWebhookConfiguration
+kubectl get mutatingwebhookconfigurations istio-sidecar-injector -o yaml \
+  | grep namespaceSelector
+
+# Check pod-level annotation override (can disable injection)
+kubectl get pod &lt;pod&gt; -o jsonpath='{.metadata.annotations}'
+# sidecar.istio.io/inject: "false" → overrides namespace label
+
+# Trigger re-injection (restart deployment)
+kubectl rollout restart deploy/&lt;name&gt; -n &lt;namespace&gt;
+
+# Verify sidecar present after restart
+kubectl get pod &lt;pod&gt; -o jsonpath='{.spec.containers[*].name}'
+# Should include: istio-proxy</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 4: istiod Not Syncing Config to Proxies (high xDS push delay)</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check istiod pod status and resources
+kubectl top pod -n istio-system -l app=istiod
+
+# Check connected proxy count vs istiod capacity
+kubectl exec -n istio-system deploy/istiod -- \
+  pilot-agent request GET stats | grep pilot_inbound_updates
+
+# Check proxy convergence time (should be &lt;30s P99)
+kubectl exec -n istio-system deploy/istiod -- \
+  pilot-agent request GET metrics | grep pilot_proxy_convergence
+
+# Common causes:
+# - istiod OOM: increase memory limits
+# - Too many services/endpoints causing full xDS push storms
+#   Fix: enable delta xDS (PILOT_ENABLE_EDS_DEBOUNCE=true)
+# - Network policy blocking istiod ↔ sidecar port 15012</code></pre>
+        </div>
+        <div class="card">
+          <h4>Runbook 5: Linkerd — Service Metrics Missing</h4>
+          <pre style="background:var(--bg3);margin:8px 0 0;font-size:12px;"><code># Check linkerd proxy injection
+linkerd check --proxy -n &lt;namespace&gt;
+
+# Check if pods have the proxy
+kubectl get pods -n &lt;namespace&gt; -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.containers[*].name}{"\n"}{end}' \
+  | grep linkerd-proxy
+
+# If missing: re-annotate and restart
+kubectl annotate namespace &lt;ns&gt; linkerd.io/inject=enabled
+kubectl rollout restart deploy -n &lt;namespace&gt;
+
+# View live traffic stats
+linkerd viz stat deploy -n &lt;namespace&gt;
+linkerd viz top deploy/&lt;name&gt; -n &lt;namespace&gt;
+
+# Check for certificate expiry
+linkerd check --proxy 2>&1 | grep -i cert</code></pre>
+        </div>
+      </div>
+
+      <!-- 18. BEST PRACTICES -->
+      <h2 id="best-practices">Best Practices</h2>
+      <ol style="padding-left:24px;color:var(--text2);font-size:14px;line-height:2;">
+        <li><strong>Start with PERMISSIVE mTLS, enforce STRICT per-namespace gradually</strong> — never flip the entire cluster to STRICT on day one. Migrate namespace by namespace, verify with <code>istioctl authn tls-check</code> before switching each namespace.</li>
+        <li><strong>Set resource requests/limits on sidecars</strong> — Envoy sidecars have no limits by default. In production, set <code>global.proxy.resources.requests/limits</code> in Helm values to prevent sidecars from starving application containers.</li>
+        <li><strong>Use outlier detection (circuit breaking) on all DestinationRules</strong> — without it, a slow/failing pod continues receiving traffic until endpoints age out. Add <code>consecutiveGatewayErrors: 5</code> and <code>interval: 30s</code> as a minimum baseline.</li>
+        <li><strong>Enable <code>outboundTrafficPolicy: REGISTRY_ONLY</code> in production</strong> — forces all egress through declared ServiceEntries. Prevents data exfiltration to arbitrary external IPs and makes egress auditable.</li>
+        <li><strong>Use Istio ambient mode for large clusters (1000+ pods)</strong> — sidecar overhead becomes significant at scale. Ambient mode reduces memory by 10-100x and eliminates pod restart requirements for mesh enrollment.</li>
+        <li><strong>Validate CRDs before applying</strong> — run <code>istioctl analyze -n &lt;namespace&gt;</code> and <code>istioctl analyze --all-namespaces</code> in CI pipelines. Invalid VirtualService or DestinationRule configs cause silent routing failures, not errors.</li>
+        <li><strong>Propagate trace headers in every service</strong> — Istio generates trace spans but cannot correlate them across services unless your application forwards B3 headers (<code>x-b3-traceid</code>, <code>x-b3-spanid</code>, <code>x-request-id</code>). Add header propagation middleware to every service.</li>
+        <li><strong>Use GAMMA (HTTPRoute with parentRef=Service) for new mesh routing</strong> — portable across Istio, Linkerd, and future implementations. Avoids Istio-specific VirtualService lock-in for basic traffic splitting.</li>
+        <li><strong>Back up Istio config state regularly</strong> — all mesh config (VirtualService, DestinationRule, PeerAuthentication, AuthorizationPolicy) is stored in etcd. Treat it as part of GitOps — store all mesh CRDs in version control and reconcile via ArgoCD/Flux.</li>
+      </ol>
+
+      <div class="nav-footer">
+        <a class="nav-btn" href="09-load-balancing.html"><small>← Previous</small>Load Balancing</a>
+        <a class="nav-btn" href="../04-storage/00-storage-overview.html"><small>Next →</small>Storage Overview</a>
+      </div>
+
+    </main>
+
+    <aside class="toc-panel">
+      <div class="toc-title">On This Page</div>
+      <a href="#what-is">What a Service Mesh Is</a>
+      <a href="#architecture">Sidecar vs Sidecarless</a>
+      <a href="#istio">Istio</a>
+      <a href="#istio-control-plane" class="toc-h3">Control Plane</a>
+      <a href="#istio-install" class="toc-h3">Installation</a>
+      <a href="#istio-crds">Istio CRDs</a>
+      <a href="#virtualservice" class="toc-h3">VirtualService</a>
+      <a href="#destinationrule" class="toc-h3">DestinationRule</a>
+      <a href="#istio-gateway" class="toc-h3">Istio Gateway</a>
+      <a href="#serviceentry" class="toc-h3">ServiceEntry</a>
+      <a href="#istio-security">Istio Security</a>
+      <a href="#peer-authentication" class="toc-h3">PeerAuthentication</a>
+      <a href="#authorization-policy" class="toc-h3">AuthorizationPolicy</a>
+      <a href="#traffic-management">Traffic Management</a>
+      <a href="#fault-injection" class="toc-h3">Fault Injection</a>
+      <a href="#traffic-mirroring" class="toc-h3">Traffic Mirroring</a>
+      <a href="#circuit-breaking" class="toc-h3">Circuit Breaking</a>
+      <a href="#istio-ambient">Istio Ambient Mode</a>
+      <a href="#istio-observability">Istio Observability</a>
+      <a href="#istio-multicluster">Multi-Cluster</a>
+      <a href="#linkerd">Linkerd</a>
+      <a href="#cilium-mesh">Cilium Service Mesh</a>
+      <a href="#spiffe">SPIFFE / SPIRE</a>
+      <a href="#mtls-migration">mTLS Migration</a>
+      <a href="#comparison">Mesh Comparison Table</a>
+      <a href="#mesh-vs-netpol">Mesh vs NetworkPolicy</a>
+      <a href="#gamma">GAMMA — Gateway API for Mesh</a>
+      <a href="#metrics">Metrics &amp; Troubleshooting</a>
+      <a href="#best-practices">Best Practices</a>
+    </aside>
+  </div>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+const themeBtn=document.getElementById('theme-toggle');
+themeBtn.textContent=saved==='dark'?'Light Mode':'Dark Mode';
+themeBtn.addEventListener('click',()=>{
+  const t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'Light Mode':'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>backTop.classList.toggle('visible',main.scrollTop>400));
+backTop.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{
+    const code=pre.querySelector('code');
+    navigator.clipboard.writeText(code?code.innerText:pre.innerText).then(()=>{
+      btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+    });
+  });
+});
+const tocLinks=document.querySelectorAll('.toc-panel a');
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const a=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

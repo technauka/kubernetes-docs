@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>03 · Cluster Architecture Overview | K8s Internals</title>
+<meta name="description" content="Complete Kubernetes cluster architecture: control plane, worker nodes, HA setup, component communication, port reference, network topology, failure domains, and production patterns."/>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--border2:#484f58;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#1f6feb;--accent-hover:#79c0ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--orange:#db6d28;--purple:#bc8cff;--pink:#f778ba;--code-bg:#161b22;--code-border:#30363d;--sidebar-w:280px;--toc-w:240px;--shadow-lg:0 8px 32px rgba(0,0,0,.6)}
+:root[data-theme="light"]{--bg:#fff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--border2:#afb8c1;--text:#1f2328;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--accent-hover:#0550ae;--green:#1a7f37;--red:#cf222e;--yellow:#9a6700;--orange:#bc4c00;--purple:#8250df;--pink:#bf3989;--code-bg:#f6f8fa;--code-border:#d0d7de;--shadow-lg:0 8px 32px rgba(0,0,0,.15)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;flex-direction:column;min-height:100vh}
+a{color:var(--accent);text-decoration:none}a:hover{color:var(--accent-hover);text-decoration:underline}
+h1{font-size:2rem;margin-bottom:1rem}h2{font-size:1.5rem;margin:2.5rem 0 .75rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}h3{font-size:1.2rem;margin:2rem 0 .5rem;color:var(--accent)}h4{font-size:1rem;margin:1.5rem 0 .4rem;color:var(--text2)}
+p{margin-bottom:1rem}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin:.25rem 0}
+code{font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:.85em;background:var(--code-bg);border:1px solid var(--code-border);border-radius:4px;padding:.1em .35em;color:var(--pink)}
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;padding:1.25rem;overflow-x:auto;margin:1rem 0;position:relative}
+pre code{background:none;border:none;padding:0;color:var(--text);font-size:.85rem;line-height:1.6}
+blockquote{border-left:4px solid var(--accent2);background:var(--bg2);padding:.75rem 1rem;margin:1rem 0;border-radius:0 6px 6px 0;color:var(--text2)}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}th{background:var(--bg3);padding:.6rem .9rem;text-align:left;border:1px solid var(--border);font-weight:600}td{padding:.55rem .9rem;border:1px solid var(--border);color:var(--text2)}tr:hover td{background:var(--bg2)}
+hr{border:none;border-top:1px solid var(--border);margin:2rem 0}
+.layout{display:flex;flex:1}.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;z-index:100}
+.main-content{flex:1;min-width:0}.article-wrap{max-width:900px;margin:0 auto;padding:2.5rem 2rem 4rem;width:100%}
+.toc-panel{width:var(--toc-w);min-width:var(--toc-w);position:sticky;top:0;height:100vh;overflow-y:auto;padding:1.5rem 1rem;border-left:1px solid var(--border);background:var(--bg2)}
+@media(max-width:1280px){.toc-panel{display:none}}@media(max-width:900px){.sidebar{position:fixed;transform:translateX(-100%);transition:transform .25s;z-index:200}.sidebar.open{transform:translateX(0)}.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}.sidebar-overlay.show{display:block}.article-wrap{padding:1.5rem 1rem 3rem}}
+.topnav{background:var(--bg2);border-bottom:1px solid var(--border);padding:.6rem 1.25rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:150}
+.menu-btn{display:none;background:none;border:none;color:var(--text);font-size:1.25rem;cursor:pointer}@media(max-width:900px){.menu-btn{display:block}}
+.brand{font-weight:700;font-size:1rem;color:var(--accent)}.search-wrap{flex:1;max-width:480px;position:relative}.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:.4rem .75rem .4rem 2rem;color:var(--text);font-size:.875rem}.search-wrap input:focus{outline:none;border-color:var(--accent)}.search-wrap .si{position:absolute;left:.6rem;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}.spacer{flex:1}
+.theme-btn{background:none;border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:.35rem .6rem;cursor:pointer;font-size:.85rem}.theme-btn:hover{background:var(--bg3)}
+.breadcrumb{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;font-size:.8rem;color:var(--text3);margin-bottom:1.5rem}.breadcrumb a{color:var(--text2)}
+.sidebar-header{padding:1rem 1rem .5rem;border-bottom:1px solid var(--border)}.sidebar-header .logo{font-weight:700;font-size:1rem;color:var(--accent)}.sidebar-header .sub{font-size:.75rem;color:var(--text3)}
+.sidebar-search{padding:.6rem .75rem;border-bottom:1px solid var(--border)}.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:.35rem .6rem;color:var(--text);font-size:.8rem}
+.sidebar-nav{padding:.5rem 0;flex:1}.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:.6rem 1rem .2rem}
+.sidebar-nav a{display:block;padding:.3rem 1rem .3rem 1.25rem;font-size:.83rem;color:var(--text2);border-left:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sidebar-nav a:hover{background:var(--bg3);color:var(--text);text-decoration:none}.sidebar-nav a.active{background:var(--bg3);color:var(--accent);border-left-color:var(--accent)}
+.toc-panel h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:.75rem}.toc-panel ol{list-style:none;margin:0;padding:0}.toc-panel li{margin:.15rem 0}.toc-panel li a{font-size:.8rem;color:var(--text2);padding:.15rem 0;display:block}.toc-panel li a:hover,.toc-panel li a.active{color:var(--accent)}.toc-panel li.l2{padding-left:1rem}.toc-panel li.l3{padding-left:2rem}
+.doc-nav{display:flex;gap:1rem;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border)}.doc-nav a{flex:1;display:flex;flex-direction:column;gap:.2rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;transition:border-color .15s}.doc-nav a:hover{border-color:var(--accent);text-decoration:none}.doc-nav .label{font-size:.75rem;color:var(--text3);text-transform:uppercase}.doc-nav .title{font-size:.9rem;color:var(--accent);font-weight:600}.next-link{text-align:right}
+.callout{border-radius:8px;padding:1rem 1.25rem;margin:1.25rem 0;border-left:4px solid}.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent)}.callout.warn{background:rgba(210,153,34,.1);border-color:var(--yellow)}.callout.danger{background:rgba(248,81,73,.1);border-color:var(--red)}.callout.tip{background:rgba(63,185,80,.08);border-color:var(--green)}.callout strong{display:block;margin-bottom:.35rem}
+details{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:1rem 0;overflow:hidden}details summary{padding:.75rem 1rem;cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;user-select:none}details summary::after{content:"▶";font-size:.75rem;color:var(--text3);transition:transform .2s}details[open] summary::after{transform:rotate(90deg)}details summary:hover{background:var(--bg3)}details .db{padding:.75rem 1rem 1rem}
+.diagram-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;overflow-x:auto;text-align:center}.caption{font-size:.8rem;color:var(--text3);margin-top:.75rem;font-style:italic}
+.copy-btn{position:absolute;top:.6rem;right:.6rem;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-size:.72rem;padding:.25rem .55rem;cursor:pointer;opacity:0;transition:opacity .15s}pre:hover .copy-btn{opacity:1}
+#back-top{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:300;box-shadow:var(--shadow-lg)}#back-top.show{display:flex}
+mark{background:rgba(210,153,34,.35);color:var(--text);border-radius:2px;padding:0 .1em}
+.file-meta{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:2rem;font-size:.83rem;display:grid;gap:.4rem}.file-meta strong{color:var(--text3);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}.tags{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.15rem}.tag{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:.15em .6em;font-size:.75rem;color:var(--text2)}
+.dep-graph{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1.5rem 0}.dep-graph h4{margin-bottom:.75rem;color:var(--accent)}.dep-tree{list-style:none;padding:0;margin:0}.dep-tree li{padding:.25rem 0;font-size:.83rem;color:var(--text2);padding-left:1.2rem;border-left:2px solid var(--border);margin-left:.5rem}.dep-tree li::before{content:"→ ";color:var(--accent)}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <button class="menu-btn" id="menuBtn">☰</button>
+  <span class="brand">☸ K8s Internals</span>
+  <div class="search-wrap"><span class="si">🔍</span><input type="text" id="globalSearch" placeholder="Search topics…" autocomplete="off"/></div>
+  <span class="spacer"></span>
+  <button class="theme-btn" id="themeBtn">☀ Light</button>
+</nav>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><div class="logo">☸ Kubernetes Internals</div><div class="sub">Production-grade deep-dive</div></div>
+  <div class="sidebar-search"><input type="text" id="sidebarSearch" placeholder="Filter pages…"/></div>
+  <nav class="sidebar-nav" id="sidebarNav">
+    <div class="section-label">00 · Foundations</div>
+    <a href="00-introduction.html">00 · Introduction</a>
+    <a href="01-history-of-kubernetes.html">01 · History</a>
+    <a href="02-container-orchestration.html">02 · Container Orchestration</a>
+    <a href="03-cluster-architecture-overview.html" class="active">03 · Cluster Architecture</a>
+    <a href="04-kubernetes-api-model.html">04 · API Model</a>
+    <div class="section-label">01 · Control Plane</div>
+    <a href="../01-control-plane/00-control-plane-overview.html">00 · Overview</a>
+    <a href="../01-control-plane/01-kube-apiserver.html">01 · kube-apiserver</a>
+    <a href="../01-control-plane/02-etcd.html">02 · etcd</a>
+    <a href="../01-control-plane/03-kube-scheduler.html">03 · Scheduler</a>
+    <a href="../01-control-plane/04-kube-controller-manager.html">04 · Controller Manager</a>
+    <a href="../01-control-plane/05-cloud-controller-manager.html">05 · Cloud Controller</a>
+    <a href="../01-control-plane/06-admission-controllers.html">06 · Admission Controllers</a>
+    <a href="../01-control-plane/07-api-aggregation.html">07 · API Aggregation</a>
+    <div class="section-label">02 · Node Components</div>
+    <a href="../02-node-components/00-worker-node-overview.html">00 · Worker Node</a>
+    <a href="../02-node-components/01-kubelet.html">01 · kubelet</a>
+    <a href="../02-node-components/02-kube-proxy.html">02 · kube-proxy</a>
+    <a href="../02-node-components/03-container-runtime-interface.html">03 · CRI</a>
+    <a href="../02-node-components/04-containerd-crio-docker.html">04 · containerd/CRI-O</a>
+    <a href="../02-node-components/05-linux-kernel-cgroups-namespaces.html">05 · cgroups/Namespaces</a>
+    <a href="../02-node-components/06-node-lifecycle.html">06 · Node Lifecycle</a>
+    <a href="../02-node-components/07-windows-worker-nodes.html">07 · Windows Nodes</a>
+    <div class="section-label">03 · Networking</div>
+    <a href="../03-networking/00-networking-overview.html">00 · Overview</a>
+    <a href="../03-networking/01-cni-architecture.html">01 · CNI</a>
+    <a href="../03-networking/05-dns-coredns.html">05 · DNS / CoreDNS</a>
+    <a href="../03-networking/06-ingress.html">06 · Ingress</a>
+    <div class="section-label">04–12 · (collapsed)</div>
+    <a href="../04-storage/00-storage-overview.html">04 · Storage →</a>
+    <a href="../05-workloads/00-workloads-overview.html">05 · Workloads →</a>
+    <a href="../06-security/00-security-overview.html">06 · Security →</a>
+    <a href="../07-observability/00-observability-overview.html">07 · Observability →</a>
+    <a href="../08-platform-engineering/00-platform-engineering-overview.html">08 · Platform Eng. →</a>
+    <a href="../09-production-operations/00-production-overview.html">09 · Production Ops →</a>
+    <a href="../10-team-workflows/00-team-overview.html">10 · Teams →</a>
+    <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html">11 · API Flows →</a>
+    <a href="../12-troubleshooting/00-troubleshooting-overview.html">12 · Troubleshooting →</a>
+  </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="main-content">
+<article class="article-wrap" id="articleWrap">
+
+<nav class="breadcrumb">
+  <a href="00-introduction.html">K8s Internals</a><span>›</span>
+  <a href="00-introduction.html">00 · Foundations</a><span>›</span>
+  <span>03 · Cluster Architecture Overview</span>
+</nav>
+
+<div class="file-meta">
+  <div><strong>File Path</strong><code>00-foundations/03-cluster-architecture-overview.html</code></div>
+  <div><strong>Prerequisites</strong>
+    <a href="00-introduction.html">00-intro</a>,
+    <a href="01-history-of-kubernetes.html">01-history</a>,
+    <a href="02-container-orchestration.html">02-containers</a>
+  </div>
+  <div><strong>Concepts Covered</strong>
+    <div class="tags">
+      <span class="tag">Cluster topology</span><span class="tag">Control plane components</span>
+      <span class="tag">Worker node components</span><span class="tag">HA architecture</span>
+      <span class="tag">Multi-master setup</span><span class="tag">Component communication</span>
+      <span class="tag">Port reference</span><span class="tag">Certificate topology</span>
+      <span class="tag">Failure domains</span><span class="tag">Network topology</span>
+      <span class="tag">Cloud vs bare metal</span><span class="tag">Stacked vs external etcd</span>
+    </div>
+  </div>
+  <div><strong>Related Files</strong>
+    <div class="tags">
+      <span class="tag"><a href="../01-control-plane/00-control-plane-overview.html">control-plane-overview</a></span>
+      <span class="tag"><a href="../01-control-plane/01-kube-apiserver.html">kube-apiserver</a></span>
+      <span class="tag"><a href="../01-control-plane/02-etcd.html">etcd</a></span>
+      <span class="tag"><a href="../09-production-operations/01-high-availability.html">high-availability</a></span>
+      <span class="tag"><a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-sequence.html">pod-creation-sequence</a></span>
+    </div>
+  </div>
+</div>
+
+<h1 id="top">Cluster Architecture Overview</h1>
+<p>
+This document is the <strong>architectural map</strong> of a Kubernetes cluster — every component,
+its role, how it communicates with other components, what ports it uses, and how the
+whole system maintains consistency under failures. Read this before diving into any
+individual component's deep-dive.
+</p>
+
+<!-- ============================================================ -->
+<h2 id="two-planes">1 · The Two Planes</h2>
+
+<p>
+A Kubernetes cluster is logically split into two planes:
+</p>
+<ul>
+  <li><strong>Control Plane</strong> — makes decisions (scheduling, reconciliation, admission), stores state. Brains of the cluster.</li>
+  <li><strong>Data Plane (Worker Nodes)</strong> — executes workloads. Runs the actual Pods that serve traffic.</li>
+</ul>
+
+<p>
+In a production cluster these planes run on separate physical/virtual machines.
+The control plane should <em>never</em> run user workloads — use <code>NoSchedule</code> taints.
+</p>
+
+<!-- Full cluster architecture SVG -->
+<div class="diagram-wrap">
+<svg viewBox="0 0 820 560" xmlns="http://www.w3.org/2000/svg" style="max-width:820px;width:100%">
+<defs>
+  <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/></marker>
+  <marker id="arrg" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3fb950"/></marker>
+  <marker id="arry" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#d29922"/></marker>
+</defs>
+
+<!-- External LB -->
+<rect x="300" y="5" width="220" height="35" rx="6" fill="#21262d" stroke="#bc8cff" stroke-width="1.5"/>
+<text x="410" y="27" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="600">External Load Balancer (VIP)</text>
+
+<!-- ── CONTROL PLANE ── -->
+<rect x="5" y="55" width="810" height="230" rx="10" fill="#0d1117" stroke="#1f6feb" stroke-width="2"/>
+<text x="18" y="78" fill="#58a6ff" font-size="12" font-weight="700">CONTROL PLANE  (3 replicas for HA)</text>
+
+<!-- CP Node 1 -->
+<rect x="15" y="88" width="250" height="185" rx="8" fill="#161b22" stroke="#30363d"/>
+<text x="140" y="108" text-anchor="middle" fill="#8b949e" font-size="10" font-weight="600">Control Plane Node 1</text>
+<!-- apiserver -->
+<rect x="28" y="118" width="110" height="40" rx="5" fill="#1f6feb" opacity=".85"/>
+<text x="83" y="135" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">kube-apiserver</text>
+<text x="83" y="150" text-anchor="middle" fill="#a5d6ff" font-size="8">:6443 HTTPS</text>
+<!-- etcd -->
+<rect x="148" y="118" width="105" height="40" rx="5" fill="#21262d" stroke="#f0883e"/>
+<text x="200" y="135" text-anchor="middle" fill="#f0883e" font-size="10" font-weight="600">etcd</text>
+<text x="200" y="150" text-anchor="middle" fill="#8b949e" font-size="8">:2379 client</text>
+<!-- scheduler -->
+<rect x="28" y="170" width="110" height="35" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="83" y="192" text-anchor="middle" fill="#bc8cff" font-size="10">kube-scheduler</text>
+<!-- ctrl-mgr -->
+<rect x="148" y="170" width="105" height="35" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="200" y="189" text-anchor="middle" fill="#3fb950" font-size="9">controller-mgr</text>
+<!-- cloud-ctrl -->
+<rect x="28" y="215" width="225" height="30" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="140" y="234" text-anchor="middle" fill="#d29922" font-size="9">cloud-controller-manager</text>
+
+<!-- CP Node 2 (abbreviated) -->
+<rect x="280" y="88" width="250" height="185" rx="8" fill="#161b22" stroke="#30363d" stroke-dasharray="4,2"/>
+<text x="405" y="108" text-anchor="middle" fill="#6e7681" font-size="10" font-weight="600">Control Plane Node 2 (identical)</text>
+<text x="405" y="185" text-anchor="middle" fill="#484f58" font-size="24">⊕</text>
+<text x="405" y="220" text-anchor="middle" fill="#6e7681" font-size="9">Same components</text>
+<text x="405" y="235" text-anchor="middle" fill="#6e7681" font-size="9">Leader-elected controllers</text>
+
+<!-- CP Node 3 (abbreviated) -->
+<rect x="545" y="88" width="260" height="185" rx="8" fill="#161b22" stroke="#30363d" stroke-dasharray="4,2"/>
+<text x="675" y="108" text-anchor="middle" fill="#6e7681" font-size="10" font-weight="600">Control Plane Node 3 (identical)</text>
+<text x="675" y="185" text-anchor="middle" fill="#484f58" font-size="24">⊕</text>
+<text x="675" y="235" text-anchor="middle" fill="#6e7681" font-size="9">etcd quorum: 2/3 required</text>
+
+<!-- etcd raft arrows -->
+<line x1="253" y1="138" x2="278" y2="138" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+<line x1="530" y1="138" x2="543" y2="138" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+<text x="264" y="131" fill="#f0883e" font-size="7">Raft</text>
+<text x="534" y="131" fill="#f0883e" font-size="7">Raft</text>
+
+<!-- VIP → apiserver arrows -->
+<line x1="410" y1="40" x2="140" y2="117" stroke="#bc8cff" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+<line x1="410" y1="40" x2="405" y2="87" stroke="#bc8cff" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+<line x1="410" y1="40" x2="675" y2="87" stroke="#bc8cff" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+
+<!-- ── WORKER NODES ── -->
+<!-- Node 1 -->
+<rect x="5" y="300" width="255" height="245" rx="10" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+<text x="15" y="320" fill="#8b949e" font-size="11" font-weight="700">Worker Node 1</text>
+<rect x="15" y="330" width="110" height="38" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="70" y="352" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">kubelet :10250</text>
+<rect x="140" y="330" width="110" height="38" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="195" y="352" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">kube-proxy</text>
+<rect x="15" y="378" width="235" height="35" rx="5" fill="#21262d" stroke="#3fb950" stroke-opacity=".5"/>
+<text x="132" y="400" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">containerd (CRI)  :unix sock</text>
+<!-- CNI plugin -->
+<rect x="15" y="422" width="235" height="28" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="132" y="440" text-anchor="middle" fill="#8b949e" font-size="9">CNI plugin (Calico/Cilium/Flannel)</text>
+<!-- Pods -->
+<rect x="15" y="460" width="108" height="70" rx="5" fill="#161b22" stroke="#484f58"/>
+<text x="69" y="480" text-anchor="middle" fill="#e6edf3" font-size="9" font-weight="600">Pod A</text>
+<text x="69" y="494" text-anchor="middle" fill="#6e7681" font-size="8">app + sidecar</text>
+<text x="69" y="507" text-anchor="middle" fill="#58a6ff" font-size="8">10.244.1.5</text>
+<rect x="132" y="460" width="118" height="70" rx="5" fill="#161b22" stroke="#484f58"/>
+<text x="191" y="480" text-anchor="middle" fill="#e6edf3" font-size="9" font-weight="600">Pod B</text>
+<text x="191" y="494" text-anchor="middle" fill="#6e7681" font-size="8">nginx</text>
+<text x="191" y="507" text-anchor="middle" fill="#58a6ff" font-size="8">10.244.1.6</text>
+
+<!-- Node 2 -->
+<rect x="280" y="300" width="255" height="245" rx="10" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+<text x="290" y="320" fill="#8b949e" font-size="11" font-weight="700">Worker Node 2</text>
+<rect x="290" y="330" width="110" height="38" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="345" y="352" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">kubelet :10250</text>
+<rect x="415" y="330" width="110" height="38" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="470" y="352" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">kube-proxy</text>
+<rect x="290" y="378" width="235" height="35" rx="5" fill="#21262d" stroke="#3fb950" stroke-opacity=".5"/>
+<text x="407" y="400" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">containerd (CRI)</text>
+<rect x="290" y="422" width="235" height="28" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="407" y="440" text-anchor="middle" fill="#8b949e" font-size="9">CNI plugin</text>
+<rect x="290" y="460" width="108" height="70" rx="5" fill="#161b22" stroke="#484f58"/>
+<text x="344" y="480" text-anchor="middle" fill="#e6edf3" font-size="9" font-weight="600">Pod C</text>
+<text x="344" y="507" text-anchor="middle" fill="#58a6ff" font-size="8">10.244.2.5</text>
+<rect x="407" y="460" width="118" height="70" rx="5" fill="#161b22" stroke="#484f58"/>
+<text x="466" y="480" text-anchor="middle" fill="#e6edf3" font-size="9" font-weight="600">Pod D</text>
+<text x="466" y="507" text-anchor="middle" fill="#58a6ff" font-size="8">10.244.2.6</text>
+
+<!-- Node N -->
+<rect x="555" y="300" width="260" height="245" rx="10" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+<text x="565" y="320" fill="#8b949e" font-size="11" font-weight="700">Worker Node N  (1 to 5000+)</text>
+<rect x="565" y="330" width="110" height="38" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="620" y="352" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">kubelet :10250</text>
+<rect x="690" y="330" width="115" height="38" rx="5" fill="#21262d" stroke="#30363d"/>
+<text x="747" y="352" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">kube-proxy</text>
+<text x="685" y="430" text-anchor="middle" fill="#484f58" font-size="32">⋯</text>
+
+<!-- kubelet → apiserver arrows -->
+<line x1="70" y1="330" x2="83" y2="158" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrg)"/>
+<line x1="345" y1="330" x2="200" y2="285" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrg)"/>
+<line x1="620" y1="330" x2="350" y2="275" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrg)"/>
+
+<!-- Legend -->
+<rect x="5" y="548" width="810" height="1" fill="#30363d"/>
+<text x="15" y="560" fill="#6e7681" font-size="9">── Blue: kubelet→apiserver watch/updates  ── Orange: etcd Raft replication  ── Purple: client→VIP→apiserver</text>
+</svg>
+<div class="caption">Figure 1 — Production HA cluster: 3 control plane nodes (etcd stacked), N worker nodes. All components communicate via kube-apiserver.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="control-plane-deep">2 · Control Plane Components In Depth</h2>
+
+<h3 id="kube-apiserver-role">2.1 kube-apiserver</h3>
+<p>
+The API server is the <strong>only stateful, central component</strong> that all other
+components talk to. It is the single source of truth gateway — no component talks to
+another component directly (exception: kubelet can be called back by the API server for
+exec/logs/port-forward, and etcd is called only by the API server).
+</p>
+
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Port</td><td>6443 (HTTPS). Never 8080 (insecure) in production.</td></tr>
+    <tr><td>Horizontally scalable</td><td>Yes — multiple replicas behind a load balancer. All replicas are active (no leader election).</td></tr>
+    <tr><td>Stateful?</td><td>No — completely stateless. All state is in etcd.</td></tr>
+    <tr><td>Auth mechanisms</td><td>x509 client certificates, bearer tokens, OIDC, webhook, service account tokens</td></tr>
+    <tr><td>Deep-dive</td><td><a href="../01-control-plane/01-kube-apiserver.html">01-control-plane/01-kube-apiserver.html</a></td></tr>
+  </tbody>
+</table>
+
+<h3 id="etcd-role">2.2 etcd</h3>
+<p>
+etcd is the <strong>cluster's brain memory</strong>. Every Kubernetes object (Pod spec,
+Deployment state, Secret value, Node status, Service endpoint) is persisted as a key-value
+entry in etcd. The kube-apiserver is the only component that reads from or writes to etcd directly.
+</p>
+
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Client port</td><td>2379 (only API server connects)</td></tr>
+    <tr><td>Peer port</td><td>2380 (etcd-to-etcd Raft replication)</td></tr>
+    <tr><td>Consensus</td><td>Raft — requires quorum of (n/2)+1 members to commit a write</td></tr>
+    <tr><td>Recommended cluster size</td><td>3 members (1 failure tolerance) or 5 members (2 failure tolerance)</td></tr>
+    <tr><td>Deep-dive</td><td><a href="../01-control-plane/02-etcd.html">01-control-plane/02-etcd.html</a></td></tr>
+  </tbody>
+</table>
+
+<h3 id="kube-scheduler-role">2.3 kube-scheduler</h3>
+<p>
+The scheduler watches for Pods with <code>spec.nodeName == ""</code> (unscheduled)
+and writes a <code>nodeName</code> into the Pod spec via a binding API call.
+It runs a <strong>filter → score → bind</strong> pipeline for every Pod.
+</p>
+
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Metrics/health port</td><td>10259 (HTTPS)</td></tr>
+    <tr><td>Leader election</td><td>Yes — only one scheduler instance is active at a time, via Lease API object</td></tr>
+    <tr><td>Talks to</td><td>Only kube-apiserver (watch for unscheduled Pods, write bindings)</td></tr>
+    <tr><td>Deep-dive</td><td><a href="../01-control-plane/03-kube-scheduler.html">01-control-plane/03-kube-scheduler.html</a></td></tr>
+  </tbody>
+</table>
+
+<h3 id="controller-manager-role">2.4 kube-controller-manager</h3>
+<p>
+A single binary that embeds <strong>30+ individual controllers</strong>, each running its own
+reconciliation loop. All controllers use the same watch-and-reconcile pattern.
+</p>
+
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Metrics/health port</td><td>10257 (HTTPS)</td></tr>
+    <tr><td>Leader election</td><td>Yes — one active instance at a time via Lease</td></tr>
+    <tr><td>Key controllers included</td><td>ReplicationController, ReplicaSet, Deployment, StatefulSet, DaemonSet, Job, CronJob, Node, Endpoint/EndpointSlice, Namespace, PersistentVolume, ServiceAccount, Token, Certificate</td></tr>
+    <tr><td>Deep-dive</td><td><a href="../01-control-plane/04-kube-controller-manager.html">01-control-plane/04-kube-controller-manager.html</a></td></tr>
+  </tbody>
+</table>
+
+<h3 id="cloud-controller-role">2.5 cloud-controller-manager</h3>
+<p>
+Separates cloud-provider-specific logic from the core Kubernetes code. Manages:
+cloud load balancers (LoadBalancer type Services), cloud node metadata (instance types,
+zones), and cloud routes (for overlay-less networking on GCE/AWS).
+</p>
+
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Port</td><td>10258 (HTTPS)</td></tr>
+    <tr><td>Leader election</td><td>Yes</td></tr>
+    <tr><td>Absent on</td><td>bare metal clusters without a cloud provider integration</td></tr>
+    <tr><td>Deep-dive</td><td><a href="../01-control-plane/05-cloud-controller-manager.html">01-control-plane/05-cloud-controller-manager.html</a></td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="worker-node-deep">3 · Worker Node Components In Depth</h2>
+
+<h3 id="kubelet-role">3.1 kubelet</h3>
+<p>
+The kubelet is the <strong>primary node agent</strong>. It is the bridge between the Kubernetes
+API and the container runtime. It watches the API server for Pods assigned to its node,
+drives the CRI to create/destroy containers, runs probes, and reports status back.
+</p>
+
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>HTTPS API port</td><td>10250 — API server calls back here for exec/logs/port-forward</td></tr>
+    <tr><td>Read-only port</td><td>10255 (deprecated, disabled by default since 1.16)</td></tr>
+    <tr><td>Healthz port</td><td>10248</td></tr>
+    <tr><td>Talks to</td><td>kube-apiserver (watch + status updates), CRI socket (containerd/CRI-O), CNI plugins</td></tr>
+    <tr><td>Deep-dive</td><td><a href="../02-node-components/01-kubelet.html">02-node-components/01-kubelet.html</a></td></tr>
+  </tbody>
+</table>
+
+<h3 id="kube-proxy-role">3.2 kube-proxy</h3>
+<p>
+kube-proxy watches Service and EndpointSlice objects and programs the host's networking stack
+(iptables rules, IPVS virtual servers, or nftables) to implement the Service virtual IP abstraction.
+</p>
+
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Healthz port</td><td>10256</td></tr>
+    <tr><td>Modes</td><td>iptables (default), IPVS (large clusters), nftables (beta in 1.31), eBPF (via Cilium replacing kube-proxy entirely)</td></tr>
+    <tr><td>Deep-dive</td><td><a href="../02-node-components/02-kube-proxy.html">02-node-components/02-kube-proxy.html</a></td></tr>
+  </tbody>
+</table>
+
+<h3 id="cri-role">3.3 Container Runtime (CRI)</h3>
+<p>
+The CRI-compliant runtime (containerd or CRI-O) receives instructions from the kubelet via gRPC,
+pulls images, manages container lifecycle, and interacts with the OCI low-level runtime (runc).
+</p>
+
+<h3 id="cni-role">3.4 CNI Plugin</h3>
+<p>
+The CNI plugin (Calico, Cilium, Flannel, Weave, etc.) is invoked by the kubelet via the
+CRI when a Pod sandbox is created. It assigns a Pod IP, creates the veth pair, and programs
+routes. CNI is not a running daemon — it is a set of binary executables in
+<code>/opt/cni/bin/</code> called by the runtime.
+</p>
+
+<!-- ============================================================ -->
+<h2 id="component-communication">4 · Component Communication Matrix</h2>
+
+<p>
+A critical production security concept: understanding exactly which components talk to which,
+over which port, authenticated with which certificate.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Source</th><th>Destination</th><th>Protocol/Port</th><th>Auth method</th><th>Direction</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>kubectl / any client</td><td>kube-apiserver</td><td>HTTPS :6443</td><td>x509 cert, OIDC token, bearer token</td><td>Client → API server</td></tr>
+    <tr><td>kube-apiserver</td><td>etcd</td><td>HTTPS :2379</td><td>x509 client cert (etcd CA signed)</td><td>API server → etcd only</td></tr>
+    <tr><td>kube-scheduler</td><td>kube-apiserver</td><td>HTTPS :6443</td><td>x509 client cert (system:kube-scheduler)</td><td>scheduler → API server (watch + write binding)</td></tr>
+    <tr><td>kube-controller-manager</td><td>kube-apiserver</td><td>HTTPS :6443</td><td>x509 client cert (system:kube-controller-manager)</td><td>controller-manager → API server</td></tr>
+    <tr><td>cloud-controller-manager</td><td>kube-apiserver</td><td>HTTPS :6443</td><td>x509 client cert</td><td>ccm → API server</td></tr>
+    <tr><td>kubelet</td><td>kube-apiserver</td><td>HTTPS :6443</td><td>x509 client cert (system:node:&lt;nodeName&gt;, bootstrapped via TLS bootstrap or kubeadm)</td><td>kubelet → API server (watch Pods, update status)</td></tr>
+    <tr><td>kube-apiserver</td><td>kubelet</td><td>HTTPS :10250</td><td>API server presents its own cert; kubelet CA must be trusted</td><td>API server → kubelet (exec, logs, port-forward)</td></tr>
+    <tr><td>kube-proxy</td><td>kube-apiserver</td><td>HTTPS :6443</td><td>x509 client cert or ServiceAccount token</td><td>kube-proxy → API server (watch Services/EndpointSlices)</td></tr>
+    <tr><td>CoreDNS</td><td>kube-apiserver</td><td>HTTPS :6443</td><td>ServiceAccount token (RBAC: get/list/watch Services/Endpoints)</td><td>CoreDNS → API server</td></tr>
+    <tr><td>etcd peer</td><td>etcd peer</td><td>HTTPS :2380</td><td>Mutual TLS (etcd peer CA)</td><td>Raft replication between etcd members</td></tr>
+    <tr><td>Admission webhook</td><td>kube-apiserver</td><td>HTTPS (webhook TLS)</td><td>Webhook server cert trusted by API server caBundle field</td><td>API server → webhook server</td></tr>
+  </tbody>
+</table>
+
+<div class="callout info">
+  <strong>The "Hub and Spoke" model</strong>
+  The kube-apiserver is at the centre of all communication. No two non-API-server components
+  communicate directly with each other (except etcd peer replication). This is a deliberate
+  design choice that simplifies security: you only need to secure one endpoint,
+  and all state transitions are auditable in one place.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="port-reference">5 · Complete Port Reference</h2>
+
+<table>
+  <thead><tr><th>Component</th><th>Port</th><th>Protocol</th><th>Purpose</th><th>Firewall rule needed?</th></tr></thead>
+  <tbody>
+    <tr><td>kube-apiserver</td><td>6443</td><td>HTTPS</td><td>Kubernetes API (all clients)</td><td>Yes — from all nodes + kubectl clients</td></tr>
+    <tr><td>etcd client</td><td>2379</td><td>HTTPS</td><td>etcd API (API server only)</td><td>Yes — from control plane nodes only</td></tr>
+    <tr><td>etcd peer</td><td>2380</td><td>HTTPS</td><td>Raft replication between etcd members</td><td>Yes — between control plane nodes only</td></tr>
+    <tr><td>kube-scheduler</td><td>10259</td><td>HTTPS</td><td>Healthz + metrics (Prometheus scrape)</td><td>Optional — monitoring only</td></tr>
+    <tr><td>kube-controller-manager</td><td>10257</td><td>HTTPS</td><td>Healthz + metrics</td><td>Optional — monitoring only</td></tr>
+    <tr><td>cloud-controller-manager</td><td>10258</td><td>HTTPS</td><td>Healthz + metrics</td><td>Optional — monitoring only</td></tr>
+    <tr><td>kubelet</td><td>10250</td><td>HTTPS</td><td>kubelet API (exec/logs/port-forward)</td><td>Yes — from control plane nodes</td></tr>
+    <tr><td>kubelet healthz</td><td>10248</td><td>HTTP</td><td>Local healthcheck only</td><td>No — local loopback only</td></tr>
+    <tr><td>kube-proxy healthz</td><td>10256</td><td>HTTP</td><td>Health probe</td><td>No — local</td></tr>
+    <tr><td>NodePort range</td><td>30000–32767</td><td>TCP/UDP</td><td>External Service exposure</td><td>Yes — from external clients</td></tr>
+    <tr><td>CoreDNS</td><td>53 (Pod IP)</td><td>UDP/TCP</td><td>DNS resolution for cluster DNS</td><td>No — internal Pod traffic only</td></tr>
+    <tr><td>metrics-server</td><td>443 (Service)</td><td>HTTPS</td><td>Resource metrics (kubectl top)</td><td>No — internal</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="ha-architecture">6 · High Availability Architecture</h2>
+
+<h3 id="stacked-vs-external-etcd">6.1 Stacked vs. External etcd</h3>
+<p>
+There are two HA topologies for the control plane:
+</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin:1.5rem 0">
+<div>
+
+<div class="diagram-wrap" style="margin:0">
+<svg viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style="max-width:300px;width:100%">
+  <text x="150" y="18" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">STACKED etcd (default kubeadm)</text>
+  <!-- Node 1 -->
+  <rect x="10" y="30" width="85" height="100" rx="6" fill="#161b22" stroke="#1f6feb"/>
+  <text x="52" y="48" text-anchor="middle" fill="#8b949e" font-size="9">CP Node 1</text>
+  <rect x="18" y="54" width="70" height="22" rx="3" fill="#1f6feb" opacity=".7"/>
+  <text x="53" y="69" text-anchor="middle" fill="#fff" font-size="8">apiserver</text>
+  <rect x="18" y="82" width="70" height="22" rx="3" fill="#21262d" stroke="#f0883e"/>
+  <text x="53" y="97" text-anchor="middle" fill="#f0883e" font-size="8">etcd</text>
+  <rect x="18" y="110" width="70" height="14" rx="3" fill="#21262d" stroke="#30363d"/>
+  <text x="53" y="121" text-anchor="middle" fill="#8b949e" font-size="7">sched+ctrlmgr</text>
+  <!-- Node 2 -->
+  <rect x="107" y="30" width="85" height="100" rx="6" fill="#161b22" stroke="#30363d" stroke-dasharray="3,2"/>
+  <text x="149" y="48" text-anchor="middle" fill="#8b949e" font-size="9">CP Node 2</text>
+  <rect x="115" y="54" width="70" height="22" rx="3" fill="#1f6feb" opacity=".5"/>
+  <text x="150" y="69" text-anchor="middle" fill="#fff" font-size="8">apiserver</text>
+  <rect x="115" y="82" width="70" height="22" rx="3" fill="#21262d" stroke="#f0883e" stroke-dasharray="3,2"/>
+  <text x="150" y="97" text-anchor="middle" fill="#f0883e" font-size="8">etcd</text>
+  <rect x="115" y="110" width="70" height="14" rx="3" fill="#21262d" stroke="#30363d"/>
+  <text x="150" y="121" text-anchor="middle" fill="#8b949e" font-size="7">sched+ctrlmgr</text>
+  <!-- Node 3 -->
+  <rect x="204" y="30" width="85" height="100" rx="6" fill="#161b22" stroke="#30363d" stroke-dasharray="3,2"/>
+  <text x="246" y="48" text-anchor="middle" fill="#8b949e" font-size="9">CP Node 3</text>
+  <rect x="212" y="54" width="70" height="22" rx="3" fill="#1f6feb" opacity=".5"/>
+  <text x="247" y="69" text-anchor="middle" fill="#fff" font-size="8">apiserver</text>
+  <rect x="212" y="82" width="70" height="22" rx="3" fill="#21262d" stroke="#f0883e" stroke-dasharray="3,2"/>
+  <text x="247" y="97" text-anchor="middle" fill="#f0883e" font-size="8">etcd</text>
+  <rect x="212" y="110" width="70" height="14" rx="3" fill="#21262d" stroke="#30363d"/>
+  <text x="247" y="121" text-anchor="middle" fill="#8b949e" font-size="7">sched+ctrlmgr</text>
+  <!-- raft -->
+  <defs><marker id="ra" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#f0883e"/></marker></defs>
+  <line x1="95" y1="93" x2="113" y2="93" stroke="#f0883e" stroke-width="1" marker-end="url(#ra)"/>
+  <line x1="192" y1="93" x2="210" y2="93" stroke="#f0883e" stroke-width="1" marker-end="url(#ra)"/>
+  <!-- pros/cons -->
+  <text x="10" y="155" fill="#3fb950" font-size="9">✓ Simpler to operate</text>
+  <text x="10" y="168" fill="#3fb950" font-size="9">✓ Fewer nodes needed</text>
+  <text x="10" y="181" fill="#3fb950" font-size="9">✓ kubeadm default</text>
+  <text x="10" y="198" fill="#f85149" font-size="9">✗ etcd and apiserver compete for I/O</text>
+  <text x="10" y="211" fill="#f85149" font-size="9">✗ Noisy-neighbour risk</text>
+  <text x="10" y="224" fill="#f85149" font-size="9">✗ Tied upgrade cycles</text>
+</svg>
+</div>
+
+</div>
+<div>
+
+<div class="diagram-wrap" style="margin:0">
+<svg viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style="max-width:300px;width:100%">
+  <text x="150" y="18" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">EXTERNAL etcd (production recommended)</text>
+  <!-- CP nodes -->
+  <rect x="10" y="30" width="80" height="75" rx="6" fill="#161b22" stroke="#1f6feb"/>
+  <text x="50" y="47" text-anchor="middle" fill="#8b949e" font-size="9">CP Node 1</text>
+  <rect x="18" y="53" width="65" height="18" rx="3" fill="#1f6feb" opacity=".7"/>
+  <text x="50" y="65" text-anchor="middle" fill="#fff" font-size="8">apiserver</text>
+  <rect x="18" y="76" width="65" height="14" rx="3" fill="#21262d" stroke="#30363d"/>
+  <text x="50" y="87" text-anchor="middle" fill="#8b949e" font-size="7">sched+ctrlmgr</text>
+
+  <rect x="110" y="30" width="80" height="75" rx="6" fill="#161b22" stroke="#30363d" stroke-dasharray="3,2"/>
+  <text x="150" y="47" text-anchor="middle" fill="#8b949e" font-size="9">CP Node 2</text>
+  <rect x="118" y="53" width="65" height="18" rx="3" fill="#1f6feb" opacity=".5"/>
+  <text x="150" y="65" text-anchor="middle" fill="#fff" font-size="8">apiserver</text>
+  <rect x="118" y="76" width="65" height="14" rx="3" fill="#21262d" stroke="#30363d"/>
+  <text x="150" y="87" text-anchor="middle" fill="#8b949e" font-size="7">sched+ctrlmgr</text>
+
+  <rect x="210" y="30" width="80" height="75" rx="6" fill="#161b22" stroke="#30363d" stroke-dasharray="3,2"/>
+  <text x="250" y="47" text-anchor="middle" fill="#8b949e" font-size="9">CP Node 3</text>
+  <rect x="218" y="53" width="65" height="18" rx="3" fill="#1f6feb" opacity=".5"/>
+  <text x="250" y="65" text-anchor="middle" fill="#fff" font-size="8">apiserver</text>
+  <rect x="218" y="76" width="65" height="14" rx="3" fill="#21262d" stroke="#30363d"/>
+  <text x="250" y="87" text-anchor="middle" fill="#8b949e" font-size="7">sched+ctrlmgr</text>
+
+  <!-- etcd external -->
+  <rect x="10" y="120" width="280" height="55" rx="6" fill="#21262d" stroke="#f0883e"/>
+  <text x="150" y="140" text-anchor="middle" fill="#f0883e" font-size="10" font-weight="600">etcd cluster (3 dedicated nodes)</text>
+  <text x="150" y="156" text-anchor="middle" fill="#8b949e" font-size="8">etcd1:2379  etcd2:2379  etcd3:2379</text>
+  <text x="150" y="170" text-anchor="middle" fill="#8b949e" font-size="8">Raft peer :2380</text>
+
+  <defs><marker id="rb" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#f0883e"/></marker></defs>
+  <line x1="50" y1="105" x2="50" y2="118" stroke="#f0883e" stroke-width="1" marker-end="url(#rb)"/>
+  <line x1="150" y1="105" x2="150" y2="118" stroke="#f0883e" stroke-width="1" marker-end="url(#rb)"/>
+  <line x1="250" y1="105" x2="250" y2="118" stroke="#f0883e" stroke-width="1" marker-end="url(#rb)"/>
+
+  <text x="10" y="195" fill="#3fb950" font-size="9">✓ No resource contention</text>
+  <text x="10" y="208" fill="#3fb950" font-size="9">✓ Independent etcd scaling/upgrade</text>
+  <text x="10" y="221" fill="#3fb950" font-size="9">✓ Best for large clusters</text>
+</svg>
+</div>
+
+</div>
+</div>
+
+<h3 id="quorum-math">6.2 Quorum Math and Failure Tolerance</h3>
+
+<table>
+  <thead><tr><th>etcd members</th><th>Quorum required</th><th>Failure tolerance</th><th>Recommendation</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>1</td><td>0</td><td>Development only — any failure loses the cluster</td></tr>
+    <tr><td>2</td><td>2</td><td>0</td><td>Worse than 1 — both must agree, but 1 failure still breaks quorum</td></tr>
+    <tr><td>3</td><td>2</td><td>1</td><td>Minimum production HA — standard for most clusters</td></tr>
+    <tr><td>5</td><td>3</td><td>2</td><td>Large/critical clusters, concurrent failure scenarios</td></tr>
+    <tr><td>7</td><td>4</td><td>3</td><td>Very large clusters; write latency increases — rarely worth it</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <strong>Never run an even number of etcd members</strong>
+  2 and 4 members provide the same or worse fault tolerance as 1 and 3, respectively,
+  but require more nodes. The split-brain scenario (network partition with equal halves)
+  is deadlier with even numbers. Always use odd numbers.
+</div>
+
+<h3 id="leader-election">6.3 Controller/Scheduler Leader Election</h3>
+<p>
+While the API server is <em>active-active</em> (all replicas serve traffic), the scheduler
+and controller-manager use <strong>leader election</strong> to ensure only one instance
+makes decisions at a time. Leader election is implemented using a
+<code>coordination.k8s.io/v1/Lease</code> object in the <code>kube-system</code> namespace.
+</p>
+
+<pre><code class="language-bash"># Inspect leader election leases
+kubectl get leases -n kube-system
+# NAME                      HOLDER                    AGE
+# kube-controller-manager   node1.cluster.internal    45d
+# kube-scheduler            node1.cluster.internal    45d
+
+# Who currently holds the scheduler lease?
+kubectl get lease kube-scheduler -n kube-system -o jsonpath='{.spec.holderIdentity}'
+
+# Leader election config (in controller-manager flags)
+# --leader-elect=true (default)
+# --leader-elect-lease-duration=15s  (time a lease is valid)
+# --leader-elect-renew-deadline=10s  (how long leader retries to renew)
+# --leader-elect-retry-period=2s    (how often non-leader tries to acquire)</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ============================================================ -->
+<h2 id="network-topology">7 · Network Topology</h2>
+
+<p>
+A Kubernetes cluster uses <strong>four distinct IP address spaces</strong>:
+</p>
+
+<table>
+  <thead><tr><th>Network</th><th>Default range</th><th>What it covers</th><th>Configured in</th></tr></thead>
+  <tbody>
+    <tr><td>Node network</td><td>Depends on infrastructure</td><td>Physical/VM NIC IPs on each node</td><td>Cloud VPC or bare metal network</td></tr>
+    <tr><td>Pod CIDR</td><td><code>10.244.0.0/16</code> (Flannel) / <code>192.168.0.0/16</code> (Calico)</td><td>Pod IP addresses (one unique IP per Pod)</td><td><code>--pod-network-cidr</code> on kubeadm / CNI config</td></tr>
+    <tr><td>Service CIDR</td><td><code>10.96.0.0/12</code></td><td>ClusterIP virtual IPs for Services</td><td><code>--service-cluster-ip-range</code> on API server</td></tr>
+    <tr><td>DNS ClusterIP</td><td><code>10.96.0.10</code></td><td>CoreDNS Service IP (fixed)</td><td><code>--cluster-dns</code> on kubelet</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <strong>IP range overlap causes silent routing failures</strong>
+  The Pod CIDR, Service CIDR, and Node network MUST NOT overlap with each other
+  or with on-premises corporate networks that the nodes can reach.
+  A Pod CIDR of 10.244.0.0/16 will cause routing issues if any corporate subnet uses 10.244.x.x.
+  Plan your CIDR allocations carefully before cluster creation — changing them requires
+  a cluster rebuild.
+</div>
+
+<h3 id="network-requirements">7.1 Kubernetes Networking Requirements</h3>
+<p>
+The Kubernetes networking model mandates:
+</p>
+<ol>
+  <li>Every Pod gets a unique, cluster-routable IP (no NAT for Pod-to-Pod traffic within the cluster)</li>
+  <li>Every Pod can reach every other Pod by IP, regardless of which node they are on</li>
+  <li>Every node can reach every Pod IP</li>
+  <li>Pods see their own IP as their IP (no masquerading for inbound)</li>
+</ol>
+<p>
+CNI plugins are responsible for implementing these rules. They achieve this via:
+VXLAN overlays (Flannel), BGP routing (Calico), eBPF dataplane (Cilium), etc.
+</p>
+
+<!-- ============================================================ -->
+<h2 id="failure-domains">8 · Failure Domains and Topology</h2>
+
+<h3 id="availability-zones">8.1 Multi-AZ Worker Node Distribution</h3>
+<p>
+In cloud deployments, worker nodes should be spread across at least 3 availability zones.
+Kubernetes provides topology-aware scheduling to enforce this.
+</p>
+
+<pre><code class="language-yaml"># Spread Pods evenly across AZs (topologySpreadConstraints)
+spec:
+  topologySpreadConstraints:
+  - maxSkew: 1                                  # Max imbalance between zones
+    topologyKey: topology.kubernetes.io/zone   # Use the zone label on nodes
+    whenUnsatisfiable: DoNotSchedule           # Fail scheduling rather than violate
+    labelSelector:
+      matchLabels:
+        app: web
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname        # Also spread across nodes within a zone
+    whenUnsatisfiable: ScheduleAnyway          # Best-effort node spread</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<h3 id="control-plane-ha-az">8.2 Control Plane AZ Distribution</h3>
+<pre><code class="language-bash"># Verify control plane nodes are spread across AZs
+kubectl get nodes -l node-role.kubernetes.io/control-plane \
+  -o custom-columns='NAME:.metadata.name,ZONE:.metadata.labels.topology\.kubernetes\.io/zone'
+
+# Example output (good):
+# NAME              ZONE
+# cp-node-1         us-east-1a
+# cp-node-2         us-east-1b
+# cp-node-3         us-east-1c</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ============================================================ -->
+<h2 id="cluster-sizing">9 · Cluster Sizing Reference</h2>
+
+<table>
+  <thead><tr><th>Cluster size</th><th>Nodes</th><th>Pods</th><th>Control plane</th><th>etcd</th><th>API server instances</th></tr></thead>
+  <tbody>
+    <tr><td>Development</td><td>1–5</td><td>&lt;100</td><td>1 node, all-in-one</td><td>Single (stacked)</td><td>1</td></tr>
+    <tr><td>Small production</td><td>5–20</td><td>&lt;500</td><td>3 nodes (stacked)</td><td>3 members</td><td>3 (one per CP node)</td></tr>
+    <tr><td>Medium production</td><td>20–100</td><td>&lt;5,000</td><td>3 nodes (external etcd recommended)</td><td>3–5 dedicated nodes</td><td>3</td></tr>
+    <tr><td>Large production</td><td>100–500</td><td>&lt;25,000</td><td>5 nodes (external etcd)</td><td>5 dedicated nodes</td><td>3–5 behind LB</td></tr>
+    <tr><td>Very large</td><td>500–5000+</td><td>150,000+</td><td>5+ nodes, tuned API server</td><td>5 dedicated high-I/O nodes (SSD)</td><td>5+ behind LB + caching</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <strong>Kubernetes scalability benchmarks (SIG Scalability)</strong>
+  As of Kubernetes 1.30+, tested to: 5,000 nodes, 150,000 Pods, 300,000 total containers.
+  API server p99 response time SLO: &lt;1s for mutating, &lt;5s for list.
+  These limits require careful etcd tuning, sufficient API server memory, and low-latency
+  storage for etcd (NVMe SSD, fsync latency &lt;10ms).
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cloud-vs-baremetal">10 · Cloud vs Bare Metal Architecture Differences</h2>
+
+<table>
+  <thead><tr><th>Concern</th><th>Cloud (GKE/EKS/AKS)</th><th>Bare Metal / On-Premises</th></tr></thead>
+  <tbody>
+    <tr><td>Control plane management</td><td>Fully managed — you never see CP nodes</td><td>You manage CP nodes, upgrades, HA, backups</td></tr>
+    <tr><td>etcd management</td><td>Managed by cloud provider</td><td>You manage backup, recovery, disk sizing</td></tr>
+    <tr><td>Load balancer</td><td>cloud-controller-manager provisions cloud LB automatically for LoadBalancer Services</td><td>MetalLB or kube-vip or external F5/HAProxy required</td></tr>
+    <tr><td>Node provisioning</td><td>Cluster Autoscaler calls cloud API (ASG, MIG) to add nodes</td><td>Cluster API with MAAS/vSphere provider, or manual</td></tr>
+    <tr><td>Storage</td><td>EBS/GCE PD/Azure Disk CSI drivers built-in</td><td>Ceph/Longhorn/NFS CSI, or SAN with custom driver</td></tr>
+    <tr><td>Networking</td><td>VPC-native routing (no overlay needed on GKE, EKS VPC CNI)</td><td>Must configure overlay (VXLAN, BGP) or routed fabric</td></tr>
+    <tr><td>Certificate rotation</td><td>Automatic (managed control plane)</td><td>Must monitor expiry; kubelet rotates via RotateKubeletClientCertificate</td></tr>
+    <tr><td>OIDC identity integration</td><td>Workload Identity (GKE) / IRSA (EKS) / Pod Identity (AKS)</td><td>OIDC provider + external Vault / Keycloak integration</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="component-startup-order">11 · Component Startup Order</h2>
+
+<p>
+When bootstrapping or recovering a cluster, components must start in the correct order:
+</p>
+
+<ol>
+  <li><strong>etcd</strong> — must be healthy first; API server cannot start without etcd</li>
+  <li><strong>kube-apiserver</strong> — reads/writes etcd; all other components depend on it</li>
+  <li><strong>kube-controller-manager</strong> — starts watching API server; leader election requires API server</li>
+  <li><strong>kube-scheduler</strong> — starts watching API server; leader election requires API server</li>
+  <li><strong>cloud-controller-manager</strong> (if present) — starts after API server</li>
+  <li><strong>kubelet</strong> on each node — registers with API server; starts DaemonSet Pods (CoreDNS, CNI agent, kube-proxy)</li>
+  <li><strong>kube-proxy</strong> — DaemonSet Pod, starts after kubelet is ready</li>
+  <li><strong>CoreDNS</strong> — Deployment, starts after kube-proxy is programming Service rules</li>
+  <li><strong>CNI agent</strong> (if daemon-based, e.g., Calico node, Cilium agent) — DaemonSet, started by kubelet</li>
+</ol>
+
+<pre><code class="language-bash"># Monitor startup sequence on a control plane node
+journalctl -u etcd -f &amp;
+journalctl -u kube-apiserver -f &amp;
+journalctl -u kube-controller-manager -f &amp;
+journalctl -u kube-scheduler -f &amp;
+
+# For kubeadm clusters (static Pods in /etc/kubernetes/manifests/):
+# These are started by kubelet as static Pods — no systemd units
+ls /etc/kubernetes/manifests/
+# etcd.yaml  kube-apiserver.yaml  kube-controller-manager.yaml  kube-scheduler.yaml
+
+# Check static Pod health
+kubectl get pods -n kube-system | grep -E "etcd|apiserver|scheduler|controller"</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ============================================================ -->
+<h2 id="certificate-topology">12 · Certificate Topology</h2>
+
+<p>
+Kubernetes uses mutual TLS for all inter-component communication.
+Understanding the certificate chain is essential for troubleshooting and
+for manually bootstrapping clusters.
+</p>
+
+<details>
+  <summary>Full certificate authority hierarchy</summary>
+  <div class="db">
+<pre><code class="language-text">Kubernetes PKI hierarchy (typical kubeadm cluster):
+
+/etc/kubernetes/pki/
+├── ca.crt / ca.key
+│   └── Cluster CA — signs:
+│       ├── apiserver.crt (server cert for kube-apiserver TLS)
+│       ├── apiserver-kubelet-client.crt (API server → kubelet client cert)
+│       ├── controller-manager.conf (embedded client cert for controller-manager)
+│       ├── scheduler.conf (embedded client cert for scheduler)
+│       └── kubelet client certs (in /var/lib/kubelet/pki/ on each node)
+│
+├── etcd/ca.crt / etcd/ca.key
+│   └── etcd CA (separate) — signs:
+│       ├── etcd/server.crt (etcd server TLS)
+│       ├── etcd/peer.crt (etcd peer replication TLS)
+│       └── apiserver-etcd-client.crt (API server → etcd client cert)
+│
+├── front-proxy-ca.crt / front-proxy-ca.key
+│   └── Front-proxy CA — signs:
+│       └── front-proxy-client.crt (used for API aggregation layer)
+│
+└── sa.pub / sa.key
+    └── Service Account signing key pair
+        (sa.key signs SA tokens; sa.pub used by API server to verify them)
+
+Default certificate validity: 1 year (kubeadm)
+CA validity: 10 years
+Auto-rotation: kubelet client certs rotate automatically via
+  RotateKubeletClientCertificate feature (enabled by default since 1.8)</code></pre>
+  </div>
+</details>
+
+<pre><code class="language-bash"># Check certificate expiry dates on a control plane node
+kubeadm certs check-expiration
+
+# Rotate certificates manually (kubeadm clusters)
+kubeadm certs renew all
+
+# Check a specific cert
+openssl x509 -in /etc/kubernetes/pki/apiserver.crt -noout -dates
+# notAfter=Jun  1 00:00:00 2026 GMT
+
+# Check kubelet node cert (on each worker node)
+openssl x509 -in /var/lib/kubelet/pki/kubelet-client-current.pem -noout -subject -dates</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<div class="callout danger">
+  <strong>Certificate expiry is a production incident waiting to happen</strong>
+  Kubernetes certificates default to 1-year validity with kubeadm.
+  Set up monitoring: <code>x509_cert_expiry</code> metric from prometheus/blackbox-exporter
+  or use <code>kubeadm certs check-expiration</code> in a CronJob.
+  Alert at 60 days remaining. At expiry, the entire cluster becomes inaccessible.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="single-node-dev">13 · Single-Node Development Clusters</h2>
+
+<p>
+For local development, all components run on a single machine.
+The control plane and worker role are combined.
+</p>
+
+<table>
+  <thead><tr><th>Tool</th><th>Mechanism</th><th>Use case</th><th>Production parity</th></tr></thead>
+  <tbody>
+    <tr><td>kind (K8s in Docker)</td><td>Each node is a Docker container; uses kubeadm internally</td><td>CI/CD pipelines, multi-node local testing</td><td>High — uses real kubeadm, real etcd</td></tr>
+    <tr><td>minikube</td><td>Single node VM or Docker driver</td><td>Developer laptop, quick prototyping</td><td>Medium — AddOns differ from production CNI/CSI</td></tr>
+    <tr><td>k3s</td><td>Single binary, SQLite or embedded etcd, replaces kube-proxy with iptables</td><td>Edge, IoT, CI, resource-constrained</td><td>Medium — some defaults differ (Traefik instead of nginx-ingress)</td></tr>
+    <tr><td>k3d</td><td>k3s in Docker containers</td><td>Fast local multi-node k3s clusters</td><td>Medium</td></tr>
+    <tr><td>Desktop (Docker/Rancher)</td><td>Bundled K8s in Docker Desktop or Rancher Desktop</td><td>Developer convenience, integrated with local registry</td><td>Low — opinionated defaults</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash"># Create a multi-node kind cluster (3 nodes: 1 control-plane, 2 workers)
+cat &lt;&lt;EOF | kind create cluster --name dev --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+- role: worker
+- role: worker
+networking:
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+EOF
+
+# Load a local image into kind (no registry needed)
+kind load docker-image myapp:dev --name dev</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ============================================================ -->
+<h2 id="health-checks">14 · Cluster Health Checks</h2>
+
+<pre><code class="language-bash"># ---- Overall cluster health ----
+kubectl get nodes -o wide                    # All nodes, status, version
+kubectl get pods -n kube-system              # All control plane + system Pods
+
+# ---- API server health ----
+kubectl get --raw /healthz                   # "ok"
+kubectl get --raw /healthz/etcd              # "ok"
+kubectl get --raw /readyz                    # Checks all health indicators
+kubectl get --raw /livez                     # Liveness check
+
+# ---- etcd health (on control plane node) ----
+ETCDCTL_API=3 etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+  --key=/etc/kubernetes/pki/etcd/healthcheck-client.key \
+  endpoint health
+
+ETCDCTL_API=3 etcdctl ... endpoint status --write-out=table
+# Shows: DB size, Raft index, leader, version
+
+# ---- Component health (modern) ----
+kubectl get --raw /api/v1/nodes | jq .
+kubectl describe node &lt;cp-node&gt; | grep -A5 "Conditions:"
+
+# ---- Scheduler / controller-manager ----
+kubectl get --raw /healthz    # through API server aggregation
+# or directly on the pod:
+kubectl exec -n kube-system kube-scheduler-&lt;hash&gt; -- wget -O- http://localhost:10259/healthz
+kubectl exec -n kube-system kube-controller-manager-&lt;hash&gt; -- wget -O- http://localhost:10257/healthz
+
+# ---- Event stream for recent issues ----
+kubectl get events --sort-by='.lastTimestamp' -A | tail -30</code></pre>
+<button class="copy-btn" onclick="copyCode(this)">copy</button>
+
+<!-- ============================================================ -->
+<h2 id="production-checklist">15 · Architecture Production Checklist</h2>
+
+<details>
+  <summary>15-point production architecture checklist</summary>
+  <div class="db">
+  <ol>
+    <li><strong>3 control plane nodes minimum</strong>, spread across 3 AZs. Prefer 5 for critical clusters.</li>
+    <li><strong>External etcd for large/critical clusters</strong> (100+ nodes or high churn). Dedicate high-I/O SSDs with &lt;10ms fsync latency.</li>
+    <li><strong>Load balancer in front of API servers</strong>. The LB VIP must be included in the API server TLS SAN (Subject Alternative Name) or all kubectl connections fail.</li>
+    <li><strong>Taint control plane nodes</strong> with <code>node-role.kubernetes.io/control-plane:NoSchedule</code> to prevent workloads from landing on CP nodes.</li>
+    <li><strong>Size control plane nodes for API request volume</strong>: 4 CPU / 8 GB RAM minimum; 8 CPU / 16 GB for 100+ node clusters; etcd needs dedicated I/O.</li>
+    <li><strong>Monitor certificate expiry</strong> with alerting at ≥60 days before expiry.</li>
+    <li><strong>Back up etcd daily</strong> to off-cluster storage. Test restores quarterly.</li>
+    <li><strong>Plan CIDR ranges before cluster creation</strong> — they cannot be changed without a rebuild.</li>
+    <li><strong>Audit API server flags</strong>: ensure <code>--anonymous-auth=false</code>, <code>--audit-log-path</code> is set, <code>--enable-admission-plugins</code> includes critical plugins.</li>
+    <li><strong>Enable audit logging</strong>. Store logs in an external SIEM. Default audit policy logs all request metadata.</li>
+    <li><strong>Worker node sizing</strong>: avoid &gt;110 Pods/node (default kubelet limit). Use at least 4 vCPU / 8 GB RAM for general worker nodes.</li>
+    <li><strong>Use Cluster Autoscaler</strong> with min/max node group bounds to prevent runaway scale-out.</li>
+    <li><strong>Deploy PodDisruptionBudgets</strong> for all critical workloads before the first node drain.</li>
+    <li><strong>Document your disaster recovery procedure</strong> and test it. etcd restore → API server restart → verify all Pods recover.</li>
+    <li><strong>Use a managed K8s service</strong> unless you have a strong reason for self-hosted. The operational burden of managing control planes is significant.</li>
+  </ol>
+  </div>
+</details>
+
+<!-- ============================================================ -->
+<hr/>
+<h2 id="next-files">Next Files</h2>
+<div class="dep-graph">
+  <h4>Dependency graph — recommended reading order</h4>
+  <ul class="dep-tree">
+    <li><a href="04-kubernetes-api-model.html">00-foundations/04-kubernetes-api-model.html</a> — API machinery, resource versioning, watch protocol, etcd key format</li>
+    <li><a href="../01-control-plane/00-control-plane-overview.html">01-control-plane/00-control-plane-overview.html</a> — Control plane component deep dives</li>
+    <li><a href="../01-control-plane/01-kube-apiserver.html">01-control-plane/01-kube-apiserver.html</a> — API server request pipeline, admission chain</li>
+    <li><a href="../01-control-plane/02-etcd.html">01-control-plane/02-etcd.html</a> — Raft consensus, etcd internals, backup/restore</li>
+    <li><a href="../09-production-operations/01-high-availability.html">09-production-operations/01-high-availability.html</a> — Detailed HA setup with kubeadm</li>
+    <li><a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-sequence.html">11-api-flows/01-pod-creation-sequence.html</a> — End-to-end Pod creation across all components</li>
+  </ul>
+</div>
+
+<h2 id="references">References</h2>
+<ul>
+  <li>Kubernetes architecture docs — <em>kubernetes.io/docs/concepts/architecture/</em></li>
+  <li>kubeadm HA docs — <em>kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/</em></li>
+  <li>etcd documentation — <em>etcd.io/docs/</em></li>
+  <li>Kubernetes scalability thresholds — <em>github.com/kubernetes/community/blob/master/sig-scalability/configs-and-limits/thresholds.md</em></li>
+  <li>PKI certificates documentation — <em>kubernetes.io/docs/setup/best-practices/certificates/</em></li>
+  <li><em>Production Kubernetes</em> — Josh Rosso, Craig Tracey et al., O'Reilly 2021</li>
+</ul>
+
+<div class="doc-nav">
+  <a href="02-container-orchestration.html"><span class="label">← Previous</span><span class="title">02 · Container Orchestration</span></a>
+  <a href="04-kubernetes-api-model.html" class="next-link"><span class="label">Next →</span><span class="title">04 · Kubernetes API Model</span></a>
+</div>
+
+</article>
+</div>
+<aside class="toc-panel" id="tocPanel">
+  <h4>On this page</h4>
+  <ol id="tocList">
+    <li class="l1"><a href="#two-planes">1 · Two Planes</a></li>
+    <li class="l1"><a href="#control-plane-deep">2 · Control Plane</a></li>
+    <li class="l2"><a href="#kube-apiserver-role">2.1 kube-apiserver</a></li>
+    <li class="l2"><a href="#etcd-role">2.2 etcd</a></li>
+    <li class="l2"><a href="#kube-scheduler-role">2.3 kube-scheduler</a></li>
+    <li class="l2"><a href="#controller-manager-role">2.4 controller-manager</a></li>
+    <li class="l2"><a href="#cloud-controller-role">2.5 cloud-controller-manager</a></li>
+    <li class="l1"><a href="#worker-node-deep">3 · Worker Nodes</a></li>
+    <li class="l2"><a href="#kubelet-role">3.1 kubelet</a></li>
+    <li class="l2"><a href="#kube-proxy-role">3.2 kube-proxy</a></li>
+    <li class="l2"><a href="#cri-role">3.3 CRI</a></li>
+    <li class="l2"><a href="#cni-role">3.4 CNI</a></li>
+    <li class="l1"><a href="#component-communication">4 · Communication Matrix</a></li>
+    <li class="l1"><a href="#port-reference">5 · Port Reference</a></li>
+    <li class="l1"><a href="#ha-architecture">6 · HA Architecture</a></li>
+    <li class="l2"><a href="#stacked-vs-external-etcd">6.1 Stacked vs External etcd</a></li>
+    <li class="l2"><a href="#quorum-math">6.2 Quorum Math</a></li>
+    <li class="l2"><a href="#leader-election">6.3 Leader Election</a></li>
+    <li class="l1"><a href="#network-topology">7 · Network Topology</a></li>
+    <li class="l2"><a href="#network-requirements">7.1 Requirements</a></li>
+    <li class="l1"><a href="#failure-domains">8 · Failure Domains</a></li>
+    <li class="l2"><a href="#availability-zones">8.1 Multi-AZ</a></li>
+    <li class="l2"><a href="#control-plane-ha-az">8.2 CP AZ distribution</a></li>
+    <li class="l1"><a href="#cluster-sizing">9 · Cluster Sizing</a></li>
+    <li class="l1"><a href="#cloud-vs-baremetal">10 · Cloud vs Bare Metal</a></li>
+    <li class="l1"><a href="#component-startup-order">11 · Startup Order</a></li>
+    <li class="l1"><a href="#certificate-topology">12 · Certificates</a></li>
+    <li class="l1"><a href="#single-node-dev">13 · Dev Clusters</a></li>
+    <li class="l1"><a href="#health-checks">14 · Health Checks</a></li>
+    <li class="l1"><a href="#production-checklist">15 · Checklist</a></li>
+    <li class="l1"><a href="#next-files">Next Files</a></li>
+  </ol>
+</aside>
+</div>
+<button id="back-top" title="Back to top">↑</button>
+<script>
+const root=document.documentElement,tb=document.getElementById('themeBtn');
+const sv=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',sv);tb.textContent=sv==='dark'?'☀ Light':'☾ Dark';
+tb.addEventListener('click',()=>{const c=root.getAttribute('data-theme'),n=c==='dark'?'light':'dark';root.setAttribute('data-theme',n);tb.textContent=n==='dark'?'☀ Light':'☾ Dark';localStorage.setItem('k8s-theme',n);});
+const sb=document.getElementById('sidebar'),ov=document.getElementById('sidebarOverlay'),mb=document.getElementById('menuBtn');
+mb.addEventListener('click',()=>{sb.classList.toggle('open');ov.classList.toggle('show');});
+ov.addEventListener('click',()=>{sb.classList.remove('open');ov.classList.remove('show');});
+const bt=document.getElementById('back-top');
+window.addEventListener('scroll',()=>bt.classList.toggle('show',scrollY>400));
+bt.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+function copyCode(b){const c=b.previousElementSibling||b.closest('pre').querySelector('code');navigator.clipboard.writeText(c.textContent).then(()=>{b.textContent='copied!';setTimeout(()=>b.textContent='copy',1800);});}
+const gs=document.getElementById('globalSearch');
+gs.addEventListener('input',function(){const q=this.value.trim();rmHL();if(q)hlT(document.getElementById('articleWrap'),q);});
+function hlT(r,q){const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');wT(r,re);}
+function rmHL(){document.querySelectorAll('mark.search-hl').forEach(m=>m.replaceWith(document.createTextNode(m.textContent)));}
+function wT(n,re){if(n.nodeType===3){if(re.test(n.textContent)){const s=document.createElement('span');s.innerHTML=n.textContent.replace(re,'<mark class="search-hl">$1</mark>');n.parentNode.replaceChild(s,n);}}else if(n.nodeType===1&&!['SCRIPT','STYLE','PRE','CODE'].includes(n.tagName)){[...n.childNodes].forEach(c=>wT(c,re));}}
+const ss=document.getElementById('sidebarSearch');
+ss.addEventListener('input',function(){const q=this.value.toLowerCase();document.querySelectorAll('#sidebarNav a').forEach(a=>{a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';});});
+const tl=document.querySelectorAll('#tocList a'),sc=[...document.querySelectorAll('h2[id],h3[id]')];
+const io=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting){tl.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`#tocList a[href="#${x.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-10% 0px -80% 0px'});
+sc.forEach(s=>io.observe(s));
+</script>
+</body>
+</html>

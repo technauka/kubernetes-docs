@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBAC — Role-Based Access Control | K8s Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border);}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;}
+.sidebar-search input:focus{border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.06);}
+main{flex:1;overflow-y:auto;padding:40px 48px;max-width:1100px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-meta{color:var(--text3);font-size:13px;margin-bottom:32px;display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;}
+:not(pre)>code{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:12px;color:var(--purple);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:11px;padding:3px 8px;cursor:pointer;transition:all .15s;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:8px 12px;text-align:left;border:1px solid var(--border);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid;font-size:14px;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout strong{display:block;margin-bottom:4px;font-size:13px;}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;overflow-x:auto;}
+.diagram pre{background:none;border:none;padding:0;margin:0;font-size:12px;color:var(--text2);}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:32px;font-size:13px;}
+.toc h4{color:var(--text);margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{margin-bottom:4px;}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:24px 0;overflow:hidden;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:8px;list-style:none;}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.coverage-body li{font-size:12px;color:var(--text2);}
+#back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+#back-to-top.visible{display:flex;}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:18px;color:var(--text);}
+@media(max-width:768px){.hamburger{display:block;}.sidebar{position:fixed;left:-280px;top:0;z-index:100;transition:left .25s;}.sidebar.open{left:0;}main{padding:24px 16px;}}
+</style>
+</head>
+<body>
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+<nav class="sidebar">
+  <div class="sidebar-header"><div class="logo">K8s <span>Docs</span></div></div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter navigation…" oninput="filterNav(this.value)"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-index.html">Overview</a>
+    <a href="../01-getting-started/01-what-is-kubernetes.html">What is Kubernetes?</a>
+    <a href="../01-getting-started/02-architecture.html">Architecture</a>
+    <a href="../01-getting-started/03-installation.html">Installation</a>
+    <a href="../01-getting-started/04-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Advanced Workloads</div>
+    <a href="../05-workloads/00-index.html">Overview</a>
+    <a href="../05-workloads/05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../05-workloads/06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="../05-workloads/07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="../05-workloads/08-pod-disruption-budgets.html">PDBs</a>
+    <a href="../05-workloads/09-resource-management.html">Resource Management</a>
+    <a href="../05-workloads/10-scheduling.html">Scheduling</a>
+    <a href="../05-workloads/11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="00-security-overview.html">Security Overview</a>
+    <a href="01-rbac.html" class="active">RBAC</a>
+    <a href="02-pod-security.html">Pod Security</a>
+    <a href="03-network-policies.html">Network Policies</a>
+    <a href="04-secrets-management.html">Secrets Management</a>
+    <a href="05-service-accounts.html">Service Accounts</a>
+    <a href="06-admission-controllers.html">Admission Controllers</a>
+    <a href="07-image-security.html">Image Security</a>
+    <a href="08-audit-logging.html">Audit Logging</a>
+    <a href="09-encryption-at-rest.html">Encryption at Rest</a>
+    <a href="10-supply-chain-security.html">Supply Chain Security</a>
+    <a href="11-compliance.html">Compliance</a>
+  </div>
+</nav>
+
+<main id="main-content">
+<h1>RBAC — Role-Based Access Control</h1>
+<div class="page-meta">
+  <span>Section 06 › 01</span>
+  <span>Last updated: 2025</span>
+  <span>~35 min read</span>
+</div>
+
+<div class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#rbac-model">RBAC Data Model</a></li>
+    <li><a href="#api-objects">API Objects: Role, ClusterRole, Binding</a></li>
+    <li><a href="#verbs">Verbs, Resources, Subresources</a></li>
+    <li><a href="#subjects">Subjects: User, Group, ServiceAccount</a></li>
+    <li><a href="#aggregation">ClusterRole Aggregation</a></li>
+    <li><a href="#default-roles">Default ClusterRoles</a></li>
+    <li><a href="#privilege-escalation">Privilege Escalation Prevention</a></li>
+    <li><a href="#impersonation">Impersonation</a></li>
+    <li><a href="#node-authorization">Node Authorization</a></li>
+    <li><a href="#auditing">RBAC Auditing Tools</a></li>
+    <li><a href="#patterns">Common RBAC Patterns</a></li>
+    <li><a href="#multitenancy">Multi-Tenant RBAC Design</a></li>
+    <li><a href="#metrics-alerts">Metrics &amp; Alerts</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<details class="coverage">
+  <summary>Coverage checklist</summary>
+  <div class="coverage-body">
+    <ul>
+      <li>RBAC data model: allow-only, no deny rules</li>
+      <li>Role vs ClusterRole scope</li>
+      <li>RoleBinding vs ClusterRoleBinding scope</li>
+      <li>Full verb list with semantics</li>
+      <li>Resources, subresources, resourceNames</li>
+      <li>Wildcard dangers</li>
+      <li>Subject types: User, Group, ServiceAccount</li>
+      <li>Group membership via OIDC claims</li>
+      <li>system:authenticated / system:unauthenticated groups</li>
+      <li>ClusterRole aggregation with labels</li>
+      <li>Default ClusterRoles: cluster-admin, admin, edit, view</li>
+      <li>system:masters group escalation danger</li>
+      <li>bind / escalate verbs — privilege escalation prevention</li>
+      <li>Impersonation verb + use cases</li>
+      <li>Node authorization + NodeRestriction</li>
+    </ul>
+    <ul>
+      <li>kubectl auth can-i for verification</li>
+      <li>rbac-lookup, rbac-police, rakkess tools</li>
+      <li>Audit log RBAC event queries</li>
+      <li>Patterns: read-only operator, namespace admin, CI/CD, monitoring</li>
+      <li>Multi-tenant namespace isolation RBAC design</li>
+      <li>Cross-namespace access limitations</li>
+      <li>Least privilege service account per workload</li>
+      <li>RBAC for CRDs and custom resources</li>
+      <li>5 metrics, 4 alerts, 5 runbooks</li>
+      <li>8 best practices</li>
+    </ul>
+  </div>
+</details>
+
+<!-- RBAC MODEL -->
+<h2 id="rbac-model">RBAC Data Model</h2>
+
+<p>Kubernetes RBAC is an <strong>allow-only</strong> system — there are no deny rules. A request is allowed if at least one Role/ClusterRole grants the requested verb on the requested resource. If no binding grants the permission, the request is denied (implicit deny).</p>
+
+<div class="diagram">
+<pre>
+Subject ──► RoleBinding / ClusterRoleBinding ──► Role / ClusterRole
+  │                       │                              │
+User                  namespaced             rules: apiGroups + resources + verbs
+Group                 (RoleBinding)
+ServiceAccount        or cluster-wide
+                      (ClusterRoleBinding)
+
+Example:
+  jane ──► RoleBinding (ns: production) ──► Role "pod-reader"
+              grants: get, list, watch on pods in production namespace only
+
+  ci-bot ──► ClusterRoleBinding ──► ClusterRole "deployment-manager"
+              grants: get, list, patch on deployments in ALL namespaces
+</pre>
+</div>
+
+<h3>Scope Rules</h3>
+<table>
+  <tr><th>Binding Type</th><th>Role Type</th><th>Effective Scope</th><th>When to Use</th></tr>
+  <tr><td><code>RoleBinding</code></td><td><code>Role</code></td><td>Single namespace (binding's namespace)</td><td>Namespace-scoped access for a team or workload</td></tr>
+  <tr><td><code>RoleBinding</code></td><td><code>ClusterRole</code></td><td>Single namespace (binding's namespace)</td><td>Reuse a common ClusterRole across many namespaces without granting cluster-wide access</td></tr>
+  <tr><td><code>ClusterRoleBinding</code></td><td><code>ClusterRole</code></td><td>All namespaces + cluster-scoped resources</td><td>Cluster-wide operators, platform admins</td></tr>
+  <tr><td><code>ClusterRoleBinding</code></td><td><code>Role</code></td><td>Not allowed — Role is namespace-scoped</td><td>N/A</td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>Key insight: ClusterRole + RoleBinding = namespace-scoped access.</strong>
+  You can bind a ClusterRole using a RoleBinding to grant its permissions only within a specific namespace. This is the standard pattern for defining common roles once (ClusterRole) and granting them per-namespace (RoleBinding). It is <em>not</em> cluster-wide access.
+</div>
+
+<!-- API OBJECTS -->
+<h2 id="api-objects">API Objects: Role, ClusterRole, Binding</h2>
+
+<h3>Role — namespace-scoped permissions</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: production          # Role lives in this namespace
+  name: pod-reader
+rules:
+- apiGroups: [""]                # "" = core API group (pods, services, configmaps, secrets...)
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]              # exec requires "create" on pods/exec subresource</code></pre>
+
+<h3>ClusterRole — cluster-scoped or reusable namespace permissions</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-reader
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]           # nodes are cluster-scoped — only ClusterRole can grant
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["nodes", "pods"]
+  verbs: ["get", "list"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]  # cluster-scoped
+  verbs: ["get", "list", "watch"]</code></pre>
+
+<h3>RoleBinding — grants Role/ClusterRole in one namespace</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-pods
+  namespace: production
+subjects:
+- kind: User
+  name: jane                       # must match the name in the X.509 cert CN or OIDC sub claim
+  apiGroup: rbac.authorization.k8s.io
+- kind: ServiceAccount
+  name: pod-monitor
+  namespace: monitoring            # SA can be in a different namespace than the binding
+roleRef:
+  kind: Role                       # or ClusterRole
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+# roleRef is immutable after creation — delete and recreate to change</code></pre>
+
+<h3>ClusterRoleBinding — grants ClusterRole cluster-wide</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-monitoring-read
+subjects:
+- kind: Group
+  name: monitoring-team            # OIDC group claim / static group in kubeconfig
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: node-reader
+  apiGroup: rbac.authorization.k8s.io</code></pre>
+
+<div class="callout callout-warn">
+  <strong>roleRef is immutable.</strong>
+  Once a binding is created, the <code>roleRef</code> field cannot be changed. To change which Role/ClusterRole a binding points to, delete the binding and create a new one. This is by design — preventing silent privilege changes through binding mutation.
+</div>
+
+<!-- VERBS -->
+<h2 id="verbs">Verbs, Resources, Subresources</h2>
+
+<h3>Complete Verb Reference</h3>
+<table>
+  <tr><th>Verb</th><th>HTTP Method</th><th>Description</th><th>Notes</th></tr>
+  <tr><td><code>get</code></td><td>GET /resource/name</td><td>Read a single object by name</td><td>Also required for kubectl describe</td></tr>
+  <tr><td><code>list</code></td><td>GET /resource</td><td>List all objects (optionally filtered)</td><td>Returns full object bodies — more permissive than get</td></tr>
+  <tr><td><code>watch</code></td><td>GET /resource?watch=true</td><td>Stream change events</td><td>Required for controllers/informers; implies list access effectively</td></tr>
+  <tr><td><code>create</code></td><td>POST /resource</td><td>Create a new object</td><td>Also required to use pods/exec, pods/portforward</td></tr>
+  <tr><td><code>update</code></td><td>PUT /resource/name</td><td>Replace full object (requires resourceVersion)</td><td>Full object replacement</td></tr>
+  <tr><td><code>patch</code></td><td>PATCH /resource/name</td><td>Partial update (JSON Patch, Merge Patch, SSA)</td><td>Commonly used by controllers</td></tr>
+  <tr><td><code>delete</code></td><td>DELETE /resource/name</td><td>Delete a single object</td><td></td></tr>
+  <tr><td><code>deletecollection</code></td><td>DELETE /resource</td><td>Delete all matching objects</td><td>Dangerous — grant separately from delete</td></tr>
+  <tr><td><code>impersonate</code></td><td>X-Impersonate headers</td><td>Act as another user/group/SA</td><td>Only for admins and test tooling; see impersonation section</td></tr>
+  <tr><td><code>bind</code></td><td>—</td><td>Create RoleBindings/ClusterRoleBindings</td><td>Privilege escalation guard — see below</td></tr>
+  <tr><td><code>escalate</code></td><td>—</td><td>Create/update Roles/ClusterRoles with permissions exceeding your own</td><td>Privilege escalation guard — see below</td></tr>
+  <tr><td><code>approve</code></td><td>—</td><td>Approve CertificateSigningRequests</td><td>Special verb on CSR objects</td></tr>
+  <tr><td><code>sign</code></td><td>—</td><td>Sign CertificateSigningRequests</td><td>Special verb on CSR objects</td></tr>
+  <tr><td><code>use</code></td><td>—</td><td>Use a PodSecurityPolicy (deprecated) or RuntimeClass</td><td>PSP removed in 1.25; RuntimeClass still uses this verb</td></tr>
+</table>
+
+<div class="callout callout-warn">
+  <strong>list grants more than get.</strong>
+  <code>list</code> returns all object bodies including fields like <code>data</code> in ConfigMaps and <code>data</code> in Secrets. A subject with <code>list</code> on secrets can read all secret values in the namespace even without <code>get</code> on individual secrets. Always consider <code>list</code> as equivalent to read access on all objects of that type.
+</div>
+
+<h3>Resources and Subresources</h3>
+<p>Subresources are accessed as <code>resource/subresource</code> and require separate RBAC rules:</p>
+<table>
+  <tr><th>Subresource</th><th>Required Verb</th><th>What It Allows</th></tr>
+  <tr><td><code>pods/exec</code></td><td><code>create</code></td><td>kubectl exec into a running container</td></tr>
+  <tr><td><code>pods/log</code></td><td><code>get</code></td><td>kubectl logs</td></tr>
+  <tr><td><code>pods/portforward</code></td><td><code>create</code></td><td>kubectl port-forward</td></tr>
+  <tr><td><code>pods/attach</code></td><td><code>create</code></td><td>kubectl attach (stdin to running process)</td></tr>
+  <tr><td><code>pods/eviction</code></td><td><code>create</code></td><td>Eviction API (used by kubectl drain, Cluster Autoscaler)</td></tr>
+  <tr><td><code>pods/status</code></td><td><code>get</code>, <code>update</code>, <code>patch</code></td><td>Read/write pod status subresource (used by kubelet)</td></tr>
+  <tr><td><code>deployments/scale</code></td><td><code>get</code>, <code>update</code>, <code>patch</code></td><td>Scale a Deployment via the scale subresource</td></tr>
+  <tr><td><code>nodes/proxy</code></td><td><code>get</code></td><td>Proxy requests through API server to kubelet HTTP endpoint</td></tr>
+  <tr><td><code>serviceaccounts/token</code></td><td><code>create</code></td><td>Request a bound token for a ServiceAccount</td></tr>
+  <tr><td><code>certificatesigningrequests/approval</code></td><td><code>update</code></td><td>Approve a CSR</td></tr>
+</table>
+
+<div class="callout callout-danger">
+  <strong>pods/exec is effectively root on the node for trusted workloads.</strong>
+  A subject with <code>create</code> on <code>pods/exec</code> can run arbitrary commands in any pod in the namespace. If any pod runs as root or has host mounts, this is a node escape vector. Restrict exec access tightly — never grant it to service accounts or CI systems that don't explicitly require it.
+</div>
+
+<h3>ResourceNames — restricting to specific objects</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Allow getting only a specific ConfigMap by name
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["app-config", "feature-flags"]  # only these named objects
+  verbs: ["get", "watch"]
+# NOTE: list and watch on a resource name does not work as expected — list ignores resourceNames
+# Use resourceNames only for get/update/patch/delete on specific objects</code></pre>
+
+<h3>Wildcards and Dangers</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># This grants full access to everything — equivalent to cluster-admin
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+
+# Avoid wildcard verbs — even in narrow resource scope
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["*"]    # includes delete, deletecollection — probably not intended</code></pre>
+
+<!-- SUBJECTS -->
+<h2 id="subjects">Subjects: User, Group, ServiceAccount</h2>
+
+<h3>Subject Types</h3>
+<table>
+  <tr><th>Kind</th><th>Identifier</th><th>Source</th><th>Notes</th></tr>
+  <tr><td><code>User</code></td><td>String name</td><td>X.509 cert CN; OIDC <code>sub</code> or <code>email</code> claim</td><td>Kubernetes has no User object — users exist only in external systems</td></tr>
+  <tr><td><code>Group</code></td><td>String name</td><td>X.509 cert O field; OIDC <code>groups</code> claim</td><td>Multiple groups per user; Kubernetes creates some system groups</td></tr>
+  <tr><td><code>ServiceAccount</code></td><td>name + namespace</td><td>Created as K8s object; token auto-mounted into pods</td><td>Must specify namespace in subject spec</td></tr>
+</table>
+
+<h3>System Groups</h3>
+<table>
+  <tr><th>Group</th><th>Who Belongs</th><th>Security Notes</th></tr>
+  <tr><td><code>system:authenticated</code></td><td>All authenticated requests</td><td>Default ClusterRoleBindings grant some read access — audit regularly</td></tr>
+  <tr><td><code>system:unauthenticated</code></td><td>Anonymous requests (if anonymous auth enabled)</td><td>Should have zero permissions in production</td></tr>
+  <tr><td><code>system:masters</code></td><td>X.509 certs with O=system:masters</td><td><span class="badge badge-red">Bypasses RBAC entirely</span> — equivalent to cluster-admin, cannot be restricted by RBAC. Only for break-glass admin certs.</td></tr>
+  <tr><td><code>system:nodes</code></td><td>Kubelets (X.509 CN=system:node:nodename)</td><td>Node authorization mode restricts permissions to per-node resources</td></tr>
+  <tr><td><code>system:serviceaccounts</code></td><td>All ServiceAccounts in all namespaces</td><td>Avoid binding roles to this group — it grants access to every SA</td></tr>
+  <tr><td><code>system:serviceaccounts:&lt;ns&gt;</code></td><td>All ServiceAccounts in namespace &lt;ns&gt;</td><td>Grants access to all current and future SAs in the namespace</td></tr>
+</table>
+
+<div class="callout callout-danger">
+  <strong>system:masters cannot be revoked via RBAC.</strong>
+  A certificate signed with <code>O=system:masters</code> bypasses the RBAC authorization layer entirely. It is checked before RBAC runs. These certificates should be used only for break-glass emergency access and kept offline. Revoking one requires rotating the CA or using a CRL.
+</div>
+
+<h3>OIDC Groups Integration</h3>
+<p>When using OIDC authentication, the API server extracts group membership from the JWT's <code>groups</code> claim (configured via <code>--oidc-groups-claim</code>). This enables binding ClusterRoles to OIDC groups:</p>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># OIDC token has: { "groups": ["platform-engineers", "k8s-admins"] }
+# API server flag: --oidc-groups-claim=groups --oidc-groups-prefix=oidc:
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: platform-engineers-admin
+subjects:
+- kind: Group
+  name: oidc:platform-engineers   # prefixed group name
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: admin                      # built-in admin ClusterRole
+  apiGroup: rbac.authorization.k8s.io</code></pre>
+
+<!-- AGGREGATION -->
+<h2 id="aggregation">ClusterRole Aggregation</h2>
+
+<p>ClusterRole aggregation lets you compose a ClusterRole from multiple other ClusterRoles automatically, using label selectors. The aggregated role is continuously updated — any ClusterRole with a matching label is automatically merged into it.</p>
+
+<div class="diagram">
+<pre>
+ClusterRole "monitoring-full"
+  aggregationRule:
+    clusterRoleSelectors:
+    - matchLabels:
+        rbac.monitoring.io/aggregate-to-monitoring: "true"
+
+  ← automatically includes rules from:
+
+ClusterRole "prometheus-scrape-pods"          label: rbac.monitoring.io/aggregate-to-monitoring=true
+  rules: get/list/watch pods, endpoints
+
+ClusterRole "grafana-read-dashboards"         label: rbac.monitoring.io/aggregate-to-monitoring=true
+  rules: get/list configmaps in monitoring ns
+
+(any new ClusterRole with the label is auto-merged in — no edit needed to monitoring-full)
+</pre>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: monitoring-aggregate
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      rbac.authorization.k8s.io/aggregate-to-monitoring: "true"
+rules: []  # populated automatically by controller; never set manually on aggregated roles
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: monitoring-pod-reader
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-monitoring: "true"  # triggers aggregation
+rules:
+- apiGroups: [""]
+  resources: ["pods", "endpoints", "services"]
+  verbs: ["get", "list", "watch"]</code></pre>
+
+<p>The built-in <code>admin</code>, <code>edit</code>, and <code>view</code> ClusterRoles use aggregation — any ClusterRole with <code>rbac.authorization.k8s.io/aggregate-to-admin/edit/view: "true"</code> is automatically merged. This is how CRD operators extend the built-in roles without modifying them.</p>
+
+<!-- DEFAULT ROLES -->
+<h2 id="default-roles">Default ClusterRoles</h2>
+
+<table>
+  <tr><th>ClusterRole</th><th>Access Level</th><th>Typical Binding</th><th>Warning</th></tr>
+  <tr><td><code>cluster-admin</code></td><td>Full access to everything in all namespaces</td><td>Break-glass only; never CI/CD or workloads</td><td><span class="badge badge-red">Use sparingly</span></td></tr>
+  <tr><td><code>admin</code></td><td>Full namespace access (no ResourceQuota/LimitRange write)</td><td>Namespace owners via RoleBinding per namespace</td><td></td></tr>
+  <tr><td><code>edit</code></td><td>Read/write most namespaced objects; no RBAC read</td><td>Developers via RoleBinding per namespace</td><td></td></tr>
+  <tr><td><code>view</code></td><td>Read-only on most namespaced objects (no Secrets)</td><td>Auditors, monitoring SAs</td><td></td></tr>
+  <tr><td><code>system:node</code></td><td>Kubelet permissions (node authorization handles this)</td><td>Auto-bound via node authorization</td><td></td></tr>
+  <tr><td><code>system:auth-delegator</code></td><td>Delegate authentication decisions</td><td>Extension API servers</td><td></td></tr>
+  <tr><td><code>system:heapster</code></td><td>Legacy metrics read; deprecated</td><td>Deprecated — use metrics-server RBAC</td><td></td></tr>
+</table>
+
+<div class="callout callout-warn">
+  <strong>The built-in view ClusterRole does NOT include secrets.</strong>
+  <code>view</code> intentionally excludes <code>secrets</code> and <code>serviceaccounts/token</code>. If you need read access to secrets, create a separate Role with explicit secret access. Do not extend the built-in view role for this — create a purpose-specific role.
+</div>
+
+<h3>Default ClusterRoleBindings to Audit</h3>
+<p>Kubernetes ships with several ClusterRoleBindings pre-installed. Review these in every cluster:</p>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># List all pre-installed ClusterRoleBindings
+kubectl get clusterrolebindings \
+  -o custom-columns='NAME:.metadata.name,ROLE:.roleRef.name,SUBJECTS:.subjects' \
+  | grep -v "^system:"
+
+# Find all ClusterRoleBindings granting cluster-admin
+kubectl get clusterrolebindings \
+  -o jsonpath='{range .items[?(@.roleRef.name=="cluster-admin")]}{.metadata.name}{"\t"}{.subjects}{"\n"}{end}'</code></pre>
+
+<!-- PRIVILEGE ESCALATION -->
+<h2 id="privilege-escalation">Privilege Escalation Prevention</h2>
+
+<p>RBAC has two special verbs that prevent privilege escalation through role creation and binding:</p>
+
+<h3>The <code>escalate</code> verb</h3>
+<p>Without explicit <code>escalate</code> permission, a user cannot create or update a Role/ClusterRole with permissions they don't already have. This prevents a user with limited access from writing a new ClusterRole granting themselves cluster-admin and then binding it to themselves.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Allow a role manager to create/update roles, including those with
+# permissions beyond their own — requires explicit escalate grant
+rules:
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "clusterroles"]
+  verbs: ["create", "update", "patch",
+          "escalate"]   # without this, cannot create roles with permissions
+                        # exceeding the role manager's own permissions</code></pre>
+
+<h3>The <code>bind</code> verb</h3>
+<p>Without explicit <code>bind</code> permission, a user cannot create a RoleBinding/ClusterRoleBinding that references a Role/ClusterRole whose permissions exceed their own. This prevents a user from binding cluster-admin to themselves or others.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Allow creating RoleBindings only for roles the user already possesses
+# (standard behavior — no escalate/bind needed for within-permission bindings)
+rules:
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["rolebindings"]
+  verbs: ["create", "update", "patch",
+          "bind"]   # required to bind roles beyond your own permissions
+                    # e.g., a "RBAC admin" role that can bind any role in a namespace</code></pre>
+
+<div class="callout callout-danger">
+  <strong>Granting escalate or bind is equivalent to granting those permissions themselves.</strong>
+  A user with <code>escalate</code> on ClusterRoles can write a ClusterRole with <code>secrets/*: [get,list]</code> even if they can't read secrets themselves. A user with <code>bind</code> on ClusterRoleBindings + access to cluster-admin ClusterRole can bind themselves to cluster-admin. Only platform admins should hold escalate or bind verbs.
+</div>
+
+<h3>Common Privilege Escalation Paths to Monitor</h3>
+<table>
+  <tr><th>Escalation Path</th><th>Required Permission</th><th>Mitigation</th></tr>
+  <tr><td>Create/update ClusterRole with excessive permissions</td><td><code>escalate</code> on clusterroles</td><td>Only platform-admins; audit log all clusterrole writes</td></tr>
+  <tr><td>Bind cluster-admin to self</td><td><code>bind</code> on clusterrolebindings</td><td>Alert on cluster-admin bindings created by non-system principals</td></tr>
+  <tr><td>Create SA + bind cluster-admin to it + exec into pod using SA</td><td>create SA + create pod + bind</td><td>Restrict bind; alert on new ClusterRoleBindings to cluster-admin</td></tr>
+  <tr><td>Modify existing ClusterRoleBinding subject list</td><td><code>patch</code> on clusterrolebindings</td><td>Audit log all binding mutations; treat binding writes as high-severity events</td></tr>
+  <tr><td>Impersonate a higher-privileged user</td><td><code>impersonate</code> on users/groups/serviceaccounts</td><td>No workload or user should hold impersonate; only specific test tooling</td></tr>
+  <tr><td>exec into privileged pod → escape to host</td><td><code>create</code> on pods/exec</td><td>Restrict exec; PSA restricted prevents privileged pods</td></tr>
+  <tr><td>Read secret containing kubeconfig or cloud credentials</td><td><code>get</code> on secrets</td><td>RBAC least-privilege on secrets; external secret store; encryption at rest</td></tr>
+</table>
+
+<!-- IMPERSONATION -->
+<h2 id="impersonation">Impersonation</h2>
+
+<p>Impersonation lets a user act as a different user, group, or service account by sending <code>Impersonate-User</code>, <code>Impersonate-Group</code>, or <code>Impersonate-Extra-*</code> headers. The API server substitutes the impersonated identity for authorization checks.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Grant impersonation for a specific user (e.g., for a CI/CD proxy)
+rules:
+- apiGroups: [""]
+  resources: ["users"]
+  verbs: ["impersonate"]
+  resourceNames: ["ci-bot@company.com"]  # restrict to specific identity
+
+# Grant impersonation for a group (e.g., for kube-oidc-proxy)
+rules:
+- apiGroups: [""]
+  resources: ["groups"]
+  verbs: ["impersonate"]</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># kubectl uses impersonation for --as flag
+kubectl get pods --as=jane --as-group=developers -n production
+
+# Test what a user can do (uses impersonation internally)
+kubectl auth can-i list pods --as=jane -n production
+kubectl auth can-i create deployments --as=system:serviceaccount:default:app-sa</code></pre>
+
+<p>Legitimate use cases for impersonation: kube-oidc-proxy (OIDC token → impersonation), debugging authorization issues, CI/CD systems acting on behalf of a specific identity, admission webhook testing.</p>
+
+<!-- NODE AUTHORIZATION -->
+<h2 id="node-authorization">Node Authorization</h2>
+
+<p>The Node authorization mode is a special-purpose authorizer that grants kubelets read/write access only to resources associated with pods <em>scheduled on that specific node</em>. Without it, any kubelet could read all secrets in the cluster.</p>
+
+<div class="diagram">
+<pre>
+Node Authorization Mode Logic:
+
+kubelet on node-1 requests GET /api/v1/secrets/db-password (ns: production)
+    ↓
+Node authorizer checks: is there a Pod scheduled on node-1 that references this secret?
+    → YES: ALLOW
+    → NO:  DENY (even though kubelet has system:nodes group)
+
+This prevents a compromised node from reading secrets for pods on other nodes.
+</pre>
+</div>
+
+<p>The <strong>NodeRestriction admission plugin</strong> complements Node authorization by preventing kubelets from modifying Node or Pod objects belonging to other nodes, and from setting labels with the <code>node-restriction.kubernetes.io/</code> prefix (which are reserved for admission-controlled trust).</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Verify Node authorization mode is enabled
+kubectl get pod kube-apiserver-controlplane -n kube-system \
+  -o jsonpath='{.spec.containers[0].command}' | tr ',' '\n' \
+  | grep authorization-mode
+# Should output: --authorization-mode=Node,RBAC</code></pre>
+
+<!-- AUDITING -->
+<h2 id="auditing">RBAC Auditing Tools</h2>
+
+<h3>kubectl auth can-i</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check your own permissions
+kubectl auth can-i list secrets -n production
+kubectl auth can-i create deployments --namespace default
+
+# Check another user's permissions (requires impersonate permission)
+kubectl auth can-i list pods --as=jane -n production
+kubectl auth can-i get secrets --as=system:serviceaccount:default:app-sa
+
+# List all allowed actions for a user in a namespace
+kubectl auth can-i --list -n production --as=jane
+
+# List all allowed actions for a service account
+kubectl auth can-i --list \
+  --as=system:serviceaccount:production:app-sa \
+  -n production</code></pre>
+
+<h3>rbac-lookup — find roles for a subject</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Install: https://github.com/FairwindsOps/rbac-lookup
+rbac-lookup jane                  # find all roles bound to user jane
+rbac-lookup app-sa -k sa          # find all roles bound to SA app-sa
+rbac-lookup -o wide               # show full details including namespace</code></pre>
+
+<h3>rakkess — access matrix</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Install: https://github.com/corneliusweig/rakkess
+# Show access matrix for all resources
+rakkess --sa app-sa -n production
+
+# Output example:
+# NAME                          GET  LIST  CREATE  UPDATE  DELETE
+# configmaps                    ✔    ✔     ✗       ✗       ✗
+# deployments.apps              ✔    ✔     ✔       ✔       ✗
+# secrets                       ✗    ✗     ✗       ✗       ✗</code></pre>
+
+<h3>rbac-police — policy analysis</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Install: https://github.com/PaloAltoNetworks/rbac-police
+# Scan for risky RBAC configurations
+rbac-police eval lib/prod.rego
+
+# Reports on:
+# - SAs that can exec into pods
+# - SAs that can read secrets
+# - Subjects bound to cluster-admin
+# - Wildcard verb/resource grants</code></pre>
+
+<h3>Audit Log Queries for RBAC Events</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Find all RBAC binding creations in audit log (jq + audit log JSON)
+cat audit.log | jq 'select(.objectRef.resource == "clusterrolebindings" and .verb == "create")'
+
+# Find secret reads by unexpected principals
+cat audit.log | jq 'select(
+  .objectRef.resource == "secrets" and
+  .verb == "get" and
+  .user.username != "system:serviceaccount:kube-system:*"
+)'
+
+# Find exec operations
+cat audit.log | jq 'select(.objectRef.subresource == "exec")'</code></pre>
+
+<!-- PATTERNS -->
+<h2 id="patterns">Common RBAC Patterns</h2>
+
+<h3>Pattern 1: Operator / Controller Service Account</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Minimal permissions for a Deployment-managing operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: my-operator
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["configmaps", "services", "serviceaccounts"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+- apiGroups: ["my.operator.io"]
+  resources: ["myresources", "myresources/status", "myresources/finalizers"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: my-operator
+subjects:
+- kind: ServiceAccount
+  name: my-operator
+  namespace: my-operator-system
+roleRef:
+  kind: ClusterRole
+  name: my-operator
+  apiGroup: rbac.authorization.k8s.io</code></pre>
+
+<h3>Pattern 2: CI/CD Pipeline Service Account</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># CI/CD: deploy-only access to specific namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: production
+  name: cicd-deployer
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets", "daemonsets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+# NOTE: no secrets access — secrets managed by Vault/ESO, not CI pipeline
+# NOTE: no delete — prevent accidental deletion; separate break-glass role for deletions</code></pre>
+
+<h3>Pattern 3: Read-Only Monitoring Service Account</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-scraper
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "nodes/proxy", "nodes/metrics", "services",
+              "endpoints", "pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions", "networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+  verbs: ["get"]</code></pre>
+
+<h3>Pattern 4: Namespace Admin (Team Lead)</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Use built-in 'admin' ClusterRole via RoleBinding for namespace scope
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: team-alpha-admins
+  namespace: team-alpha
+subjects:
+- kind: Group
+  name: oidc:team-alpha-leads   # OIDC group
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: admin                   # built-in — grants full namespace access, no RBAC management
+  apiGroup: rbac.authorization.k8s.io</code></pre>
+
+<h3>Pattern 5: RBAC for Custom Resources (CRDs)</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Grant access to custom resources + extend built-in view ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: myapp-crd-view
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"  # extends built-in view
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"  # extends built-in edit
+    rbac.authorization.k8s.io/aggregate-to-admin: "true" # extends built-in admin
+rules:
+- apiGroups: ["myapp.io"]
+  resources: ["myresources", "myresources/status"]
+  verbs: ["get", "list", "watch"]</code></pre>
+
+<!-- MULTI-TENANCY -->
+<h2 id="multitenancy">Multi-Tenant RBAC Design</h2>
+
+<p>For namespace-based multi-tenancy, each tenant namespace should have its own RBAC structure. Cross-namespace access is intentionally limited in Kubernetes.</p>
+
+<div class="diagram">
+<pre>
+Platform Team (ClusterRoleBinding → cluster-admin)
+    │
+    ├── Namespace: team-alpha
+    │       RoleBinding → admin  (team-alpha-leads group)
+    │       RoleBinding → edit   (team-alpha-devs group)
+    │       RoleBinding → view   (team-alpha-observers group)
+    │       RoleBinding → cicd-deployer (SA: ci-alpha)
+    │       NetworkPolicy: default-deny-all
+    │       ResourceQuota: team-alpha-quota
+    │       LimitRange: team-alpha-limits
+    │
+    ├── Namespace: team-beta
+    │       RoleBinding → admin  (team-beta-leads group)
+    │       ... (same pattern)
+    │
+    └── Namespace: monitoring
+            ClusterRoleBinding → prometheus-scraper (SA: prometheus)
+            [cluster-wide read for metrics scraping]
+</pre>
+</div>
+
+<h3>Cross-Namespace Access Limitations</h3>
+<p>RBAC does not have a "cross-namespace" concept. A ServiceAccount in namespace A cannot be granted access to namespace B's resources via a RoleBinding in namespace A. Options for cross-namespace access:</p>
+<ul>
+  <li>Create a RoleBinding in namespace B referencing the SA from namespace A (the SA subject can be in a different namespace)</li>
+  <li>Use ClusterRoleBinding for cluster-wide access (loses namespace isolation)</li>
+  <li>Use Kubernetes Network Policy + API Gateway pattern to proxy requests through a service in the target namespace</li>
+  <li>For operator patterns: use ClusterRoleBinding with namespace selector logic in the operator itself</li>
+</ul>
+
+<!-- METRICS AND ALERTS -->
+<h2 id="metrics-alerts">Metrics &amp; Alerts</h2>
+
+<h3>Key Metrics</h3>
+<table>
+  <tr><th>Metric</th><th>Source</th><th>What It Tells You</th></tr>
+  <tr><td><code>apiserver_authorization_decisions_total{decision="allow|deny|no-opinion"}</code></td><td>kube-apiserver</td><td>Authorization decision counts by decision type and stage</td></tr>
+  <tr><td><code>rest_client_requests_total{verb="POST|GET",resource="clusterrolebindings"}</code></td><td>client-go metrics</td><td>Rate of binding creation/mutation from controllers</td></tr>
+  <tr><td><code>apiserver_audit_event_total</code></td><td>audit log</td><td>Total audit events — spike may indicate scanning or probing</td></tr>
+  <tr><td><code>apiserver_authentication_attempts_total{result="error|success"}</code></td><td>kube-apiserver</td><td>Failed auth attempts — brute force or misconfigured certs</td></tr>
+  <tr><td><code>apiserver_request_total{verb="WATCH",resource="secrets"}</code></td><td>kube-apiserver</td><td>Unexpected watch on secrets — possible secret enumeration</td></tr>
+</table>
+
+<h3>Alerts</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">groups:
+- name: rbac.rules
+  rules:
+
+  - alert: ClusterAdminBindingCreated
+    expr: |
+      increase(apiserver_audit_event_total[5m]) > 0
+      # (use audit log stream filter — Prometheus alone can't filter audit events)
+    # Implementation: stream audit log to alerting system; match:
+    # verb=create, objectRef.resource=clusterrolebindings,
+    # requestObject.roleRef.name=cluster-admin
+    annotations:
+      summary: "New cluster-admin binding created"
+      description: "A ClusterRoleBinding referencing cluster-admin was created by {{ $labels.user }}"
+    labels:
+      severity: critical
+
+  - alert: ExcessiveAuthorizationDenials
+    expr: |
+      rate(apiserver_authorization_decisions_total{decision="deny"}[5m]) > 10
+    for: 2m
+    annotations:
+      summary: "High RBAC denial rate — possible misconfiguration or probing"
+    labels:
+      severity: warning
+
+  - alert: WildcardRoleCreated
+    # Implement via OPA/Gatekeeper or Kyverno policy + audit
+    annotations:
+      summary: "Role with wildcard verb or resource created"
+    labels:
+      severity: high
+
+  - alert: SecretsListFromUnexpectedSA
+    # Implement via audit log: verb=list, resource=secrets,
+    # user.username not in allowlist
+    annotations:
+      summary: "Secrets listed by unexpected service account"
+    labels:
+      severity: high</code></pre>
+
+<h3>Runbooks</h3>
+<ol>
+  <li><strong>Unexpected cluster-admin binding detected:</strong> Immediately identify who created the binding (<code>kubectl describe clusterrolebinding &lt;name&gt;</code>, cross-check audit log). Determine if the binding is legitimate (platform admin performing break-glass) or unauthorized. If unauthorized: revoke binding, rotate credentials for the creating principal, audit all actions performed during the window, consider cluster compromise response.</li>
+
+  <li><strong>Service account can exec into pods:</strong> Run <code>kubectl auth can-i create pods/exec --as=system:serviceaccount:&lt;ns&gt;:&lt;name&gt;</code>. Find the granting Role/ClusterRole via <code>rbac-lookup</code>. Assess whether exec access is genuinely needed. If not: remove the pods/exec rule. Consider adding an OPA/Gatekeeper policy to prevent future grants.</li>
+
+  <li><strong>High RBAC denial rate:</strong> Identify denying requests via audit log (<code>grep "Forbidden" apiserver.log</code> or SIEM query). Determine if it's a misconfigured application (missing RBAC rule) or probing. For misconfigured apps: create minimal required Role. For probing: investigate source IP/SA, consider blocking.</li>
+
+  <li><strong>Secrets enumeration detected (unexpected list on secrets):</strong> Identify the SA/user from audit log. Check if access was intentional (new deployment) or anomalous. Revoke access if unauthorized. Check what secrets were accessed. Rotate any potentially exposed secret values.</li>
+
+  <li><strong>Rotate compromised service account:</strong> Delete the SA token secret (for legacy tokens) or wait for bound token expiry (default 1h). Delete and recreate the ServiceAccount if needed. Update all RoleBindings referencing the SA. Audit all API calls made by the SA in the compromise window via audit log.</li>
+</ol>
+
+<!-- BEST PRACTICES -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>One ServiceAccount per workload, never use default.</strong> The <code>default</code> ServiceAccount in each namespace is auto-mounted into all pods that don't specify one. Set <code>automountServiceAccountToken: false</code> on the default ServiceAccount in every namespace, and create dedicated SAs for workloads that need API server access. This ensures each workload has only the permissions it needs, and compromising one pod doesn't compromise the namespace's default SA token.</li>
+
+  <li><strong>Prefer RoleBinding+ClusterRole over ClusterRoleBinding.</strong> For namespace-scoped access, bind a ClusterRole using a RoleBinding rather than a ClusterRoleBinding. This reuses the ClusterRole definition without granting cluster-wide access. Only use ClusterRoleBinding for genuinely cluster-wide operators or platform infrastructure.</li>
+
+  <li><strong>Never grant wildcard verbs (<code>*</code>) in production.</strong> Wildcards include verbs like <code>deletecollection</code> that can destroy all objects of a type. Always enumerate specific verbs. Enforce this via OPA/Gatekeeper or Kyverno policy that rejects Role/ClusterRole objects with wildcard verbs.</li>
+
+  <li><strong>Separate read from write from delete in role design.</strong> Define separate roles for read-only, read-write, and read-write-delete access. Bind CI/CD pipelines to the narrowest role needed. Rarely does a CI system need delete access — create an explicit break-glass role for deletion operations.</li>
+
+  <li><strong>Audit all ClusterRoleBindings to cluster-admin weekly.</strong> Run <code>kubectl get clusterrolebindings -o json | jq '[.items[] | select(.roleRef.name=="cluster-admin")]'</code> and review the subject list. Any non-system, non-platform-admin principal binding to cluster-admin is a finding. Automate this check in your security posture management pipeline (Starboard, Trivy Operator, Kubescape).</li>
+
+  <li><strong>Use ClusterRole aggregation for extensible role design.</strong> When deploying CRDs, always create a ClusterRole with <code>aggregate-to-view/edit/admin</code> labels so operators of your CRD can be managed with the standard built-in roles. This prevents the need to grant wildcards or cluster-admin to manage custom resources.</li>
+
+  <li><strong>Restrict <code>pods/exec</code>, <code>pods/portforward</code>, and <code>nodes/proxy</code> tightly.</strong> These subresources bypass normal application-level access controls. Exec into a container is as powerful as SSH. Treat grants of these verbs as high-privilege and require justification. Monitor exec operations via audit log.</li>
+
+  <li><strong>Implement OPA/Gatekeeper or Kyverno policies as guardrails for RBAC.</strong> Pure RBAC cannot prevent an admin from creating wildcard roles or cluster-admin bindings for non-admins. Add admission policies that: block wildcard verbs on non-platform namespaces, block new cluster-admin ClusterRoleBindings without a specific label, require all Roles to have an owner annotation. This creates a policy-as-code safety net around RBAC.</li>
+</ol>
+
+<button id="back-to-top" title="Back to top" onclick="document.getElementById('main-content').scrollTo({top:0,behavior:'smooth'})">↑</button>
+</main>
+
+<script>
+(function(){const t=localStorage.getItem('k8s-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){tocLinks.forEach(l=>l.classList.remove('active'));const a=document.querySelector('.toc a[href="#'+e.target.id+'"]');if(a)a.classList.add('active');}});
+},{root:main,rootMargin:'-20% 0px -70% 0px'});
+headings.forEach(h=>obs.observe(h));
+function filterNav(val){const v=val.toLowerCase();document.querySelectorAll('.nav-section a').forEach(a=>{a.style.display=a.textContent.toLowerCase().includes(v)?'':'none';});}
+function copyCode(btn){const code=btn.parentElement.querySelector('code');navigator.clipboard.writeText(code.innerText).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});}
+</script>
+</body>
+</html>

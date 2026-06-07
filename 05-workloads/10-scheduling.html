@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheduling | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
+.main-content{margin-left:var(--sidebar-w);flex:1;padding:0;overflow-y:auto;height:100vh;}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);position:fixed;top:0;right:0;height:100vh;overflow-y:auto;padding:24px 16px;}
+.content-area{max-width:900px;margin:0 auto;padding:40px 48px 80px;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-weight:600;font-size:16px;flex:1;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);cursor:pointer;padding:6px 12px;border-radius:6px;font-size:13px;}
+.back-to-top{position:fixed;bottom:32px;right:calc(var(--toc-w) + 16px);background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;z-index:50;}
+.back-to-top.visible{opacity:1;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;color:var(--text2);}
+.sidebar-search{margin:12px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:calc(100% - 24px);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.nav-section a{display:block;padding:6px 16px 6px 24px;font-size:13px;color:var(--text2);transition:background .15s,color .15s;}
+.nav-section a:hover,.nav-section a.active{background:var(--bg3);color:var(--accent);text-decoration:none;}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;}
+.toc-panel a{display:block;font-size:12px;color:var(--text2);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-panel a:hover,.toc-panel a.active{color:var(--accent);border-left-color:var(--accent);text-decoration:none;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.2;}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;padding-top:8px;}
+h3{font-size:17px;font-weight:600;margin:32px 0 12px;}
+h4{font-size:15px;font-weight:600;margin:24px 0 8px;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{padding-left:24px;margin-bottom:16px;color:var(--text2);}
+li{margin-bottom:4px;}
+.subtitle{font-size:18px;color:var(--text2);margin-bottom:32px;}
+.meta{display:flex;gap:16px;margin-bottom:40px;flex-wrap:wrap;}
+.meta-tag{background:var(--bg3);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--text2);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;margin-bottom:24px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;line-height:1.7;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;}
+.copy-btn:hover{background:var(--bg4);}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--text);border:1px solid var(--border);}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.callout{border-radius:8px;padding:16px 20px;margin-bottom:24px;border-left:4px solid;}
+.callout-warn{background:#d2992218;border-color:var(--yellow);}
+.callout-warn strong{color:var(--yellow);}
+.callout-danger{background:#f8514918;border-color:var(--red);}
+.callout-danger strong{color:var(--red);}
+.callout-info{background:#58a6ff18;border-color:var(--accent);}
+.callout-info strong{color:var(--accent);}
+.callout-success{background:#3fb95018;border-color:var(--green);}
+.callout-success strong{color:var(--green);}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.section-divider{border:none;border-top:1px solid var(--border);margin:48px 0;}
+.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;margin-bottom:24px;color:var(--text2);}
+@media(max-width:1200px){.toc-panel{display:none;}.main-content{margin-left:var(--sidebar-w);}.back-to-top{right:16px;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.content-area{padding:24px 20px 60px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">Kubernetes Docs</div>
+  <input class="sidebar-search" id="nav-search" placeholder="Filter navigation..." type="text">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Kubernetes Overview</a>
+    <a href="../01-getting-started/01-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/02-control-plane-components.html">Control Plane Components</a>
+    <a href="../01-getting-started/03-node-components.html">Node Components</a>
+    <a href="../01-getting-started/04-api-server-deep-dive.html">API Server Deep Dive</a>
+    <a href="../01-getting-started/05-etcd.html">etcd</a>
+    <a href="../01-getting-started/06-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../02-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../02-networking/01-services.html">Services</a>
+    <a href="../02-networking/02-ingress.html">Ingress</a>
+    <a href="../02-networking/03-network-policies.html">Network Policies</a>
+    <a href="../02-networking/04-dns.html">DNS</a>
+    <a href="../02-networking/05-cni-plugins.html">CNI Plugins</a>
+    <a href="../02-networking/06-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../03-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../03-configuration/01-secrets.html">Secrets</a>
+    <a href="../03-configuration/02-resource-quotas.html">Resource Quotas</a>
+    <a href="../03-configuration/03-limit-ranges.html">Limit Ranges</a>
+    <a href="../03-configuration/04-namespaces.html">Namespaces</a>
+    <a href="../03-configuration/05-labels-annotations.html">Labels &amp; Annotations</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Storage Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">Persistent Volumes</a>
+    <a href="../04-storage/02-storage-classes.html">Storage Classes</a>
+    <a href="../04-storage/03-volume-types.html">Volume Types</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+    <a href="../04-storage/05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="../04-storage/06-stateful-sets-storage.html">StatefulSet Storage</a>
+    <a href="../04-storage/07-storage-capacity.html">Storage Capacity</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html" class="active">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="main-content" id="main-content">
+<div class="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span class="topbar-title">Scheduling</span>
+  <button class="theme-btn" id="theme-btn">Light Mode</button>
+</div>
+
+<div class="content-area">
+
+<details class="coverage">
+  <summary>📋 Page Coverage Checklist</summary>
+  <div class="coverage-body">
+    <li>Scheduler framework: all extension points with responsibilities</li>
+    <li>nodeSelector and nodeName (bypasses scheduler)</li>
+    <li>Node affinity: required vs preferred, all operators</li>
+    <li>Pod affinity and anti-affinity: topologyKey, weight, co-location patterns</li>
+    <li>Taints and tolerations: NoSchedule/PreferNoSchedule/NoExecute, operator:Exists, tolerationSeconds</li>
+    <li>Topology spread constraints: maxSkew, whenUnsatisfiable, matchLabelKeys (1.27)</li>
+    <li>Priority and preemption: PriorityClass, preemptionPolicy:Never</li>
+    <li>Descheduler: eviction-based rebalancing, LowNodeUtilization, RemoveDuplicates</li>
+    <li>Gang scheduling: Volcano PodGroup, Yunikorn Queue</li>
+    <li>Multiple schedulers and scheduler profiles</li>
+    <li>Scheduling queue: activeQ, backoffQ, unschedulableQ</li>
+    <li>5 metrics + 4 alerting rules + 5 runbooks + 8 best practices</li>
+  </div>
+</details>
+
+<h1>Scheduling</h1>
+<p class="subtitle">How pods are placed on nodes: the scheduler framework, affinity, taints, topology spread, and priority</p>
+<div class="meta">
+  <span class="meta-tag">kube-scheduler</span>
+  <span class="meta-tag">Kubernetes 1.19+</span>
+  <span class="meta-tag">Platform Engineer</span>
+</div>
+
+<p>The Kubernetes scheduler watches for unscheduled pods and selects the best node for each one by running the pod through a pipeline of filter and scoring plugins. Understanding this pipeline — and the pod-level constraints that influence it — is essential for building clusters that achieve high utilization, fault tolerance, zone awareness, and hardware affinity simultaneously.</p>
+
+<!-- ============================================================ -->
+<h2 id="scheduler-framework">Scheduler Framework</h2>
+
+<p>The scheduler framework (GA 1.19) is a plugin-based architecture where all scheduling logic is implemented as plugins hooked into named extension points. The default scheduler ships with plugins for resource fitting, affinity, topology spread, and more. Custom schedulers extend or replace these plugins.</p>
+
+<div class="diagram">
+Scheduling pipeline for a single pod:
+
+  Unscheduled pod enters activeQ (priority queue)
+       │
+       ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │  FILTER PHASE — eliminate nodes that cannot host pod    │
+  │                                                         │
+  │  PreFilter   → pre-compute data for filter plugins      │
+  │  Filter      → NodeResourcesFit, NodeAffinity,          │
+  │                TaintToleration, NodePorts, PodTopology   │
+  │                Spread, VolumeBinding, etc.              │
+  │                                                         │
+  │  Feasible nodes = nodes that passed ALL filters         │
+  │  If 0 feasible nodes → pod goes to unschedulableQ       │
+  └─────────────────────────────────────────────────────────┘
+       │
+       ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │  SCORE PHASE — rank feasible nodes (0–100 per plugin)   │
+  │                                                         │
+  │  PreScore    → pre-compute data for score plugins       │
+  │  Score       → NodeResourcesBalancedAllocation,         │
+  │                ImageLocality, InterPodAffinity,         │
+  │                NodeAffinity (preferred), etc.           │
+  │  NormalizeScore → normalize scores to 0–100            │
+  │                                                         │
+  │  Final score = weighted sum of all plugin scores        │
+  └─────────────────────────────────────────────────────────┘
+       │
+       ▼
+  Selected node (highest score)
+       │
+       ▼
+  Reserve → Permit → PreBind → Bind → PostBind
+  (reserve resources, wait for permits, write pod.spec.nodeName)
+</div>
+
+<table>
+  <thead><tr><th>Extension point</th><th>Phase</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>QueueSort</code></td><td>Queue</td><td>Order pods in the scheduling queue (default: PrioritySort)</td></tr>
+    <tr><td><code>PreFilter</code></td><td>Filter</td><td>Pre-compute or validate data needed by Filter plugins</td></tr>
+    <tr><td><code>Filter</code></td><td>Filter</td><td>Eliminate nodes that cannot satisfy pod constraints</td></tr>
+    <tr><td><code>PostFilter</code></td><td>Filter</td><td>Run after Filter (e.g., preemption — find pods to evict)</td></tr>
+    <tr><td><code>PreScore</code></td><td>Score</td><td>Pre-compute data for Score plugins</td></tr>
+    <tr><td><code>Score</code></td><td>Score</td><td>Rank feasible nodes 0–100 per plugin</td></tr>
+    <tr><td><code>NormalizeScore</code></td><td>Score</td><td>Normalize per-plugin scores before weighting</td></tr>
+    <tr><td><code>Reserve</code></td><td>Bind</td><td>Reserve resources (VolumeBinding reserves PVCs here)</td></tr>
+    <tr><td><code>Permit</code></td><td>Bind</td><td>Allow/deny/wait before binding (used by gang schedulers)</td></tr>
+    <tr><td><code>PreBind</code></td><td>Bind</td><td>Pre-bind work (e.g., provision volumes)</td></tr>
+    <tr><td><code>Bind</code></td><td>Bind</td><td>Write <code>pod.spec.nodeName</code> to API server</td></tr>
+    <tr><td><code>PostBind</code></td><td>Bind</td><td>Informational — cleanup, metrics after bind</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="scheduling-queue">Scheduling Queue</h2>
+
+<p>The scheduler maintains three queues for pods:</p>
+
+<div class="diagram">
+  activeQ        → pods ready to be scheduled (priority-ordered)
+  backoffQ       → pods that failed scheduling; waiting with exponential backoff
+                   (10s → 20s → 40s ... up to 10 minutes)
+  unschedulableQ → pods that cannot be scheduled with current cluster state
+                   (re-checked when cluster state changes: new node, pod deleted, etc.)
+
+  Pod enters activeQ on creation
+  Scheduling fails → moved to backoffQ or unschedulableQ
+  Cluster event (new node added, pod deleted) → unschedulableQ pods
+    are re-evaluated and may move back to activeQ
+</div>
+
+<pre><code class="language-bash"># See why a pod is unschedulable
+kubectl describe pod &lt;pod&gt; -n &lt;namespace&gt; | grep -A20 Events
+# Look for: "0/10 nodes are available: 3 Insufficient cpu, 7 node(s) had taint..."
+
+# Check scheduler logs
+kubectl logs -n kube-system -l component=kube-scheduler --tail=100 | grep &lt;pod-name&gt;</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="node-selector">nodeSelector and nodeName</h2>
+
+<h3 id="nodeselector">nodeSelector</h3>
+
+<p>The simplest node constraint: a map of key-value labels that the node must have. All entries must match (AND logic).</p>
+
+<pre><code class="language-yaml">spec:
+  nodeSelector:
+    kubernetes.io/os: linux
+    node.kubernetes.io/instance-type: m5.2xlarge
+    topology.kubernetes.io/zone: us-east-1a</code></pre>
+
+<h3 id="nodename">nodeName (bypasses scheduler)</h3>
+
+<p>Setting <code>spec.nodeName</code> directly assigns the pod to a specific node, bypassing the scheduler entirely — no filter or score plugins run. The pod is bound to the named node regardless of resource availability.</p>
+
+<pre><code class="language-yaml">spec:
+  nodeName: worker-node-3    # Bypasses scheduler; skips all filters</code></pre>
+
+<div class="callout callout-danger">
+  <strong>nodeName bypasses all scheduling checks</strong><br>
+  A pod with <code>spec.nodeName</code> set will be scheduled to that node even if the node lacks sufficient resources, has incompatible taints, or is cordoned. The kubelet will attempt to run the pod and may fail to start it (Pending/OutOfmemory). Only use <code>nodeName</code> for static system pods or testing — never in production workloads.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="node-affinity">Node Affinity</h2>
+
+<p>Node affinity is a more expressive replacement for <code>nodeSelector</code>, supporting operators, weight-based preferences, and separation of scheduling-time vs runtime requirements.</p>
+
+<pre><code class="language-yaml">spec:
+  affinity:
+    nodeAffinity:
+      # HARD requirement — pod will not schedule if not satisfied
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values: [amd64, arm64]
+              - key: node.kubernetes.io/instance-type
+                operator: NotIn
+                values: [t3.micro, t3.small]   # Exclude small instances
+
+      # SOFT preference — scheduler prefers but doesn't require
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 80          # Higher weight = stronger preference (1–100)
+          preference:
+            matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [us-east-1a]     # Prefer zone a
+
+        - weight: 20
+          preference:
+            matchExpressions:
+              - key: node-type
+                operator: In
+                values: [compute-optimized]</code></pre>
+
+<table>
+  <thead><tr><th>Operator</th><th>Meaning</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><code>In</code></td><td>Label value is in the set</td><td><code>zone In [a, b]</code></td></tr>
+    <tr><td><code>NotIn</code></td><td>Label value is NOT in the set</td><td><code>type NotIn [spot]</code></td></tr>
+    <tr><td><code>Exists</code></td><td>Label key exists (any value)</td><td><code>gpu Exists</code></td></tr>
+    <tr><td><code>DoesNotExist</code></td><td>Label key does not exist</td><td><code>spot DoesNotExist</code></td></tr>
+    <tr><td><code>Gt</code></td><td>Label value (integer) greater than</td><td><code>generation Gt [2]</code></td></tr>
+    <tr><td><code>Lt</code></td><td>Label value (integer) less than</td><td><code>generation Lt [5]</code></td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-info">
+  <strong>IgnoredDuringExecution</strong><br>
+  Both required and preferred node affinity are "IgnoredDuringExecution" — if a node's labels change after a pod is scheduled, the pod continues running. A future <code>RequiredDuringSchedulingRequiredDuringExecution</code> type would evict pods whose nodes no longer match, but this has not been implemented.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pod-affinity">Pod Affinity and Anti-Affinity</h2>
+
+<p>Pod affinity/anti-affinity places pods relative to <em>other pods</em>, using topology domains (zone, node, rack). This enables co-location (cache next to app) and spreading (replicas on different nodes).</p>
+
+<pre><code class="language-yaml">spec:
+  affinity:
+    # Co-locate with pods that have app=redis (same node)
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: redis
+          topologyKey: kubernetes.io/hostname   # "same node"
+          namespaces: [production]              # Optional: limit to namespace
+
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                tier: cache
+            topologyKey: topology.kubernetes.io/zone  # Prefer same zone as cache
+
+    # Anti-affinity: spread replicas across nodes
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: api-server        # Don't place on same node as another api-server pod
+          topologyKey: kubernetes.io/hostname
+
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: api-server
+            topologyKey: topology.kubernetes.io/zone  # Prefer different zones</code></pre>
+
+<div class="callout callout-warn">
+  <strong>Required pod anti-affinity scales as O(n²) at large replica counts</strong><br>
+  With <code>requiredDuringScheduling</code> pod anti-affinity and <code>topologyKey: kubernetes.io/hostname</code>, each new pod must check all existing pods. At hundreds of replicas, scheduler throughput drops significantly. For large-scale spreading, prefer <code>topologySpreadConstraints</code> (below) — it is specifically optimized for this case.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="taints-tolerations">Taints and Tolerations</h2>
+
+<p>Taints mark nodes as unsuitable for pods that don't explicitly tolerate the taint. They are the node-side counterpart to node affinity.</p>
+
+<pre><code class="language-bash"># Apply a taint to a node
+kubectl taint nodes gpu-node-1 nvidia.com/gpu=present:NoSchedule
+kubectl taint nodes spot-node-2 spot=true:PreferNoSchedule
+kubectl taint nodes maintenance-node node.kubernetes.io/unschedulable:NoExecute
+
+# Remove a taint
+kubectl taint nodes gpu-node-1 nvidia.com/gpu=present:NoSchedule-</code></pre>
+
+<table>
+  <thead><tr><th>Effect</th><th>Scheduling behavior</th><th>Running pods behavior</th></tr></thead>
+  <tbody>
+    <tr><td><code>NoSchedule</code></td><td>Pod will NOT be scheduled on this node unless it tolerates the taint</td><td>Existing pods on the node are NOT evicted</td></tr>
+    <tr><td><code>PreferNoSchedule</code></td><td>Scheduler tries to avoid this node; will use it if no other option</td><td>Existing pods unaffected</td></tr>
+    <tr><td><code>NoExecute</code></td><td>Pod will NOT be scheduled AND existing pods without toleration are evicted</td><td>Pods without toleration are evicted (with tolerationSeconds grace)</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-yaml">spec:
+  tolerations:
+    # Exact match toleration
+    - key: nvidia.com/gpu
+      operator: Equal
+      value: present
+      effect: NoSchedule
+
+    # Tolerate any value for this key
+    - key: spot
+      operator: Exists
+      effect: PreferNoSchedule
+
+    # Tolerate NoExecute with a grace period (stay up to 300s after taint added)
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300   # Pod evicted 300s after node becomes NotReady
+
+    # Catch-all: tolerate ALL taints on the node (use sparingly)
+    - operator: Exists</code></pre>
+
+<h3 id="builtin-taints">Built-in Node Taints</h3>
+
+<table>
+  <thead><tr><th>Taint key</th><th>Added when</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>node.kubernetes.io/not-ready</code></td><td>Node condition NotReady</td><td>NoExecute</td></tr>
+    <tr><td><code>node.kubernetes.io/unreachable</code></td><td>Node unreachable from controller</td><td>NoExecute</td></tr>
+    <tr><td><code>node.kubernetes.io/memory-pressure</code></td><td>MemoryPressure condition</td><td>NoSchedule</td></tr>
+    <tr><td><code>node.kubernetes.io/disk-pressure</code></td><td>DiskPressure condition</td><td>NoSchedule</td></tr>
+    <tr><td><code>node.kubernetes.io/pid-pressure</code></td><td>PIDPressure condition</td><td>NoSchedule</td></tr>
+    <tr><td><code>node.kubernetes.io/unschedulable</code></td><td>Node cordoned (<code>kubectl cordon</code>)</td><td>NoSchedule</td></tr>
+    <tr><td><code>node.kubernetes.io/network-unavailable</code></td><td>Network not configured by CNI</td><td>NoSchedule</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-info">
+  <strong>Default tolerations auto-injected by node lifecycle controller</strong><br>
+  Pods are automatically given <code>tolerationSeconds: 300</code> tolerations for <code>not-ready</code> and <code>unreachable</code> taints. This means pods survive 5 minutes of node unresponsiveness before being evicted and rescheduled elsewhere. Increase this for stateful workloads that need more time (e.g., databases renegotiating connections); decrease for stateless services that benefit from faster failover.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="topology-spread">Topology Spread Constraints</h2>
+
+<p>Topology spread constraints (GA 1.19) spread pods evenly across topology domains — more efficient than pod anti-affinity and designed for large replica counts.</p>
+
+<pre><code class="language-yaml">spec:
+  topologySpreadConstraints:
+    # Spread across zones (hard constraint)
+    - maxSkew: 1                        # Max difference between most and least loaded zone
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: DoNotSchedule  # Hard: block if skew would exceed maxSkew
+      labelSelector:
+        matchLabels:
+          app: api-server
+      minDomains: 3                     # Require at least 3 zones to exist (1.24+)
+      nodeAffinityPolicy: Honor         # Consider node affinity in domain calculation (1.26+)
+      nodeTaintsPolicy: Honor           # Consider node taints (1.26+)
+
+    # Spread across nodes within each zone (soft constraint)
+    - maxSkew: 2
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway # Soft: schedule even if skew would exceed maxSkew
+      labelSelector:
+        matchLabels:
+          app: api-server
+      matchLabelKeys:                   # Also spread across rollout versions (1.27+)
+        - pod-template-hash             # Each RS gets its own spread domain</code></pre>
+
+<table>
+  <thead><tr><th>Field</th><th>Default</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>maxSkew</code></td><td>1</td><td>Maximum allowed difference between the most- and least-loaded topology domain</td></tr>
+    <tr><td><code>topologyKey</code></td><td>—</td><td>Node label key that defines the topology domain (zone, hostname, rack, etc.)</td></tr>
+    <tr><td><code>whenUnsatisfiable</code></td><td>DoNotSchedule</td><td><code>DoNotSchedule</code> (hard) or <code>ScheduleAnyway</code> (soft — schedule but penalize)</td></tr>
+    <tr><td><code>labelSelector</code></td><td>—</td><td>Which pods to count when computing domain loads</td></tr>
+    <tr><td><code>minDomains</code></td><td>nil</td><td>Minimum number of topology domains that must exist; if fewer, constraint is unsatisfiable</td></tr>
+    <tr><td><code>matchLabelKeys</code></td><td>nil</td><td>Additional label keys (e.g., <code>pod-template-hash</code>) to scope spread per rollout revision</td></tr>
+  </tbody>
+</table>
+
+<div class="diagram">
+Topology spread example: maxSkew=1, 3 zones, 6 replicas
+
+  Initial: zone-a=2, zone-b=2, zone-c=2  → skew=0 ✓
+  Add pod:  zone-a=3, zone-b=2, zone-c=2  → skew=1 ✓
+  Add pod:  zone-a=3, zone-b=3, zone-c=2  → skew=1 ✓
+  Add pod:  zone-a=4, zone-b=3, zone-c=2  → skew=2 ✗ (blocked with DoNotSchedule)
+            → scheduler places in zone-c instead: a=3, b=3, c=3 → skew=0 ✓
+
+  With ScheduleAnyway: pod is placed in the least-loaded zone as a best effort
+  but is NOT blocked if all zones would exceed maxSkew
+</div>
+
+<h3 id="cluster-default-spread">Cluster-Level Default Spread</h3>
+
+<pre><code class="language-yaml"># KubeSchedulerConfiguration — apply default topology spread to all pods
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+  - schedulerName: default-scheduler
+    pluginConfig:
+      - name: PodTopologySpread
+        args:
+          defaultConstraints:
+            - maxSkew: 3
+              topologyKey: topology.kubernetes.io/zone
+              whenUnsatisfiable: ScheduleAnyway
+            - maxSkew: 5
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+          defaultingType: List   # Only apply to pods without explicit topologySpreadConstraints</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="priority-preemption">Priority and Preemption</h2>
+
+<p>PriorityClass assigns a numeric priority to pods. When a high-priority pod cannot be scheduled due to resource constraints, the scheduler may <strong>preempt</strong> (evict) lower-priority pods to make room.</p>
+
+<pre><code class="language-yaml"># Define priority classes
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: critical-production
+value: 1000000        # Higher number = higher priority
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority  # Default: can preempt lower-priority pods
+description: "Critical production services"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: batch-low
+value: 100
+globalDefault: false
+preemptionPolicy: Never  # This class cannot preempt other pods
+description: "Low-priority batch jobs"
+
+---
+# Use in pod
+spec:
+  priorityClassName: critical-production</code></pre>
+
+<h3 id="system-priority">Built-in System Priority Classes</h3>
+
+<table>
+  <thead><tr><th>Name</th><th>Value</th><th>Used by</th></tr></thead>
+  <tbody>
+    <tr><td><code>system-cluster-critical</code></td><td>2,000,000,000</td><td>kube-dns, kube-proxy, CNI pods</td></tr>
+    <tr><td><code>system-node-critical</code></td><td>2,000,001,000</td><td>kubelet static pods, node-critical DaemonSets</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warn">
+  <strong>Preemption bypasses PodDisruptionBudgets</strong><br>
+  When the scheduler preempts pods to make room for a high-priority pod, it does NOT respect PodDisruptionBudgets. PDBs only apply to the Eviction API (voluntary disruptions). A critical pod can preempt multiple pods simultaneously, potentially violating quorum guarantees. Mitigate by setting appropriate priority values so high-priority pods don't preempt quorum-critical workloads.
+</div>
+
+<pre><code class="language-bash"># Check pod priority
+kubectl get pod &lt;pod&gt; -o jsonpath='{.spec.priority} {.spec.priorityClassName}'
+
+# See which pods have been preempted (look for nominating field)
+kubectl get pod &lt;high-priority-pod&gt; -o jsonpath='{.status.nominatedNodeName}'
+
+# List all priority classes
+kubectl get priorityclasses --sort-by='.value'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="scheduler-profiles">Multiple Schedulers and Profiles</h2>
+
+<p>The scheduler supports multiple named profiles within a single binary. Each profile can enable/disable different plugins, allowing different scheduling behavior for different workload types.</p>
+
+<pre><code class="language-yaml">apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+  # Default profile
+  - schedulerName: default-scheduler
+    plugins:
+      score:
+        disabled:
+          - name: NodeResourcesBalancedAllocation  # Disable bin-packing
+        enabled:
+          - name: NodeResourcesMostAllocated       # Enable node-packing instead
+
+  # Batch profile — maximize node utilization
+  - schedulerName: batch-scheduler
+    plugins:
+      score:
+        enabled:
+          - name: NodeResourcesMostAllocated
+            weight: 10
+    pluginConfig:
+      - name: NodeResourcesMostAllocated
+        args:
+          resources:
+            - name: cpu
+              weight: 1
+            - name: memory
+              weight: 1</code></pre>
+
+<pre><code class="language-yaml"># Use the batch scheduler for a specific pod
+spec:
+  schedulerName: batch-scheduler   # Must match a profile name in KubeSchedulerConfiguration</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="descheduler">Descheduler</h2>
+
+<p>The scheduler only places pods at creation time. Once running, pods stay on their initial node even if the cluster becomes imbalanced (new nodes added, workloads removed). The <strong>Descheduler</strong> is an add-on that periodically evicts pods to trigger rebalancing.</p>
+
+<div class="diagram">
+Descheduler workflow (runs as CronJob or Deployment):
+
+  1. Scan all pods against enabled strategies
+  2. Identify pods that violate constraints or could be better placed
+  3. Evict qualifying pods (via Eviction API — respects PDBs)
+  4. Pods are rescheduled by kube-scheduler to better nodes
+</div>
+
+<h3 id="descheduler-strategies">Key Strategies</h3>
+
+<table>
+  <thead><tr><th>Strategy</th><th>What it evicts</th><th>Use case</th></tr></thead>
+  <tbody>
+    <tr><td><code>LowNodeUtilization</code></td><td>Pods from over-utilized nodes to under-utilized ones (thresholds: CPU/memory %)</td><td>Rebalance after node additions or workload changes</td></tr>
+    <tr><td><code>RemoveDuplicates</code></td><td>Extra pods from the same ReplicaSet/Deployment on the same node (when topology spread was violated at creation)</td><td>Fix uneven distribution from rapid scale-outs</td></tr>
+    <tr><td><code>RemovePodsViolatingNodeAffinity</code></td><td>Pods on nodes that no longer satisfy their node affinity (labels changed after scheduling)</td><td>Enforce node affinity rules retroactively</td></tr>
+    <tr><td><code>RemovePodsViolatingTopologySpreadConstraint</code></td><td>Pods causing topology spread violations</td><td>Rebalance after node failures or additions</td></tr>
+    <tr><td><code>RemovePodsHavingTooManyRestarts</code></td><td>Pods with excessive restarts (crash-looping)</td><td>Force reschedule of unstable pods to different nodes</td></tr>
+    <tr><td><code>PodLifeTime</code></td><td>Pods older than a configured age</td><td>Enforce pod refresh cycle for security/version freshness</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-yaml">apiVersion: "descheduler/v1alpha2"
+kind: "DeschedulerPolicy"
+profiles:
+  - name: default
+    pluginConfig:
+      - name: LowNodeUtilization
+        args:
+          thresholds:
+            cpu: 20          # Nodes below 20% CPU = underutilized
+            memory: 20
+            pods: 20
+          targetThresholds:
+            cpu: 50          # Move pods until nodes are ≤50% CPU
+            memory: 50
+            pods: 50
+      - name: RemoveDuplicates
+        args:
+          excludeOwnerKinds: ["ReplicaSet"]  # Don't evict RS pods (managed by scheduler)
+    plugins:
+      balance:
+        enabled:
+          - LowNodeUtilization
+          - RemoveDuplicates</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="gang-scheduling">Gang Scheduling</h2>
+
+<p>Gang scheduling ensures that a group of pods is scheduled <em>all-or-nothing</em>. Without it, distributed ML training jobs (PyTorch, MPI) can deadlock: worker pods consume resources while the parameter server pod sits Pending, and no job makes progress.</p>
+
+<h3 id="volcano">Volcano</h3>
+
+<pre><code class="language-yaml"># PodGroup — define the minimum pods needed to start
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: PodGroup
+metadata:
+  name: pytorch-training-job
+  namespace: ml-platform
+spec:
+  minMember: 8          # All 8 pods must be schedulable before ANY start
+  minResources:
+    cpu: "32"
+    memory: 64Gi
+  queue: ml-training
+  priorityClassName: ml-high
+
+---
+# Reference PodGroup from pods
+spec:
+  schedulerName: volcano
+  metadata:
+    annotations:
+      scheduling.volcano.sh/pod-group: pytorch-training-job</code></pre>
+
+<h3 id="yunikorn">Apache YuniKorn</h3>
+
+<pre><code class="language-yaml"># YuniKorn queue-based scheduling
+spec:
+  schedulerName: yunikorn
+  metadata:
+    labels:
+      queue: root.ml-platform.training
+    annotations:
+      yunikorn.apache.org/task-group-name: pytorch-workers
+      yunikorn.apache.org/task-groups: |
+        [{
+          "name": "pytorch-workers",
+          "minMember": 8,
+          "minResource": {"cpu": "4", "memory": "8Gi"}
+        }]</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="scheduling-decision-guide">Scheduling Decision Guide</h2>
+
+<table>
+  <thead><tr><th>Goal</th><th>Mechanism</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Require specific node type</td><td><code>nodeSelector</code> or <code>nodeAffinity.required</code></td><td>Use affinity for complex expressions</td></tr>
+    <tr><td>Prefer certain nodes</td><td><code>nodeAffinity.preferred</code> with weight</td><td>Multiple preferences sum their weights</td></tr>
+    <tr><td>Keep pods off certain nodes</td><td>Taint + toleration; or <code>nodeAffinity.required NotIn</code></td><td>Taint is node-side; affinity is pod-side</td></tr>
+    <tr><td>Co-locate with another workload</td><td><code>podAffinity.required</code>, <code>topologyKey: hostname</code></td><td>E.g., app next to its sidecar cache</td></tr>
+    <tr><td>Spread replicas across zones</td><td><code>topologySpreadConstraints</code> with zone key</td><td>Prefer over anti-affinity for large fleets</td></tr>
+    <tr><td>Spread replicas across nodes</td><td><code>topologySpreadConstraints</code> with hostname key</td><td>Use <code>maxSkew: 1</code> for tight spread</td></tr>
+    <tr><td>Dedicated nodes for workload type</td><td>Taint nodes + add toleration to pods</td><td>nodeSelector ensures pods only go there</td></tr>
+    <tr><td>Prioritize critical pods under pressure</td><td>PriorityClass with preemption</td><td>PDB not respected during preemption</td></tr>
+    <tr><td>All-or-nothing batch scheduling</td><td>Volcano PodGroup / YuniKorn task groups</td><td>Prevents deadlock in distributed training</td></tr>
+    <tr><td>Rebalance after cluster changes</td><td>Descheduler LowNodeUtilization</td><td>Evicts and reschedules — disrupts running pods</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Labels</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>scheduler_pending_pods</code></td><td><code>queue</code> (active/backoff/unschedulable)</td><td>Scheduling queue depth — rising unschedulable = cluster capacity issue</td></tr>
+    <tr><td><code>scheduler_scheduling_attempt_duration_seconds</code></td><td><code>profile</code>, <code>result</code> (scheduled/unschedulable/error)</td><td>Scheduling latency percentiles</td></tr>
+    <tr><td><code>scheduler_preemption_victims</code></td><td><code>profile</code></td><td>Number of pods preempted per scheduling cycle</td></tr>
+    <tr><td><code>scheduler_pod_scheduling_sli_duration_seconds</code></td><td><code>profile</code></td><td>E2E scheduling SLI: time from pod creation to running</td></tr>
+    <tr><td><code>kube_pod_status_unschedulable</code></td><td><code>pod</code>, <code>namespace</code></td><td>Binary metric: 1 if pod is currently unschedulable</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Alerting Rules</h2>
+
+<pre><code class="language-yaml">groups:
+  - name: scheduling
+    rules:
+      # Pods stuck unschedulable for > 5 minutes
+      - alert: PodsUnschedulable
+        expr: scheduler_pending_pods{queue="unschedulable"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} pods are unschedulable for > 5 minutes"
+          description: "Check kubectl describe pod for scheduling failure reasons"
+
+      # Scheduling latency too high (p99 > 1s)
+      - alert: SchedulerHighLatency
+        expr: |
+          histogram_quantile(0.99,
+            rate(scheduler_scheduling_attempt_duration_seconds_bucket{result="scheduled"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Scheduler p99 latency > 1s — large cluster or complex constraints"
+
+      # High preemption rate (priority pods evicting others)
+      - alert: HighPreemptionRate
+        expr: rate(scheduler_preemption_victims[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Scheduler is preempting >30 pods/min — check priority class configuration"
+
+      # Scheduler not running / unhealthy
+      - alert: KubeSchedulerDown
+        expr: absent(up{job="kube-scheduler"} == 1)
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "kube-scheduler is down — no new pods can be scheduled"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="runbooks">Runbooks</h2>
+
+<h3>Pods Stuck in Pending (Unschedulable)</h3>
+<pre><code class="language-bash"># Get the failure reason
+kubectl describe pod &lt;pod&gt; -n &lt;namespace&gt; | grep -A20 Events
+
+# Common reasons and fixes:
+# "Insufficient cpu/memory" → scale up nodes or reduce requests
+# "node(s) had taint ... that the pod didn't tolerate" → add toleration
+# "node(s) didn't match Pod's node affinity" → check labels on nodes
+# "didn't match pod anti-affinity rules" → use topology spread instead
+# "0 nodes available" → check minDomains / zone availability
+
+# Check node resources
+kubectl describe nodes | grep -A5 "Allocated resources:"
+
+# Check if nodes exist with required labels
+kubectl get nodes -l kubernetes.io/os=linux,node-type=gpu</code></pre>
+
+<h3>Pod Scheduled to Wrong Node Type</h3>
+<pre><code class="language-bash"># Check what labels the scheduled node has
+kubectl get node $(kubectl get pod &lt;pod&gt; -o jsonpath='{.spec.nodeName}') \
+  --show-labels
+
+# Check the pod's nodeSelector / affinity
+kubectl get pod &lt;pod&gt; -o jsonpath='{.spec.nodeSelector}'
+kubectl get pod &lt;pod&gt; -o yaml | grep -A30 affinity
+
+# If nodeSelector is missing/wrong, update the Deployment
+kubectl patch deployment &lt;name&gt; -n &lt;namespace&gt; --type=merge \
+  -p '{"spec":{"template":{"spec":{"nodeSelector":{"node-type":"gpu"}}}}}'</code></pre>
+
+<h3>Topology Spread Constraint Blocking Scheduling</h3>
+<pre><code class="language-bash"># Check pod events for spread violations
+kubectl describe pod &lt;pod&gt; | grep "didn't match.*topology"
+
+# Check current pod distribution
+kubectl get pods -n &lt;namespace&gt; -l app=&lt;app&gt; \
+  -o custom-columns=NAME:.metadata.name,NODE:.spec.nodeName,ZONE:.metadata.labels['topology\.kubernetes\.io/zone']
+
+# Count pods per zone
+kubectl get pods -n &lt;namespace&gt; -l app=&lt;app&gt; \
+  -o jsonpath='{.items[*].spec.nodeName}' | tr ' ' '\n' | \
+  xargs -I{} kubectl get node {} -o jsonpath='{.metadata.labels.topology\.kubernetes\.io/zone}' | \
+  sort | uniq -c
+
+# Temporarily loosen constraint
+kubectl patch deployment &lt;name&gt; -n &lt;namespace&gt; --type=json -p='[{
+  "op":"replace",
+  "path":"/spec/template/spec/topologySpreadConstraints/0/whenUnsatisfiable",
+  "value":"ScheduleAnyway"
+}]'</code></pre>
+
+<h3>High-Priority Pod Not Triggering Preemption</h3>
+<pre><code class="language-bash"># Check if priority class is set correctly
+kubectl get pod &lt;pod&gt; -o jsonpath='{.spec.priority} {.spec.priorityClassName}'
+
+# Check if there are lower-priority pods to preempt
+kubectl get pods -A --sort-by='.spec.priority' -o custom-columns=\
+'NAMESPACE:.metadata.namespace,NAME:.metadata.name,PRIORITY:.spec.priority,NODE:.spec.nodeName' | head -20
+
+# Check scheduler logs for preemption decisions
+kubectl logs -n kube-system -l component=kube-scheduler | grep -i "preempt\|nominat"
+
+# Check nominated node (scheduler's preemption candidate)
+kubectl get pod &lt;pod&gt; -o jsonpath='{.status.nominatedNodeName}'</code></pre>
+
+<h3>Uneven Pod Distribution After Scale-Out</h3>
+<pre><code class="language-bash"># Check distribution
+kubectl get pods -l app=&lt;app&gt; -o wide | awk '{print $7}' | sort | uniq -c
+
+# Trigger rebalancing via Descheduler (if installed)
+kubectl create job descheduler-manual --from=cronjob/descheduler -n kube-system
+
+# Manual rebalancing: rollout restart spreads pods fresh
+kubectl rollout restart deployment &lt;name&gt; -n &lt;namespace&gt;</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Use <code>topologySpreadConstraints</code> over pod anti-affinity for spreading replicas</strong> — topology spread is O(n) while required pod anti-affinity is O(n²). At 50+ replicas, the scheduling latency difference is significant.</li>
+  <li><strong>Set <code>minDomains</code> when you require multi-zone spread</strong> — without it, topology spread happily schedules all pods into a single zone if only one zone has capacity. <code>minDomains: 3</code> forces a minimum of 3 zones to be used.</li>
+  <li><strong>Use <code>preferredDuring</code> affinity for preferences, not requirements</strong> — <code>requiredDuring</code> constraints that are too strict cause pods to stay Pending indefinitely. Reserve <code>required</code> for genuine hardware requirements (GPUs, OS, architecture).</li>
+  <li><strong>Taint dedicated nodes AND use nodeSelector</strong> — a taint prevents non-tolerated pods from landing on a node, but doesn't force your pods to land there. Add <code>nodeSelector</code> or affinity to direct your pods to the dedicated nodes.</li>
+  <li><strong>Set <code>preemptionPolicy: Never</code> for batch workloads</strong> — prevents low-value batch jobs from preempting production traffic when they momentarily spike. Production workloads should have higher priority but batch should not preempt anyone.</li>
+  <li><strong>Run the Descheduler for long-running clusters</strong> — initial scheduling decisions become suboptimal as the cluster changes. Descheduler with <code>LowNodeUtilization</code> and <code>RemoveDuplicates</code> keeps placement healthy without manual intervention.</li>
+  <li><strong>Use gang scheduling for distributed ML/HPC jobs</strong> — partial scheduling of distributed training is worse than no scheduling. Without a PodGroup minimum, workers consume GPU resources while waiting for peers, blocking other jobs.</li>
+  <li><strong>Monitor <code>scheduler_pending_pods{queue="unschedulable"}</code> continuously</strong> — a growing unschedulable count is an early warning of capacity shortage or misconfigured constraints, often surfacing before users notice impact.</li>
+</ol>
+
+</div><!-- content-area -->
+<button class="back-to-top" id="back-to-top">↑ Top</button>
+</div><!-- main-content -->
+
+<nav class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#scheduler-framework">Scheduler Framework</a>
+  <a href="#scheduling-queue">Scheduling Queue</a>
+  <a href="#node-selector">nodeSelector / nodeName</a>
+  <a href="#node-affinity">Node Affinity</a>
+  <a href="#pod-affinity">Pod Affinity / Anti-Affinity</a>
+  <a href="#taints-tolerations">Taints &amp; Tolerations</a>
+  <a href="#builtin-taints">Built-in Node Taints</a>
+  <a href="#topology-spread">Topology Spread</a>
+  <a href="#cluster-default-spread">Cluster Default Spread</a>
+  <a href="#priority-preemption">Priority &amp; Preemption</a>
+  <a href="#scheduler-profiles">Multiple Schedulers</a>
+  <a href="#descheduler">Descheduler</a>
+  <a href="#gang-scheduling">Gang Scheduling</a>
+  <a href="#scheduling-decision-guide">Decision Guide</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#alerts">Alerting Rules</a>
+  <a href="#runbooks">Runbooks</a>
+  <a href="#best-practices">Best Practices</a>
+</nav>
+</div><!-- layout -->
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => btt.classList.toggle('visible', main.scrollTop > 400));
+btt.addEventListener('click', () => main.scrollTo({top: 0, behavior: 'smooth'}));
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.querySelector('code')?.innerText || pre.innerText);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+const tocLinks = document.querySelectorAll('.toc-panel a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, {root: main, threshold: 0.2});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+document.getElementById('nav-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

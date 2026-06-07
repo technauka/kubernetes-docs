@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Production Operations Overview | Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+/* Sidebar */
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+#sidebar-header h1{font-size:14px;font-weight:600;color:var(--text);}
+#sidebar-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+#sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+#sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none;}
+#sidebar-search input:focus{border-color:var(--accent);}
+#sidebar-nav{overflow-y:auto;flex:1;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);}
+/* Main */
+#main{flex:1;overflow-y:auto;padding:40px 48px;position:relative;}
+.page-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.page-header .breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.page-header .breadcrumb span{color:var(--text2);}
+.page-header h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-header .subtitle{color:var(--text2);font-size:16px;line-height:1.6;}
+.page-header .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+/* TOC */
+#toc{float:right;width:220px;margin:0 0 24px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;position:sticky;top:24px;}
+#toc h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+#toc a{display:block;font-size:12px;color:var(--text2);padding:3px 0;border-left:2px solid transparent;padding-left:8px;transition:all .15s;}
+#toc a:hover{color:var(--text);text-decoration:none;}
+#toc a.active{color:var(--accent);border-left-color:var(--accent);}
+#toc a.toc-h3{padding-left:18px;font-size:11px;}
+/* Content */
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);clear:both;}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;}
+p{color:var(--text2);line-height:1.7;margin-bottom:12px;}
+ul,ol{color:var(--text2);line-height:1.7;padding-left:20px;margin-bottom:12px;}
+li{margin-bottom:4px;}
+strong{color:var(--text);font-weight:600;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:12px;color:var(--text);line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);color:var(--text);}
+/* Cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card-accent-blue{border-top:3px solid var(--accent);}
+.card-accent-green{border-top:3px solid var(--green);}
+.card-accent-yellow{border-top:3px solid var(--yellow);}
+.card-accent-red{border-top:3px solid var(--red);}
+.card-accent-purple{border-top:3px solid var(--purple);}
+.card-accent-orange{border-top:3px solid var(--orange);}
+/* Tables */
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+/* Callouts */
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout-body p,.callout-body ul{font-size:13px;margin:0;}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);}
+/* Diagrams */
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.diagram .title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+/* Section nav */
+.section-nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:20px 0;}
+.section-nav a{display:block;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;transition:border-color .15s;}
+.section-nav a:hover{border-color:var(--accent);text-decoration:none;}
+.section-nav .sn-num{font-size:11px;color:var(--text3);font-family:monospace;margin-bottom:4px;}
+.section-nav .sn-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.section-nav .sn-desc{font-size:12px;color:var(--text2);}
+/* Pill row */
+.pill-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
+.pill{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text2);}
+/* Back to top */
+#back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;z-index:100;}
+#back-top.visible{opacity:1;}
+#back-top:hover{background:var(--bg4);color:var(--text);}
+/* Status dot */
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+.dot-green{background:var(--green);}
+.dot-yellow{background:var(--yellow);}
+.dot-red{background:var(--red);}
+.dot-blue{background:var(--accent);}
+/* Maturity level */
+.maturity-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin:20px 0;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.maturity-col{padding:16px 12px;background:var(--bg2);border-right:1px solid var(--border);}
+.maturity-col:last-child{border-right:none;}
+.maturity-num{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+.maturity-label{font-size:11px;font-weight:600;color:var(--text);margin-bottom:8px;}
+.maturity-items{font-size:11px;color:var(--text2);line-height:1.7;}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Kubernetes Docs</h1>
+    <p>Production-Grade Reference</p>
+  </div>
+  <div id="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)" />
+  </div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Getting Started</div>
+      <a href="../00-foundations/00-overview.html">00 Foundations Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Core Concepts</div>
+      <a href="../01-core-concepts/00-architecture.html">Architecture</a>
+      <a href="../01-core-concepts/01-pods.html">Pods</a>
+      <a href="../01-core-concepts/02-workloads.html">Workloads</a>
+      <a href="../01-core-concepts/03-services-networking.html">Services & Networking</a>
+      <a href="../01-core-concepts/04-storage.html">Storage</a>
+      <a href="../01-core-concepts/05-configuration.html">Configuration</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Cluster Operations</div>
+      <a href="../02-cluster-operations/00-cluster-overview.html">Cluster Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Workload Management</div>
+      <a href="../03-workload-management/00-workload-overview.html">Workload Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Networking</div>
+      <a href="../04-networking/00-networking-overview.html">Networking Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Security</div>
+      <a href="../05-security/00-security-overview.html">Security Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Observability</div>
+      <a href="../06-observability/00-observability-overview.html">Observability Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Storage & Data</div>
+      <a href="../07-storage-data/00-storage-overview.html">Storage Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-overview.html">Platform Overview</a>
+      <a href="../08-platform-engineering/01-cluster-provisioning.html">Cluster Provisioning</a>
+      <a href="../08-platform-engineering/02-gitops.html">GitOps</a>
+      <a href="../08-platform-engineering/03-ci-cd-pipelines.html">CI/CD Pipelines</a>
+      <a href="../08-platform-engineering/04-developer-portal.html">Developer Portal</a>
+      <a href="../08-platform-engineering/05-policy-enforcement.html">Policy Enforcement</a>
+      <a href="../08-platform-engineering/06-multi-tenancy.html">Multi-Tenancy</a>
+      <a href="../08-platform-engineering/07-cost-management.html">Cost Management</a>
+      <a href="../08-platform-engineering/08-service-catalog.html">Service Catalog</a>
+      <a href="../08-platform-engineering/09-secrets-automation.html">Secrets Automation</a>
+      <a href="../08-platform-engineering/10-platform-apis.html">Platform APIs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="00-production-overview.html" class="active">Production Overview</a>
+      <a href="01-capacity-planning.html">Capacity Planning</a>
+      <a href="02-performance-tuning.html">Performance Tuning</a>
+      <a href="03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="04-security-hardening.html">Security Hardening</a>
+      <a href="05-network-operations.html">Network Operations</a>
+      <a href="06-storage-operations.html">Storage Operations</a>
+      <a href="07-certificate-management.html">Certificate Management</a>
+      <a href="08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="09-incident-response.html">Incident Response</a>
+      <a href="10-sre-practices.html">SRE Practices</a>
+    </div>
+  </nav>
+</div>
+
+<div id="main">
+
+<nav id="toc">
+  <h3>On This Page</h3>
+  <a href="#what-is-prod-ops">What Is Production Operations</a>
+  <a href="#operations-domains">Operations Domains</a>
+  <a href="#production-readiness">Production Readiness</a>
+  <a href="#runbook-framework">Runbook Framework</a>
+  <a href="#ops-tooling">Operations Tooling</a>
+  <a href="#change-management">Change Management</a>
+  <a href="#on-call">On-Call Engineering</a>
+  <a href="#golden-signals">Four Golden Signals</a>
+  <a href="#production-slos">Production SLOs</a>
+  <a href="#ops-maturity">Ops Maturity Model</a>
+  <a href="#section-guide">Section Guide</a>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">09 — Production Operations / <span>00 Overview</span></div>
+  <h1>Production Operations Overview</h1>
+  <p class="subtitle">Running Kubernetes reliably at scale — capacity, performance, resilience, security, and incident response in a unified operational framework.</p>
+  <div class="meta">
+    <span class="badge badge-blue">Section Overview</span>
+    <span class="badge badge-green">11 Topics</span>
+    <span class="badge badge-purple">Operations</span>
+    <span class="badge badge-red">SRE</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="what-is-prod-ops">What Is Production Operations</h2>
+
+<p>Production operations is the discipline of keeping Kubernetes clusters and their workloads available, performant, secure, and cost-efficient 24/7. While the platform engineering section (Section 08) covers what to build, this section covers how to run it — day-2 through day-N operations.</p>
+
+<div class="diagram">
+  <div class="title">Operational Lifecycle</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+   Plan          Build          Deploy         Operate         Improve
+  ────────      ───────        ────────        ────────        ─────────
+  Capacity   →  Platform   →   GitOps     →   Monitor    →   Post-mortems
+  Planning      Provisioning   Pipeline        Alert           SLO review
+  SLO design    Policy         Canary           Runbooks        Chaos tests
+  Budget        Security       PDB              Incident        Capacity plan
+  On-call       Secrets        Smoke test       Response        Efficiency
+  rotation      Portal         Gate             Escalation      upgrade cycle</pre>
+</div>
+
+<p>The gap between a cluster that works and a cluster that <em>runs production</em> spans five concerns:</p>
+
+<div class="card-grid">
+  <div class="card card-accent-red">
+    <h3>Reliability</h3>
+    <p>SLOs, error budgets, PDBs, multi-AZ topology, chaos engineering, disaster recovery with RTO/RPO targets.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>Performance</h3>
+    <p>Right-sizing, kernel tuning, JVM profiling, etcd/apiserver latency, HPA/KEDA autoscaling response time.</p>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>Security</h3>
+    <p>CIS hardening, runtime threat detection, audit log analysis, CVE patching cadence, zero-trust networking.</p>
+  </div>
+  <div class="card card-accent-green">
+    <h3>Efficiency</h3>
+    <p>Capacity planning, VPA right-sizing, spot adoption, FinOps reviews, idle resource detection.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>Operability</h3>
+    <p>Runbooks, on-call rotations, change management, upgrade cadence, certificate lifecycle, incident playbooks.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="operations-domains">Operations Domains</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Domain</th><th>Core Concern</th><th>Key Tools</th><th>Primary Signal</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Capacity Planning</strong></td><td>Right cluster size today and 6 months forward; headroom for spikes</td><td>VPA/Goldilocks, OpenCost, kube-capacity</td><td>CPU/mem allocatable vs requested</td></tr>
+    <tr><td><strong>Performance Tuning</strong></td><td>Latency, throughput, kernel/JVM/GC optimization</td><td>pprof, Pyroscope, perf, strace, netstat</td><td>Request p99, GC pause, saturation</td></tr>
+    <tr><td><strong>Disaster Recovery</strong></td><td>etcd backup/restore, Velero workload backup, RTO/RPO</td><td>Velero, etcdctl, cluster snapshots</td><td>Restore time, backup age</td></tr>
+    <tr><td><strong>Security Hardening</strong></td><td>CIS benchmarks, runtime detection, supply chain</td><td>kube-bench, Falco, Trivy, network policies</td><td>kube-bench score, Falco alert rate</td></tr>
+    <tr><td><strong>Network Operations</strong></td><td>DNS reliability, CNI health, Ingress/Gateway throughput</td><td>CoreDNS, Cilium, NGINX Ingress, Hubble</td><td>DNS latency, connection errors, drop rate</td></tr>
+    <tr><td><strong>Storage Operations</strong></td><td>PVC lifecycle, StorageClass tuning, backup, CSI health</td><td>CSI drivers, Velero, Restic, etcd compaction</td><td>PVC bind time, IOPS saturation</td></tr>
+    <tr><td><strong>Certificate Management</strong></td><td>TLS expiry, rotation automation, PKI hierarchy</td><td>cert-manager, Vault PKI, cfssl</td><td>Certificate days-to-expiry</td></tr>
+    <tr><td><strong>Cluster Maintenance</strong></td><td>Version upgrades, node rotation, etcd compaction</td><td>eksctl/gcloud/kubeadm, Karpenter drift</td><td>K8s version skew, etcd DB size</td></tr>
+    <tr><td><strong>Incident Response</strong></td><td>On-call triage, runbooks, post-mortems, MTTR</td><td>PagerDuty, runbooks, kubectl debug</td><td>MTTR, alert fatigue rate, post-mortem count</td></tr>
+    <tr><td><strong>SRE Practices</strong></td><td>SLI/SLO/error budget, toil reduction, reliability reviews</td><td>Sloth, pyrra, Grafana SLO, chaos-mesh</td><td>Error budget burn rate</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="production-readiness">Production Readiness Checklist</h2>
+
+<p>Before a workload enters production, each item below should be confirmed. This acts as a gate — teams self-certify against this checklist as part of their launch process (optionally enforced via Kyverno policies or Backstage scorecards, as covered in <a href="../08-platform-engineering/05-policy-enforcement.html">Section 08-05</a> and <a href="../08-platform-engineering/04-developer-portal.html">08-04</a>).</p>
+
+<h3>Reliability</h3>
+<ul>
+  <li><code>replicas &gt;= 2</code> for stateless workloads; zero single points of failure</li>
+  <li>PodDisruptionBudget defined (<code>minAvailable: 1</code> or <code>maxUnavailable: 1</code>)</li>
+  <li>Pod topology spread across zones (<code>topologyKey: topology.kubernetes.io/zone</code>)</li>
+  <li>Liveness, readiness, and startup probes configured</li>
+  <li>Graceful shutdown: <code>preStop</code> hook + <code>terminationGracePeriodSeconds</code> matches SIGTERM handling</li>
+  <li>HPA or KEDA ScaledObject defined; scale-up headroom tested</li>
+</ul>
+
+<h3>Observability</h3>
+<ul>
+  <li>ServiceMonitor or PodMonitor present; Prometheus scraping confirmed</li>
+  <li>Structured JSON logs with <code>level</code>, <code>msg</code>, <code>trace_id</code>, <code>service</code>, <code>env</code> fields</li>
+  <li>OpenTelemetry traces emitted; sampling rate configured</li>
+  <li>Grafana dashboard committed to repo alongside code</li>
+  <li>Alerts: SLO burn rate + saturation + error rate PrometheusRules in repo</li>
+  <li>PagerDuty service registered; runbook URL in alert annotations</li>
+</ul>
+
+<h3>Security</h3>
+<ul>
+  <li>Pod Security Standard ≥ baseline enforced on namespace</li>
+  <li><code>runAsNonRoot: true</code>, <code>readOnlyRootFilesystem: true</code>, <code>allowPrivilegeEscalation: false</code></li>
+  <li>All capabilities dropped; seccomp profile <code>RuntimeDefault</code> or <code>Localhost</code></li>
+  <li>Container image scanned (no CRITICAL/HIGH CVEs); signed with Cosign</li>
+  <li>Secrets sourced from ESO or Vault — no plaintext in manifests or env vars</li>
+  <li>NetworkPolicy: default-deny + explicit allow rules</li>
+  <li>RBAC: least-privilege ServiceAccount; no cluster-admin binding</li>
+</ul>
+
+<h3>Resource Management</h3>
+<ul>
+  <li>CPU and memory requests and limits set on every container</li>
+  <li>VPA VerticalPodAutoscaler in <code>Off</code> mode for recommendation data</li>
+  <li>Namespace ResourceQuota and LimitRange present</li>
+  <li>PriorityClass assigned (defaults to <code>production-default</code>)</li>
+  <li>Cost labels: <code>team</code>, <code>env</code>, <code>cost-center</code>, <code>service</code></li>
+</ul>
+
+<h3>GitOps &amp; CI/CD</h3>
+<ul>
+  <li>All manifests in Git; no manual <code>kubectl apply</code> to production</li>
+  <li>Argo CD Application configured with <code>selfHeal: true</code>, <code>prune: true</code></li>
+  <li>Rollout strategy: canary or blue-green with AnalysisTemplate</li>
+  <li>Rollback procedure documented and tested in staging</li>
+  <li>SBOM generated and attested per image build</li>
+</ul>
+
+<h3>Operations</h3>
+<ul>
+  <li>Runbook written and linked from alert annotations</li>
+  <li>On-call rotation set up; escalation policy defined</li>
+  <li>SLOs defined: availability target + latency target + error budget window</li>
+  <li>Chaos/failure injection tested in staging (pod kill, AZ failure)</li>
+  <li>DR restore procedure documented with RTO/RPO targets</li>
+</ul>
+
+<div class="callout callout-info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <strong>Automate the checklist</strong>
+    <p>The above can be implemented as Backstage scorecard checks (tech-insights plugin) or Kyverno ClusterPolicy generate rules that fail admission if required annotations are missing. Automating the gate catches regressions automatically — no manual review required for standard workloads.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="runbook-framework">Runbook Framework</h2>
+
+<p>Every production alert must link to a runbook. A runbook without a clear structure becomes a wall of text nobody reads under pressure. Use this standard template:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-markdown"># Alert: PaymentServiceHighErrorRate
+
+## Summary
+Payment service error rate exceeds 5% for 5+ minutes.
+
+## Impact
+Customers may be unable to complete purchases. Revenue impact estimated at $X/minute.
+
+## Severity: P1
+
+## Diagnosis Steps
+
+### 1. Triage
+```bash
+kubectl get pods -n payments -l app=payment-service
+kubectl top pods -n payments --sort-by=cpu
+```
+
+### 2. Check recent changes
+```bash
+kubectl rollout history deploy/payment-service -n payments
+# Check Argo CD sync history
+argocd app history payments-service
+```
+
+### 3. Check logs for errors
+```bash
+kubectl logs -n payments -l app=payment-service --since=10m | \
+  jq 'select(.level=="error")' | tail -50
+```
+
+### 4. Check downstream dependencies
+```bash
+# Database connectivity
+kubectl exec -n payments deploy/payment-service -- \
+  pg_isready -h $DB_HOST -p 5432
+# Check ESO secret sync
+kubectl get externalsecret -n payments
+```
+
+## Resolution Steps
+
+### Option A: Rollback
+```bash
+kubectl rollout undo deploy/payment-service -n payments
+# Verify
+kubectl rollout status deploy/payment-service -n payments
+```
+
+### Option B: Scale up
+```bash
+kubectl scale deploy/payment-service --replicas=10 -n payments
+```
+
+## Escalation
+- After 15 min unresolved: page payments-team-lead
+- After 30 min: page VP Engineering
+
+## Post-Incident
+File post-mortem within 48h using template at /post-mortems/template.md
+</code></pre>
+
+<p>Store runbooks in the same Git repository as the application. Link them from Backstage catalog-info.yaml under <code>annotations.pagerduty.com/service-id</code> and from every PrometheusRule alert annotation:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">- alert: PaymentServiceHighErrorRate
+  annotations:
+    runbook_url: https://github.com/org/payments/blob/main/runbooks/high-error-rate.md
+    summary: Payment service error rate > 5%
+    description: "Namespace {{ $labels.namespace }}, job {{ $labels.job }}: {{ $value | humanizePercentage }} error rate"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="ops-tooling">Operations Tooling Reference</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Category</th><th>Tool</th><th>Purpose</th><th>Install</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Cluster introspection</strong></td><td>k9s</td><td>Terminal UI for real-time cluster browsing</td><td><code>brew install k9s</code></td></tr>
+    <tr><td></td><td>kube-capacity</td><td>Node resource usage vs allocatable</td><td><code>krew install resource-capacity</code></td></tr>
+    <tr><td></td><td>kubectl-tree</td><td>OwnerReference hierarchy tree</td><td><code>krew install tree</code></td></tr>
+    <tr><td></td><td>kubectl-neat</td><td>Strip generated fields from kubectl output</td><td><code>krew install neat</code></td></tr>
+    <tr><td></td><td>stern</td><td>Multi-pod log tailing with regex filter</td><td><code>brew install stern</code></td></tr>
+    <tr><td><strong>Debugging</strong></td><td>kubectl debug</td><td>Ephemeral debug container (distroless-safe)</td><td>Built-in (K8s 1.23+)</td></tr>
+    <tr><td></td><td>inspektor-gadget</td><td>eBPF-based in-cluster debugging (tcpdump, top, trace)</td><td>krew install gadget</td></tr>
+    <tr><td></td><td>netshoot</td><td>nicolaka/netshoot: full network debug toolkit pod</td><td><code>kubectl run tmp --image=nicolaka/netshoot -it --rm</code></td></tr>
+    <tr><td><strong>Security scanning</strong></td><td>kube-bench</td><td>CIS Kubernetes Benchmark checks</td><td>Job YAML in cluster</td></tr>
+    <tr><td></td><td>Falco</td><td>Runtime syscall threat detection</td><td>Helm install</td></tr>
+    <tr><td></td><td>Trivy Operator</td><td>Continuous vulnerability + config scanning in-cluster</td><td>Helm install</td></tr>
+    <tr><td><strong>Backup</strong></td><td>Velero</td><td>Workload + PV backup/restore/migration</td><td>CLI + Helm chart</td></tr>
+    <tr><td></td><td>etcdctl</td><td>etcd snapshot save/restore</td><td>Bundled with etcd</td></tr>
+    <tr><td><strong>Chaos</strong></td><td>chaos-mesh</td><td>Fault injection: pod-kill, network, I/O, stress</td><td>Helm install</td></tr>
+    <tr><td></td><td>kube-monkey</td><td>Chaos Monkey for Kubernetes (opt-in via labels)</td><td>Helm install</td></tr>
+    <tr><td><strong>Cost</strong></td><td>OpenCost / Kubecost</td><td>Namespace cost allocation and savings recommendations</td><td>Helm install (see <a href="../08-platform-engineering/07-cost-management.html">08-07</a>)</td></tr>
+    <tr><td><strong>Profiling</strong></td><td>Pyroscope</td><td>Continuous profiling aggregation and flame graphs</td><td>Helm install (see <a href="../06-observability/07-profiling.html">06-07</a>)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Essential krew plugins</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Install krew plugin manager first
+(
+  set -x; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/arm.*$/arm/')" &&
+  KREW="krew-${OS}_${ARCH}" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+  tar zxvf "${KREW}.tar.gz" &&
+  ./"${KREW}" install krew
+)
+
+# Add to PATH
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+# Install essential plugins
+kubectl krew install \
+  resource-capacity \
+  tree \
+  neat \
+  ctx \
+  ns \
+  stern \
+  gadget \
+  view-secret \
+  who-can \
+  access-matrix \
+  hns</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="change-management">Change Management in Production</h2>
+
+<p>Production changes fall into three tiers with different approval and rollout requirements:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Tier</th><th>Examples</th><th>Approval</th><th>Rollout</th><th>Rollback SLA</th></tr></thead>
+  <tbody>
+    <tr><td><strong>T1 — Standard</strong></td><td>Application code change, config update, image bump</td><td>PR review + CI pass</td><td>GitOps canary/blue-green (automated)</td><td>&lt; 5 min automated rollback</td></tr>
+    <tr><td><strong>T2 — Elevated</strong></td><td>HPA bounds change, resource quota increase, new Ingress rule, cluster add-on update</td><td>PR + team-lead approval</td><td>Staged: dev → staging → prod with manual gate</td><td>&lt; 15 min via GitOps revert</td></tr>
+    <tr><td><strong>T3 — High Risk</strong></td><td>K8s control plane upgrade, etcd migration, CNI change, StorageClass migration, security policy change</td><td>Change Advisory Board + runbook review</td><td>Maintenance window + dry-run in staging</td><td>Manual restore procedure + RTO target</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>GitOps as change ledger</h3>
+<p>Every production change must originate from a Git commit. This provides an automatic audit trail — who changed what, when, and via which PR. The Argo CD sync history additionally records which Git SHA was applied to each cluster and at what time.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Who changed what in the last 24 hours (Argo CD history)
+argocd app history payment-service --output json | \
+  jq '.[] | {id:.id, revision:.revision, deployedAt:.deployedAt}'
+
+# What changed between two revisions
+argocd app diff payment-service --revision HEAD~1
+
+# Rollback to previous revision
+argocd app rollback payment-service 42   # where 42 is the history ID</code></pre>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body">
+    <strong>Change freeze windows</strong>
+    <p>Establish change freeze periods: Friday 3pm–Monday 9am for T2/T3 changes; 48 hours before/after major holidays. Document these in the GitOps repo README and enforce via CI checks that block merges to the production branch outside approved windows.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="on-call">On-Call Engineering</h2>
+
+<p>Sustainable on-call requires alert quality before rotation size. Before growing the rotation, reduce alert noise.</p>
+
+<div class="diagram">
+  <div class="title">On-Call Alert Triage Flow</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  PagerDuty page
+       │
+       ▼
+  Is SLO burning?
+  ├─ Yes → Is error budget &lt;10%? → P1: wake secondary + escalate
+  │        Is error budget &lt;50%? → P2: respond within 30 min
+  │        Otherwise            → P3: next business day
+  └─ No  → Is customer-visible?
+            ├─ Yes → P2
+            └─ No  → Investigate during business hours; silence if noisy</pre>
+</div>
+
+<h3>Alert quality metrics to track</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Metric</th><th>Healthy Target</th><th>Warning</th><th>Action if Warning</th></tr></thead>
+  <tbody>
+    <tr><td>Pages per on-call shift (8h)</td><td>&lt; 2</td><td>&gt; 5</td><td>Alert audit: silence/tune noisy alerts</td></tr>
+    <tr><td>Actionable page %</td><td>&gt; 80%</td><td>&lt; 60%</td><td>Review alert conditions; raise thresholds</td></tr>
+    <tr><td>MTTR (P1 incidents)</td><td>&lt; 30 min</td><td>&gt; 60 min</td><td>Improve runbooks; add diagnostic steps</td></tr>
+    <tr><td>Post-mortem completion rate</td><td>100% of P1/P2</td><td>&lt; 80%</td><td>Block new incidents until post-mortem filed</td></tr>
+    <tr><td>Alert flap rate</td><td>&lt; 5%</td><td>&gt; 15%</td><td>Add <code>for: 5m</code> duration to flapping alerts</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>On-call rotation setup (PagerDuty pattern)</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Backstage catalog-info.yaml — link to PagerDuty service
+metadata:
+  annotations:
+    pagerduty.com/integration-key: abc123xyz
+    pagerduty.com/service-id: PXYZ123
+    # On-call schedule visible in Backstage
+    pagerduty.com/escalation-policy-id: EP123456</code></pre>
+
+<h3>kubectl debug — ephemeral container triage</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Attach ephemeral debug container to running pod (non-distroless)
+kubectl debug -it payment-pod-xyz \
+  --image=nicolaka/netshoot \
+  --target=payment-service \
+  -n payments
+
+# Debug a CrashLoopBackOff pod by copying it with a shell
+kubectl debug payment-pod-xyz \
+  -it \
+  --copy-to=payment-debug \
+  --image=nicolaka/netshoot \
+  --share-processes \
+  -n payments
+
+# Node-level debug (requires privileged — for platform SREs only)
+kubectl debug node/ip-10-0-1-42.us-east-1.compute.internal \
+  -it \
+  --image=nicolaka/netshoot</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="golden-signals">The Four Golden Signals</h2>
+
+<p>The four golden signals (Google SRE Book) apply directly to Kubernetes workloads. Every production service should have Prometheus alerts covering all four.</p>
+
+<div class="card-grid">
+  <div class="card card-accent-red">
+    <h3>Latency</h3>
+    <p>Time to handle a request. Track p50/p95/p99 — not just mean. A slow success and a fast failure are both important.</p>
+    <pre style="margin:8px 0 0;padding:8px;"><code style="font-size:11px;">histogram_quantile(0.99,
+  rate(http_request_duration_seconds_bucket
+    {job="payment-service"}[5m]))</code></pre>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>Traffic</h3>
+    <p>How much demand is on the system. Requests per second, messages per second, active connections.</p>
+    <pre style="margin:8px 0 0;padding:8px;"><code style="font-size:11px;">sum(rate(http_requests_total
+  {job="payment-service"}[1m]))
+by (method, route)</code></pre>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>Errors</h3>
+    <p>Rate of failed requests — explicit (5xx) or implicit (wrong data). Track 4xx separately to detect client-side abuse.</p>
+    <pre style="margin:8px 0 0;padding:8px;"><code style="font-size:11px;">sum(rate(http_requests_total
+  {status=~"5.."}[5m]))
+/ sum(rate(http_requests_total[5m]))</code></pre>
+  </div>
+  <div class="card card-accent-green">
+    <h3>Saturation</h3>
+    <p>How full the service is. CPU throttling, queue depth, memory pressure, connection pool exhaustion.</p>
+    <pre style="margin:8px 0 0;padding:8px;"><code style="font-size:11px;">sum(container_cpu_cfs_throttled_seconds_total
+  {namespace="payments"}) /
+sum(container_cpu_cfs_periods_total
+  {namespace="payments"})</code></pre>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="production-slos">Production SLOs</h2>
+
+<p>SLOs are agreements with your users about service reliability. Without an error budget, every outage feels like a catastrophe. With one, you know how much risk you can take.</p>
+
+<h3>SLI → SLO → Error Budget chain</h3>
+
+<div class="diagram">
+  <div class="title">SLO Error Budget Flow</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  SLI: ratio of successful requests
+  SLO: 99.9% availability over 30 days
+  Error budget: 0.1% × 30d × 24h × 60min = 43.2 minutes
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Day 1-5:   No incidents         Budget remaining: 43.2 min │
+  │  Day 12:    5 min incident       Budget remaining: 38.2 min │
+  │  Day 20:    30 min incident      Budget remaining:  8.2 min │
+  │  Day 22:    Budget &lt; 10%         → Feature freeze           │
+  │             (only reliability    → No T2/T3 changes         │
+  │              work allowed)       → On-call P1 threshold ↓   │
+  └─────────────────────────────────────────────────────────────┘</pre>
+</div>
+
+<h3>Sloth SLO definition (declarative)</h3>
+
+<p><a href="https://sloth.dev">Sloth</a> generates multi-window multi-burn-rate alerts from a simple SLO YAML, following the Google SRE workbook's alerting strategy:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: payment-service-slo
+  namespace: payments
+spec:
+  service: payment-service
+  labels:
+    team: payments
+    env: production
+  slos:
+    - name: requests-availability
+      objective: 99.9
+      description: 99.9% of payment API requests succeed
+      sli:
+        events:
+          error_query: |
+            sum(rate(http_requests_total{job="payment-service",status=~"5.."}[{{.window}}]))
+          total_query: |
+            sum(rate(http_requests_total{job="payment-service"}[{{.window}}]))
+      alerting:
+        name: PaymentServiceHighErrorBudgetBurn
+        annotations:
+          runbook_url: https://github.com/org/payments/blob/main/runbooks/slo-burn.md
+        page_alert:
+          labels:
+            severity: critical
+        ticket_alert:
+          labels:
+            severity: warning
+
+    - name: requests-latency
+      objective: 99.0
+      description: 99% of payment API requests complete in < 500ms
+      sli:
+        events:
+          error_query: |
+            sum(rate(http_request_duration_seconds_bucket{
+              job="payment-service",le="0.5"}[{{.window}}]))
+          total_query: |
+            sum(rate(http_request_duration_seconds_count{
+              job="payment-service"}[{{.window}}]))</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Generate PrometheusRules from Sloth SLO YAML
+sloth generate -i slo.yaml -o prometheus-rules.yaml
+
+# Or deploy Sloth as an operator (watches PrometheusServiceLevel CRs)
+helm repo add sloth https://slok.github.io/sloth
+helm install sloth sloth/sloth \
+  --namespace monitoring \
+  --set customSLIs.enabled=true</code></pre>
+
+<h3>Error budget policy</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Budget Remaining</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>&gt; 50%</td><td>Normal operations; T1/T2/T3 changes allowed</td></tr>
+    <tr><td>25–50%</td><td>T3 changes require extra review; increase canary duration</td></tr>
+    <tr><td>10–25%</td><td>No T3 changes; T2 changes require CISO/VP approval</td></tr>
+    <tr><td>&lt; 10%</td><td>Feature freeze: only reliability/security work merges; all-hands reliability sprint</td></tr>
+    <tr><td>Exhausted</td><td>Incident declared; post-mortem mandatory; SLO review within 1 week</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ops-maturity">Operations Maturity Model</h2>
+
+<div class="maturity-grid">
+  <div class="maturity-col">
+    <div class="maturity-num">1</div>
+    <div class="maturity-label">Reactive</div>
+    <div class="maturity-items">
+      Manual deploys<br>
+      No runbooks<br>
+      Alert on every metric<br>
+      Single point of failure<br>
+      No post-mortems<br>
+      Manual cert renewal
+    </div>
+  </div>
+  <div class="maturity-col">
+    <div class="maturity-num">2</div>
+    <div class="maturity-label">Managed</div>
+    <div class="maturity-items">
+      GitOps in place<br>
+      Basic runbooks<br>
+      PDBs defined<br>
+      On-call rotation<br>
+      Ad-hoc post-mortems<br>
+      cert-manager installed
+    </div>
+  </div>
+  <div class="maturity-col">
+    <div class="maturity-num">3</div>
+    <div class="maturity-label">Defined</div>
+    <div class="maturity-items">
+      SLOs defined<br>
+      Error budgets tracked<br>
+      Canary deployments<br>
+      Velero backups<br>
+      kube-bench enforced<br>
+      DR tested quarterly
+    </div>
+  </div>
+  <div class="maturity-col">
+    <div class="maturity-num">4</div>
+    <div class="maturity-label">Measured</div>
+    <div class="maturity-items">
+      DORA metrics tracked<br>
+      Chaos engineering<br>
+      Auto-remediation<br>
+      Capacity forecasting<br>
+      Toil &lt; 50%<br>
+      Multi-cluster DR
+    </div>
+  </div>
+  <div class="maturity-col">
+    <div class="maturity-num">5</div>
+    <div class="maturity-label">Optimising</div>
+    <div class="maturity-items">
+      Self-healing operators<br>
+      Predictive scaling<br>
+      Zero-touch upgrades<br>
+      Continuous chaos<br>
+      Toil &lt; 20%<br>
+      Autonomous DR
+    </div>
+  </div>
+</div>
+
+<p>Most teams should target Level 3 before optimizing for Level 4. Skipping to Level 5 without solid Level 3 foundations (SLOs, DR, runbooks) results in fragile automation.</p>
+
+<!-- ============================================================ -->
+<h2 id="section-guide">Section 09 — Topics in This Section</h2>
+
+<p>The eleven files in this section move from planning to hands-on operations to reliability engineering:</p>
+
+<div class="section-nav">
+  <a href="00-production-overview.html">
+    <div class="sn-num">09-00</div>
+    <div class="sn-title">Production Overview</div>
+    <div class="sn-desc">This file — readiness checklist, runbook framework, golden signals, SLOs, maturity model.</div>
+  </a>
+  <a href="01-capacity-planning.html">
+    <div class="sn-num">09-01</div>
+    <div class="sn-title">Capacity Planning</div>
+    <div class="sn-desc">Demand forecasting, node sizing, headroom calculation, VPA/Goldilocks, cluster autoscaling strategy.</div>
+  </a>
+  <a href="02-performance-tuning.html">
+    <div class="sn-num">09-02</div>
+    <div class="sn-title">Performance Tuning</div>
+    <div class="sn-desc">Kernel tuning, JVM GC, CPU throttling, network optimization, etcd and apiserver performance.</div>
+  </a>
+  <a href="03-disaster-recovery.html">
+    <div class="sn-num">09-03</div>
+    <div class="sn-title">Disaster Recovery</div>
+    <div class="sn-desc">etcd backup/restore, Velero workload backup, RTO/RPO targets, failover automation, DR drills.</div>
+  </a>
+  <a href="04-security-hardening.html">
+    <div class="sn-num">09-04</div>
+    <div class="sn-title">Security Hardening</div>
+    <div class="sn-desc">CIS benchmarks, kube-bench, Falco runtime detection, Trivy Operator, audit log analysis.</div>
+  </a>
+  <a href="05-network-operations.html">
+    <div class="sn-num">09-05</div>
+    <div class="sn-title">Network Operations</div>
+    <div class="sn-desc">CoreDNS tuning, CNI troubleshooting, Ingress operations, eBPF network observability with Hubble.</div>
+  </a>
+  <a href="06-storage-operations.html">
+    <div class="sn-num">09-06</div>
+    <div class="sn-title">Storage Operations</div>
+    <div class="sn-desc">PVC lifecycle, CSI driver ops, StorageClass tuning, etcd compaction, backup with Restic.</div>
+  </a>
+  <a href="07-certificate-management.html">
+    <div class="sn-num">09-07</div>
+    <div class="sn-title">Certificate Management</div>
+    <div class="sn-desc">cert-manager ops, PKI hierarchy, rotation automation, mutual TLS, expiry monitoring.</div>
+  </a>
+  <a href="08-cluster-maintenance.html">
+    <div class="sn-num">09-08</div>
+    <div class="sn-title">Cluster Maintenance</div>
+    <div class="sn-desc">K8s version upgrades, node rotation, etcd maintenance, add-on lifecycle, maintenance windows.</div>
+  </a>
+  <a href="09-incident-response.html">
+    <div class="sn-num">09-09</div>
+    <div class="sn-title">Incident Response</div>
+    <div class="sn-desc">On-call triage, incident lifecycle, post-mortem process, MTTR reduction, escalation playbooks.</div>
+  </a>
+  <a href="10-sre-practices.html">
+    <div class="sn-num">09-10</div>
+    <div class="sn-title">SRE Practices</div>
+    <div class="sn-desc">Toil elimination, error budget policies, chaos engineering, reliability reviews, automation patterns.</div>
+  </a>
+</div>
+
+<!-- ============================================================ -->
+<h2>Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card card-accent-green">
+    <h3>SLOs before alerts</h3>
+    <p>Define SLOs first; derive alerts from error budget burn rate. This eliminates alert fatigue and focuses on user-visible impact.</p>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>Runbooks are mandatory</h3>
+    <p>No alert ships to production without a runbook URL in its annotation. Enforce this in CI with a PromQL lint check.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>Test your DR regularly</h3>
+    <p>An untested restore procedure is not a DR plan. Run quarterly restore drills from Velero backups and etcd snapshots in a staging cluster.</p>
+  </div>
+  <div class="card card-accent-red">
+    <h3>Production readiness gates</h3>
+    <p>Automate the readiness checklist as a Backstage scorecard or Kyverno policy. Manual checklists are forgotten under delivery pressure.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>Toil budget</h3>
+    <p>Track on-call toil per sprint. If toil exceeds 50% of engineering time, halt feature work and invest in automation. This is the SRE contract.</p>
+  </div>
+  <div class="card card-accent-orange">
+    <h3>Change tier discipline</h3>
+    <p>Classify every change before it ships. T3 changes in a change-freeze window are the most common cause of weekend incidents.</p>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<button id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none';
+  });
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>300);
+});
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=pre.querySelector('.copy-btn');
+  if(!btn)return;
+  btn.addEventListener('click',()=>{
+    const code=pre.querySelector('code');
+    navigator.clipboard.writeText(code.innerText).then(()=>{
+      btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+    });
+  });
+});
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+// TOC highlight
+const mainEl=document.getElementById('main');
+const headings=mainEl.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('#toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('#toc a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:mainEl,threshold:0.3});
+headings.forEach(h=>obs.observe(h));
+</script>
+</body>
+</html>

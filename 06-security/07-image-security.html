@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Security | Kubernetes Documentation</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#30363d;
+  --border:#30363d; --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --accent:#58a6ff; --accent2:#388bfd; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --orange:#d18616; --code-bg:#161b22;
+}
+[data-theme="light"] {
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eaeef2; --bg4:#d0d7de;
+  --border:#d0d7de; --text:#24292f; --text2:#57606a; --text3:#6e7781;
+  --accent:#0969da; --accent2:#0550ae; --green:#1a7f37; --yellow:#9a6700;
+  --red:#cf222e; --purple:#8250df; --orange:#953800; --code-bg:#f6f8fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+/* Sidebar */
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-filter{padding:12px 16px;border-bottom:1px solid var(--border);}
+.sidebar-filter input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;}
+.sidebar-filter input:focus{outline:none;border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
+.page-header{margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.breadcrumb{font-size:13px;color:var(--text3);margin-bottom:12px;}
+.breadcrumb a{color:var(--text3);}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;margin-bottom:12px;}
+.page-desc{font-size:16px;color:var(--text2);line-height:1.6;}
+.meta-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.tag{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--text2);}
+.tag.adv{border-color:var(--red);color:var(--red);}
+.tag.int{border-color:var(--yellow);color:var(--yellow);}
+.tag.beg{border-color:var(--green);color:var(--green);}
+
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{margin:0 0 16px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'SF Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+.copy-btn:hover{color:var(--text);}
+
+/* Callouts */
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid;}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.warning{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-size:13px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.callout.danger .callout-title{color:var(--red);}
+.callout.warning .callout-title{color:var(--yellow);}
+.callout.info .callout-title{color:var(--accent);}
+.callout.success .callout-title{color:var(--green);}
+.callout p{margin-bottom:0;font-size:14px;}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);border-bottom:1px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+
+/* Cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 10px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card.danger{border-color:var(--red);}
+.card.warning{border-color:var(--yellow);}
+.card.success{border-color:var(--green);}
+.card.info{border-color:var(--accent);}
+
+/* Diagrams */
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'SF Mono','Fira Code',monospace;font-size:13px;line-height:1.8;overflow-x:auto;}
+.diagram .box{display:inline-block;border:1px solid var(--border);padding:4px 12px;border-radius:4px;background:var(--bg3);}
+.diagram .box.red{border-color:var(--red);color:var(--red);}
+.diagram .box.green{border-color:var(--green);color:var(--green);}
+.diagram .box.blue{border-color:var(--accent);color:var(--accent);}
+.diagram .box.yellow{border-color:var(--yellow);color:var(--yellow);}
+.diagram .box.purple{border-color:var(--purple);color:var(--purple);}
+.diagram .arrow{color:var(--text3);}
+
+/* Phase steps */
+.steps{display:flex;flex-direction:column;gap:0;margin:20px 0;}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step-num{width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.step-num.red{background:var(--red);}
+.step-num.green{background:var(--green);}
+.step-num.yellow{background:var(--yellow);}
+.step-content h4{margin:0 0 4px;font-size:14px;color:var(--text);}
+.step-content p{margin:0;font-size:13px;}
+
+/* Badge */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge.red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge.green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge.yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge.blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge.purple{background:rgba(188,140,255,.15);color:var(--purple);}
+
+/* Coverage */
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden;}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;border-top:1px solid var(--border);}
+.coverage-body li{font-size:13px;color:var(--text2);}
+
+/* TOC */
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:32px;}
+.toc-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{font-size:13px;margin-bottom:4px;}
+.toc a{color:var(--text2);}
+.toc a:hover{color:var(--accent);}
+.toc a.active{color:var(--accent);}
+
+/* Toolbar */
+.toolbar{position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:100;}
+.toolbar button{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+.toolbar button:hover{color:var(--text);border-color:var(--text3);}
+.back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;}
+.back-to-top.visible{opacity:1;}
+
+/* Hamburger */
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;}
+@media(max-width:768px){
+  .hamburger{display:block;}
+  .sidebar{position:fixed;left:-280px;top:0;z-index:150;transition:left .25s;}
+  .sidebar.open{left:0;}
+  .main{padding:24px 20px;}
+}
+
+/* Syntax colors */
+.k{color:#ff7b72;} .s{color:#a5d6ff;} .c{color:#8b949e;font-style:italic;} .n{color:#ffa657;} .kw{color:#ff7b72;} .cm{color:#3fb950;}
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">K8s <span>Docs</span></div>
+  </div>
+  <div class="sidebar-filter">
+    <input type="text" placeholder="Filter navigation..." id="nav-filter" oninput="filterNav(this.value)">
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="00-security-overview.html">Security Overview</a>
+    <a href="01-rbac.html">RBAC</a>
+    <a href="02-pod-security.html">Pod Security</a>
+    <a href="03-network-policies.html">Network Policies</a>
+    <a href="04-secrets-management.html">Secrets Management</a>
+    <a href="05-service-accounts.html">Service Accounts</a>
+    <a href="06-admission-controllers.html">Admission Controllers</a>
+    <a href="07-image-security.html" class="active">Image Security</a>
+    <a href="08-audit-logging.html">Audit Logging</a>
+    <a href="09-encryption-at-rest.html">Encryption at Rest</a>
+    <a href="10-supply-chain-security.html">Supply Chain Security</a>
+    <a href="11-compliance.html">Compliance</a>
+  </div>
+</nav>
+
+<main class="main" id="main">
+  <div class="toolbar">
+    <button onclick="toggleTheme()">Theme</button>
+  </div>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-security-overview.html">Security</a> › Image Security</div>
+    <h1>Image Security</h1>
+    <p class="page-desc">Container image trust chain, vulnerability scanning, registry security, image signing with Sigstore/Cosign, SLSA provenance, runtime image policies, and supply chain integrity from build to deploy.</p>
+    <div class="meta-tags">
+      <span class="tag adv">Advanced</span>
+      <span class="tag">Security</span>
+      <span class="tag">Supply Chain</span>
+      <span class="tag">Images</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">On This Page</div>
+    <ol>
+      <li><a href="#threat-model">Image Threat Model</a></li>
+      <li><a href="#image-anatomy">Image Anatomy &amp; Attack Surface</a></li>
+      <li><a href="#base-images">Base Image Strategy</a></li>
+      <li><a href="#vulnerability-scanning">Vulnerability Scanning</a></li>
+      <li><a href="#registry-security">Registry Security</a></li>
+      <li><a href="#image-signing">Image Signing with Cosign</a></li>
+      <li><a href="#slsa">SLSA Provenance</a></li>
+      <li><a href="#policy-enforcement">Policy Enforcement in Kubernetes</a></li>
+      <li><a href="#runtime-security">Runtime Image Security</a></li>
+      <li><a href="#dockerfile-hardening">Dockerfile Hardening</a></li>
+      <li><a href="#observability">Metrics, Alerts &amp; Runbooks</a></li>
+      <li><a href="#best-practices">Best Practices</a></li>
+    </ol>
+  </div>
+
+  <details class="coverage">
+    <summary>Coverage Checklist</summary>
+    <ul class="coverage-body">
+      <li>Image threat model: 5 attack vectors</li>
+      <li>OCI image spec: layers, manifest, config</li>
+      <li>Base image selection: distroless, scratch, alpine</li>
+      <li>Multi-stage build pattern</li>
+      <li>Vulnerability scanning tools: Trivy, Grype, Snyk</li>
+      <li>CVSS scoring and triage</li>
+      <li>Registry security: auth, RBAC, replication</li>
+      <li>imagePullPolicy: Always vs IfNotPresent</li>
+      <li>Image digest pinning vs tag</li>
+      <li>Private registry imagePullSecrets</li>
+      <li>Cosign signing and verification</li>
+      <li>Keyless signing with OIDC/Fulcio/Rekor</li>
+      <li>SLSA framework levels</li>
+      <li>SLSA provenance attestation</li>
+      <li>Admission policy: registry allow-list</li>
+      <li>Kyverno verifyImages policy</li>
+      <li>OPA Gatekeeper image policy</li>
+      <li>AlwaysPullImages admission plugin</li>
+      <li>Dockerfile hardening: non-root, read-only, no secrets</li>
+      <li>Runtime image integrity: Falco rules</li>
+      <li>5 metrics, 4 alerts, 5 runbooks, 8 best practices</li>
+    </ul>
+  </details>
+
+  <!-- ───── THREAT MODEL ───── -->
+  <h2 id="threat-model">Image Threat Model</h2>
+
+  <p>Container images are a primary attack vector in Kubernetes. Compromised images bypass most runtime controls because the attack is baked in before the container ever starts.</p>
+
+  <div class="card-grid">
+    <div class="card danger">
+      <h4>Vulnerable Dependencies</h4>
+      <p>OS packages and language libraries with known CVEs. Most breaches involve publicly disclosed vulnerabilities with available patches.</p>
+    </div>
+    <div class="card danger">
+      <h4>Malicious Base Images</h4>
+      <p>Typosquatted or compromised public images on Docker Hub. <code>mysql:lastest</code> (typo), <code>node:slim</code> backdoored builds.</p>
+    </div>
+    <div class="card danger">
+      <h4>Secrets Baked In</h4>
+      <p>API keys, TLS certs, SSH keys, or database passwords embedded in image layers via <code>COPY</code>, <code>RUN</code>, or <code>ENV</code>.</p>
+    </div>
+    <div class="card danger">
+      <h4>Unverified Provenance</h4>
+      <p>No proof that an image was built from source you control. Compromised CI pipeline could inject malicious code without changing the tag.</p>
+    </div>
+    <div class="card danger">
+      <h4>Tag Mutability</h4>
+      <p>Image tags are mutable. <code>:latest</code> or even <code>:1.2.3</code> can be overwritten. Re-deploying the "same" tag may run different code.</p>
+    </div>
+  </div>
+
+  <div class="callout danger">
+    <div class="callout-title">Attack Chain</div>
+    <p>Compromised registry credentials → push malicious image with legitimate tag → Kubernetes pulls on next rollout → attacker code runs with pod's RBAC permissions and network access.</p>
+  </div>
+
+  <!-- ───── IMAGE ANATOMY ───── -->
+  <h2 id="image-anatomy">Image Anatomy &amp; Attack Surface</h2>
+
+  <p>Understanding the OCI image specification reveals exactly where each attack type enters.</p>
+
+  <div class="diagram">
+<span class="box blue">Image Manifest</span> <span class="arrow">──────────────────────────────────────────────</span>
+<br>  ├── <span class="box">Config (image config JSON)</span>  ← ENV vars, CMD, ENTRYPOINT
+<br>  │    └── Attack: <span style="color:var(--red)">secrets in ENV, dangerous capabilities in config</span>
+<br>  └── <span class="box">Layers (ordered)</span>
+<br>       ├── <span class="box">Layer 0</span>: FROM ubuntu:22.04   ← <span style="color:var(--yellow)">base image CVEs</span>
+<br>       ├── <span class="box">Layer 1</span>: RUN apt-get install ← <span style="color:var(--yellow)">package CVEs added here</span>
+<br>       ├── <span class="box">Layer 2</span>: COPY . /app         ← <span style="color:var(--red)">source code + possibly secrets</span>
+<br>       └── <span class="box">Layer N</span>: RUN pip install    ← <span style="color:var(--yellow)">library CVEs</span>
+<br>
+<br><span style="color:var(--text3)"># Secrets in deleted layers are still accessible</span>
+<br><span style="color:var(--red)">COPY secret.key /tmp/secret.key</span>  <span style="color:var(--text3)"># Layer 3: secret present</span>
+<br><span style="color:var(--red)">RUN rm /tmp/secret.key</span>           <span style="color:var(--text3)"># Layer 4: deleted — but Layer 3 is still in image!</span>
+  </div>
+
+  <div class="callout danger">
+    <div class="callout-title">Deleted Files Are Not Gone</div>
+    <p>OCI layers are additive. A file deleted in a later layer is still present in earlier layers and accessible via <code>docker save image.tar && tar xf image.tar</code>. Never add secrets to any layer, even temporarily.</p>
+  </div>
+
+  <h3>Image Identity: Tag vs Digest</h3>
+  <table>
+    <thead><tr><th>Reference Type</th><th>Example</th><th>Mutable?</th><th>Security Implication</th></tr></thead>
+    <tbody>
+      <tr><td>Tag</td><td><code>nginx:1.25.3</code></td><td><span class="badge yellow">Yes</span></td><td>Registry owner can overwrite; no guarantee of content</td></tr>
+      <tr><td>Digest</td><td><code>nginx@sha256:abc123...</code></td><td><span class="badge green">No</span></td><td>Cryptographically immutable; content cannot change</td></tr>
+      <tr><td>Tag + Digest</td><td><code>nginx:1.25.3@sha256:abc...</code></td><td><span class="badge green">No</span></td><td>Best of both: human-readable + immutable reference</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <div class="callout-title">Always Pin to Digest in Production</div>
+    <p>Tags are human convenience. Pin production workloads to digest references. Admission controllers can enforce this. Update digests as part of your dependency update process.</p>
+  </div>
+
+  <!-- ───── BASE IMAGES ───── -->
+  <h2 id="base-images">Base Image Strategy</h2>
+
+  <p>The base image determines your initial attack surface. Smaller base images have fewer packages to patch and a smaller CVE surface.</p>
+
+  <table>
+    <thead><tr><th>Base Image</th><th>Size</th><th>Shell</th><th>Package Mgr</th><th>Use Case</th><th>Security</th></tr></thead>
+    <tbody>
+      <tr><td><code>ubuntu:22.04</code></td><td>~77MB</td><td><span class="badge green">Yes</span></td><td>apt</td><td>Development, debugging</td><td><span class="badge red">Low</span></td></tr>
+      <tr><td><code>debian:slim</code></td><td>~75MB</td><td><span class="badge green">Yes</span></td><td>apt</td><td>General purpose</td><td><span class="badge yellow">Medium</span></td></tr>
+      <tr><td><code>alpine:3.19</code></td><td>~7MB</td><td>ash</td><td>apk</td><td>Small footprint</td><td><span class="badge yellow">Medium</span></td></tr>
+      <tr><td><code>gcr.io/distroless/base</code></td><td>~20MB</td><td><span class="badge red">No</span></td><td>None</td><td>Compiled binaries</td><td><span class="badge green">High</span></td></tr>
+      <tr><td><code>gcr.io/distroless/java17</code></td><td>~200MB</td><td><span class="badge red">No</span></td><td>None</td><td>JVM applications</td><td><span class="badge green">High</span></td></tr>
+      <tr><td><code>gcr.io/distroless/python3</code></td><td>~100MB</td><td><span class="badge red">No</span></td><td>None</td><td>Python apps</td><td><span class="badge green">High</span></td></tr>
+      <tr><td><code>scratch</code></td><td>0MB</td><td><span class="badge red">No</span></td><td>None</td><td>Static Go binaries</td><td><span class="badge green">Highest</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-title">Distroless Benefits</div>
+    <p>Distroless images contain only your application and its runtime dependencies — no shell, no package manager, no coreutils. This eliminates entire classes of post-exploitation techniques (reverse shells, package installation, script execution). The absence of a shell doesn't break <code>kubectl exec</code> entirely — use the debug container pattern with <code>kubectl debug -it --image=busybox</code>.</p>
+  </div>
+
+  <h3>Multi-Stage Build Pattern</h3>
+
+  <p>Multi-stage builds are the primary mechanism for separating build-time tools from the final image, preventing the leakage of build secrets and tools into production images.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Stage 1: Build (all build deps, secrets, tools)</span>
+<span class="k">FROM</span> <span class="n">golang:1.22</span> <span class="k">AS</span> <span class="n">builder</span>
+
+<span class="k">WORKDIR</span> /app
+
+<span class="c"># Dependency layer (cached unless go.mod/sum changes)</span>
+<span class="k">COPY</span> go.mod go.sum ./
+<span class="k">RUN</span> go mod download
+
+<span class="c"># Source code</span>
+<span class="k">COPY</span> . .
+
+<span class="c"># Build static binary — no CGO means no glibc dependency</span>
+<span class="k">RUN</span> CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /server ./cmd/server
+
+<span class="c"># Stage 2: Final image — only the binary</span>
+<span class="k">FROM</span> <span class="n">gcr.io/distroless/static-debian12:nonroot</span>
+
+<span class="c"># nonroot tag: runs as UID 65532 by default</span>
+<span class="k">COPY</span> --from=builder /server /server
+
+<span class="c"># Document the port (does not publish it)</span>
+<span class="k">EXPOSE</span> 8080
+
+<span class="c"># Use numeric UID to work with PodSecurityPolicy runAsNonRoot</span>
+<span class="k">USER</span> 65532:65532
+
+<span class="k">ENTRYPOINT</span> ["/server"]</code></pre>
+
+  <div class="callout info">
+    <div class="callout-title">Build Secrets with --mount=type=secret</div>
+    <p>For private package registries during build, use BuildKit's secret mount — the secret is never written to any layer:</p>
+  </div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># BuildKit secret mount — never appears in any layer</span>
+<span class="k">RUN</span> --mount=type=secret,id=npmrc,target=/root/.npmrc \
+    npm install --production
+
+<span class="c"># Build with:</span>
+<span class="c"># docker buildx build --secret id=npmrc,src=.npmrc .</span></code></pre>
+
+  <!-- ───── VULNERABILITY SCANNING ───── -->
+  <h2 id="vulnerability-scanning">Vulnerability Scanning</h2>
+
+  <p>Vulnerability scanners match image packages and libraries against CVE databases (NVD, OSV, GHSA). They are a necessary but not sufficient security control — zero-day vulnerabilities have no CVE.</p>
+
+  <h3>Scanning Tools Comparison</h3>
+  <table>
+    <thead><tr><th>Tool</th><th>Type</th><th>Databases</th><th>Formats</th><th>Kubernetes Integration</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Trivy</strong></td><td>Open source</td><td>NVD, GHSA, OSV, language-specific</td><td>JSON, SARIF, CycloneDX, SPDX</td><td>Operator, CLI, CI/CD</td></tr>
+      <tr><td><strong>Grype</strong></td><td>Open source</td><td>NVD, GHSA, OSV</td><td>JSON, SARIF, CycloneDX</td><td>CLI, CI/CD</td></tr>
+      <tr><td><strong>Snyk</strong></td><td>Commercial</td><td>Snyk DB (proprietary)</td><td>JSON, SARIF</td><td>Operator, admission webhook</td></tr>
+      <tr><td><strong>Prisma Cloud (Twistlock)</strong></td><td>Commercial</td><td>Multiple + runtime</td><td>Multiple</td><td>Deep K8s integration</td></tr>
+      <tr><td><strong>Clair</strong></td><td>Open source</td><td>NVD, RHEL, Ubuntu</td><td>JSON</td><td>Registry-integrated</td></tr>
+      <tr><td><strong>Anchore Grype</strong></td><td>Open source</td><td>Multiple</td><td>JSON, CycloneDX, SPDX</td><td>CLI, AnchoreCTL</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Trivy Usage</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Scan image — includes OS packages and language libs</span>
+trivy image nginx:1.25.3
+
+<span class="c"># Scan with severity filter (fail CI on CRITICAL/HIGH)</span>
+trivy image --exit-code 1 --severity CRITICAL,HIGH nginx:1.25.3
+
+<span class="c"># SBOM-first scan: generate CycloneDX SBOM then scan it</span>
+trivy image --format cyclonedx --output sbom.json nginx:1.25.3
+trivy sbom sbom.json
+
+<span class="c"># Scan in-cluster images (requires kubeconfig)</span>
+trivy k8s --report summary cluster
+
+<span class="c"># Scan a specific namespace</span>
+trivy k8s --namespace production --report all
+
+<span class="c"># Ignore unfixed vulnerabilities (useful for reducing noise)</span>
+trivy image --ignore-unfixed nginx:1.25.3
+
+<span class="c"># Scan with .trivyignore for known-acceptable CVEs</span>
+trivy image --ignorefile .trivyignore nginx:1.25.3</code></pre>
+
+  <h3>CVSS Scoring and Triage</h3>
+
+  <table>
+    <thead><tr><th>Severity</th><th>CVSS Score</th><th>Action</th><th>SLA</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge red">Critical</span></td><td>9.0–10.0</td><td>Block deployment, immediate patch</td><td>24–48 hours</td></tr>
+      <tr><td><span class="badge red">High</span></td><td>7.0–8.9</td><td>Block deployment, patch in sprint</td><td>7 days</td></tr>
+      <tr><td><span class="badge yellow">Medium</span></td><td>4.0–6.9</td><td>Track, patch in next release</td><td>30 days</td></tr>
+      <tr><td><span class="badge blue">Low</span></td><td>0.1–3.9</td><td>Track, patch opportunistically</td><td>90 days</td></tr>
+      <tr><td><span class="badge">None</span></td><td>0.0</td><td>Informational</td><td>Best effort</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <div class="callout-title">CVSS Score Is Not Everything</div>
+    <p>CVSS score measures theoretical severity, not actual exploitability in your environment. A Critical CVE in a library that has no network path to an attacker is less urgent than a Medium CVE in your public API handler. Use CVSS as a starting point, not a final decision. Tools like VEX (Vulnerability Exploitability eXchange) provide exploitability context.</p>
+  </div>
+
+  <h3>Trivy Operator — In-Cluster Continuous Scanning</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Install Trivy Operator via Helm</span>
+helm repo add aqua https://aquasecurity.github.io/helm-charts/
+helm install trivy-operator aqua/trivy-operator \
+  --namespace trivy-system \
+  --create-namespace \
+  --set="trivy.ignoreUnfixed=true"
+
+<span class="c"># Operator creates VulnerabilityReport CRDs per workload</span>
+kubectl get vulnerabilityreports -A
+kubectl describe vulnerabilityreport replicaset-nginx-abc123 -n production</code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># VulnerabilityReport CRD (auto-created by Trivy Operator)</span>
+<span class="k">apiVersion</span>: <span class="s">aquasecurity.github.io/v1alpha1</span>
+<span class="k">kind</span>: <span class="s">VulnerabilityReport</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">replicaset-nginx-abc123-nginx</span>
+  <span class="k">namespace</span>: <span class="s">production</span>
+<span class="k">report</span>:
+  <span class="k">summary</span>:
+    <span class="k">criticalCount</span>: <span class="n">0</span>
+    <span class="k">highCount</span>: <span class="n">2</span>
+    <span class="k">mediumCount</span>: <span class="n">5</span>
+  <span class="k">vulnerabilities</span>:
+  - <span class="k">vulnerabilityID</span>: <span class="s">CVE-2023-44487</span>
+    <span class="k">title</span>: <span class="s">HTTP/2 Rapid Reset Attack</span>
+    <span class="k">severity</span>: <span class="s">HIGH</span>
+    <span class="k">fixedVersion</span>: <span class="s">1.25.3</span>
+    <span class="k">resource</span>: <span class="s">nginx</span></code></pre>
+
+  <!-- ───── REGISTRY SECURITY ───── -->
+  <h2 id="registry-security">Registry Security</h2>
+
+  <h3>Registry Authentication</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Create imagePullSecret for private registry</span>
+kubectl create secret docker-registry regcred \
+  --docker-server=registry.example.com \
+  --docker-username=myuser \
+  --docker-password=mypassword \
+  --docker-email=ops@example.com \
+  --namespace production
+
+<span class="c"># Reference in pod spec</span>
+<span class="k">spec</span>:
+  <span class="k">imagePullSecrets</span>:
+  - <span class="k">name</span>: <span class="s">regcred</span>
+  <span class="k">containers</span>:
+  - <span class="k">image</span>: <span class="s">registry.example.com/myapp:1.2.3</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Attach imagePullSecret to ServiceAccount so all pods</span>
+<span class="c"># in the namespace automatically get it</span>
+<span class="k">apiVersion</span>: <span class="s">v1</span>
+<span class="k">kind</span>: <span class="s">ServiceAccount</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">default</span>
+  <span class="k">namespace</span>: <span class="s">production</span>
+<span class="k">imagePullSecrets</span>:
+- <span class="k">name</span>: <span class="s">regcred</span></code></pre>
+
+  <div class="callout warning">
+    <div class="callout-title">imagePullSecrets Are Namespace-Scoped</div>
+    <p>Attaching an <code>imagePullSecret</code> to the <code>default</code> ServiceAccount makes it available to all pods that use that SA in that namespace. For cross-namespace use, you must replicate the secret. Use tools like <code>reflector</code> or <code>reloader</code> to sync secrets across namespaces.</p>
+  </div>
+
+  <h3>imagePullPolicy</h3>
+
+  <table>
+    <thead><tr><th>Policy</th><th>Behavior</th><th>Security Risk</th><th>When to Use</th></tr></thead>
+    <tbody>
+      <tr><td><code>Always</code></td><td>Pull on every pod start</td><td>Lowest — always gets latest</td><td>Production with mutable tags</td></tr>
+      <tr><td><code>IfNotPresent</code></td><td>Pull only if not on node</td><td>Medium — cached image may be stale</td><td>Pinned digests</td></tr>
+      <tr><td><code>Never</code></td><td>Never pull, fail if absent</td><td>High — relies on pre-loaded images</td><td>Air-gapped environments</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout danger">
+    <div class="callout-title">AlwaysPullImages Admission Plugin</div>
+    <p>Enabling the <code>AlwaysPullImages</code> admission plugin forces <code>imagePullPolicy: Always</code> on every pod, regardless of what the pod spec says. This prevents nodes from running images that a different tenant pulled previously. Without it, tenant A could reference an image from tenant B's namespace if it happens to be cached on the same node.</p>
+  </div>
+
+  <h3>Registry Security Controls</h3>
+
+  <table>
+    <thead><tr><th>Control</th><th>Description</th><th>Implementation</th></tr></thead>
+    <tbody>
+      <tr><td>Private registry</td><td>No anonymous pulls</td><td>Harbor, ECR, GCR, ACR with auth required</td></tr>
+      <tr><td>Image scanning gate</td><td>Block push if vulnerabilities exceed threshold</td><td>Harbor built-in, ECR Enhanced Scanning</td></tr>
+      <tr><td>Content trust</td><td>Only signed images allowed</td><td>Notary v2, Cosign, registry policy</td></tr>
+      <tr><td>Repository RBAC</td><td>Teams can only push to their repos</td><td>Harbor projects, ECR resource policies</td></tr>
+      <tr><td>Immutable tags</td><td>Tags cannot be overwritten</td><td>ECR immutable tags, Harbor tag retention</td></tr>
+      <tr><td>Geo-replication</td><td>Images closer to clusters</td><td>Harbor replication, ECR replication</td></tr>
+      <tr><td>Audit logging</td><td>Who pushed/pulled when</td><td>Registry audit logs → SIEM</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── IMAGE SIGNING ───── -->
+  <h2 id="image-signing">Image Signing with Cosign</h2>
+
+  <p>Cosign (part of the Sigstore project) enables cryptographic signing of container images, creating a verifiable link between an image digest and an identity that signed it.</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── Key-based signing workflow ────────────────────────────────────────</span>
+<br>
+<br><span class="box green">CI/CD Pipeline</span>
+<br>  │
+<br>  ├─ Build image → push to registry
+<br>  │   └── <span class="box">Image Digest</span>: sha256:abc123...
+<br>  │
+<br>  ├─ Sign with private key:
+<br>  │   <span style="color:var(--accent)">cosign sign --key cosign.key registry/image@sha256:abc123</span>
+<br>  │   └── Signature stored in registry as: <span class="box">registry/image:sha256-abc123.sig</span>
+<br>  │
+<br>  └─ Push SBOM attestation:
+<br>      <span style="color:var(--accent)">cosign attest --key cosign.key --predicate sbom.json registry/image@sha256:abc123</span>
+<br>
+<br><span style="color:var(--text3)">── Verification at admission time ────────────────────────────────────</span>
+<br>
+<br><span class="box blue">Admission Webhook</span> (Kyverno / Policy Controller)
+<br>  │
+<br>  ├─ Pod CREATE request arrives
+<br>  ├─ Extract image reference
+<br>  ├─ Fetch signature from registry
+<br>  ├─ Verify: <span style="color:var(--accent)">cosign verify --key cosign.pub registry/image@sha256:abc123</span>
+<br>  └─ Allow (signature valid) or Deny (no valid signature)
+  </div>
+
+  <h3>Key-Based Signing</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Generate key pair (store private key in Vault/KMS, not CI env var)</span>
+cosign generate-key-pair
+
+<span class="c"># Sign image (after push to registry)</span>
+cosign sign --key cosign.key \
+  registry.example.com/myapp@sha256:abc123...
+
+<span class="c"># Sign with KMS key (Google Cloud KMS example)</span>
+cosign sign --key gcpkms://projects/my-project/locations/global/keyRings/my-ring/cryptoKeys/cosign \
+  registry.example.com/myapp@sha256:abc123...
+
+<span class="c"># Verify image signature</span>
+cosign verify --key cosign.pub \
+  registry.example.com/myapp@sha256:abc123...
+
+<span class="c"># Verify outputs JSON with signer identity and timestamp</span></code></pre>
+
+  <h3>Keyless Signing (Sigstore)</h3>
+
+  <p>Keyless signing uses ephemeral keys tied to OIDC identity (GitHub Actions, Google SA, etc.) and records signatures in the public Rekor transparency log. No long-lived private keys to manage or protect.</p>
+
+  <div class="diagram">
+<span class="box green">GitHub Actions</span>
+<br>  │
+<br>  ├─ OIDC token issued by GitHub (id_token: write permission)
+<br>  │   <span style="color:var(--text3)">iss: https://token.actions.githubusercontent.com</span>
+<br>  │   <span style="color:var(--text3)">sub: repo:myorg/myrepo:ref:refs/heads/main</span>
+<br>  │
+<br>  ├─ cosign sign (SIGSTORE_NO_TLOG=false)
+<br>  │   ├── Request ephemeral cert from <span class="box blue">Fulcio CA</span>
+<br>  │   │   └── Cert binds: OIDC identity ↔ ephemeral public key
+<br>  │   ├── Sign image digest with ephemeral private key
+<br>  │   └── Upload signature + cert to <span class="box purple">Rekor transparency log</span>
+<br>  │
+<br>  └─ Ephemeral private key discarded
+<br>
+<br><span class="box blue">Verifier</span>
+<br>  ├─ Fetch signature from registry
+<br>  ├─ Verify cert chain (Fulcio root CA)
+<br>  ├─ Verify signature with cert public key
+<br>  ├─ Check Rekor inclusion proof
+<br>  └─ Verify cert subject matches expected OIDC identity
+  </div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Keyless sign in GitHub Actions (OIDC token available automatically)</span>
+- name: Sign image
+  run: |
+    cosign sign \
+      --yes \
+      registry.example.com/myapp@${{ steps.build.outputs.digest }}
+  env:
+    COSIGN_EXPERIMENTAL: "1"  <span class="c"># Not needed from cosign v2.0+</span>
+
+<span class="c"># Keyless verify — check identity matches expected GitHub workflow</span>
+cosign verify \
+  --certificate-identity-regexp "https://github.com/myorg/myrepo/.github/workflows/.*" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  registry.example.com/myapp@sha256:abc123...</code></pre>
+
+  <h3>Attestations</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Attach SBOM as attestation (CycloneDX format)</span>
+cosign attest \
+  --key cosign.key \
+  --type cyclonedx \
+  --predicate sbom.cyclonedx.json \
+  registry.example.com/myapp@sha256:abc123...
+
+<span class="c"># Attach SLSA provenance as attestation</span>
+cosign attest \
+  --key cosign.key \
+  --type slsaprovenance \
+  --predicate provenance.json \
+  registry.example.com/myapp@sha256:abc123...
+
+<span class="c"># Verify attestation</span>
+cosign verify-attestation \
+  --key cosign.pub \
+  --type cyclonedx \
+  registry.example.com/myapp@sha256:abc123... | \
+  jq .payload | base64 -d | jq .</code></pre>
+
+  <!-- ───── SLSA ───── -->
+  <h2 id="slsa">SLSA Provenance</h2>
+
+  <p>SLSA (Supply chain Levels for Software Artifacts, pronounced "salsa") is a framework of incrementally adoptable security levels for software supply chains, defined by Google and the OpenSSF.</p>
+
+  <table>
+    <thead><tr><th>Level</th><th>Requirements</th><th>What It Prevents</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge blue">SLSA 0</span></td><td>No guarantees</td><td>Nothing</td></tr>
+      <tr><td><span class="badge yellow">SLSA 1</span></td><td>Provenance generated (not authenticated)</td><td>Accidental mistakes; provides artifact lineage</td></tr>
+      <tr><td><span class="badge yellow">SLSA 2</span></td><td>Signed provenance from hosted build service</td><td>Tampering after the build; identifies build service</td></tr>
+      <tr><td><span class="badge green">SLSA 3</span></td><td>Hardened build platform; non-forgeable provenance</td><td>Compromised build service modifying artifacts</td></tr>
+      <tr><td><span class="badge purple">SLSA 4</span></td><td>Two-person review; hermetic builds</td><td>Insider threats; reproducible builds verification</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-title">SLSA Level 3 Is the Practical Target</div>
+    <p>SLSA 3 requires a hosted, hardened build platform (GitHub Actions, Google Cloud Build, etc.) that generates non-forgeable provenance. This is achievable with existing CI/CD tooling. SLSA 4 requires hermetic and reproducible builds which many projects cannot achieve today.</p>
+  </div>
+
+  <h3>SLSA Provenance with GitHub Actions</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># .github/workflows/release.yaml</span>
+<span class="k">jobs</span>:
+  <span class="k">build</span>:
+    <span class="k">permissions</span>:
+      <span class="k">id-token</span>: <span class="s">write</span>     <span class="c"># For OIDC / Sigstore</span>
+      <span class="k">contents</span>: <span class="s">read</span>
+      <span class="k">packages</span>: <span class="s">write</span>     <span class="c"># For pushing to GHCR</span>
+    <span class="k">steps</span>:
+    - <span class="k">uses</span>: <span class="s">actions/checkout@v4</span>
+    - <span class="k">name</span>: <span class="s">Build and push</span>
+      <span class="k">id</span>: <span class="s">build</span>
+      <span class="k">uses</span>: <span class="s">docker/build-push-action@v5</span>
+      <span class="k">with</span>:
+        <span class="k">push</span>: <span class="s">true</span>
+        <span class="k">tags</span>: <span class="s">ghcr.io/myorg/myapp:${{ github.sha }}</span>
+
+  <span class="k">provenance</span>:
+    <span class="k">needs</span>: [<span class="s">build</span>]
+    <span class="k">uses</span>: <span class="s">slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.10.0</span>
+    <span class="k">with</span>:
+      <span class="k">image</span>: <span class="s">ghcr.io/myorg/myapp</span>
+      <span class="k">digest</span>: <span class="s">${{ needs.build.outputs.digest }}</span>
+    <span class="k">permissions</span>:
+      <span class="k">id-token</span>: <span class="s">write</span>
+      <span class="k">contents</span>: <span class="s">read</span>
+      <span class="k">packages</span>: <span class="s">write</span>
+      <span class="k">actions</span>: <span class="s">read</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Verify SLSA provenance</span>
+slsa-verifier verify-image \
+  --source-uri github.com/myorg/myapp \
+  --source-tag v1.2.3 \
+  ghcr.io/myorg/myapp@sha256:abc123...</code></pre>
+
+  <!-- ───── POLICY ENFORCEMENT ───── -->
+  <h2 id="policy-enforcement">Policy Enforcement in Kubernetes</h2>
+
+  <h3>Kyverno verifyImages</h3>
+
+  <p>Kyverno's <code>verifyImages</code> rule validates image signatures and attestations at admission time. It supports Cosign key-based, keyless, and attestation verification.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Kyverno ClusterPolicy: require signed images from trusted registry</span>
+<span class="k">apiVersion</span>: <span class="s">kyverno.io/v1</span>
+<span class="k">kind</span>: <span class="s">ClusterPolicy</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">verify-image-signatures</span>
+<span class="k">spec</span>:
+  <span class="k">validationFailureAction</span>: <span class="s">Enforce</span>
+  <span class="k">background</span>: <span class="s">false</span>   <span class="c"># Don't check existing pods</span>
+  <span class="k">rules</span>:
+  - <span class="k">name</span>: <span class="s">verify-signature</span>
+    <span class="k">match</span>:
+      <span class="k">any</span>:
+      - <span class="k">resources</span>:
+          <span class="k">kinds</span>: [<span class="s">Pod</span>]
+    <span class="k">verifyImages</span>:
+    - <span class="k">imageReferences</span>:
+      - <span class="s">"registry.example.com/*"</span>
+      <span class="k">attestors</span>:
+      - <span class="k">entries</span>:
+        - <span class="k">keys</span>:
+            <span class="k">publicKeys</span>: |-
+              -----BEGIN PUBLIC KEY-----
+              MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE...
+              -----END PUBLIC KEY-----
+      <span class="k">mutateDigest</span>: <span class="s">true</span>   <span class="c"># Replace tag with verified digest</span>
+      <span class="k">verifyDigest</span>: <span class="s">true</span>   <span class="c"># Ensure image ref uses digest</span>
+      <span class="k">required</span>: <span class="s">true</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Kyverno verifyImages: keyless (Sigstore) verification</span>
+    <span class="k">verifyImages</span>:
+    - <span class="k">imageReferences</span>:
+      - <span class="s">"ghcr.io/myorg/*"</span>
+      <span class="k">attestors</span>:
+      - <span class="k">entries</span>:
+        - <span class="k">keyless</span>:
+            <span class="k">subject</span>: <span class="s">"https://github.com/myorg/myrepo/.github/workflows/release.yaml@refs/heads/main"</span>
+            <span class="k">issuer</span>: <span class="s">"https://token.actions.githubusercontent.com"</span>
+            <span class="k">rekor</span>:
+              <span class="k">url</span>: <span class="s">https://rekor.sigstore.dev</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Kyverno verifyImages: verify SBOM attestation exists</span>
+    <span class="k">verifyImages</span>:
+    - <span class="k">imageReferences</span>:
+      - <span class="s">"registry.example.com/*"</span>
+      <span class="k">attestations</span>:
+      - <span class="k">type</span>: <span class="s">https://cyclonedx.org/bom</span>
+        <span class="k">attestors</span>:
+        - <span class="k">entries</span>:
+          - <span class="k">keys</span>:
+              <span class="k">publicKeys</span>: <span class="s">"..."</span>
+        <span class="k">conditions</span>:
+        - <span class="k">all</span>:
+          - <span class="k">key</span>: <span class="s">"{{ components | length(@) }}"</span>
+            <span class="k">operator</span>: <span class="s">GreaterThan</span>
+            <span class="k">value</span>: <span class="s">"0"</span></code></pre>
+
+  <h3>Registry Allow-List with Kyverno</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Block images from untrusted registries</span>
+<span class="k">apiVersion</span>: <span class="s">kyverno.io/v1</span>
+<span class="k">kind</span>: <span class="s">ClusterPolicy</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">restrict-image-registries</span>
+<span class="k">spec</span>:
+  <span class="k">validationFailureAction</span>: <span class="s">Enforce</span>
+  <span class="k">rules</span>:
+  - <span class="k">name</span>: <span class="s">validate-registries</span>
+    <span class="k">match</span>:
+      <span class="k">any</span>:
+      - <span class="k">resources</span>:
+          <span class="k">kinds</span>: [<span class="s">Pod</span>]
+    <span class="k">validate</span>:
+      <span class="k">message</span>: <span class="s">"Images must come from registry.example.com or gcr.io/distroless"</span>
+      <span class="k">pattern</span>:
+        <span class="k">spec</span>:
+          <span class="k">containers</span>:
+          - <span class="k">image</span>: <span class="s">"registry.example.com/* | gcr.io/distroless/*"</span></code></pre>
+
+  <h3>OPA Gatekeeper: Digest Pinning Policy</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># ConstraintTemplate: require digest-pinned images</span>
+<span class="k">apiVersion</span>: <span class="s">templates.gatekeeper.sh/v1</span>
+<span class="k">kind</span>: <span class="s">ConstraintTemplate</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">k8srequiredimagedigest</span>
+<span class="k">spec</span>:
+  <span class="k">crd</span>:
+    <span class="k">spec</span>:
+      <span class="k">names</span>:
+        <span class="k">kind</span>: <span class="s">K8sRequiredImageDigest</span>
+  <span class="k">targets</span>:
+  - <span class="k">target</span>: <span class="s">admission.k8s.gatekeeper.sh</span>
+    <span class="k">rego</span>: |
+      package k8srequiredimagedigest
+
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.containers[_]
+        not contains(container.image, "@sha256:")
+        msg := sprintf("Container '%v' image '%v' must use digest pinning (@sha256:...)", [container.name, container.image])
+      }
+
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.initContainers[_]
+        not contains(container.image, "@sha256:")
+        msg := sprintf("InitContainer '%v' image '%v' must use digest pinning", [container.name, container.image])
+      }</code></pre>
+
+  <h3>ValidatingAdmissionPolicy (CEL): Registry Check</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="k">apiVersion</span>: <span class="s">admissionregistration.k8s.io/v1</span>
+<span class="k">kind</span>: <span class="s">ValidatingAdmissionPolicy</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">check-image-registry</span>
+<span class="k">spec</span>:
+  <span class="k">matchConstraints</span>:
+    <span class="k">resourceRules</span>:
+    - <span class="k">apiGroups</span>: [<span class="s">""</span>]
+      <span class="k">apiVersions</span>: [<span class="s">v1</span>]
+      <span class="k">operations</span>: [<span class="s">CREATE</span>, <span class="s">UPDATE</span>]
+      <span class="k">resources</span>: [<span class="s">pods</span>]
+  <span class="k">validations</span>:
+  - <span class="k">expression</span>: >
+      object.spec.containers.all(c,
+        c.image.startsWith("registry.example.com/") ||
+        c.image.startsWith("gcr.io/distroless/")
+      )
+    <span class="k">message</span>: <span class="s">"Images must come from approved registries"</span>
+  - <span class="k">expression</span>: >
+      object.spec.containers.all(c,
+        c.image.contains("@sha256:")
+      )
+    <span class="k">message</span>: <span class="s">"Images must be pinned to a digest"</span></code></pre>
+
+  <!-- ───── RUNTIME SECURITY ───── -->
+  <h2 id="runtime-security">Runtime Image Security</h2>
+
+  <h3>Falco Rules for Image Anomalies</h3>
+
+  <p>Falco detects runtime behavior that indicates a compromised or malicious image. Crucially, Falco detects but does not prevent — pair it with admission controls for prevention.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Falco rule: detect container running as root</span>
+- <span class="k">rule</span>: Container Running as Root
+  <span class="k">desc</span>: Detect containers running as root user
+  <span class="k">condition</span>: >
+    container and
+    proc.vpid=1 and
+    user.uid=0 and
+    not container.image.repository in (trusted_root_images)
+  <span class="k">output</span>: >
+    Container running as root (user=%user.name image=%container.image.repository
+    container=%container.name pod=%k8s.pod.name ns=%k8s.ns.name)
+  <span class="k">priority</span>: WARNING
+
+<span class="c"># Falco rule: detect unexpected network connection from container</span>
+- <span class="k">rule</span>: Unexpected Outbound Connection
+  <span class="k">desc</span>: Detect outbound network connections to unusual destinations
+  <span class="k">condition</span>: >
+    outbound and
+    container and
+    not fd.sport in (allowed_outbound_ports) and
+    not fd.sip in (allowed_outbound_ips)
+  <span class="k">output</span>: >
+    Unexpected outbound connection (image=%container.image.repository
+    connection=%fd.name pod=%k8s.pod.name)
+  <span class="k">priority</span>: CRITICAL
+
+<span class="c"># Falco rule: detect binary execution in container</span>
+- <span class="k">rule</span>: Unexpected Process in Container
+  <span class="k">desc</span>: Detect execution of binaries not expected in container
+  <span class="k">condition</span>: >
+    spawned_process and
+    container and
+    not proc.name in (allowed_processes) and
+    not proc.pname in (allowed_parent_processes)
+  <span class="k">output</span>: >
+    Unexpected process (proc=%proc.name pproc=%proc.pname
+    image=%container.image.repository pod=%k8s.pod.name)
+  <span class="k">priority</span>: ERROR</code></pre>
+
+  <h3>Image Pull Verification Workflow</h3>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Pod CREATE Request</h4>
+        <p>Admission webhook intercepts the pod creation request before it reaches etcd.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Registry Allow-List Check</h4>
+        <p>Validate image references start with approved registry prefixes. Reject images from Docker Hub or unrecognized registries.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Digest Pinning Check</h4>
+        <p>Validate image references contain <code>@sha256:</code> digest. Reject mutable tag-only references.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Signature Verification</h4>
+        <p>Fetch and verify Cosign signature from registry. Validate against trusted public keys or OIDC identity constraints.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">5</div>
+      <div class="step-content">
+        <h4>Admission Allowed</h4>
+        <p>Image reference mutated to verified digest (if tag was supplied). Pod created with immutable image reference.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── DOCKERFILE HARDENING ───── -->
+  <h2 id="dockerfile-hardening">Dockerfile Hardening</h2>
+
+  <h3>Complete Hardened Dockerfile</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c">###############################################################</span>
+<span class="c"># Stage 1: Dependency download (separate for better caching)</span>
+<span class="c">###############################################################</span>
+<span class="k">FROM</span> <span class="n">node:20-alpine3.19</span> <span class="k">AS</span> <span class="n">deps</span>
+
+<span class="k">WORKDIR</span> /app
+
+<span class="c"># Copy only manifests first — layer cache: only invalidated when deps change</span>
+<span class="k">COPY</span> package.json package-lock.json ./
+<span class="k">RUN</span> npm ci --only=production --ignore-scripts
+
+<span class="c">###############################################################</span>
+<span class="c"># Stage 2: Application build</span>
+<span class="c">###############################################################</span>
+<span class="k">FROM</span> <span class="n">node:20-alpine3.19</span> <span class="k">AS</span> <span class="n">build</span>
+
+<span class="k">WORKDIR</span> /app
+<span class="k">COPY</span> package.json package-lock.json ./
+<span class="k">RUN</span> npm ci                          <span class="c"># include devDeps for build</span>
+<span class="k">COPY</span> . .
+<span class="k">RUN</span> npm run build
+
+<span class="c">###############################################################</span>
+<span class="c"># Stage 3: Production image</span>
+<span class="c">###############################################################</span>
+<span class="k">FROM</span> <span class="n">node:20-alpine3.19</span>
+
+<span class="c"># Upgrade OS packages to get latest CVE fixes</span>
+<span class="k">RUN</span> apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
+
+<span class="c"># Create non-root user with fixed UID (important for runAsNonRoot + runAsUser)</span>
+<span class="k">RUN</span> addgroup -g 10001 -S appgroup && \
+    adduser  -u 10001 -S appuser -G appgroup
+
+<span class="k">WORKDIR</span> /app
+
+<span class="c"># Copy artifacts from build stages (not source code or devDeps)</span>
+<span class="k">COPY</span> --from=deps   --chown=appuser:appgroup /app/node_modules ./node_modules
+<span class="k">COPY</span> --from=build  --chown=appuser:appgroup /app/dist         ./dist
+<span class="k">COPY</span>               --chown=appuser:appgroup package.json      .
+
+<span class="c"># Drop to non-root user</span>
+<span class="k">USER</span> 10001:10001
+
+<span class="c"># Document (do not publish) the application port</span>
+<span class="k">EXPOSE</span> 3000
+
+<span class="c"># Use exec form (not shell form) to ensure signals propagate correctly</span>
+<span class="k">ENTRYPOINT</span> ["node", "dist/server.js"]</code></pre>
+
+  <h3>Dockerfile Anti-Patterns</h3>
+
+  <table>
+    <thead><tr><th>Anti-Pattern</th><th>Risk</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td><code>FROM ubuntu:latest</code></td><td>Non-reproducible, mutable</td><td>Pin to specific digest: <code>FROM ubuntu:22.04@sha256:...</code></td></tr>
+      <tr><td><code>USER root</code> (final image)</td><td>Container runs as root</td><td>Add non-root user, use <code>USER 10001</code></td></tr>
+      <tr><td><code>COPY . .</code> without .dockerignore</td><td>Source secrets, .env copied</td><td>Add <code>.dockerignore</code>; copy specific files</td></tr>
+      <tr><td><code>ENV API_KEY=secret</code></td><td>Secret in image layers forever</td><td>Use runtime injection: K8s Secrets or ESO</td></tr>
+      <tr><td><code>RUN curl | bash</code></td><td>Arbitrary code execution at build time</td><td>Pin to specific version + verify checksum</td></tr>
+      <tr><td><code>RUN apt-get install &amp;&amp; rm -rf /var/lib/apt</code></td><td>Package manager remains; packages cached</td><td>Multi-stage; apt in build stage only</td></tr>
+      <tr><td><code>ADD https://... /app/</code></td><td>Remote content without verification</td><td>Use <code>RUN curl -L URL | sha256sum -c -</code></td></tr>
+      <tr><td>No <code>HEALTHCHECK</code></td><td>Kubernetes can't detect app-level failure</td><td>Add <code>HEALTHCHECK</code> or use liveness probe</td></tr>
+    </tbody>
+  </table>
+
+  <h3>.dockerignore</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># .dockerignore — always include this file</span>
+.git
+.gitignore
+*.md
+.env
+.env.*
+*.key
+*.pem
+*.cert
+*.crt
+node_modules
+dist
+coverage
+.DS_Store
+Dockerfile*
+docker-compose*
+.github
+tests
+__tests__
+*.test.ts
+*.spec.ts</code></pre>
+
+  <!-- ───── OBSERVABILITY ───── -->
+  <h2 id="observability">Metrics, Alerts &amp; Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Source</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>trivy_vulnerability_id</code></td><td>Trivy Operator</td><td>Per-image CVE count by severity</td></tr>
+      <tr><td><code>kyverno_policy_results_total</code></td><td>Kyverno</td><td>Policy pass/fail counts by policy name</td></tr>
+      <tr><td><code>image_pull_errors_total</code></td><td>kubelet</td><td>Failed image pull attempts (ErrImagePull, ImagePullBackOff)</td></tr>
+      <tr><td><code>cosign_verification_duration_seconds</code></td><td>Custom webhook</td><td>Signature verification latency at admission</td></tr>
+      <tr><td><code>falco_events_total</code></td><td>Falco</td><td>Runtime security events by rule name</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Alerts</h3>
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Alert: Critical CVE in running workload</span>
+- <span class="k">alert</span>: <span class="s">CriticalCVEInRunningWorkload</span>
+  <span class="k">expr</span>: <span class="s">sum by (namespace, workload, image) (trivy_vulnerability_id{severity="CRITICAL"}) > 0</span>
+  <span class="k">for</span>: <span class="s">5m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Critical CVE in {{ $labels.workload }} ({{ $labels.namespace }})"</span>
+
+<span class="c"># Alert: Image from untrusted registry blocked</span>
+- <span class="k">alert</span>: <span class="s">UntrustedRegistryBlocked</span>
+  <span class="k">expr</span>: <span class="s">increase(kyverno_policy_results_total{policy="restrict-image-registries",result="fail"}[5m]) > 0</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Attempt to deploy image from untrusted registry"</span>
+
+<span class="c"># Alert: Signature verification failures spike</span>
+- <span class="k">alert</span>: <span class="s">ImageSignatureVerificationFailure</span>
+  <span class="k">expr</span>: <span class="s">increase(kyverno_policy_results_total{policy="verify-image-signatures",result="fail"}[5m]) > 3</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Multiple image signature verification failures — possible supply chain attack"</span>
+
+<span class="c"># Alert: Falco runtime anomaly</span>
+- <span class="k">alert</span>: <span class="s">FalcoRuntimeAnomaly</span>
+  <span class="k">expr</span>: <span class="s">increase(falco_events_total{priority=~"CRITICAL|ERROR"}[5m]) > 0</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Falco detected runtime anomaly: {{ $labels.rule }}"</span></code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Critical CVE in Production</h4>
+      <p>1. Identify affected images: <code>kubectl get vulnerabilityreports -A</code><br>2. Check if CVE is exploitable (network path? fix available?)<br>3. Update base image or package, rebuild, re-sign, redeploy<br>4. If no fix: apply compensating controls (NetworkPolicy, seccomp)</p>
+    </div>
+    <div class="card">
+      <h4>ImagePullBackOff</h4>
+      <p>1. Check events: <code>kubectl describe pod &lt;name&gt;</code><br>2. Verify imagePullSecret exists and is valid<br>3. Verify registry is reachable from node<br>4. Check if admission policy mutated the image reference unexpectedly</p>
+    </div>
+    <div class="card">
+      <h4>Signature Verification Failure Spike</h4>
+      <p>1. Check which images are failing: Kyverno PolicyReport<br>2. Verify CI pipeline is signing correctly<br>3. Check if public key in policy matches signing key<br>4. Investigate for unauthorized image push attempts</p>
+    </div>
+    <div class="card">
+      <h4>Falco Runtime Alert</h4>
+      <p>1. Identify pod: <code>kubectl get pod -n &lt;ns&gt; &lt;name&gt;</code><br>2. Capture forensics: <code>kubectl debug -it --image=busybox</code><br>3. Consider immediate isolation: remove from Service, cordon node<br>4. Preserve evidence before terminating pod</p>
+    </div>
+    <div class="card">
+      <h4>Registry Credential Rotation</h4>
+      <p>1. Create new imagePullSecret with new credentials<br>2. Update ServiceAccount or pod specs<br>3. Roll deployments: <code>kubectl rollout restart deployment</code><br>4. Revoke old credentials in registry</p>
+    </div>
+  </div>
+
+  <!-- ───── BEST PRACTICES ───── -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num green">1</div>
+      <div class="step-content">
+        <h4>Pin all images to digest in production</h4>
+        <p>Tags are mutable. Use <code>image@sha256:</code> references for all production workloads. Automate digest updates with tools like Renovate or Dependabot.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">2</div>
+      <div class="step-content">
+        <h4>Use distroless or scratch base images</h4>
+        <p>Eliminate shell access, package managers, and unneeded utilities from production images. This removes entire attack classes post-exploitation.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h4>Scan in CI and block on critical/high CVEs</h4>
+        <p>Run <code>trivy image --exit-code 1 --severity CRITICAL,HIGH</code> in every build pipeline. Never deploy images that fail the threshold.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
+      <div class="step-content">
+        <h4>Sign every image with Cosign</h4>
+        <p>Adopt keyless signing via GitHub Actions OIDC for zero key management overhead. Verify signatures at admission with Kyverno <code>verifyImages</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">5</div>
+      <div class="step-content">
+        <h4>Enforce registry allow-list at admission</h4>
+        <p>Use Kyverno or ValidatingAdmissionPolicy to reject images from unapproved registries. Docker Hub images should be mirrored to your private registry before use.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">6</div>
+      <div class="step-content">
+        <h4>Never bake secrets into images</h4>
+        <p>Use BuildKit's <code>--mount=type=secret</code> for build-time secrets. Inject runtime secrets via Kubernetes Secrets or an external secrets operator — not ENV in Dockerfile.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">7</div>
+      <div class="step-content">
+        <h4>Enable AlwaysPullImages in multi-tenant clusters</h4>
+        <p>The <code>AlwaysPullImages</code> admission plugin prevents cross-tenant image cache exploitation. Performance impact is mitigated by registry proximity (same datacenter).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">8</div>
+      <div class="step-content">
+        <h4>Deploy Trivy Operator for continuous scanning</h4>
+        <p>One-time CI scans miss new CVEs in running workloads. The Trivy Operator continuously scans running images and surfaces new vulnerabilities via <code>VulnerabilityReport</code> CRDs.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="back-to-top" id="back-to-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+</main>
+
+<script>
+function toggleTheme(){
+  const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t === 'dark' ? null : t);
+  if(t !== 'dark') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('k8s-theme', t);
+}
+(function(){
+  const t = localStorage.getItem('k8s-theme');
+  if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+})();
+
+function copyCode(btn){
+  const pre = btn.parentElement;
+  const code = pre.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display = a.textContent.toLowerCase().includes(v.toLowerCase()) ? '' : 'none';
+  });
+}
+
+const main = document.getElementById('main');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{
+  btt.classList.toggle('visible', main.scrollTop > 400);
+});
+
+// TOC active state
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    const id = e.target.id;
+    const link = document.querySelector(`.toc a[href="#${id}"]`);
+    if(link) link.classList.toggle('active', e.isIntersecting);
+  });
+},{root: main, rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('h2[id]').forEach(h=>observer.observe(h));
+</script>
+</body>
+</html>

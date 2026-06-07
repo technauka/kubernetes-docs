@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stateful Storage Patterns — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6;}
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sidebar-logo{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;}
+.sidebar-search{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;margin-top:10px;}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);text-decoration:none;border-radius:0;transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);}
+.nav-section a.active{color:var(--accent);background:var(--bg3);border-left:2px solid var(--accent);}
+/* Main */
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:900px;}
+.toc-wrap{width:var(--toc-w);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);}
+/* Header */
+.page-header{margin-bottom:32px;}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.breadcrumb a{color:var(--text3);text-decoration:none;}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:12px;}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
+/* Typography */
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+/* Code */
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;font-family:'SFMono-Regular',Consolas,monospace;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;padding:3px 8px;cursor:pointer;}
+.copy-btn:hover{background:var(--bg4);}
+/* Callouts */
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-weight:700;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.callout-info .callout-title{color:var(--accent);}
+.callout-warn .callout-title{color:var(--yellow);}
+.callout-danger .callout-title{color:var(--red);}
+.callout-success .callout-title{color:var(--green);}
+.callout p{margin:0;font-size:14px;}
+/* Tables */
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+/* Cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin:16px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card-title{font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;}
+.card p{font-size:13px;margin:0;}
+/* Coverage block */
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+/* TOC */
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px;}
+.toc-list{list-style:none;margin:0;padding:0;}
+.toc-list li{margin-bottom:2px;}
+.toc-list a{font-size:12px;color:var(--text2);text-decoration:none;display:block;padding:3px 0;border-left:2px solid transparent;padding-left:8px;}
+.toc-list a:hover{color:var(--text);}
+.toc-list a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-l2{padding-left:16px!important;}
+/* Diagram */
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--text2);overflow-x:auto;white-space:pre;}
+/* Badge */
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+/* Nav footer */
+.page-nav{display:flex;justify-content:space-between;margin-top:56px;padding-top:20px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;flex-direction:column;gap:4px;color:var(--text2);text-decoration:none;max-width:45%;}
+.page-nav a:hover{color:var(--accent);}
+.page-nav .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.page-nav .nav-title{font-size:14px;font-weight:600;}
+/* Top bar */
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;position:sticky;top:0;z-index:99;align-items:center;justify-content:space-between;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:14px;font-weight:600;}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:12px;}
+/* Back-to-top */
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.back-top.visible{opacity:1;}
+@media(max-width:1200px){.toc-wrap{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrap{margin-left:0;}.topbar{display:flex;}.main-content{padding:20px 16px;}}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="../index.html" class="sidebar-logo">⎈ Kubernetes Docs</a>
+  </div>
+  <input type="text" class="sidebar-search" placeholder="Filter navigation…" id="nav-search">
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-overview.html">Overview</a>
+    <a href="../01-getting-started/01-architecture.html">Architecture</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../02-workloads/00-pods.html">Pods</a>
+    <a href="../02-workloads/01-deployments.html">Deployments</a>
+    <a href="../02-workloads/02-statefulsets.html">StatefulSets</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Networking Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="00-storage-overview.html">Storage Overview</a>
+    <a href="01-volumes.html">Volumes</a>
+    <a href="02-persistent-volumes.html">Persistent Volumes</a>
+    <a href="03-storage-classes.html">Storage Classes</a>
+    <a href="04-csi-drivers.html">CSI Drivers</a>
+    <a href="05-volume-snapshots.html">Volume Snapshots</a>
+    <a href="06-stateful-sets-storage.html" class="active">Stateful Storage Patterns</a>
+    <a href="07-storage-capacity.html">Storage Capacity</a>
+  </div>
+</nav>
+
+<!-- Top bar (mobile) -->
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">☰</button>
+  <span class="topbar-title">Stateful Storage Patterns</span>
+  <button class="theme-btn" id="theme-btn-top">☀</button>
+</div>
+
+<div class="main-wrap">
+<main class="main-content" id="main-content">
+
+  <!-- Breadcrumb -->
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="../index.html">Home</a> › <a href="00-storage-overview.html">Storage</a> › Stateful Storage Patterns
+    </div>
+    <h1>Stateful Storage Patterns</h1>
+    <div class="page-meta">
+      <span>Section 4.6</span>
+      <span>StatefulSets · Distributed Databases · Rook-Ceph · Longhorn</span>
+      <span>Platform-engineer level</span>
+    </div>
+  </div>
+
+  <!-- Coverage block -->
+  <details class="coverage">
+    <summary>▶ What This Page Covers</summary>
+    <div class="coverage-body">
+      <li>StatefulSet vs Deployment storage semantics: stable identity, ordered management</li>
+      <li>volumeClaimTemplates anatomy — naming convention, multiple templates, immutability</li>
+      <li>PVC lifecycle: orphaned PVCs, no auto-delete on StatefulSet delete</li>
+      <li>persistentVolumeClaimRetentionPolicy GA 1.27 — whenDeleted/whenScaled</li>
+      <li>podManagementPolicy: OrderedReady vs Parallel with storage implications</li>
+      <li>Ordered provisioning sequence and scaling constraints for stateful apps</li>
+      <li>RollingUpdate with partition field — canary upgrades for databases</li>
+      <li>OnDelete upgrade strategy for manual-controlled database rolling upgrades</li>
+      <li>Pod anti-affinity patterns — hostname and zone topology keys</li>
+      <li>TopologySpreadConstraints for even replica distribution</li>
+      <li>PodDisruptionBudgets for quorum-based and leader-elected systems</li>
+      <li>Headless service deep-dive — DNS records per pod, stable DNS names</li>
+      <li>PostgreSQL on Kubernetes — CloudNativePG operator, patroni, pg_basebackup replica init</li>
+      <li>Cassandra on Kubernetes — rack-awareness, seed discovery via headless DNS</li>
+      <li>Kafka on Kubernetes — KRaft vs ZooKeeper, broker ID = ordinal, topic replication</li>
+      <li>MongoDB on Kubernetes — replica set via MongoDB Community Operator</li>
+      <li>Redis Cluster and Redis Sentinel topologies</li>
+      <li>Local PVs with StatefulSets — NVMe performance, node failure data-loss warning</li>
+      <li>Longhorn architecture — manager DaemonSet, volume replication, S3 backup</li>
+      <li>Rook-Ceph architecture — CephCluster CRD, OSD placement, CRUSH rack-awareness</li>
+      <li>Rook-Ceph storage classes: RBD (block) and CephFS (shared filesystem)</li>
+      <li>Init container patterns — replica initialization, seed node bootstrap, data migration</li>
+      <li>Backup strategies — PVC snapshot + application-level + Velero integration</li>
+      <li>5 metrics + 4 alerting rules + 5 runbooks</li>
+      <li>8 best practices for production stateful workloads</li>
+    </div>
+  </details>
+
+  <!-- ============================================================ -->
+  <h2 id="statefulset-vs-deployment">StatefulSet vs Deployment: Storage Semantics</h2>
+
+  <p>Deployments treat pods as interchangeable cattle — any pod can serve any request, and PVCs are shared (ReadWriteMany) or not used at all. StatefulSets assign each pod a <strong>stable identity</strong>: a fixed ordinal (0, 1, 2…), a stable DNS hostname, and a stable PVC that follows the pod across rescheduling. The PVC is never re-created — it persists even after pod or StatefulSet deletion.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Characteristic</th><th>Deployment</th><th>StatefulSet</th></tr></thead>
+      <tbody>
+        <tr><td>Pod identity</td><td>Random hash suffix (random-a1b2c)</td><td>Ordinal suffix (db-0, db-1)</td></tr>
+        <tr><td>DNS hostname</td><td>Unpredictable</td><td>Stable: pod-name.headless-svc.ns.svc.cluster.local</td></tr>
+        <tr><td>PVC per pod</td><td>Shared PVC or no PVC</td><td>Dedicated PVC per pod via volumeClaimTemplates</td></tr>
+        <tr><td>Pod creation order</td><td>All at once (parallel)</td><td>Sequential 0→N (OrderedReady) or parallel</td></tr>
+        <tr><td>Pod deletion order</td><td>Random</td><td>Sequential N→0</td></tr>
+        <tr><td>PVC on pod delete</td><td>N/A</td><td>PVC retained (not deleted with pod)</td></tr>
+        <tr><td>PVC on StatefulSet delete</td><td>N/A</td><td>PVCs orphaned by default (Retain policy)</td></tr>
+        <tr><td>Rolling update direction</td><td>New pods before old</td><td>Reverse ordinal (N→0)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="volumeclaim-templates">volumeClaimTemplates</h2>
+
+  <p><code>volumeClaimTemplates</code> defines PVC templates that the StatefulSet controller instantiates for each pod. Each template creates a PVC named <code>{template.metadata.name}-{pod-name}</code>. For a StatefulSet named <code>postgres</code> with template name <code>data</code>, pod <code>postgres-0</code> gets PVC <code>data-postgres-0</code>.</p>
+
+  <h3>Full Anatomy</h3>
+
+  <pre><code>apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: data
+spec:
+  serviceName: postgres-headless   # required headless service name
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres
+  podManagementPolicy: OrderedReady  # default; sequential pod lifecycle
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0   # update all pods; set to N to freeze pods 0..N-1
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: postgres
+        image: postgres:16
+        env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: wal
+          mountPath: /var/lib/postgresql/wal
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      annotations:
+        # Optional: survive StatefulSet deletion (persistentVolumeClaimRetentionPolicy covers this in 1.27+)
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: ebs-gp3
+      resources:
+        requests:
+          storage: 100Gi
+  - metadata:
+      name: wal
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: ebs-io2   # separate faster disk for WAL
+      resources:
+        requests:
+          storage: 20Gi</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">volumeClaimTemplates Are Immutable</div>
+    <p>Once a StatefulSet is created, <code>volumeClaimTemplates</code> cannot be modified. Changing storage size, storage class, or access modes requires deleting and re-creating the StatefulSet (with <code>--cascade=orphan</code> to preserve PVCs) or migrating data to new PVCs.</p>
+  </div>
+
+  <h3>PVC Naming Convention</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>StatefulSet</th><th>Template Name</th><th>Replica 0</th><th>Replica 1</th><th>Replica 2</th></tr></thead>
+      <tbody>
+        <tr><td>postgres</td><td>data</td><td>data-postgres-0</td><td>data-postgres-1</td><td>data-postgres-2</td></tr>
+        <tr><td>postgres</td><td>wal</td><td>wal-postgres-0</td><td>wal-postgres-1</td><td>wal-postgres-2</td></tr>
+        <tr><td>kafka</td><td>data</td><td>data-kafka-0</td><td>data-kafka-1</td><td>data-kafka-2</td></tr>
+        <tr><td>cassandra</td><td>cassandra-data</td><td>cassandra-data-cassandra-0</td><td>cassandra-data-cassandra-1</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="pvc-lifecycle">PVC Lifecycle and Orphaned PVCs</h2>
+
+  <h3>Default Behavior: PVCs Are Not Deleted</h3>
+
+  <p>When you delete a StatefulSet, the pods are deleted but the PVCs are left behind — <em>orphaned</em>. This is intentional: it protects against accidental data loss. A new StatefulSet with the same name and template names will re-bind to the existing PVCs and continue from where the data left off.</p>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Deleting with --cascade=orphan</div>
+    <p>Use <code>kubectl delete sts postgres --cascade=orphan</code> to delete the StatefulSet object without deleting its pods. This lets you recreate the StatefulSet (e.g., with updated <code>volumeClaimTemplates</code>) while keeping pods and PVCs running — zero-downtime migration of StatefulSet spec.</p>
+  </div>
+
+  <h3>Detecting Orphaned PVCs</h3>
+
+  <pre><code># List PVCs in a namespace that have no owning pod
+kubectl get pvc -n data -o json | jq -r '
+  .items[] |
+  select(.metadata.ownerReferences == null) |
+  "\(.metadata.name) \(.status.phase) \(.spec.resources.requests.storage)"
+'
+
+# More targeted: find PVCs matching StatefulSet template pattern with no matching pod
+kubectl get pvc -n data --no-headers | awk '{print $1}' | while read pvc; do
+  pod=$(echo "$pvc" | sed 's/^[^-]*-//')
+  kubectl get pod "$pod" -n data &>/dev/null || echo "ORPHANED: $pvc"
+done</code></pre>
+
+  <h3>persistentVolumeClaimRetentionPolicy (GA 1.27)</h3>
+
+  <p>Introduced in 1.22 (alpha), stable in 1.27, this field controls automated PVC deletion lifecycle:</p>
+
+  <pre><code>spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete   # Delete PVCs when StatefulSet is deleted
+    whenScaled: Retain    # Keep PVCs when scaling down (safe default)
+    # whenScaled: Delete  # DANGER: permanently deletes PVCs on scale-down</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Policy</th><th>whenDeleted</th><th>whenScaled</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td>Retain/Retain (default)</td><td>Keep PVCs</td><td>Keep PVCs</td><td>Production DBs — manual cleanup</td></tr>
+        <tr><td>Delete/Retain</td><td>Delete PVCs on StatefulSet delete</td><td>Keep PVCs on scale-down</td><td>CI/staging: easy teardown, safe scale</td></tr>
+        <tr><td>Retain/Delete</td><td>Keep PVCs</td><td>Delete PVCs on scale-down</td><td>Stateless-ish caches, re-seed on scale-up</td></tr>
+        <tr><td>Delete/Delete</td><td>Delete all PVCs</td><td>Delete PVCs on scale-down</td><td>Ephemeral test environments only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">whenScaled: Delete Is Irreversible</div>
+    <p>If you scale a StatefulSet from 3→1 with <code>whenScaled: Delete</code>, PVCs for pods 1 and 2 are permanently deleted. Scaling back to 3 creates brand-new empty PVCs — all data from replicas 1 and 2 is gone. Never use this for databases without verified backup/restore testing.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="pod-management">Pod Management and Update Strategies</h2>
+
+  <h3>OrderedReady vs Parallel</h3>
+
+  <pre><code>podManagementPolicy: OrderedReady  # default
+# Pods created 0 → 1 → 2 (each must be Running+Ready before next)
+# Pods deleted 2 → 1 → 0 (each must be Terminated before next)
+# Safe for databases that require leader election before follower starts
+
+podManagementPolicy: Parallel
+# All pods created simultaneously (no sequencing)
+# All pods deleted simultaneously
+# Faster for stateless-ish work or when app handles concurrent init
+# Still maintains stable identity and PVC binding</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">OrderedReady Can Deadlock</div>
+    <p>If pod-0 becomes not-Ready (e.g., database waiting for pod-1 to form quorum), the StatefulSet controller blocks — it will not create pod-1 until pod-0 is Ready. Break the deadlock with <code>kubectl rollout restart</code> or by temporarily patching the pod's readiness probe, or by setting <code>podManagementPolicy: Parallel</code> if the application supports parallel start.</p>
+  </div>
+
+  <h3>RollingUpdate with Partition (Canary Upgrades)</h3>
+
+  <p>The <code>partition</code> field causes the controller to update only pods with ordinal ≥ partition. Pods with ordinal &lt; partition keep their current revision.</p>
+
+  <pre><code># Update only pod-2 (highest ordinal) to test new version
+kubectl patch sts postgres -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":2}}}}'
+kubectl rollout status sts/postgres
+
+# If postgres-2 is healthy, expand to pod-1 and pod-2
+kubectl patch sts postgres -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":1}}}}'
+
+# Full rollout
+kubectl patch sts postgres -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":0}}}}'</code></pre>
+
+  <h3>OnDelete Strategy (Manual DB Rolling Upgrade)</h3>
+
+  <pre><code>spec:
+  updateStrategy:
+    type: OnDelete
+# Pods are only updated when manually deleted — you control timing
+# Essential for: Patroni (must demote replica first), Galera, Cassandra
+# Workflow:
+#   1. kubectl set image sts/postgres postgres=postgres:16.2
+#   2. kubectl delete pod postgres-2  # kills replica, controller creates new pod with new image
+#   3. Verify postgres-2 healthy, then delete postgres-1
+#   4. For primary (postgres-0): trigger manual failover first</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="headless-service">Headless Service and DNS</h2>
+
+  <p>A headless service (<code>clusterIP: None</code>) is required for StatefulSets. It creates per-pod DNS A records rather than a single VIP, enabling direct pod addressing.</p>
+
+  <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-headless
+  namespace: data
+spec:
+  clusterIP: None         # headless — no VIP
+  publishNotReadyAddresses: true  # include NotReady pods (important for init)
+  selector:
+    app: postgres
+  ports:
+  - name: postgres
+    port: 5432</code></pre>
+
+  <div class="diagram">DNS records created for StatefulSet "postgres" with headless service "postgres-headless" in namespace "data":
+
+Pod hostname format:  {pod-name}.{service}.{namespace}.svc.cluster.local
+
+postgres-0.postgres-headless.data.svc.cluster.local  → 10.0.1.10
+postgres-1.postgres-headless.data.svc.cluster.local  → 10.0.1.11
+postgres-2.postgres-headless.data.svc.cluster.local  → 10.0.1.12
+
+Service DNS (round-robin A records):
+postgres-headless.data.svc.cluster.local  → [10.0.1.10, 10.0.1.11, 10.0.1.12]
+
+With publishNotReadyAddresses: true
+→ DNS includes not-yet-ready pods (pod-0 during init can find pod-1 seed)
+Without it → pods invisible until Ready (can deadlock peer-discovery)</div>
+
+  <!-- ============================================================ -->
+  <h2 id="topology">Anti-Affinity and Topology</h2>
+
+  <h3>Hard Anti-Affinity (One Pod Per Node)</h3>
+
+  <pre><code>spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: postgres
+            topologyKey: kubernetes.io/hostname
+            # Prevents any two postgres pods on the same node
+            # Blocks scheduling if insufficient nodes — use "preferred" for flexibility</code></pre>
+
+  <h3>Zone-Spread Anti-Affinity (HA Across AZs)</h3>
+
+  <pre><code>      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: postgres
+              topologyKey: topology.kubernetes.io/zone</code></pre>
+
+  <h3>TopologySpreadConstraints (Preferred over Anti-Affinity)</h3>
+
+  <pre><code>      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule   # hard: block if can't satisfy
+        labelSelector:
+          matchLabels:
+            app: postgres
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway  # soft: spread but don't block</code></pre>
+
+  <h3>PodDisruptionBudgets for Stateful Apps</h3>
+
+  <pre><code># PostgreSQL primary/replica: always keep at least 1 pod (the primary)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: data
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgres
+---
+# Kafka 3-broker cluster with min.insync.replicas=2:
+# Must keep at least 2 brokers to accept writes
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: kafka</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="postgres">PostgreSQL on Kubernetes</h2>
+
+  <h3>CloudNativePG Operator (Recommended)</h3>
+
+  <p>CloudNativePG is the CNCF-sandbox operator for PostgreSQL. It manages primary/replica topology, automatic failover, backup integration, and connection pooling via PgBouncer. Use it instead of manual StatefulSet configuration for production.</p>
+
+  <pre><code>apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-cluster
+  namespace: data
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.2
+
+  storage:
+    size: 100Gi
+    storageClass: ebs-gp3
+
+  walStorage:
+    size: 20Gi
+    storageClass: ebs-io2    # separate fast storage for WAL
+
+  backup:
+    retentionPolicy: "30d"
+    barmanObjectStore:
+      destinationPath: s3://my-bucket/postgres
+      s3Credentials:
+        accessKeyId:
+          name: aws-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: aws-creds
+          key: SECRET_ACCESS_KEY
+
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: topology.kubernetes.io/zone
+
+  resources:
+    requests:
+      memory: 4Gi
+      cpu: "2"
+    limits:
+      memory: 8Gi</code></pre>
+
+  <h3>Patroni-Based StatefulSet (Manual)</h3>
+
+  <p>For teams not using an operator, Patroni provides HA PostgreSQL with etcd/consul/Kubernetes leader election. The key pattern is an init container that runs <code>pg_basebackup</code> on replicas to initialize from the primary.</p>
+
+  <pre><code>initContainers:
+- name: init-replica
+  image: postgres:16
+  command:
+  - sh
+  - -c
+  - |
+    # Skip if primary (ordinal 0) or if data dir already initialized
+    ORDINAL=$(echo $HOSTNAME | awk -F'-' '{print $NF}')
+    if [ "$ORDINAL" = "0" ] || [ -f "/var/lib/postgresql/data/pgdata/PG_VERSION" ]; then
+      exit 0
+    fi
+    # Wait for primary to be ready
+    until pg_isready -h postgres-0.postgres-headless.data.svc.cluster.local -p 5432; do
+      echo "Waiting for primary..."; sleep 2
+    done
+    # Stream base backup from primary
+    pg_basebackup \
+      -h postgres-0.postgres-headless.data.svc.cluster.local \
+      -U replication \
+      -D /var/lib/postgresql/data/pgdata \
+      -Xs -P -R    # -R writes recovery.conf / standby.signal
+  volumeMounts:
+  - name: data
+    mountPath: /var/lib/postgresql/data</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="cassandra">Cassandra on Kubernetes</h2>
+
+  <p>Cassandra uses a gossip protocol and a token ring. Kubernetes StatefulSets map well because Cassandra nodes require stable DNS names for seed discovery and stable storage for SSTables.</p>
+
+  <pre><code>apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+spec:
+  serviceName: cassandra
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: cassandra
+        image: cassandra:4.1
+        env:
+        - name: CASSANDRA_SEEDS
+          # First two pods as seeds; headless DNS provides stable addresses
+          value: "cassandra-0.cassandra.data.svc.cluster.local,cassandra-1.cassandra.data.svc.cluster.local"
+        - name: CASSANDRA_CLUSTER_NAME
+          value: "production"
+        - name: CASSANDRA_DC
+          value: "dc1"
+        - name: CASSANDRA_RACK
+          # Use node label for rack awareness; requires Downward API or env injection
+          value: "rack1"
+        - name: MAX_HEAP_SIZE
+          value: "8192M"
+        - name: HEAP_NEWSIZE
+          value: "2048M"
+        resources:
+          requests:
+            memory: 16Gi    # Cassandra is memory-hungry
+            cpu: "4"
+        readinessProbe:
+          exec:
+            command: ["/bin/bash", "-c", "nodetool status | grep -E '^UN\\s+$POD_IP'"]
+          initialDelaySeconds: 90
+          periodSeconds: 10
+        volumeMounts:
+        - name: cassandra-data
+          mountPath: /var/lib/cassandra
+  volumeClaimTemplates:
+  - metadata:
+      name: cassandra-data
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: local-nvme   # local NVMe for compaction I/O
+      resources:
+        requests:
+          storage: 500Gi</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Cassandra Bootstrap Order</div>
+    <p>Use <code>podManagementPolicy: OrderedReady</code> for initial cluster bootstrap — each node must join the ring and reach <code>UN</code> (Up/Normal) state before the next node starts. After initial bootstrap, <code>Parallel</code> can be used for rolling restarts if the cluster is healthy.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="kafka">Kafka on Kubernetes</h2>
+
+  <p>Kafka brokers maintain persistent log segments. The broker ID maps naturally to the StatefulSet pod ordinal. Strimzi is the dominant Kubernetes operator for Kafka.</p>
+
+  <h3>Strimzi Kafka Cluster (Operator Pattern)</h3>
+
+  <pre><code>apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: production-kafka
+spec:
+  kafka:
+    version: 3.7.0
+    replicas: 3
+    listeners:
+    - name: plain
+      port: 9092
+      type: internal
+      tls: false
+    - name: tls
+      port: 9093
+      type: internal
+      tls: true
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2     # producers with acks=all require 2 ISR
+      log.retention.hours: 168   # 7 days
+    storage:
+      type: persistent-claim
+      size: 500Gi
+      class: ebs-gp3
+      deleteClaim: false         # retain PVCs on Kafka cluster delete
+    resources:
+      requests:
+        memory: 8Gi
+        cpu: "2"
+      limits:
+        memory: 16Gi
+  zookeeper:
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 20Gi
+      class: ebs-gp3</code></pre>
+
+  <h3>KRaft Mode (ZooKeeper-Free, Kafka 3.3+ Production-Ready)</h3>
+
+  <pre><code>  kafka:
+    version: 3.7.0
+    metadataVersion: 3.7-IV4
+    replicas: 3
+    # No zookeeper section — KRaft uses internal metadata topic
+    # Combined mode: broker + controller roles in same pods
+    # Separate mode (recommended for large clusters): dedicated controller nodes</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="mongodb">MongoDB on Kubernetes</h2>
+
+  <pre><code>apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: mongodb-replica-set
+spec:
+  members: 3
+  type: ReplicaSet
+  version: "7.0.4"
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+  - name: admin
+    db: admin
+    passwordSecretRef:
+      name: admin-password
+    roles:
+    - name: clusterAdmin
+      db: admin
+  statefulSet:
+    spec:
+      volumeClaimTemplates:
+      - metadata:
+          name: data-volume
+        spec:
+          accessModes: [ReadWriteOnce]
+          storageClassName: ebs-gp3
+          resources:
+            requests:
+              storage: 200Gi
+      - metadata:
+          name: logs-volume
+        spec:
+          accessModes: [ReadWriteOnce]
+          storageClassName: ebs-gp3
+          resources:
+            requests:
+              storage: 10Gi</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="redis">Redis on Kubernetes</h2>
+
+  <h3>Redis Sentinel (HA for Single Shard)</h3>
+
+  <pre><code># Redis StatefulSet with persistent storage
+# Sentinel monitors primary and triggers failover
+# Primary: redis-0; Replicas: redis-1, redis-2
+# Sentinel quorum: 2 of 3 sentinels must agree for failover
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+spec:
+  serviceName: redis-headless
+  replicas: 3
+  template:
+    spec:
+      initContainers:
+      - name: config
+        image: redis:7.2
+        command: ["sh", "-c"]
+        args:
+        - |
+          ORDINAL=$(echo $HOSTNAME | awk -F'-' '{print $NF}')
+          if [ "$ORDINAL" = "0" ]; then
+            cp /tmp/redis-default.conf /etc/redis/redis.conf
+          else
+            echo "replicaof redis-0.redis-headless.data.svc.cluster.local 6379" >> /etc/redis/redis.conf
+          fi
+      containers:
+      - name: redis
+        image: redis:7.2
+        command: ["redis-server", "/etc/redis/redis.conf"]
+        volumeMounts:
+        - name: data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: ebs-gp3
+      resources:
+        requests:
+          storage: 50Gi</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="local-pvs">Local PVs with StatefulSets</h2>
+
+  <p>Local PVs bind directly to a node's NVMe disk, providing the lowest possible latency. The tradeoff: if the node fails, the data on that node is inaccessible (or lost if the disk fails) until the node recovers.</p>
+
+  <pre><code># Local PV — manually provisioned, node-affinity required
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-pv-node1-nvme
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-nvme
+  local:
+    path: /mnt/nvme0n1
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [node1]
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-nvme
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer  # critical: bind only when pod is scheduled</code></pre>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">Local PV Node Failure Means Data Inaccessibility</div>
+    <p>When the node hosting a local PV goes down, the pod cannot reschedule to another node — it is stuck in <code>Pending</code> indefinitely because no other node has the required PV. Recovery requires either restoring the node, manually moving data, or re-seeding the replica. Use Longhorn or Rook-Ceph for automatic replication if node failure tolerance is required.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="longhorn">Longhorn</h2>
+
+  <p>Longhorn (CNCF incubating) is a distributed block storage system built for Kubernetes. It replicates volumes across nodes, handles node failures automatically, and provides S3-backed snapshots and backups.</p>
+
+  <div class="diagram">Longhorn Architecture:
+
+┌─────────────────────────────────────────────────────────┐
+│                    Kubernetes Cluster                    │
+│                                                          │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐            │
+│  │  Node 1  │   │  Node 2  │   │  Node 3  │            │
+│  │          │   │          │   │          │            │
+│  │ longhorn-│   │ longhorn-│   │ longhorn-│            │
+│  │  manager │   │  manager │   │  manager │ ← DaemonSet│
+│  │ (agent)  │   │ (agent)  │   │ (agent)  │            │
+│  │          │   │          │   │          │            │
+│  │ Engine   │   │ Replica  │   │ Replica  │            │
+│  │ Process  │◄──│ Process  │   │ Process  │            │
+│  │ (active) │   │(replica1)│   │(replica2)│            │
+│  │    ▲     │   │   /dev/  │   │  /dev/   │            │
+│  │    │     │   │  longhorn│   │ longhorn │            │
+│  └────│─────┘   └──────────┘   └──────────┘            │
+│       │ iSCSI/NVMe-oF                                   │
+│  ┌────┴──────────────────────────────────────────────┐  │
+│  │  Application Pod (postgres-0)                      │  │
+│  │  PVC: data-postgres-0 → Longhorn Volume           │  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘</div>
+
+  <pre><code># Longhorn StorageClass
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+parameters:
+  numberOfReplicas: "3"          # replicate across 3 nodes
+  staleReplicaTimeout: "2880"    # 48 hours before treating stale replica as failed
+  fromBackup: ""
+  fsType: ext4
+  diskSelector: ""               # target specific disk tags
+  nodeSelector: ""               # target specific node tags
+  recurringJobSelector: '[{"name":"backup", "isGroup":true}]'</code></pre>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">Volume Replication</div>
+      <p>Each Longhorn volume has N replicas on N distinct nodes. Engine process runs on the node hosting the pod; replicas sync over the network. replica count configurable per volume.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Backup to S3</div>
+      <p>Incremental snapshots pushed to S3/MinIO/NFS. RecurringJob CRD schedules automatic backups. Restores create new PVC from backup — cross-cluster recovery supported.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Node Drain Safe</div>
+      <p>Longhorn respects node cordon/drain — engine migrates to another node automatically when replicas exist elsewhere. PodDisruptionBudget enforced during drain.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">UI Dashboard</div>
+      <p>Built-in web UI shows volume health, replica placement, backup status. Expose via Service or Ingress. RBAC controls available via Longhorn RBAC resources.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="rook-ceph">Rook-Ceph</h2>
+
+  <p>Rook is a CNCF-graduated cloud-native storage orchestrator. Rook deploys and manages Ceph — a production-grade distributed storage system providing block (RBD), file (CephFS), and object (RGW/S3) storage from the same cluster.</p>
+
+  <div class="diagram">Rook-Ceph Architecture:
+
+┌───────────────────────────────────────────────────────────────┐
+│  Rook-Ceph Namespace                                          │
+│                                                               │
+│  rook-ceph-operator (Deployment)                             │
+│    └── watches CephCluster/CephBlockPool/CephFilesystem CRDs  │
+│                                                               │
+│  Ceph Daemons (managed by operator):                         │
+│  ┌─────────┐  ┌────────────────────────────────────────────┐ │
+│  │  MON    │  │  OSD (DaemonSet or StatefulSet per device) │ │
+│  │ (x3)    │  │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐     │ │
+│  │ cluster │  │  │OSD-0 │ │OSD-1 │ │OSD-2 │ │OSD-3 │     │ │
+│  │ state   │  │  │node1 │ │node1 │ │node2 │ │node3 │     │ │
+│  │ quorum  │  │  │/dev/ │ │/dev/ │ │/dev/ │ │/dev/ │     │ │
+│  └─────────┘  │  │nvme0 │ │nvme1 │ │nvme0 │ │nvme0 │     │ │
+│               │  └──────┘ └──────┘ └──────┘ └──────┘     │ │
+│  ┌─────────┐  └────────────────────────────────────────────┘ │
+│  │  MGR    │                                                  │
+│  │ (x2 HA) │  ┌──────────────┐  ┌──────────────────────────┐ │
+│  │dashboard│  │  MDS (x2)   │  │  RGW (S3 endpoint)       │ │
+│  └─────────┘  │ (CephFS MDS) │  │  (object storage)        │ │
+│               └──────────────┘  └──────────────────────────┘ │
+└───────────────────────────────────────────────────────────────┘</div>
+
+  <h3>CephCluster CRD</h3>
+
+  <pre><code>apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: rook-ceph
+  namespace: rook-ceph
+spec:
+  cephVersion:
+    image: quay.io/ceph/ceph:v18.2.2   # Reef
+  dataDirHostPath: /var/lib/rook       # persisted on host for mon data
+  mon:
+    count: 3
+    allowMultiplePerNode: false
+  mgr:
+    count: 2
+    modules:
+    - name: pg_autoscaler
+      enabled: true
+  dashboard:
+    enabled: true
+    ssl: true
+  storage:
+    useAllNodes: false
+    useAllDevices: false
+    nodes:
+    - name: "node1"
+      devices:
+      - name: "nvme0n1"
+      - name: "nvme1n1"
+    - name: "node2"
+      devices:
+      - name: "nvme0n1"
+    - name: "node3"
+      devices:
+      - name: "nvme0n1"
+  placement:
+    osd:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app: rook-ceph-osd</code></pre>
+
+  <h3>Ceph Block Storage (RBD) StorageClass</h3>
+
+  <pre><code>apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: replicapool
+  namespace: rook-ceph
+spec:
+  failureDomain: host     # CRUSH: tolerate full host failure
+  replicated:
+    size: 3
+    requireSafeReplicaSize: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: rook-ceph-block
+provisioner: rook-ceph.rbd.csi.ceph.com
+parameters:
+  clusterID: rook-ceph
+  pool: replicapool
+  imageFormat: "2"
+  imageFeatures: layering   # required for snapshots; add exclusive-lock,object-map,fast-diff for better performance
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+allowVolumeExpansion: true
+reclaimPolicy: Delete</code></pre>
+
+  <h3>CephFS StorageClass (ReadWriteMany)</h3>
+
+  <pre><code>apiVersion: ceph.rook.io/v1
+kind: CephFilesystem
+metadata:
+  name: myfs
+  namespace: rook-ceph
+spec:
+  metadataPool:
+    replicated:
+      size: 3
+  dataPools:
+  - name: data0
+    replicated:
+      size: 3
+  preserveFilesystemOnDelete: true   # don't wipe filesystem on CRD delete
+  metadataServer:
+    activeCount: 1
+    activeStandby: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: rook-cephfs
+provisioner: rook-ceph.cephfs.csi.ceph.com
+parameters:
+  clusterID: rook-ceph
+  fsName: myfs
+  pool: myfs-data0
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+allowVolumeExpansion: true
+reclaimPolicy: Delete</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">CRUSH Map for Rack-Awareness</div>
+    <p>Set <code>failureDomain: rack</code> in CephBlockPool and label nodes with <code>topology.rook.io/rack=rack1</code> to spread OSD replicas across physical racks. With 3 racks and replica size 3, a full rack failure is tolerated with no data loss. Requires at least 3 OSDs per rack for optimal placement.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="backup-strategies">Backup Strategies for Stateful Workloads</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Strategy</th><th>Mechanism</th><th>Pros</th><th>Cons</th><th>Best For</th></tr></thead>
+      <tbody>
+        <tr><td>PVC Volume Snapshot</td><td>CSI CreateSnapshot RPC</td><td>Fast, crash-consistent</td><td>Not app-consistent without quiesce</td><td>Caches, replicas with WAL replay</td></tr>
+        <tr><td>App-level dump</td><td>pg_dump / mongodump / redis-cli BGSAVE</td><td>Fully consistent, portable SQL</td><td>Slow for large DBs, CPU overhead</td><td>Primary source of truth DBs</td></tr>
+        <tr><td>pg_basebackup / pgBackRest</td><td>Streaming replication protocol</td><td>Fast physical backup, WAL archiving, PITR</td><td>PostgreSQL-specific</td><td>PostgreSQL production backups</td></tr>
+        <tr><td>Velero + CSI snapshots</td><td>Velero + VolumeSnapshot API</td><td>Cluster-wide, namespace backup, manifest + data together</td><td>Requires CSI snapshot support</td><td>Full namespace DR</td></tr>
+        <tr><td>Longhorn backup</td><td>Longhorn recurring job → S3</td><td>Incremental, integrated with Longhorn volumes</td><td>Longhorn-specific</td><td>Longhorn-managed volumes</td></tr>
+        <tr><td>Rook-Ceph RBD mirroring</td><td>Ceph RBD mirroring to remote cluster</td><td>Async replication to DR cluster</td><td>Complex setup, separate Ceph cluster</td><td>Active-passive cross-cluster DR</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="metrics">Metrics, Alerts, and Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Source</th><th>What to Watch</th></tr></thead>
+      <tbody>
+        <tr><td><code>kube_statefulset_status_replicas_ready</code></td><td>kube-state-metrics</td><td>Should equal <code>kube_statefulset_replicas</code>; alert on mismatch</td></tr>
+        <tr><td><code>kube_statefulset_status_current_revision != kube_statefulset_status_update_revision</code></td><td>kube-state-metrics</td><td>Indicates incomplete rolling update; alert if stale &gt; 15m</td></tr>
+        <tr><td><code>kube_persistentvolumeclaim_status_phase{phase="Lost"}</code></td><td>kube-state-metrics</td><td>PVC Lost = pod stuck Pending; page immediately</td></tr>
+        <tr><td><code>kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes</code></td><td>kubelet</td><td>Alert at 80% and 90% utilization</td></tr>
+        <tr><td><code>kube_pod_container_status_restarts_total</code></td><td>kube-state-metrics</td><td>StatefulSet pod restarts may indicate data corruption or OOM</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Alerting Rules</h3>
+  <pre><code>groups:
+- name: stateful-storage
+  rules:
+  - alert: StatefulSetNotFullyReady
+    expr: |
+      kube_statefulset_status_replicas_ready
+        != kube_statefulset_replicas
+    for: 5m
+    annotations:
+      summary: "StatefulSet {{ $labels.statefulset }} not fully ready"
+
+  - alert: StatefulSetRolloutStuck
+    expr: |
+      kube_statefulset_status_current_revision
+        != kube_statefulset_status_update_revision
+    for: 15m
+    annotations:
+      summary: "StatefulSet {{ $labels.statefulset }} rollout stuck"
+
+  - alert: PVCDiskPressureWarning
+    expr: |
+      (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.80
+    for: 5m
+    annotations:
+      summary: "PVC {{ $labels.persistentvolumeclaim }} >80% full"
+
+  - alert: PVCDiskPressureCritical
+    expr: |
+      (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.90
+    for: 2m
+    labels:
+      severity: critical</code></pre>
+
+  <h3>Runbooks</h3>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">StatefulSet Pod Stuck Pending</div>
+      <p>Check PVC status (<code>kubectl get pvc</code>). If Pending: storage class mis-match or quota. If Lost: PV deleted — recreate PV with original <code>volumeHandle</code> and claimRef UID. If no PVC: <code>volumeClaimTemplates</code> binding mode issue.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">StatefulSet Rollout Stuck</div>
+      <p>Check pod-N readiness: <code>kubectl describe pod sts-N</code>. Common cause: new image crashes on startup, readiness probe fails. If OrderedReady deadlock: temporarily patch <code>partition</code> value to skip the stuck pod or use <code>kubectl rollout undo</code>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">PVC Full — Online Expansion</div>
+      <p>Edit PVC <code>spec.resources.requests.storage</code> to larger value (storage class must have <code>allowVolumeExpansion: true</code>). For filesystem resize: wait for <code>FileSystemResizePending</code> condition to clear after pod restart. Check CSI driver supports <code>ControllerExpandVolume</code>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Rook-Ceph OSD Down</div>
+      <p>Check OSD pod: <code>kubectl -n rook-ceph get pod -l app=rook-ceph-osd</code>. If node failure: Ceph will auto-heal after <code>mon_osd_down_out_interval</code> (10 min default). Check PG status: <code>kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph status</code>. Alert if PGs stuck in <code>undersized+degraded</code> &gt; 30min.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Orphaned PVCs After StatefulSet Delete</div>
+      <p>List with label selector: <code>kubectl get pvc -n ns -l app=deleted-sts</code>. Verify no running pods use them: <code>kubectl get pod -n ns -o json | jq '.items[].spec.volumes[].persistentVolumeClaim.claimName'</code>. Delete manually after confirming data backed up.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <ol>
+    <li><strong>Always use a headless service</strong> — <code>clusterIP: None</code> with <code>publishNotReadyAddresses: true</code> for peer discovery during init. Never share a ClusterIP service for intra-cluster database replication.</li>
+    <li><strong>Set <code>terminationGracePeriodSeconds</code> appropriately</strong> — databases need time to flush WAL, finish checkpoints, and gracefully close connections. 60–120 seconds is typical; never leave at default 30s for PostgreSQL or Cassandra.</li>
+    <li><strong>Use <code>podManagementPolicy: OrderedReady</code> for initial bootstrap</strong> — then consider <code>Parallel</code> for rolling restarts after the cluster is healthy (faster for large clusters). Never use Parallel with databases that require leader election before followers start.</li>
+    <li><strong>Pin <code>partition</code> to the highest ordinal during upgrades</strong> — canary one replica before rolling all. Especially critical for major Kafka, PostgreSQL, and Cassandra version upgrades with format changes.</li>
+    <li><strong>Never rely on StatefulSet PVC auto-cleanup for production data</strong> — keep <code>persistentVolumeClaimRetentionPolicy.whenDeleted: Retain</code> and <code>whenScaled: Retain</code> for all production databases. Automate orphaned PVC detection and manual review.</li>
+    <li><strong>Separate data and WAL/log volumes</strong> — put WAL on a separate higher-IOPS <code>StorageClass</code> (io2 vs gp3). This allows independent sizing and prevents WAL I/O from contending with table data reads.</li>
+    <li><strong>Use an operator for complex databases</strong> — CloudNativePG for PostgreSQL, Strimzi for Kafka, MongoDB Community Operator for MongoDB. Manual StatefulSet management misses critical details (failover logic, backup scheduling, rolling upgrade ordering, connection pooling).</li>
+    <li><strong>Test failover and recovery procedures regularly</strong> — simulate node failure, test backup restore, validate that replicas rejoin after restart. Storage failures surface during actual incidents, not just monitoring.</li>
+  </ol>
+
+  <!-- Page nav -->
+  <div class="page-nav">
+    <a href="05-volume-snapshots.html">
+      <span class="nav-label">← Previous</span>
+      <span class="nav-title">Volume Snapshots</span>
+    </a>
+    <a href="07-storage-capacity.html" style="text-align:right">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">Storage Capacity</span>
+    </a>
+  </div>
+
+</main>
+
+<!-- TOC -->
+<aside class="toc-wrap">
+  <div class="toc-title">On This Page</div>
+  <ul class="toc-list" id="toc-list">
+    <li><a href="#statefulset-vs-deployment">StatefulSet vs Deployment</a></li>
+    <li><a href="#volumeclaim-templates">volumeClaimTemplates</a></li>
+    <li><a href="#pvc-lifecycle">PVC Lifecycle</a></li>
+    <li><a href="#pod-management">Pod Management &amp; Updates</a></li>
+    <li><a href="#headless-service">Headless Service &amp; DNS</a></li>
+    <li><a href="#topology">Anti-Affinity &amp; Topology</a></li>
+    <li><a href="#postgres">PostgreSQL</a></li>
+    <li><a href="#cassandra">Cassandra</a></li>
+    <li><a href="#kafka">Kafka</a></li>
+    <li><a href="#mongodb">MongoDB</a></li>
+    <li><a href="#redis">Redis</a></li>
+    <li><a href="#local-pvs">Local PVs</a></li>
+    <li><a href="#longhorn">Longhorn</a></li>
+    <li><a href="#rook-ceph">Rook-Ceph</a></li>
+    <li><a href="#backup-strategies">Backup Strategies</a></li>
+    <li><a href="#metrics">Metrics &amp; Alerts</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ul>
+</aside>
+</div>
+
+<!-- Back to top -->
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+// Theme
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+function toggleTheme(){const t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);localStorage.setItem('k8s-theme',t);}
+document.getElementById('theme-btn-top').addEventListener('click',toggleTheme);
+
+// Hamburger
+document.getElementById('hamburger').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// Back to top
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{backTop.classList.toggle('visible',main.scrollTop>400);});
+backTop.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+
+// Copy buttons
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';
+  btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code').innerText);
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+
+// TOC intersection observer
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc-list a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+
+// Sidebar search/filter
+document.getElementById('nav-search').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

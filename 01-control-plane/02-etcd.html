@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>etcd Deep Dive | Kubernetes Internals</title>
+<style>
+:root{--sidebar-w:280px;--toc-w:240px;--font-mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--border2:#21262d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#1f6feb;--accent3:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--orange:#d18616;--purple:#bc8cff;--cyan:#39d353;--pink:#f778ba;--code-bg:#161b22;--code-border:#30363d;--tag-bg:#1f6feb33;--tag-text:#58a6ff;--warn-bg:#3d2b00;--warn-border:#d29922;--note-bg:#0d2137;--note-border:#1f6feb;--danger-bg:#3d0000;--danger-border:#f85149;--success-bg:#0d2b0d;--success-border:#3fb950;--table-head:#21262d;--table-stripe:#161b22;--scrollbar:#30363d;--scrollbar-thumb:#484f58}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--border2:#eaeef2;--text:#1f2328;--text2:#636c76;--text3:#9198a1;--accent:#0969da;--accent2:#0969da;--accent3:#218bff;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--orange:#bc4c00;--purple:#8250df;--cyan:#0550ae;--pink:#bf3989;--code-bg:#f6f8fa;--code-border:#d0d7de;--tag-bg:#ddf4ff;--tag-text:#0969da;--warn-bg:#fff8c5;--warn-border:#d4a72c;--note-bg:#ddf4ff;--note-border:#54aeff;--danger-bg:#ffebe9;--danger-border:#ff8182;--success-bg:#dafbe1;--success-border:#4ac26b;--table-head:#f6f8fa;--table-stripe:#f6f8fa;--scrollbar:#d0d7de;--scrollbar-thumb:#9198a1}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;display:flex;flex-direction:column;min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--scrollbar)}::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:3px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+code{font-family:var(--font-mono);font-size:0.85em;background:var(--code-bg);border:1px solid var(--code-border);border-radius:4px;padding:0.1em 0.35em}
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;padding:1.2rem;overflow-x:auto;position:relative;margin:1rem 0}
+pre code{background:none;border:none;padding:0;font-size:0.82em;line-height:1.6}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:5px;font-size:0.75em;cursor:pointer;opacity:0.7;transition:opacity .2s}.copy-btn:hover{opacity:1}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:1rem}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;display:none;padding:4px}
+.topbar-logo{font-weight:700;font-size:1.05rem;color:var(--text)}.topbar-logo span{color:var(--accent)}
+.breadcrumb{display:flex;align-items:center;gap:0.4rem;font-size:0.82em;color:var(--text2)}.breadcrumb a{color:var(--text2)}.breadcrumb a:hover{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:0.7rem}
+.search-wrap{position:relative}
+#search-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:0.3rem 0.7rem 0.3rem 2rem;font-size:0.82em;width:200px;outline:none}
+#search-input:focus{border-color:var(--accent)}
+.search-wrap::before{content:'⌕';position:absolute;left:0.5rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:1rem;pointer-events:none}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:0.82em}
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);flex-shrink:0;transition:transform .25s}
+.sidebar-search{padding:0.7rem;border-bottom:1px solid var(--border)}
+#sidebar-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:0.3rem 0.6rem;font-size:0.8em;outline:none}
+.sidebar nav{padding:0.5rem 0}
+.nav-section{margin:0.3rem 0}
+.nav-section-title{padding:0.45rem 1rem;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)}
+.nav-section a{display:flex;align-items:center;padding:0.32rem 1rem 0.32rem 1.4rem;font-size:0.83em;color:var(--text2);gap:0.5rem;border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--tag-bg);font-weight:600}
+.nav-section a .num{color:var(--text3);font-size:0.78em;min-width:1.6em}
+.main-content{flex:1;overflow-y:auto;padding:2rem 2.5rem;max-width:calc(100% - var(--toc-w));min-width:0}
+.toc-panel{width:var(--toc-w);background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);flex-shrink:0;padding:1rem 0}
+.toc-title{font-size:0.75em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:0 1rem 0.5rem}
+.toc-panel a{display:block;font-size:0.8em;color:var(--text2);padding:0.25rem 1rem;border-left:2px solid transparent;transition:all .15s}
+.toc-panel a:hover{color:var(--text);text-decoration:none}.toc-panel a.active{color:var(--accent);border-left-color:var(--accent)}
+.toc-panel a.toc-h3{padding-left:1.8rem;font-size:0.75em}
+.page-header{margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.file-meta{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem}
+.tag{background:var(--tag-bg);color:var(--tag-text);border:1px solid var(--accent2);border-radius:12px;padding:0.2rem 0.7rem;font-size:0.75em;font-family:var(--font-mono)}
+h1{font-size:1.9rem;font-weight:700;margin-bottom:0.5rem}
+h2{font-size:1.3rem;font-weight:700;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.08rem;font-weight:700;margin:2rem 0 0.8rem}
+h4{font-size:0.95rem;font-weight:700;margin:1.5rem 0 0.6rem;color:var(--text2)}
+p{margin:0.7rem 0}ul,ol{margin:0.7rem 0 0.7rem 1.5rem}li{margin:0.25rem 0}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85em}
+th{background:var(--table-head);padding:0.6rem 0.8rem;text-align:left;font-weight:600;border:1px solid var(--border)}
+td{padding:0.5rem 0.8rem;border:1px solid var(--border);vertical-align:top}
+tr:nth-child(even){background:var(--table-stripe)}
+.callout{border-radius:8px;padding:1rem 1.2rem;margin:1.2rem 0;border-left:3px solid}
+.callout.warn{background:var(--warn-bg);border-color:var(--yellow)}.callout.note{background:var(--note-bg);border-color:var(--accent)}.callout.danger{background:var(--danger-bg);border-color:var(--red)}.callout.success{background:var(--success-bg);border-color:var(--green)}
+.callout-title{font-weight:700;margin-bottom:0.4rem;font-size:0.88em;text-transform:uppercase;letter-spacing:0.05em}
+.callout.warn .callout-title{color:var(--yellow)}.callout.note .callout-title{color:var(--accent)}.callout.danger .callout-title{color:var(--red)}.callout.success .callout-title{color:var(--green)}
+.nav-footer{display:flex;gap:1rem;margin:3rem 0 1rem;padding-top:2rem;border-top:1px solid var(--border)}
+.nav-btn{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;cursor:pointer;transition:all .2s;color:var(--text);text-align:left}
+.nav-btn:hover{border-color:var(--accent);background:var(--bg3);text-decoration:none}
+.nav-btn.next{text-align:right}
+.nav-btn .label{font-size:0.75em;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.3rem}
+.nav-btn .title{font-size:0.9em;font-weight:600;color:var(--accent)}
+.back-to-top{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--accent2);color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:1.1rem;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4);z-index:200}
+.back-to-top.visible{display:flex}
+.search-hl{background:var(--yellow);color:#000;border-radius:2px}
+details{margin:0.8rem 0}
+details>summary{cursor:pointer;padding:0.6rem 0.8rem;background:var(--bg3);border:1px solid var(--border);border-radius:6px;font-weight:600;font-size:0.88em;list-style:none;display:flex;align-items:center;gap:0.5rem}
+details>summary::before{content:'▶';font-size:0.7em;transition:transform .2s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>summary::-webkit-details-marker{display:none}
+details .details-body{padding:1rem;background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:1rem 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin:1rem 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.2rem}
+.card h4{margin-top:0;color:var(--accent)}
+.flow-row{display:flex;align-items:center;gap:0.5rem;margin:0.4rem 0;flex-wrap:wrap}
+.flow-box{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:0.3rem 0.7rem;font-size:0.82em;font-family:var(--font-mono);white-space:nowrap}
+.flow-box.cp{border-color:var(--accent);color:var(--accent)}
+.flow-box.etcd{border-color:var(--purple);color:var(--purple)}
+.flow-box.ok{border-color:var(--green);color:var(--green)}
+.flow-box.warn{border-color:var(--yellow);color:var(--yellow)}
+.flow-arrow{color:var(--text3);font-size:1.1em}
+.raft-state{display:inline-flex;align-items:center;gap:0.4rem;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:0.3rem 0.8rem;font-size:0.83em;font-family:var(--font-mono)}
+svg text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+@media(max-width:1200px){.toc-panel{display:none}}
+@media(max-width:768px){.hamburger{display:flex}.sidebar{position:fixed;left:0;top:52px;z-index:50;transform:translateX(-100%);height:calc(100vh - 52px)}.sidebar.open{transform:translateX(0)}.main-content{max-width:100%;padding:1.2rem}.grid-2,.grid-3{grid-template-columns:1fr}#search-input{width:130px}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" id="hamburger">&#9776;</button>
+    <span class="topbar-logo"><span>K8s</span> Internals</span>
+    <nav class="breadcrumb">
+      <a href="../00-foundations/00-introduction.html">Home</a><span>›</span>
+      <a href="00-control-plane-overview.html">Control Plane</a><span>›</span>
+      <span>etcd</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap"><input id="search-input" type="search" placeholder="Search…" autocomplete="off"/></div>
+    <button class="theme-btn" id="theme-btn">☀ Light</button>
+  </div>
+</div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search"><input id="sidebar-filter" type="search" placeholder="Filter pages…"/></div>
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-title">00 · Foundations</div>
+      <a href="../00-foundations/00-introduction.html"><span class="num">00</span>Introduction</a>
+      <a href="../00-foundations/01-history-of-kubernetes.html"><span class="num">01</span>History of Kubernetes</a>
+      <a href="../00-foundations/02-container-orchestration.html"><span class="num">02</span>Container Orchestration</a>
+      <a href="../00-foundations/03-cluster-architecture-overview.html"><span class="num">03</span>Cluster Architecture</a>
+      <a href="../00-foundations/04-kubernetes-api-model.html"><span class="num">04</span>Kubernetes API Model</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 · Control Plane</div>
+      <a href="00-control-plane-overview.html"><span class="num">00</span>Control Plane Overview</a>
+      <a href="01-kube-apiserver.html"><span class="num">01</span>kube-apiserver</a>
+      <a href="02-etcd.html" class="active"><span class="num">02</span>etcd</a>
+      <a href="03-kube-scheduler.html"><span class="num">03</span>kube-scheduler</a>
+      <a href="04-kube-controller-manager.html"><span class="num">04</span>kube-controller-manager</a>
+      <a href="05-cloud-controller-manager.html"><span class="num">05</span>cloud-controller-manager</a>
+      <a href="06-admission-controllers.html"><span class="num">06</span>Admission Controllers</a>
+      <a href="07-api-aggregation.html"><span class="num">07</span>API Aggregation</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 · Node Components</div>
+      <a href="../02-node-components/00-worker-node-overview.html"><span class="num">00</span>Worker Node Overview</a>
+      <a href="../02-node-components/01-kubelet.html"><span class="num">01</span>kubelet</a>
+      <a href="../02-node-components/02-kube-proxy.html"><span class="num">02</span>kube-proxy</a>
+      <a href="../02-node-components/03-container-runtime.html"><span class="num">03</span>Container Runtime</a>
+      <a href="../02-node-components/04-cni-plugins.html"><span class="num">04</span>CNI Plugins</a>
+      <a href="../02-node-components/05-csi-drivers.html"><span class="num">05</span>CSI Drivers</a>
+      <a href="../02-node-components/06-node-lifecycle.html"><span class="num">06</span>Node Lifecycle</a>
+      <a href="../02-node-components/07-windows-worker-nodes.html"><span class="num">07</span>Windows Worker Nodes</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 · Networking</div>
+      <a href="../03-networking/00-networking-overview.html"><span class="num">00</span>Networking Overview</a>
+      <a href="../03-networking/01-pod-networking.html"><span class="num">01</span>Pod Networking</a>
+      <a href="../03-networking/02-services.html"><span class="num">02</span>Services</a>
+      <a href="../03-networking/03-ingress.html"><span class="num">03</span>Ingress</a>
+      <a href="../03-networking/04-dns.html"><span class="num">04</span>DNS (CoreDNS)</a>
+      <a href="../03-networking/05-network-policies.html"><span class="num">05</span>Network Policies</a>
+      <a href="../03-networking/06-kube-proxy-iptables.html"><span class="num">06</span>kube-proxy &amp; iptables</a>
+      <a href="../03-networking/07-ebpf-networking.html"><span class="num">07</span>eBPF Networking</a>
+      <a href="../03-networking/08-ipv4-ipv6-dualstack.html"><span class="num">08</span>IPv4/IPv6 Dual-Stack</a>
+      <a href="../03-networking/09-load-balancing.html"><span class="num">09</span>Load Balancing</a>
+      <a href="../03-networking/10-gateway-api.html"><span class="num">10</span>Gateway API</a>
+      <a href="../03-networking/11-istio-linkerd-service-mesh.html"><span class="num">11</span>Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 · Storage</div>
+      <a href="../04-storage/00-storage-overview.html"><span class="num">00</span>Storage Overview</a>
+      <a href="../04-storage/01-volumes.html"><span class="num">01</span>Volumes</a>
+      <a href="../04-storage/02-persistent-volumes.html"><span class="num">02</span>Persistent Volumes</a>
+      <a href="../04-storage/03-storage-classes.html"><span class="num">03</span>Storage Classes</a>
+      <a href="../04-storage/04-statefulsets-storage.html"><span class="num">04</span>StatefulSets &amp; Storage</a>
+      <a href="../04-storage/05-csi-deep-dive.html"><span class="num">05</span>CSI Deep Dive</a>
+      <a href="../04-storage/06-volume-snapshots.html"><span class="num">06</span>Volume Snapshots</a>
+      <a href="../04-storage/07-backup-disaster-recovery.html"><span class="num">07</span>Backup &amp; DR</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 · Workloads</div>
+      <a href="../05-workloads/00-workloads-overview.html"><span class="num">00</span>Workloads Overview</a>
+      <a href="../05-workloads/01-pods-deep-dive.html"><span class="num">01</span>Pods Deep Dive</a>
+      <a href="../05-workloads/02-deployments.html"><span class="num">02</span>Deployments</a>
+      <a href="../05-workloads/03-statefulsets.html"><span class="num">03</span>StatefulSets</a>
+      <a href="../05-workloads/04-daemonsets.html"><span class="num">04</span>DaemonSets</a>
+      <a href="../05-workloads/05-jobs-cronjobs.html"><span class="num">05</span>Jobs &amp; CronJobs</a>
+      <a href="../05-workloads/06-replicasets.html"><span class="num">06</span>ReplicaSets</a>
+      <a href="../05-workloads/07-pod-scheduling.html"><span class="num">07</span>Pod Scheduling</a>
+      <a href="../05-workloads/08-resource-management.html"><span class="num">08</span>Resource Management</a>
+      <a href="../05-workloads/09-pod-disruption.html"><span class="num">09</span>Pod Disruption</a>
+      <a href="../05-workloads/10-init-containers.html"><span class="num">10</span>Init Containers</a>
+      <a href="../05-workloads/11-autoscaling.html"><span class="num">11</span>Autoscaling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">06 · Security</div>
+      <a href="../06-security/00-security-overview.html"><span class="num">00</span>Security Overview</a>
+      <a href="../06-security/01-authentication.html"><span class="num">01</span>Authentication</a>
+      <a href="../06-security/02-authorization-rbac.html"><span class="num">02</span>RBAC Authorization</a>
+      <a href="../06-security/03-admission-control.html"><span class="num">03</span>Admission Control</a>
+      <a href="../06-security/04-pod-security.html"><span class="num">04</span>Pod Security</a>
+      <a href="../06-security/05-secrets-management.html"><span class="num">05</span>Secrets Management</a>
+      <a href="../06-security/06-network-security.html"><span class="num">06</span>Network Security</a>
+      <a href="../06-security/07-tls-certificates.html"><span class="num">07</span>TLS &amp; Certificates</a>
+      <a href="../06-security/08-audit-logging.html"><span class="num">08</span>Audit Logging</a>
+      <a href="../06-security/09-image-security.html"><span class="num">09</span>Image Security</a>
+      <a href="../06-security/10-runtime-security.html"><span class="num">10</span>Runtime Security</a>
+      <a href="../06-security/11-supply-chain-security.html"><span class="num">11</span>Supply Chain Security</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">07 · Observability</div>
+      <a href="../07-observability/00-observability-overview.html"><span class="num">00</span>Observability Overview</a>
+      <a href="../07-observability/01-metrics-prometheus.html"><span class="num">01</span>Metrics &amp; Prometheus</a>
+      <a href="../07-observability/02-logging.html"><span class="num">02</span>Logging</a>
+      <a href="../07-observability/03-tracing.html"><span class="num">03</span>Distributed Tracing</a>
+      <a href="../07-observability/04-events.html"><span class="num">04</span>Kubernetes Events</a>
+      <a href="../07-observability/05-dashboards-alerting.html"><span class="num">05</span>Dashboards &amp; Alerting</a>
+      <a href="../07-observability/06-cost-monitoring.html"><span class="num">06</span>Cost Monitoring</a>
+      <a href="../07-observability/07-debugging-production-issues.html"><span class="num">07</span>Debugging Production</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">08 · Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-engineering-overview.html"><span class="num">00</span>Platform Overview</a>
+      <a href="../08-platform-engineering/01-multi-tenancy.html"><span class="num">01</span>Multi-Tenancy</a>
+      <a href="../08-platform-engineering/02-gitops.html"><span class="num">02</span>GitOps</a>
+      <a href="../08-platform-engineering/03-helm.html"><span class="num">03</span>Helm</a>
+      <a href="../08-platform-engineering/04-operators.html"><span class="num">04</span>Operators &amp; CRDs</a>
+      <a href="../08-platform-engineering/05-service-catalog.html"><span class="num">05</span>Service Catalog</a>
+      <a href="../08-platform-engineering/06-policy-management.html"><span class="num">06</span>Policy Management</a>
+      <a href="../08-platform-engineering/07-developer-experience.html"><span class="num">07</span>Developer Experience</a>
+      <a href="../08-platform-engineering/08-cost-optimization.html"><span class="num">08</span>Cost Optimization</a>
+      <a href="../08-platform-engineering/09-multi-cluster.html"><span class="num">09</span>Multi-Cluster</a>
+      <a href="../08-platform-engineering/10-cluster-api.html"><span class="num">10</span>Cluster API</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">09 · Production Operations</div>
+      <a href="../09-production-operations/00-production-overview.html"><span class="num">00</span>Production Overview</a>
+      <a href="../09-production-operations/01-cluster-hardening.html"><span class="num">01</span>Cluster Hardening</a>
+      <a href="../09-production-operations/02-etcd-operations.html"><span class="num">02</span>etcd Operations</a>
+      <a href="../09-production-operations/03-certificate-management.html"><span class="num">03</span>Certificate Management</a>
+      <a href="../09-production-operations/04-upgrades.html"><span class="num">04</span>Cluster Upgrades</a>
+      <a href="../09-production-operations/05-disaster-recovery.html"><span class="num">05</span>Disaster Recovery</a>
+      <a href="../09-production-operations/06-performance-tuning.html"><span class="num">06</span>Performance Tuning</a>
+      <a href="../09-production-operations/07-capacity-planning.html"><span class="num">07</span>Capacity Planning</a>
+      <a href="../09-production-operations/08-node-management.html"><span class="num">08</span>Node Management</a>
+      <a href="../09-production-operations/09-traffic-management.html"><span class="num">09</span>Traffic Management</a>
+      <a href="../09-production-operations/10-real-world-incident-analysis.html"><span class="num">10</span>Incident Analysis</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">10 · Team Workflows</div>
+      <a href="../10-team-workflows/00-team-overview.html"><span class="num">00</span>Team Overview</a>
+      <a href="../10-team-workflows/01-rbac-multitenancy.html"><span class="num">01</span>RBAC &amp; Multi-Tenancy</a>
+      <a href="../10-team-workflows/02-cicd-pipelines.html"><span class="num">02</span>CI/CD Pipelines</a>
+      <a href="../10-team-workflows/03-progressive-delivery.html"><span class="num">03</span>Progressive Delivery</a>
+      <a href="../10-team-workflows/04-configuration-management.html"><span class="num">04</span>Configuration Mgmt</a>
+      <a href="../10-team-workflows/05-secret-management.html"><span class="num">05</span>Secret Management</a>
+      <a href="../10-team-workflows/06-container-image-mgmt.html"><span class="num">06</span>Image Management</a>
+      <a href="../10-team-workflows/07-developer-workflows.html"><span class="num">07</span>Developer Workflows</a>
+      <a href="../10-team-workflows/08-sre-practices.html"><span class="num">08</span>SRE Practices</a>
+      <a href="../10-team-workflows/09-infrastructure-operations.html"><span class="num">09</span>Infrastructure Ops</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">11 · API Flows &amp; Diagrams</div>
+      <a href="../11-api-flows-and-sequence-diagrams/00-api-flow-overview.html"><span class="num">00</span>API Flow Overview</a>
+      <a href="../11-api-flows-and-sequence-diagrams/01-pod-creation-flow.html"><span class="num">01</span>Pod Creation Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/02-deployment-rollout-flow.html"><span class="num">02</span>Deployment Rollout</a>
+      <a href="../11-api-flows-and-sequence-diagrams/03-service-endpoint-flow.html"><span class="num">03</span>Service Endpoint Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/04-pvc-binding-flow.html"><span class="num">04</span>PVC Binding Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/05-autoscaling-flow.html"><span class="num">05</span>Autoscaling Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/06-admission-webhook-flow.html"><span class="num">06</span>Admission Webhook</a>
+      <a href="../11-api-flows-and-sequence-diagrams/07-leader-election-flow.html"><span class="num">07</span>Leader Election</a>
+      <a href="../11-api-flows-and-sequence-diagrams/08-rbac-authz-flow.html"><span class="num">08</span>RBAC AuthZ Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/09-csi-volume-flow.html"><span class="num">09</span>CSI Volume Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/10-pod-eviction-flow.html"><span class="num">10</span>Pod Eviction Flow</a>
+      <a href="../11-api-flows-and-sequence-diagrams/11-node-registration-flow.html"><span class="num">11</span>Node Registration</a>
+      <a href="../11-api-flows-and-sequence-diagrams/12-secret-projection-flow.html"><span class="num">12</span>Secret Projection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/13-garbage-collection-flow.html"><span class="num">13</span>Garbage Collection</a>
+      <a href="../11-api-flows-and-sequence-diagrams/14-cross-node-network-packet-flow.html"><span class="num">14</span>Network Packet Flow</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">12 · Troubleshooting</div>
+      <a href="../12-troubleshooting/00-troubleshooting-overview.html"><span class="num">00</span>Troubleshooting Overview</a>
+      <a href="../12-troubleshooting/01-pod-failures.html"><span class="num">01</span>Pod Failures</a>
+      <a href="../12-troubleshooting/02-node-failures.html"><span class="num">02</span>Node Failures</a>
+      <a href="../12-troubleshooting/03-networking-issues.html"><span class="num">03</span>Networking Issues</a>
+      <a href="../12-troubleshooting/04-storage-issues.html"><span class="num">04</span>Storage Issues</a>
+      <a href="../12-troubleshooting/05-control-plane-failures.html"><span class="num">05</span>Control Plane Failures</a>
+      <a href="../12-troubleshooting/06-performance-issues.html"><span class="num">06</span>Performance Issues</a>
+      <a href="../12-troubleshooting/07-security-issues.html"><span class="num">07</span>Security Issues</a>
+      <a href="../12-troubleshooting/08-resource-exhaustion.html"><span class="num">08</span>Resource Exhaustion</a>
+      <a href="../12-troubleshooting/09-etcd-issues.html"><span class="num">09</span>etcd Issues</a>
+      <a href="../12-troubleshooting/10-crashloopbackoff-analysis.html"><span class="num">10</span>CrashLoopBackOff</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ============================================================ MAIN -->
+<main class="main-content" id="main-content">
+
+<div class="page-header">
+  <div class="file-meta">
+    <span class="tag">01-control-plane/02-etcd.html</span>
+    <span class="tag">Prerequisites: 01-control-plane/00-control-plane-overview.html</span>
+    <span class="tag">Prerequisites: 01-control-plane/01-kube-apiserver.html</span>
+    <span class="tag">Related: 09-production-operations/02-etcd-operations.html · 12-troubleshooting/09-etcd-issues.html</span>
+  </div>
+  <h1>etcd — Complete Internals for Kubernetes</h1>
+  <p style="color:var(--text2);font-size:1rem">Raft consensus, MVCC storage engine, WAL, snapshots, compaction, keyspace layout, backup/restore, TLS, performance tuning, and production operations for the Kubernetes backing store.</p>
+</div>
+
+<!-- ============================================================ WHAT IS ETCD -->
+<h2 id="what">What Is etcd?</h2>
+<p>etcd is a strongly consistent, distributed key-value store written in Go. It was created by CoreOS in 2013 and became the backing store for Kubernetes in its earliest versions. The name comes from <strong>/etc</strong> (Unix configuration directory) + <strong>d</strong> (distributed). etcd provides the following guarantees that Kubernetes relies on:</p>
+
+<ul>
+  <li><strong>Strong consistency</strong>: Every read returns the latest committed write, as if the cluster had a single node (given quorum). No stale reads.</li>
+  <li><strong>High availability</strong>: Tolerates minority member failures while maintaining consistency and availability for the majority partition.</li>
+  <li><strong>Watch</strong>: Clients can watch a key or prefix and receive real-time notifications when values change. This powers the Kubernetes Informer machinery.</li>
+  <li><strong>Transactions (MVCC)</strong>: Multi-Version Concurrency Control allows optimistic locking — compare-and-swap semantics prevent lost updates between concurrent writers.</li>
+  <li><strong>Leases</strong>: Time-bounded ownership of keys. Used by Kubernetes for leader election and node heartbeats.</li>
+</ul>
+
+<div class="callout danger">
+  <div class="callout-title">etcd IS the Cluster</div>
+  If all etcd members are permanently lost and no backup exists, the cluster is gone. All Kubernetes objects — every Pod, Deployment, Secret, ConfigMap, ServiceAccount, RBAC policy — live exclusively in etcd. Running pods continue to run on nodes (kubelet doesn't need etcd), but no management, scheduling, or reconciliation is possible.
+</div>
+
+<!-- ============================================================ RAFT CONSENSUS -->
+<h2 id="raft">Raft Consensus Algorithm</h2>
+<p>etcd uses the <strong>Raft</strong> consensus algorithm (2013, Ongaro &amp; Ousterhout) to ensure all members agree on the log order even in the presence of failures. Raft is designed to be more understandable than Paxos while providing the same guarantees.</p>
+
+<h3 id="raft-states">Member States</h3>
+<p>Every etcd member is always in one of three states:</p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>Follower</h4>
+    <p>Passive state. Receives AppendEntries RPCs from the leader (log replication + heartbeats). Forwards client writes to the leader. Starts an election if no heartbeat is received within the election timeout (150–300ms randomized).</p>
+  </div>
+  <div class="card">
+    <h4>Candidate</h4>
+    <p>Transitional state during election. Increments its term, votes for itself, and sends RequestVote RPCs to all peers. Transitions to Leader if it gets majority votes, or back to Follower if it discovers a current leader or higher term.</p>
+  </div>
+  <div class="card">
+    <h4>Leader</h4>
+    <p>The active state for ONE member at a time. Accepts all client writes. Replicates entries to followers via AppendEntries. Sends periodic heartbeats (≤50ms) to prevent elections. Steps down if it can't reach a majority.</p>
+  </div>
+</div>
+
+<h3 id="raft-write-flow">Write Commit Flow</h3>
+
+<svg viewBox="0 0 820 380" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;height:auto;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.5rem">
+  <defs>
+    <marker id="ra" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#58a6ff"/></marker>
+    <marker id="rg" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#3fb950"/></marker>
+    <marker id="rp" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#bc8cff"/></marker>
+  </defs>
+
+  <!-- Actors -->
+  <rect x="10" y="20" width="90" height="36" rx="5" fill="#0d1f3d" stroke="#1f6feb"/>
+  <text x="55" y="43" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="bold">apiserver</text>
+
+  <rect x="200" y="20" width="120" height="36" rx="5" fill="#1a0d2e" stroke="#bc8cff"/>
+  <text x="260" y="38" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="bold">etcd-0 (Leader)</text>
+  <text x="260" y="52" text-anchor="middle" fill="#6e7681" font-size="9">term=5, index=1000</text>
+
+  <rect x="420" y="20" width="120" height="36" rx="5" fill="#21262d" stroke="#6e3a9e"/>
+  <text x="480" y="38" text-anchor="middle" fill="#bc8cff" font-size="11">etcd-1 (Follower)</text>
+  <text x="480" y="52" text-anchor="middle" fill="#6e7681" font-size="9">term=5, index=999</text>
+
+  <rect x="650" y="20" width="120" height="36" rx="5" fill="#21262d" stroke="#6e3a9e"/>
+  <text x="710" y="38" text-anchor="middle" fill="#bc8cff" font-size="11">etcd-2 (Follower)</text>
+  <text x="710" y="52" text-anchor="middle" fill="#6e7681" font-size="9">term=5, index=999</text>
+
+  <!-- Step lines (horizontal lifelines) -->
+  <line x1="55" y1="56" x2="55" y2="360" stroke="#30363d" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="260" y1="56" x2="260" y2="360" stroke="#30363d" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="480" y1="56" x2="480" y2="360" stroke="#30363d" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="710" y1="56" x2="710" y2="360" stroke="#30363d" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Step 1: client write -->
+  <line x1="55" y1="85" x2="252" y2="85" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ra)"/>
+  <text x="153" y="80" text-anchor="middle" fill="#58a6ff" font-size="10">1. gRPC Put(key, val)</text>
+
+  <!-- Step 2: leader appends to WAL -->
+  <rect x="225" y="95" width="70" height="22" rx="3" fill="#1a0d2e" stroke="#bc8cff"/>
+  <text x="260" y="110" text-anchor="middle" fill="#bc8cff" font-size="9">append to WAL</text>
+
+  <!-- Step 3: replicate to followers -->
+  <line x1="260" y1="130" x2="472" y2="130" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#rp)"/>
+  <text x="366" y="124" text-anchor="middle" fill="#bc8cff" font-size="10">2. AppendEntries RPC (index=1001)</text>
+  <line x1="260" y1="145" x2="702" y2="145" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#rp)"/>
+
+  <!-- Step 4: followers append to WAL and ack -->
+  <rect x="447" y="155" width="65" height="22" rx="3" fill="#21262d" stroke="#6e3a9e"/>
+  <text x="480" y="170" text-anchor="middle" fill="#bc8cff" font-size="9">append to WAL</text>
+  <rect x="677" y="155" width="65" height="22" rx="3" fill="#21262d" stroke="#6e3a9e"/>
+  <text x="710" y="170" text-anchor="middle" fill="#bc8cff" font-size="9">append to WAL</text>
+
+  <line x1="480" y1="177" x2="268" y2="188" stroke="#3fb950" stroke-width="1.5" marker-end="url(#rg)"/>
+  <text x="370" y="182" text-anchor="middle" fill="#3fb950" font-size="10">3. ACK (success)</text>
+  <line x1="710" y1="177" x2="268" y2="200" stroke="#3fb950" stroke-width="1.5" marker-end="url(#rg)"/>
+
+  <!-- Step 5: quorum reached, leader commits -->
+  <rect x="220" y="210" width="80" height="22" rx="3" fill="#0d2b0d" stroke="#3fb950"/>
+  <text x="260" y="225" text-anchor="middle" fill="#3fb950" font-size="9">commit (quorum!)</text>
+  <text x="260" y="237" text-anchor="middle" fill="#6e7681" font-size="8">apply to boltdb/bbolt</text>
+
+  <!-- Step 6: notify watchers -->
+  <line x1="260" y1="250" x2="55" y2="265" stroke="#d29922" stroke-width="1.5" marker-end="url(#ra)"/>
+  <text x="155" y="258" text-anchor="middle" fill="#d29922" font-size="10">4. Watch event (ADDED/MODIFIED)</text>
+
+  <!-- Step 7: send commit index to followers -->
+  <line x1="260" y1="280" x2="472" y2="280" stroke="#bc8cff" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rp)"/>
+  <text x="366" y="274" text-anchor="middle" fill="#6e7681" font-size="9">5. next heartbeat: commitIndex=1001</text>
+  <line x1="260" y1="290" x2="702" y2="290" stroke="#bc8cff" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rp)"/>
+
+  <!-- Step 8: followers apply -->
+  <rect x="447" y="298" width="65" height="22" rx="3" fill="#0d2b0d" stroke="#3fb950"/>
+  <text x="480" y="313" text-anchor="middle" fill="#3fb950" font-size="9">apply to boltdb</text>
+  <rect x="677" y="298" width="65" height="22" rx="3" fill="#0d2b0d" stroke="#3fb950"/>
+  <text x="710" y="313" text-anchor="middle" fill="#3fb950" font-size="9">apply to boltdb</text>
+
+  <!-- Step 9: response to apiserver -->
+  <line x1="252" y1="330" x2="55" y2="330" stroke="#3fb950" stroke-width="1.5" marker-end="url(#rg)"/>
+  <text x="153" y="324" text-anchor="middle" fill="#3fb950" font-size="10">6. Response OK (new resourceVersion)</text>
+
+  <text x="410" y="370" text-anchor="middle" fill="#6e7681" font-size="9">Write completes once leader receives majority ACK (2/3 here). Response to client comes AFTER commit.</text>
+</svg>
+
+<p style="color:var(--text2);font-size:0.83em;margin-top:0.5rem">Figure 1: Raft write commit sequence. The leader writes to its WAL, replicates to followers in parallel, waits for majority ACK (quorum), commits to boltdb, then sends the response. Followers apply the entry on the next heartbeat carrying the updated commitIndex.</p>
+
+<h3 id="raft-quorum">Quorum Math</h3>
+<p>Raft requires <code>⌊n/2⌋ + 1</code> votes (a majority) to elect a leader and to commit an entry. This determines how many member failures a cluster can tolerate:</p>
+
+<table>
+  <thead><tr><th>Members (n)</th><th>Quorum</th><th>Tolerated Failures</th><th>Recommendation</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>1</td><td>0</td><td>Dev/test only; any failure = total loss</td></tr>
+    <tr><td>2</td><td>2</td><td>0</td><td>Worse than 1 — both must be up; never use</td></tr>
+    <tr><td>3</td><td>2</td><td>1</td><td>Minimum HA. Standard for most production clusters.</td></tr>
+    <tr><td>4</td><td>3</td><td>1</td><td>Same fault tolerance as 3, but more expensive; avoid</td></tr>
+    <tr><td>5</td><td>3</td><td>2</td><td>Large/critical clusters. Handles rolling upgrades safely.</td></tr>
+    <tr><td>7</td><td>4</td><td>3</td><td>Very large clusters. Write latency increases with more members.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <div class="callout-title">Always Use Odd Numbers</div>
+  Even numbers of members give no benefit. A 4-member cluster tolerates only 1 failure (same as 3) but requires 3 of 4 members for quorum — making it strictly harder to maintain. More members also increase write latency because the leader must wait for more ACKs.
+</div>
+
+<h3 id="raft-election">Leader Election Timing</h3>
+<p>etcd's election timeout is randomized per member between <code>--election-timeout</code> (default 1000ms) and <code>2 * --election-timeout</code> (2000ms). The randomization prevents multiple members from starting elections simultaneously. The heartbeat interval is <code>--heartbeat-interval</code> (default 100ms). Rule: election timeout should be ≥ 10× heartbeat interval.</p>
+
+<pre><code class="language-bash"># Check election and heartbeat intervals (from running etcd)
+ETCDCTL_API=3 etcdctl endpoint status --write-out=json \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/peer.crt \
+  --key=/etc/kubernetes/pki/etcd/peer.key | python3 -m json.tool
+
+# Watch for election events
+journalctl -u etcd --since "5 min ago" | grep -i "elect\|leader\|campaign"
+
+# Count leader changes (should be near 0 in healthy cluster)
+ETCDCTL_API=3 etcdctl endpoint status ... | grep -i leader</code></pre>
+
+<!-- ============================================================ STORAGE ENGINE -->
+<h2 id="storage-engine">Storage Engine: boltdb and MVCC</h2>
+
+<h3 id="boltdb">boltdb (bbolt)</h3>
+<p>etcd uses <strong>boltdb</strong> (later forked to bbolt by etcd's maintainers) as its embedded storage engine. boltdb is a pure-Go, B+tree-based key-value store with the following properties:</p>
+<ul>
+  <li><strong>Single writer</strong>: Only one write transaction at a time (serialized via a mutex). Multiple concurrent read transactions are supported.</li>
+  <li><strong>ACID transactions</strong>: Writes are atomic and durable (fsync before returning). No partial writes.</li>
+  <li><strong>Memory-mapped file</strong>: The database file (<code>member/snap/db</code>) is memory-mapped with <code>mmap()</code>. Read transactions are zero-copy — they read directly from the OS page cache.</li>
+  <li><strong>Copy-on-write B+tree</strong>: Pages are never modified in-place; new pages are allocated and the old ones are freed after commit. This means reads don't block writes and vice versa.</li>
+</ul>
+
+<div class="callout warn">
+  <div class="callout-title">fsync is Mandatory</div>
+  etcd calls <code>fsync()</code> on WAL (Write-Ahead Log) entries before acknowledging writes to the leader. This is why etcd is <strong>extremely sensitive to disk I/O latency</strong>. Network-attached storage (NFS, SAN without write-back caching) is a common source of etcd instability. Use local NVMe SSDs. The benchmark for etcd disk: WAL fsync p99 &lt; 10ms.
+</div>
+
+<h3 id="mvcc">MVCC — Multi-Version Concurrency Control</h3>
+<p>etcd implements MVCC at the application level on top of boltdb. Every write creates a new <strong>revision</strong> of the key — the previous version is not overwritten. This allows:</p>
+<ul>
+  <li><strong>Watch history</strong>: Clients can watch from any past revision, receiving all changes since that point.</li>
+  <li><strong>Optimistic concurrency</strong>: Clients include the <code>modRevision</code> they read; if it's been updated, the transaction fails with a conflict.</li>
+  <li><strong>Consistent reads</strong>: Read at a specific revision to get a snapshot of the database at that point in time.</li>
+</ul>
+
+<p>The MVCC data model:</p>
+<pre><code class="language-text">Keyspace (boltdb):
+  Key: (keyBytes, revision)     → Value: (value, create_revision, mod_revision, version, lease)
+
+  /registry/pods/default/nginx @ rev=100   → {data=..., create_rev=100, mod_rev=100, ver=1}
+  /registry/pods/default/nginx @ rev=150   → {data=..., create_rev=100, mod_rev=150, ver=2}
+  /registry/pods/default/nginx @ rev=200   → {data=..., create_rev=100, mod_rev=200, ver=3}
+
+Revision index (boltdb):
+  rev=100 → /registry/pods/default/nginx (PUT)
+  rev=150 → /registry/pods/default/nginx (PUT)
+  rev=200 → /registry/pods/default/nginx (PUT)
+  rev=201 → /registry/secrets/default/mysecret (PUT)</code></pre>
+
+<p>The <strong>cluster revision</strong> (also called the global revision) is a monotonically increasing integer. Every write that changes the state (PUT or DELETE) increments the cluster revision. This maps directly to Kubernetes <code>resourceVersion</code>.</p>
+
+<pre><code class="language-bash"># Inspect MVCC versions for a key
+ETCDCTL_API=3 etcdctl get /registry/pods/default/nginx \
+  --write-out=json \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/peer.crt \
+  --key=/etc/kubernetes/pki/etcd/peer.key | python3 -m json.tool
+# Output: {"kvs":[{"key":"...","create_revision":100,"mod_revision":200,"version":3,"value":"..."}]}
+
+# Get all revisions of a key (history)
+ETCDCTL_API=3 etcdctl get /registry/pods/default/nginx \
+  --write-out=json --rev=0   # 0 = latest
+
+# Check current cluster revision
+ETCDCTL_API=3 etcdctl endpoint status --write-out=json ... | jq '.[0].Status.header.revision'</code></pre>
+
+<!-- ============================================================ WAL AND SNAPSHOTS -->
+<h2 id="wal-snapshots">WAL (Write-Ahead Log) and Snapshots</h2>
+
+<h3 id="wal">Write-Ahead Log</h3>
+<p>Before any write is applied to boltdb, etcd writes it to the <strong>WAL</strong> — a sequential append-only log on disk. The WAL serves two purposes:</p>
+<ol>
+  <li><strong>Durability</strong>: If etcd crashes after writing to WAL but before applying to boltdb, it can replay the WAL on restart to recover.</li>
+  <li><strong>Replication</strong>: The leader sends WAL entries (as Raft log entries via AppendEntries RPC) to followers.</li>
+</ol>
+
+<p>WAL files are stored in <code>member/wal/</code>. Each file is a fixed size (64MB by default). When a file fills up, a new segment is created. Old WAL segments are retained until a snapshot is taken.</p>
+
+<h3 id="snapshots">Snapshots</h3>
+<p>Keeping the entire WAL forever would make startup slow (replaying millions of entries). Periodically, etcd takes a <strong>snapshot</strong> of the entire boltdb state. Snapshots are stored in <code>member/snap/</code>. After a snapshot is saved, WAL entries before the snapshot's revision can be discarded.</p>
+
+<p>etcd snapshots are triggered when <code>--snapshot-count</code> entries have been applied since the last snapshot (default: 100,000). For large clusters with high write rates, this can happen frequently.</p>
+
+<pre><code class="language-bash"># etcd data directory layout
+/var/lib/etcd/
+├── member/
+│   ├── snap/
+│   │   ├── 0000000000000002-0000000000030000.snap   # snapshot at term-2, index-30000
+│   │   └── db                                       # boltdb database file (mmap'd)
+│   └── wal/
+│       ├── 0000000000000000-0000000000000000.wal    # first WAL segment
+│       └── 0000000000000001-0000000000030001.wal    # second WAL segment
+
+# Check snapshot metadata
+ETCDCTL_API=3 etcdctl snapshot status member/snap/db --write-out=table</code></pre>
+
+<!-- ============================================================ KUBERNETES KEYSPACE -->
+<h2 id="keyspace">Kubernetes Keyspace Layout</h2>
+<p>All Kubernetes objects are stored in etcd under the <code>/registry/</code> prefix. The key format encodes the API group, resource type, namespace (for namespaced resources), and name:</p>
+
+<pre><code class="language-text">Cluster-scoped resources:
+  /registry/{resource}/{name}
+  /registry/nodes/worker-1
+  /registry/namespaces/default
+  /registry/clusterroles/cluster-admin
+  /registry/persistentvolumes/pvc-abc123
+
+Namespaced resources:
+  /registry/{resource}/{namespace}/{name}
+  /registry/pods/default/nginx-abc123
+  /registry/deployments/production/myapp
+  /registry/secrets/kube-system/bootstrap-token-xyz
+
+API Group resources:
+  /registry/{group}/{resource}/{namespace}/{name}
+  /registry/apps/deployments/default/myapp
+  /registry/apps/replicasets/default/myapp-7d4f9c
+  /registry/batch/jobs/default/etl-job
+  /registry/networking.k8s.io/ingresses/default/my-ingress
+  /registry/rbac.authorization.k8s.io/roles/default/read-pods
+
+Special keys:
+  /registry/events/default/nginx-abc.17b2c3d4e5f6    # Events (use separate etcd in large clusters)
+  /registry/minions/{node-name}                       # Old name for nodes (still used internally)
+  /registry/apiextensions.k8s.io/customresourcedefinitions/{name}
+  /registry/leases/kube-system/kube-scheduler         # Leader election</code></pre>
+
+<pre><code class="language-bash"># Inspect the entire keyspace
+ETCDCTL_API=3 etcdctl get /registry \
+  --prefix --keys-only \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/peer.crt \
+  --key=/etc/kubernetes/pki/etcd/peer.key | head -50
+
+# Count objects by type
+ETCDCTL_API=3 etcdctl get /registry --prefix --keys-only ... | \
+  sed 's|/registry/||' | cut -d/ -f1 | sort | uniq -c | sort -rn
+
+# Read a specific pod's raw protobuf value (binary)
+ETCDCTL_API=3 etcdctl get /registry/pods/default/nginx-abc \
+  --print-value-only ... | strings | head -30</code></pre>
+
+<h3 id="encoding">Object Encoding</h3>
+<p>Kubernetes objects are stored in etcd as <strong>protobuf</strong> (not JSON), prefixed with a magic byte sequence: <code>k8s\x00</code>. The encoding is:</p>
+
+<pre><code class="language-text">Etcd value = "k8s\x00" + Unknown{TypeMeta} + protobuf(object)
+
+TypeMeta (Unknown struct):
+  TypeMeta.APIVersion = "apps/v1"
+  TypeMeta.Kind = "Deployment"
+
+protobuf encoding uses the "internal" Go types (not the versioned client types).
+</code></pre>
+
+<div class="callout note">
+  <div class="callout-title">Why Protobuf?</div>
+  JSON encoding is used for the API (client-facing), but protobuf is used for storage because it is 2–4× smaller and faster to encode/decode. A large cluster with 50,000 pods stores ~50MB of pod data in etcd. Protobuf keeps this manageable. The apiserver transparently converts between JSON (API) and protobuf (storage).
+</div>
+
+<!-- ============================================================ COMPACTION -->
+<h2 id="compaction">Compaction and Defragmentation</h2>
+
+<h3 id="compaction-why">Why Compaction Is Needed</h3>
+<p>MVCC keeps all historical revisions of every key. Without compaction, the database grows unboundedly. A busy cluster with 100 pods being updated 10 times/second generates 1,000 new MVCC entries per second. After a week that's 600 million entries.</p>
+
+<p>Compaction removes all historical revisions older than a specified revision, keeping only the latest value for each key.</p>
+
+<pre><code class="language-bash"># Manual compaction (compact everything older than current revision)
+ETCD_ENDPOINTS="https://127.0.0.1:2379"
+ETCD_CERT_FLAGS="--cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/peer.crt --key=/etc/kubernetes/pki/etcd/peer.key"
+
+# Get current revision
+REV=$(ETCDCTL_API=3 etcdctl endpoint status $ETCD_CERT_FLAGS --endpoints=$ETCD_ENDPOINTS --write-out=json | jq '.[0].Status.header.revision')
+echo "Current revision: $REV"
+
+# Compact to current revision (removes all history)
+ETCDCTL_API=3 etcdctl compact $REV $ETCD_CERT_FLAGS --endpoints=$ETCD_ENDPOINTS
+
+# Defragment (reclaim disk space after compaction — boltdb doesn't shrink automatically)
+ETCDCTL_API=3 etcdctl defrag $ETCD_CERT_FLAGS --endpoints=$ETCD_ENDPOINTS
+# Note: defrag briefly blocks all writes — do it one member at a time, non-leader first</code></pre>
+
+<h3 id="auto-compaction">Auto-Compaction</h3>
+<p>etcd supports automatic compaction via the <code>--auto-compaction-mode</code> and <code>--auto-compaction-retention</code> flags:</p>
+
+<pre><code class="language-bash"># Time-based: compact entries older than 1 hour
+etcd --auto-compaction-mode=periodic --auto-compaction-retention=1h
+
+# Revision-based: keep last 1000 revisions
+etcd --auto-compaction-mode=revision --auto-compaction-retention=1000
+
+# For Kubernetes: periodic with 8-hour retention is a common setting
+# (allows Informers to reconnect with a 8-hour-old resourceVersion before needing relist)</code></pre>
+
+<div class="callout warn">
+  <div class="callout-title">DB Size Quota</div>
+  etcd has a <code>--quota-backend-bytes</code> limit (default 2GB). When exceeded, etcd returns <code>NOSPACE</code> errors for all writes, causing the Kubernetes apiserver to fail all mutations. The cluster becomes effectively read-only. Kubernetes recommends setting this to 8GB maximum for large clusters. Monitor <code>etcd_mvcc_db_total_size_in_bytes</code> and alert at 70% of quota.
+</div>
+
+<!-- ============================================================ LEASES -->
+<h2 id="leases">Leases — TTL-based Key Ownership</h2>
+<p>etcd Leases are time-bounded tokens. A key can be attached to a Lease; when the Lease expires (client fails to renew), all attached keys are automatically deleted. This is used by Kubernetes for:</p>
+<ul>
+  <li><strong>Leader election</strong>: <code>kube-scheduler</code> and <code>kube-controller-manager</code> hold a Lease object in the <code>kube-system</code> namespace. The holder is the active leader.</li>
+  <li><strong>Node heartbeats</strong> (v1.17+): kubelet updates a <code>Lease</code> object in <code>kube-node-lease</code> namespace every 10s, avoiding constant updates to the heavy Node object.</li>
+</ul>
+
+<pre><code class="language-bash"># Node heartbeat leases
+kubectl get leases -n kube-node-lease
+# NAME          HOLDER        AGE
+# worker-1      worker-1      5d
+# worker-2      worker-2      5d
+
+# Leader election leases
+kubectl get leases -n kube-system
+# NAME                       HOLDER                          AGE
+# kube-controller-manager    kube-controller-manager-node1   5d
+# kube-scheduler             kube-scheduler-node1            5d
+
+# Inspect a lease
+kubectl get lease kube-scheduler -n kube-system -o yaml
+# spec:
+#   holderIdentity: kube-scheduler-node1_abc-uuid
+#   leaseDurationSeconds: 15
+#   renewTime: "2026-05-15T18:00:00Z"   # updated every renewDeadline (10s)</code></pre>
+
+<!-- ============================================================ TLS AND SECURITY -->
+<h2 id="tls">TLS and Security Configuration</h2>
+
+<p>etcd uses two separate TLS configurations:</p>
+<div class="grid-2">
+  <div class="card">
+    <h4>Client TLS (port 2379)</h4>
+    <p>Used by the apiserver to connect to etcd. Requires:</p>
+    <ul>
+      <li><code>--trusted-ca-file</code>: CA that signed apiserver's client cert</li>
+      <li><code>--cert-file</code>: etcd server's serving cert</li>
+      <li><code>--key-file</code>: etcd server's private key</li>
+      <li><code>--client-cert-auth=true</code>: require mTLS from clients</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Peer TLS (port 2380)</h4>
+    <p>Used between etcd members for Raft replication. Requires:</p>
+    <ul>
+      <li><code>--peer-trusted-ca-file</code>: Peer CA (often same as etcd CA)</li>
+      <li><code>--peer-cert-file</code>: This member's peer cert</li>
+      <li><code>--peer-key-file</code>: This member's peer key</li>
+      <li><code>--peer-client-cert-auth=true</code>: require mTLS from peers</li>
+    </ul>
+  </div>
+</div>
+
+<pre><code class="language-bash"># Full etcd TLS configuration flags
+etcd \
+  --name=etcd-0 \
+  --data-dir=/var/lib/etcd \
+  # Client TLS
+  --listen-client-urls=https://0.0.0.0:2379 \
+  --advertise-client-urls=https://etcd-0.etcd.svc:2379 \
+  --trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert-file=/etc/kubernetes/pki/etcd/server.crt \
+  --key-file=/etc/kubernetes/pki/etcd/server.key \
+  --client-cert-auth=true \
+  # Peer TLS
+  --listen-peer-urls=https://0.0.0.0:2380 \
+  --initial-advertise-peer-urls=https://etcd-0.etcd.svc:2380 \
+  --peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt \
+  --peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt \
+  --peer-key-file=/etc/kubernetes/pki/etcd/peer.key \
+  --peer-client-cert-auth=true \
+  # Cluster formation
+  --initial-cluster-state=new \
+  --initial-cluster="etcd-0=https://etcd-0.etcd.svc:2380,etcd-1=https://etcd-1.etcd.svc:2380,etcd-2=https://etcd-2.etcd.svc:2380"</code></pre>
+
+<!-- ============================================================ BACKUP AND RESTORE -->
+<h2 id="backup-restore">Backup and Restore</h2>
+
+<h3 id="backup">Taking a Snapshot</h3>
+<p>etcd snapshots are atomic, consistent point-in-time copies of the entire keyspace. A snapshot taken from any member (including followers) captures the state at the snapshot revision.</p>
+
+<pre><code class="language-bash">#!/bin/bash
+# Production etcd backup script
+
+BACKUP_DIR="/backup/etcd/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+ETCD_CERT_FLAGS="
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt
+  --cert=/etc/kubernetes/pki/etcd/peer.crt
+  --key=/etc/kubernetes/pki/etcd/peer.key"
+
+# Take snapshot (connects to local etcd member)
+ETCDCTL_API=3 etcdctl snapshot save "$BACKUP_DIR/snapshot.db" \
+  --endpoints=https://127.0.0.1:2379 \
+  $ETCD_CERT_FLAGS
+
+# Verify snapshot integrity
+ETCDCTL_API=3 etcdctl snapshot status "$BACKUP_DIR/snapshot.db" --write-out=table
+
+# Compress and upload to off-cluster storage (S3, GCS, etc.)
+gzip "$BACKUP_DIR/snapshot.db"
+aws s3 cp "$BACKUP_DIR/snapshot.db.gz" s3://my-cluster-backups/etcd/
+
+echo "Backup complete: $BACKUP_DIR/snapshot.db.gz"</code></pre>
+
+<pre><code class="language-bash"># Automate with a CronJob (if etcd runs outside the cluster) or system cron
+# /etc/cron.d/etcd-backup
+0 * * * * root /usr/local/bin/etcd-backup.sh >> /var/log/etcd-backup.log 2>&1</code></pre>
+
+<h3 id="restore">Restoring From a Snapshot</h3>
+<p>Restoring from a snapshot replaces the entire etcd cluster state. This is a destructive operation — it overwrites all current data with the snapshot contents. It also forces etcd to generate a new cluster ID, preventing old members from joining.</p>
+
+<div class="callout danger">
+  <div class="callout-title">Restore Impacts All Members</div>
+  You must restore to ALL etcd members (or a fresh set of members) from the same snapshot. Restoring to only one member while others have newer data creates a split state. Always stop all apiservers before restoring.
+</div>
+
+<pre><code class="language-bash">#!/bin/bash
+# Disaster recovery restore procedure
+
+SNAPSHOT="/backup/etcd/20260515-020000/snapshot.db.gz"
+RESTORE_DIR="/var/lib/etcd-restore"
+
+# Step 1: Stop apiserver and all controllers (static pod: move manifest away)
+mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/
+mv /etc/kubernetes/manifests/kube-controller-manager.yaml /tmp/
+mv /etc/kubernetes/manifests/kube-scheduler.yaml /tmp/
+
+# Step 2: Stop etcd
+mv /etc/kubernetes/manifests/etcd.yaml /tmp/
+# Wait for etcd process to exit
+sleep 5
+
+# Step 3: Restore snapshot to each member (run on each CP node with appropriate names/URLs)
+gunzip -c "$SNAPSHOT" > /tmp/snapshot.db
+
+ETCDCTL_API=3 etcdctl snapshot restore /tmp/snapshot.db \
+  --name=etcd-0 \
+  --initial-cluster="etcd-0=https://etcd-0:2380,etcd-1=https://etcd-1:2380,etcd-2=https://etcd-2:2380" \
+  --initial-cluster-token=etcd-cluster-restored-$(date +%s) \
+  --initial-advertise-peer-urls=https://etcd-0:2380 \
+  --data-dir="$RESTORE_DIR"
+
+# Step 4: Replace old data directory
+mv /var/lib/etcd /var/lib/etcd-old
+mv "$RESTORE_DIR" /var/lib/etcd
+chown -R etcd:etcd /var/lib/etcd
+
+# Step 5: Restart etcd (restore manifest)
+mv /tmp/etcd.yaml /etc/kubernetes/manifests/
+# Wait for etcd to become healthy
+sleep 10
+ETCDCTL_API=3 etcdctl endpoint health ...
+
+# Step 6: Restore apiserver and controllers
+mv /tmp/kube-apiserver.yaml /etc/kubernetes/manifests/
+mv /tmp/kube-controller-manager.yaml /etc/kubernetes/manifests/
+mv /tmp/kube-scheduler.yaml /etc/kubernetes/manifests/</code></pre>
+
+<!-- ============================================================ PERFORMANCE TUNING -->
+<h2 id="performance">Performance Tuning</h2>
+
+<h3 id="disk-requirements">Disk Requirements</h3>
+<p>etcd performance is dominated by WAL fsync latency. Guidelines:</p>
+
+<table>
+  <thead><tr><th>Metric</th><th>Target</th><th>Alert At</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>WAL fsync p99</td><td>&lt;1ms</td><td>&gt;10ms</td><td>Move to faster disk; check I/O scheduler</td></tr>
+    <tr><td>Backend commit p99</td><td>&lt;25ms</td><td>&gt;100ms</td><td>Check boltdb size; trigger compaction/defrag</td></tr>
+    <tr><td>DB size</td><td>&lt;2GB</td><td>&gt;5GB (of 8GB quota)</td><td>Increase compaction frequency; check write rate</td></tr>
+    <tr><td>Peer round-trip latency</td><td>&lt;1ms</td><td>&gt;10ms</td><td>Place etcd members in same datacenter/AZ</td></tr>
+    <tr><td>Leader elections/hour</td><td>0</td><td>&gt;0</td><td>Investigate disk latency, CPU pressure, network issues</td></tr>
+  </tbody>
+</table>
+
+<h3 id="disk-tuning">OS-Level Disk Tuning</h3>
+<pre><code class="language-bash"># Check I/O scheduler (should be 'none' or 'noop' for SSDs)
+cat /sys/block/nvme0n1/queue/scheduler
+# If not 'none': echo none > /sys/block/nvme0n1/queue/scheduler
+
+# Benchmark disk latency with fio (recommended before deploying etcd)
+fio --rw=write --ioengine=sync --fdatasync=1 \
+    --directory=/var/lib/etcd \
+    --size=22m --bs=2300 \
+    --name=etcd-disk-benchmark
+# Target: 99th percentile sync latency < 10ms
+
+# Check if etcd process has CPU/IO priority
+ionice -c 1 -n 0 -p $(pgrep etcd)    # set real-time I/O class
+nice -n -10 -p $(pgrep etcd)          # boost CPU priority
+
+# Dedicated disk for etcd
+# /etc/fstab: /dev/nvme1n1 /var/lib/etcd ext4 noatime,nodiratime 0 2</code></pre>
+
+<h3 id="resource-allocation">Resource Allocation</h3>
+<pre><code class="language-bash"># etcd resource recommendations:
+# CPU: 2-4 cores dedicated
+# Memory: 8GB recommended (etcd uses mmap; OS will cache boltdb in page cache)
+# Disk: Dedicated NVMe SSD, 50GB minimum
+
+# If etcd runs as a static pod (kubeadm), set resources in the manifest:
+# /etc/kubernetes/manifests/etcd.yaml
+resources:
+  requests:
+    cpu: "100m"
+    memory: "100Mi"
+  limits:
+    cpu: "4"
+    memory: "8Gi"
+
+# Isolate etcd from noisy neighbors using cpuset (Linux)
+systemctl set-property etcd CPUAffinity=0-3   # pin to CPUs 0-3</code></pre>
+
+<!-- ============================================================ CLUSTER OPERATIONS -->
+<h2 id="cluster-ops">Cluster Operations</h2>
+
+<h3 id="member-add">Adding a Member</h3>
+<pre><code class="language-bash"># Step 1: Add the member to the cluster (updates cluster membership)
+ETCDCTL_API=3 etcdctl member add etcd-3 \
+  --peer-urls=https://etcd-3:2380 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/peer.crt \
+  --key=/etc/kubernetes/pki/etcd/peer.key \
+  --endpoints=https://etcd-0:2379
+
+# Step 2: Start etcd on the new node with --initial-cluster-state=existing
+# The new member will automatically sync state from the leader
+
+# Step 3: Verify the member joined
+ETCDCTL_API=3 etcdctl member list ...</code></pre>
+
+<h3 id="member-remove">Removing a Failed Member</h3>
+<pre><code class="language-bash"># Get member IDs
+ETCDCTL_API=3 etcdctl member list \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/peer.crt \
+  --key=/etc/kubernetes/pki/etcd/peer.key \
+  --endpoints=https://etcd-0:2379
+
+# Remove the failed member by ID
+ETCDCTL_API=3 etcdctl member remove <MEMBER_ID> ...
+
+# The cluster immediately drops quorum requirement by 1 for the removed member
+# A 3-member cluster that just had a member removed is now a 2-member cluster
+# and needs BOTH remaining members to achieve quorum!</code></pre>
+
+<div class="callout danger">
+  <div class="callout-title">Member Remove Is Immediate</div>
+  As soon as you run <code>member remove</code>, the cluster size decreases. If you remove a member from a 3-member cluster while one member is already down, you now have a 2-member cluster where both remaining members must be up for quorum. You've reduced your fault tolerance to zero. Be careful.
+</div>
+
+<h3 id="disaster-recovery-split">Recovering From Loss of Quorum</h3>
+<pre><code class="language-bash"># Scenario: 3-member cluster, 2 members lost. 1 member running but no quorum.
+# The remaining member will refuse all writes: "etcdserver: request timed out"
+
+# Option A: Restore from backup (safest, may lose recent writes)
+# (follow the restore procedure above)
+
+# Option B: Force a new single-member cluster from the surviving member's data
+# WARNING: This discards all writes since the last committed index on the survivor.
+
+# Step 1: Stop etcd
+systemctl stop etcd
+
+# Step 2: Force a new cluster from this member's data dir
+etcd --force-new-cluster --data-dir=/var/lib/etcd
+
+# Step 3: Immediately run the apiserver against this single member
+# Step 4: Add new etcd members to restore HA</code></pre>
+
+<!-- ============================================================ MONITORING -->
+<h2 id="monitoring">Key etcd Metrics</h2>
+
+<pre><code class="language-bash"># etcd exposes Prometheus metrics at :2381/metrics (or :2379/metrics)
+# Sample critical queries:
+
+# Leader elections (should be 0)
+etcd_server_leader_changes_seen_total
+
+# Write latency (WAL sync - most critical)
+histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m]))
+
+# Backend commit latency (boltdb)
+histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket[5m]))
+
+# Database size
+etcd_mvcc_db_total_size_in_bytes
+etcd_mvcc_db_total_size_in_use_in_bytes   # actual used; difference = fragmentation
+
+# Watch connections
+etcd_server_slow_apply_total             # operations taking > 100ms
+etcd_server_slow_read_indexes_total      # read index operations taking too long
+
+# Raft health
+etcd_server_proposals_committed_total   # rate = write throughput
+etcd_server_proposals_pending           # should be near 0
+etcd_server_proposals_failed_total      # should be 0
+etcd_network_peer_round_trip_time_seconds # inter-member latency</code></pre>
+
+<pre><code class="language-yaml"># Prometheus alerting rules for etcd
+groups:
+- name: etcd
+  rules:
+  - alert: EtcdNoLeader
+    expr: etcd_server_has_leader == 0
+    for: 1m
+    annotations:
+      summary: "etcd member has no leader"
+
+  - alert: EtcdHighNumberOfLeaderChanges
+    expr: increase(etcd_server_leader_changes_seen_total[1h]) > 3
+    annotations:
+      summary: "etcd leader changed more than 3 times in 1 hour"
+
+  - alert: EtcdHighFsyncDuration
+    expr: histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])) > 0.01
+    for: 5m
+    annotations:
+      summary: "etcd WAL fsync p99 > 10ms — disk performance issue"
+
+  - alert: EtcdDbSizeExceeding
+    expr: etcd_mvcc_db_total_size_in_bytes / etcd_server_quota_backend_bytes > 0.7
+    for: 10m
+    annotations:
+      summary: "etcd database size exceeds 70% of quota"
+
+  - alert: EtcdMemberDown
+    expr: up{job="etcd"} == 0
+    for: 3m
+    annotations:
+      summary: "etcd member is down"</code></pre>
+
+<!-- ============================================================ TROUBLESHOOTING -->
+<h2 id="troubleshooting">Troubleshooting etcd</h2>
+
+<h3 id="ts-nospace">NOSPACE Alarm — DB Quota Exceeded</h3>
+<pre><code class="language-bash"># Symptom: all apiserver writes fail with "etcdserver: mvcc: database space exceeded"
+# Step 1: Check current state
+ETCDCTL_API=3 etcdctl alarm list ...    # should show NOSPACE
+ETCDCTL_API=3 etcdctl endpoint status --write-out=table ...  # check DB SIZE column
+
+# Step 2: Compact and defrag (even if at quota, compaction is allowed)
+REV=$(ETCDCTL_API=3 etcdctl endpoint status --write-out=json ... | jq '.[0].Status.header.revision')
+ETCDCTL_API=3 etcdctl compact $REV ...
+ETCDCTL_API=3 etcdctl defrag ...
+
+# Step 3: Clear the alarm (only after DB size is back under quota)
+ETCDCTL_API=3 etcdctl alarm disarm ...
+
+# Step 4: Increase quota to prevent recurrence (restart required)
+# etcd flag: --quota-backend-bytes=8589934592  (8GB)</code></pre>
+
+<h3 id="ts-slow-writes">Slow Writes / High Latency</h3>
+<pre><code class="language-bash"># Check fsync latency (should be < 1ms on fast SSDs)
+ETCDCTL_API=3 etcdctl check perf ...
+# Expected output: 60 / 60 passed for round trip time
+
+# Check I/O wait on the node
+iostat -x 1 10 | grep -E "Device|nvme"
+
+# Check if another process is contending for disk
+iotop -o  # interactive I/O monitor
+
+# Check for etcd leader thrashing (election per minute = instability)
+journalctl -u etcd --since "1 hour ago" | grep -c "elected leader"
+
+# Check VM steal time (if on cloud)
+vmstat 1 10 | awk '{print $16}'  # st column = steal; should be < 1%</code></pre>
+
+<h3 id="ts-split-brain">Network Partition / Split-Brain Detection</h3>
+<pre><code class="language-bash"># Detect if a member is isolated
+ETCDCTL_API=3 etcdctl endpoint health --cluster ...
+# Unhealthy member will show: "failed to commit proposal" or "context deadline exceeded"
+
+# Check peer connectivity from within each member
+# (etcd logs show peer connection errors)
+journalctl -u etcd | grep "lost the TCP streaming connection"
+journalctl -u etcd | grep "failed to send"
+
+# Verify quorum is intact
+ETCDCTL_API=3 etcdctl endpoint status --write-out=table ...
+# RAFT TERM should be the same for all healthy members</code></pre>
+
+<h3 id="ts-corruption">Data Corruption Recovery</h3>
+<pre><code class="language-bash"># etcd detects data corruption via hash checks
+# Symptom: "etcdserver: database file may be corrupt"
+
+# Step 1: Check integrity
+ETCDCTL_API=3 etcdctl snapshot status member/snap/db
+
+# Step 2: If corrupt, restore from snapshot
+# See backup/restore section above
+
+# Prevention: never use SIGKILL on etcd (always SIGTERM)
+# SIGKILL during a write can corrupt the WAL
+kill -TERM $(pgrep etcd)   # correct
+# kill -9 $(pgrep etcd)   # NEVER do this</code></pre>
+
+<!-- ============================================================ PRODUCTION CHECKLIST -->
+<h2 id="production-checklist">Production Checklist</h2>
+
+<details>
+  <summary>20-Item etcd Production Checklist</summary>
+  <div class="details-body">
+    <table>
+      <thead><tr><th>#</th><th>Item</th><th>Verification</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Odd number of members (3 or 5)</td><td><code>etcdctl member list</code></td></tr>
+        <tr><td>2</td><td>Members spread across AZs</td><td>Verify placement in cloud console</td></tr>
+        <tr><td>3</td><td>Dedicated NVMe SSD for etcd data</td><td><code>lsblk; df -h /var/lib/etcd</code></td></tr>
+        <tr><td>4</td><td>WAL fsync p99 &lt; 10ms</td><td>Prometheus: <code>etcd_disk_wal_fsync_duration_seconds</code></td></tr>
+        <tr><td>5</td><td>Hourly backups with off-cluster storage</td><td>Check backup cron; verify S3/GCS bucket</td></tr>
+        <tr><td>6</td><td>Backup restore tested</td><td>Annual DR drill: restore from snapshot to test cluster</td></tr>
+        <tr><td>7</td><td>TLS + mTLS on both client and peer ports</td><td><code>--client-cert-auth=true --peer-client-cert-auth=true</code></td></tr>
+        <tr><td>8</td><td>etcd not reachable from outside CP network</td><td>Firewall: port 2379/2380 restricted to CP node IPs</td></tr>
+        <tr><td>9</td><td>Auto-compaction configured</td><td><code>--auto-compaction-mode=periodic --auto-compaction-retention=8h</code></td></tr>
+        <tr><td>10</td><td>Quota set to 8GB</td><td><code>--quota-backend-bytes=8589934592</code></td></tr>
+        <tr><td>11</td><td>DB size alerting at 70% quota</td><td>Prometheus alert configured</td></tr>
+        <tr><td>12</td><td>Leader election count alert</td><td>Alert on &gt;3 elections/hour</td></tr>
+        <tr><td>13</td><td>All members healthy</td><td><code>etcdctl endpoint health --cluster</code></td></tr>
+        <tr><td>14</td><td>Etcd logs monitored for errors</td><td>Loki/CloudWatch alert on "failed to commit"</td></tr>
+        <tr><td>15</td><td>Separate etcd CA from Kubernetes CA</td><td>Verify issuer: <code>openssl x509 -in etcd/ca.crt -noout -subject</code></td></tr>
+        <tr><td>16</td><td>Etcd member certs expiry &gt; 30 days</td><td><code>kubeadm certs check-expiration</code></td></tr>
+        <tr><td>17</td><td>Events stored in separate etcd (large clusters)</td><td>Check apiserver <code>--etcd-servers-overrides</code> flag</td></tr>
+        <tr><td>18</td><td>Resource limits on etcd static pod</td><td><code>grep -A5 resources /etc/kubernetes/manifests/etcd.yaml</code></td></tr>
+        <tr><td>19</td><td>No NFS/network storage for etcd data dir</td><td><code>df -T /var/lib/etcd</code> (should be local)</td></tr>
+        <tr><td>20</td><td>Never SIGKILL etcd; use SIGTERM for shutdown</td><td>Review kubelet static pod management; check restart policy</td></tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<!-- ============================================================ EVENTS SEPARATION -->
+<h2 id="events-separation">Separating Events Into a Dedicated etcd</h2>
+<p>Kubernetes Events are extremely high-volume — every pod phase change, scheduler decision, and controller action generates an Event. In large clusters, Events can account for 50%+ of etcd writes, consuming quota and slowing down writes to actual workload state.</p>
+
+<pre><code class="language-bash"># Configure apiserver to use a separate etcd for Events
+kube-apiserver \
+  --etcd-servers=https://etcd-0:2379,https://etcd-1:2379,https://etcd-2:2379 \
+  --etcd-servers-overrides=/events#https://etcd-events-0:2379,https://etcd-events-1:2379
+
+# This routes all /registry/events/* keys to the events etcd cluster
+# The events etcd can be smaller and have shorter retention
+# (Events themselves have a default TTL of 1 hour)</code></pre>
+
+<!-- ============================================================ DEPENDENCY GRAPH -->
+<h2 id="dependency-graph">Dependency Graph and Next Files</h2>
+<div class="grid-3">
+  <div class="card">
+    <h4>Prerequisites</h4>
+    <ul style="font-size:0.83em">
+      <li><a href="00-control-plane-overview.html">01-00 — Control Plane Overview</a></li>
+      <li><a href="01-kube-apiserver.html">01-01 — kube-apiserver</a></li>
+      <li><a href="../00-foundations/04-kubernetes-api-model.html">04 — API Model (resourceVersion)</a></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>This File Covers</h4>
+    <ul style="font-size:0.83em">
+      <li>Raft consensus: states, write flow, quorum</li>
+      <li>boltdb storage engine + MVCC</li>
+      <li>WAL and snapshots</li>
+      <li>Kubernetes keyspace layout + protobuf encoding</li>
+      <li>Compaction and defragmentation</li>
+      <li>Leases (leader election + node heartbeats)</li>
+      <li>TLS/mTLS configuration</li>
+      <li>Backup and restore procedures</li>
+      <li>Performance tuning (disk, OS, resources)</li>
+      <li>Cluster operations (add/remove members)</li>
+      <li>Key metrics + Prometheus alerting rules</li>
+      <li>Troubleshooting runbooks (NOSPACE, slow writes, split-brain, corruption)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Next Files</h4>
+    <ul style="font-size:0.83em">
+      <li><a href="03-kube-scheduler.html">01-03 — kube-scheduler Deep Dive</a></li>
+      <li><a href="../09-production-operations/02-etcd-operations.html">09-02 — etcd Operations</a></li>
+      <li><a href="../09-production-operations/05-disaster-recovery.html">09-05 — Disaster Recovery</a></li>
+      <li><a href="../12-troubleshooting/09-etcd-issues.html">12-09 — etcd Issues</a></li>
+    </ul>
+  </div>
+</div>
+
+<div class="nav-footer">
+  <a href="01-kube-apiserver.html" class="nav-btn">
+    <div class="label">← Previous</div>
+    <div class="title">kube-apiserver Deep Dive</div>
+  </a>
+  <a href="03-kube-scheduler.html" class="nav-btn next">
+    <div class="label">Next →</div>
+    <div class="title">kube-scheduler Deep Dive</div>
+  </a>
+</div>
+
+</main>
+
+<aside class="toc-panel">
+  <div class="toc-title">On This Page</div>
+  <a href="#what">What Is etcd?</a>
+  <a href="#raft">Raft Consensus</a>
+  <a class="toc-h3" href="#raft-states">Member States</a>
+  <a class="toc-h3" href="#raft-write-flow">Write Commit Flow</a>
+  <a class="toc-h3" href="#raft-quorum">Quorum Math</a>
+  <a class="toc-h3" href="#raft-election">Election Timing</a>
+  <a href="#storage-engine">Storage Engine</a>
+  <a class="toc-h3" href="#boltdb">boltdb / bbolt</a>
+  <a class="toc-h3" href="#mvcc">MVCC</a>
+  <a href="#wal-snapshots">WAL and Snapshots</a>
+  <a class="toc-h3" href="#wal">Write-Ahead Log</a>
+  <a class="toc-h3" href="#snapshots">Snapshots</a>
+  <a href="#keyspace">Kubernetes Keyspace</a>
+  <a class="toc-h3" href="#encoding">Object Encoding</a>
+  <a href="#compaction">Compaction</a>
+  <a class="toc-h3" href="#compaction-why">Why Compaction</a>
+  <a class="toc-h3" href="#auto-compaction">Auto-Compaction</a>
+  <a href="#leases">Leases</a>
+  <a href="#tls">TLS and Security</a>
+  <a href="#backup-restore">Backup and Restore</a>
+  <a class="toc-h3" href="#backup">Taking a Snapshot</a>
+  <a class="toc-h3" href="#restore">Restoring</a>
+  <a href="#performance">Performance Tuning</a>
+  <a class="toc-h3" href="#disk-requirements">Disk Requirements</a>
+  <a class="toc-h3" href="#disk-tuning">OS-Level Tuning</a>
+  <a href="#cluster-ops">Cluster Operations</a>
+  <a href="#monitoring">Key Metrics</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a class="toc-h3" href="#ts-nospace">NOSPACE Alarm</a>
+  <a class="toc-h3" href="#ts-slow-writes">Slow Writes</a>
+  <a class="toc-h3" href="#ts-split-brain">Split-Brain</a>
+  <a class="toc-h3" href="#ts-corruption">Corruption</a>
+  <a href="#production-checklist">Production Checklist</a>
+  <a href="#events-separation">Events Separation</a>
+  <a href="#dependency-graph">Next Files</a>
+</aside>
+</div>
+
+<button class="back-to-top" id="back-to-top">↑</button>
+
+<script>
+const themeBtn=document.getElementById('theme-btn');
+const saved=localStorage.getItem('k8s-theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+themeBtn.textContent=saved==='dark'?'☀ Light':'☾ Dark';
+themeBtn.addEventListener('click',()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('k8s-theme',t);
+  themeBtn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+});
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+btt.addEventListener('click',()=>main.scrollTo({top:0,behavior:'smooth'}));
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');btn.className='copy-btn';btn.textContent='Copy';
+  pre.appendChild(btn);
+  btn.addEventListener('click',()=>{navigator.clipboard.writeText(pre.querySelector('code')?.innerText||pre.innerText);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});
+});
+const tocLinks=[...document.querySelectorAll('.toc-panel a')];
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){tocLinks.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.toc-panel a[href="#${e.target.id}"]`);if(a)a.classList.add('active');}});
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h=>obs.observe(h));
+document.getElementById('sidebar-filter').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';});
+});
+const si=document.getElementById('search-input');
+si.addEventListener('input',function(){
+  document.querySelectorAll('.search-hl').forEach(m=>{m.outerHTML=m.textContent;});
+  const q=this.value.trim();if(!q)return;
+  const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  function walk(n){if(n.nodeType===3){if(n.textContent.match(re)){const s=document.createElement('span');s.innerHTML=n.textContent.replace(re,m=>`<mark class="search-hl">${m}</mark>`);n.parentNode.replaceChild(s,n);}}else if(n.nodeType===1&&!['SCRIPT','STYLE','MARK','BUTTON','INPUT'].includes(n.tagName)){[...n.childNodes].forEach(walk);}}
+  walk(document.getElementById('main-content'));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Alerting — Kubernetes Observability</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#1f2328;--text2:#656d76;--text3:#9198a1;--code-bg:#f6f8fa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;font-size:14px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:272px;min-width:272px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:transform .25s}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo{font-size:20px}.sidebar-title{font-size:14px;font-weight:600}
+.sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.sidebar-nav{overflow-y:auto;flex:1;padding:8px 0}
+.nav-section{margin-bottom:4px}
+.nav-section-header{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.nav-section a{display:block;padding:5px 16px 5px 28px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3)}
+.main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.hamburger{background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px;display:none}
+.topbar-title{font-size:14px;font-weight:600;flex:1}
+.topbar-actions{display:flex;gap:8px}
+.btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 12px;font-size:12px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--bg4)}
+main{flex:1;overflow-y:auto;padding:32px 40px;scroll-behavior:smooth}
+h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.subtitle{color:var(--text2);font-size:15px;margin-bottom:24px}
+h2{font-size:20px;font-weight:600;margin:40px 0 16px;padding-top:8px;border-top:1px solid var(--border)}
+h2:first-of-type{margin-top:24px;border-top:none}
+h3{font-size:16px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:18px 0 8px;color:var(--text2)}
+p{color:var(--text2);line-height:1.65;margin-bottom:12px}
+ul,ol{color:var(--text2);padding-left:20px;margin-bottom:12px}
+li{margin-bottom:4px;line-height:1.55}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'SF Mono',Consolas,monospace;font-size:12px;color:var(--text)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin-bottom:16px;position:relative}
+pre code{background:none;border:none;padding:0;font-size:12px;line-height:1.55}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);padding:3px 8px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}.copy-btn:hover{background:var(--bg4)}
+.table-wrap{overflow-x:auto;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text)}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg2)}
+.callout{border-left:3px solid;padding:12px 16px;margin-bottom:16px;border-radius:0 6px 6px 0}
+.callout-info{border-color:var(--accent);background:rgba(88,166,255,.08)}
+.callout-warn{border-color:var(--yellow);background:rgba(210,153,34,.08)}
+.callout-danger{border-color:var(--red);background:rgba(248,81,73,.08)}
+.callout-success{border-color:var(--green);background:rgba(63,185,80,.08)}
+.callout-title{font-weight:600;font-size:13px;margin-bottom:4px}
+.callout p{margin-bottom:0;font-size:13px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin-top:0;margin-bottom:8px;font-size:14px}
+.card p{font-size:13px;margin-bottom:0}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;font-family:'SF Mono',Consolas,monospace;font-size:12px;line-height:1.7;overflow-x:auto;white-space:pre;color:var(--text2)}
+.badge{display:inline-block;padding:1px 7px;border-radius:12px;font-size:11px;font-weight:500}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px}
+.toc-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.toc ol{margin-bottom:0;padding-left:16px}
+.toc li{font-size:12px;margin-bottom:3px}
+.toc a{color:var(--text2)}.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.section-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2)}
+.section-nav a:hover{color:var(--accent);text-decoration:none;border-color:var(--accent)}
+.step-list{counter-reset:step;list-style:none;padding:0;margin-bottom:16px}
+.step-list li{counter-increment:step;padding:10px 12px 10px 44px;position:relative;border-left:2px solid var(--border);margin-bottom:6px;color:var(--text2);font-size:13px}
+.step-list li::before{content:counter(step);position:absolute;left:-14px;top:8px;background:var(--accent2);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+/* alert lifecycle */
+.lifecycle{display:flex;align-items:center;gap:0;margin-bottom:16px;flex-wrap:wrap}
+.lc-step{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:12px;text-align:center;min-width:110px}
+.lc-step .lc-label{font-weight:600;color:var(--text);font-size:12px}
+.lc-step .lc-sub{color:var(--text3);font-size:11px;margin-top:2px}
+.lc-arrow{color:var(--text3);font-size:16px;padding:0 4px}
+.lc-step.active{border-color:var(--yellow);background:rgba(210,153,34,.08)}
+.lc-step.firing{border-color:var(--red);background:rgba(248,81,73,.08)}
+.lc-step.resolved{border-color:var(--green);background:rgba(63,185,80,.08)}
+#back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:100}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:40px}
+details.coverage summary{padding:14px 16px;cursor:pointer;font-size:13px;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;color:var(--text3)}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2)}
+@media(max-width:768px){.sidebar{position:fixed;left:0;top:0;height:100%;z-index:200;transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{padding:20px 16px}.two-col{grid-template-columns:1fr}.coverage-body{grid-template-columns:1fr}.lifecycle{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-logo">☸</span>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="nav-filter" placeholder="Filter navigation…" aria-label="Filter navigation"/>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-header">Getting Started</div>
+      <a href="../00-introduction/00-overview.html">Overview</a>
+      <a href="../00-introduction/01-architecture.html">Architecture</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Workloads</div>
+      <a href="../01-workloads/00-pods.html">Pods</a>
+      <a href="../01-workloads/01-deployments.html">Deployments</a>
+      <a href="../01-workloads/02-statefulsets.html">StatefulSets</a>
+      <a href="../01-workloads/03-daemonsets.html">DaemonSets</a>
+      <a href="../01-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Networking</div>
+      <a href="../02-networking/00-services.html">Services</a>
+      <a href="../02-networking/01-ingress.html">Ingress</a>
+      <a href="../02-networking/02-network-policies.html">Network Policies</a>
+      <a href="../02-networking/03-dns.html">DNS</a>
+      <a href="../02-networking/04-cni.html">CNI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Storage</div>
+      <a href="../03-storage/00-volumes.html">Volumes</a>
+      <a href="../03-storage/01-persistent-volumes.html">Persistent Volumes</a>
+      <a href="../03-storage/02-storage-classes.html">Storage Classes</a>
+      <a href="../03-storage/03-csi.html">CSI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Configuration</div>
+      <a href="../04-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../04-configuration/01-secrets.html">Secrets</a>
+      <a href="../04-configuration/02-resource-management.html">Resource Management</a>
+      <a href="../04-configuration/03-hpa-vpa.html">HPA &amp; VPA</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Scheduling</div>
+      <a href="../05-scheduling/00-node-selection.html">Node Selection</a>
+      <a href="../05-scheduling/01-taints-tolerations.html">Taints &amp; Tolerations</a>
+      <a href="../05-scheduling/02-priority-preemption.html">Priority &amp; Preemption</a>
+      <a href="../05-scheduling/03-scheduler-internals.html">Scheduler Internals</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Security</div>
+      <a href="../06-security/00-rbac.html">RBAC</a>
+      <a href="../06-security/01-service-accounts.html">Service Accounts</a>
+      <a href="../06-security/02-pod-security.html">Pod Security</a>
+      <a href="../06-security/03-network-policies.html">Network Policies (Security)</a>
+      <a href="../06-security/04-secrets-management.html">Secrets Management</a>
+      <a href="../06-security/05-opa-gatekeeper.html">OPA Gatekeeper</a>
+      <a href="../06-security/06-admission-controllers.html">Admission Controllers</a>
+      <a href="../06-security/07-image-security.html">Image Security</a>
+      <a href="../06-security/08-audit-logging.html">Audit Logging</a>
+      <a href="../06-security/09-encryption-at-rest.html">Encryption at Rest</a>
+      <a href="../06-security/10-supply-chain-security.html">Supply Chain Security</a>
+      <a href="../06-security/11-compliance.html">Compliance</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Observability</div>
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics &amp; Prometheus</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html">Distributed Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html" class="active">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-overview.html">Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Production Operations</div>
+      <a href="../09-production-operations/00-overview.html">Overview</a>
+    </div>
+  </nav>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+    <span class="topbar-title">Alerting — Kubernetes Observability</span>
+    <div class="topbar-actions">
+      <button class="btn" id="theme-toggle">Light Mode</button>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <h1>Alerting in Kubernetes</h1>
+    <p class="subtitle">Complete guide to Alertmanager architecture, PrometheusRule CRD, alert routing and inhibition, silences, multi-window SLO burn rate alerts, notification channels, Grafana unified alerting, and production alert hygiene.</p>
+
+    <nav class="section-nav" aria-label="Section navigation">
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html">Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </nav>
+
+    <nav class="toc" aria-label="Table of contents">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#alert-lifecycle">Alert Lifecycle</a></li>
+        <li><a href="#prometheusrule">PrometheusRule CRD</a></li>
+        <li><a href="#alertmanager-arch">Alertmanager Architecture</a></li>
+        <li><a href="#alertmanager-config">Alertmanager Configuration</a></li>
+        <li><a href="#routing">Routing, Grouping &amp; Inhibition</a></li>
+        <li><a href="#silences">Silences &amp; Maintenance</a></li>
+        <li><a href="#slo-alerts">SLO Burn Rate Alerts</a></li>
+        <li><a href="#notification-channels">Notification Channels</a></li>
+        <li><a href="#grafana-alerting">Grafana Unified Alerting</a></li>
+        <li><a href="#alert-quality">Alert Quality &amp; Hygiene</a></li>
+        <li><a href="#operations">Metrics, Self-Monitoring &amp; Runbooks</a></li>
+      </ol>
+    </nav>
+
+    <!-- =================== ALERT LIFECYCLE =================== -->
+    <h2 id="alert-lifecycle">Alert Lifecycle</h2>
+
+    <p>An alert progresses through defined states from the moment its expression becomes true to the moment it resolves. Understanding this lifecycle prevents confusion about why alerts page (or fail to page) during incidents.</p>
+
+    <div class="lifecycle">
+      <div class="lc-step">
+        <div class="lc-label">Inactive</div>
+        <div class="lc-sub">expr = false</div>
+      </div>
+      <div class="lc-arrow">→</div>
+      <div class="lc-step active">
+        <div class="lc-label">Pending</div>
+        <div class="lc-sub">expr = true<br>for: not elapsed</div>
+      </div>
+      <div class="lc-arrow">→</div>
+      <div class="lc-step firing">
+        <div class="lc-label">Firing</div>
+        <div class="lc-sub">for: elapsed<br>sent to Alertmanager</div>
+      </div>
+      <div class="lc-arrow">→</div>
+      <div class="lc-step resolved">
+        <div class="lc-label">Resolved</div>
+        <div class="lc-sub">expr = false<br>resolve_timeout elapsed</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>State</th><th>Meaning</th><th>Visible In</th><th>Notification Sent</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">Inactive</span></td><td>Expression evaluates to false or no data</td><td>Prometheus /alerts (not shown)</td><td>No</td></tr>
+          <tr><td><span class="badge badge-yellow">Pending</span></td><td>Expression true but <code>for</code> duration not yet elapsed</td><td>Prometheus /alerts (pending)</td><td>No</td></tr>
+          <tr><td><span class="badge badge-red">Firing</span></td><td>Expression true for the full <code>for</code> duration — alert sent to Alertmanager</td><td>Prometheus /alerts, Alertmanager UI</td><td>Yes (after group_wait)</td></tr>
+          <tr><td><span class="badge badge-green">Resolved</span></td><td>Expression returned false after firing</td><td>Alertmanager UI briefly, then cleared</td><td>Yes (resolve notification)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The for: Duration — When to Use It</h3>
+    <div class="callout callout-warn">
+      <div class="callout-title">for: Prevents Noise But Delays Detection</div>
+      <p>The <code>for</code> duration prevents alerts from firing on transient spikes. However, it also delays notification. For a <code>for: 5m</code> alert on a 1-minute evaluation interval, an incident can be undetected for up to 6 minutes. For critical alerts (full service outage, data loss risk), use <code>for: 0m</code> or <code>for: 1m</code>. Use longer durations (5–15m) only for warnings about gradual degradation.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Severity</th><th>Recommended for:</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-red">critical</span></td><td><code>for: 0m</code> or <code>for: 1m</code></td><td>Immediate detection required; tolerate rare false positives</td></tr>
+          <tr><td><span class="badge badge-yellow">warning</span></td><td><code>for: 5m</code> to <code>for: 15m</code></td><td>Reduce noise from transient spikes; trend confirmation</td></tr>
+          <tr><td><span class="badge badge-blue">info</span></td><td><code>for: 30m</code> to <code>for: 1h</code></td><td>Capacity and trend signals; no urgency</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== PROMETHEUSRULE =================== -->
+    <h2 id="prometheusrule">PrometheusRule CRD</h2>
+
+    <p>The <code>PrometheusRule</code> CRD (provided by Prometheus Operator) allows alert and recording rules to be stored as Kubernetes objects and automatically loaded by Prometheus without restarts. The Prometheus Operator watches PrometheusRule objects and reconciles them into the Prometheus configuration.</p>
+
+    <h3>PrometheusRule Structure</h3>
+    <pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: payments-alerts
+  namespace: payments           # team-owned namespace
+  labels:
+    prometheus: kube-prometheus  # must match Prometheus .spec.ruleSelector
+    role: alert-rules
+spec:
+  groups:
+    - name: payments.availability    # group name — appears in Prometheus UI
+      interval: 1m                   # optional: override evaluation interval for this group
+      rules:
+        # --- Recording Rule ---
+        - record: namespace_service:http_request_errors:rate5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_requests_total{namespace="payments",code=~"5.."}[5m])
+            )
+          labels:
+            team: payments
+
+        # --- Alerting Rule ---
+        - alert: PaymentsHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{namespace="payments",code=~"5.."}[5m]))
+              / sum(rate(http_requests_total{namespace="payments"}[5m]))
+            ) > 0.01
+          for: 2m
+          labels:
+            severity: critical        # used by Alertmanager routing
+            team: payments            # used for routing to team channel
+            service: payment-api
+          annotations:
+            summary: "High error rate in payments ({{ $value | humanizePercentage }})"
+            description: |
+              Error rate has been above 1% for 2 minutes in the payments namespace.
+              Current value: {{ $value | humanizePercentage }}
+              Namespace: {{ $labels.namespace }}
+            runbook_url: "https://wiki.company.com/runbooks/payments/high-error-rate"
+            dashboard_url: "https://grafana.company.com/d/payments-sre?var-namespace=payments"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Prometheus Selector for PrometheusRules</h3>
+    <pre><code class="language-yaml"># In Prometheus CR — which PrometheusRule objects to load
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: kube-prometheus
+  namespace: monitoring
+spec:
+  ruleSelector:
+    matchLabels:
+      prometheus: kube-prometheus    # only load rules with this label
+  ruleNamespaceSelector:
+    matchLabels: {}                  # empty = all namespaces
+    # Or restrict to specific namespaces:
+    # matchExpressions:
+    #   - key: kubernetes.io/metadata.name
+    #     operator: In
+    #     values: [monitoring, payments, orders]</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Alert Labels — What Each Field Does</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Label</th><th>Purpose</th><th>Used By</th></tr></thead>
+        <tbody>
+          <tr><td><code>severity</code></td><td>Alert urgency: <code>critical</code>, <code>warning</code>, <code>info</code></td><td>Alertmanager routing, PagerDuty urgency, Slack channel selection</td></tr>
+          <tr><td><code>team</code></td><td>Owning team identifier</td><td>Alertmanager routing to team-specific receiver</td></tr>
+          <tr><td><code>service</code></td><td>Service name</td><td>Grouping, deduplication, notification context</td></tr>
+          <tr><td><code>namespace</code></td><td>Kubernetes namespace (often from metric labels)</td><td>Routing, inhibition, notification context</td></tr>
+          <tr><td><code>env</code></td><td>Environment: <code>production</code>, <code>staging</code></td><td>Suppress staging alerts from paging on-call</td></tr>
+          <tr><td><code>page</code></td><td>Boolean: <code>true</code> if this should page on-call</td><td>Fine-grained routing: some critical alerts don't page at night</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Alert Annotation Variables</h3>
+    <pre><code class="language-yaml"># Available template variables in annotations:
+annotations:
+  summary: "{{ $labels.namespace }}/{{ $labels.pod }} — {{ $value | humanize }}"
+  # $labels     — label set of the alert
+  # $value      — current numeric value of the expression
+  # $externalURL — Alertmanager external URL
+
+  # Humanize filters:
+  # humanize       — 1234567 → "1.23M"
+  # humanizePercentage — 0.01234 → "1.23%"
+  # humanizeDuration   — 93542 → "1d 1h 59m 2s"
+  # humanize1024       — bytes: 1073741824 → "1Gi"
+
+  # Direct Grafana/runbook links (golden practice):
+  runbook_url: "https://wiki/runbooks/{{ $labels.alertname }}"
+  dashboard_url: "https://grafana/d/{{ $labels.namespace }}-sre?from={{ $startsAt }}&to=now"</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== ALERTMANAGER ARCH =================== -->
+    <h2 id="alertmanager-arch">Alertmanager Architecture</h2>
+
+    <div class="diagram">Prometheus  (fires alerts → HTTP POST)
+     │
+     ▼
+┌────────────────────────────────────────────────┐
+│                 Alertmanager                   │
+│                                                │
+│  ┌──────────┐   ┌────────────┐                │
+│  │ Ingress  │   │  Gossip    │ ← HA cluster   │
+│  │ (alerts) │   │  Protocol  │   (3 replicas) │
+│  └────┬─────┘   └────────────┘                │
+│       │                                        │
+│  ┌────▼──────────────────────────────────┐    │
+│  │  Pipeline                             │    │
+│  │  1. Silence check (muted → drop)      │    │
+│  │  2. Inhibition check (inhibited→drop) │    │
+│  │  3. Routing (match labels → receiver) │    │
+│  │  4. Grouping (batch into groups)      │    │
+│  │  5. Timing (group_wait/interval/      │    │
+│  │            repeat_interval)           │    │
+│  └───────────────────────┬───────────────┘    │
+└──────────────────────────┼─────────────────────┘
+                           │
+         ┌─────────────────┼─────────────────┐
+         ▼                 ▼                 ▼
+    PagerDuty           Slack            OpsGenie
+    (critical)       (warnings)          (backup)</div>
+
+    <h3>HA Alertmanager — Gossip and Deduplication</h3>
+    <p>Alertmanager uses the <strong>gossip protocol</strong> (memberlist) to synchronize state across a cluster of replicas. All Prometheus instances send alerts to <em>all</em> Alertmanager replicas. Each replica independently processes alerts, but gossip ensures silences, inhibitions, and notification state are shared — so only one replica sends each notification.</p>
+
+    <pre><code class="language-yaml"># Alertmanager CR for HA (kube-prometheus-stack)
+apiVersion: monitoring.coreos.com/v1
+kind: Alertmanager
+metadata:
+  name: kube-prometheus-stack-alertmanager
+  namespace: monitoring
+spec:
+  replicas: 3
+  retention: 120h   # keep alert state for 5 days (for silence persistence)
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 10Gi
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 256Mi}
+  alertmanagerConfigSelector:
+    matchLabels:
+      alertmanagerConfig: kube-prometheus    # load AlertmanagerConfig CRDs</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== ALERTMANAGER CONFIG =================== -->
+    <h2 id="alertmanager-config">Alertmanager Configuration</h2>
+
+    <h3>Core Configuration Structure</h3>
+    <pre><code class="language-yaml"># alertmanager.yaml — full production configuration
+global:
+  resolve_timeout: 5m       # time to wait before marking alert resolved
+  smtp_from: alerts@company.com
+  smtp_smarthost: smtp.company.com:587
+  slack_api_url: https://hooks.slack.com/services/...
+  pagerduty_url: https://events.pagerduty.com/v2/enqueue
+
+# Notification templates (Go text/template)
+templates:
+  - /etc/alertmanager/templates/*.tmpl
+
+# Root route — catches all alerts not matched by child routes
+route:
+  receiver: default-receiver
+  group_by: [alertname, cluster, namespace]
+  group_wait: 30s            # wait 30s to batch initial alerts in a group
+  group_interval: 5m         # wait 5m before sending updates to existing groups
+  repeat_interval: 4h        # re-notify if alert is still firing after 4h
+  routes:
+    # Route critical alerts to PagerDuty
+    - matchers:
+        - severity = critical
+      receiver: pagerduty-critical
+      group_by: [alertname, cluster, namespace, service]
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: false          # stop matching further routes
+
+    # Route team-specific alerts
+    - matchers:
+        - team = payments
+      receiver: slack-payments-team
+      routes:
+        - matchers:
+            - severity = critical
+          receiver: pagerduty-payments
+          repeat_interval: 30m
+
+    - matchers:
+        - team = platform
+      receiver: slack-platform-team
+
+    # Suppress staging environment pages
+    - matchers:
+        - env = staging
+      receiver: slack-staging
+      repeat_interval: 24h
+
+receivers:
+  - name: default-receiver
+    slack_configs:
+      - channel: "#alerts-default"
+        send_resolved: true
+
+  - name: pagerduty-critical
+    pagerduty_configs:
+      - routing_key: "${PAGERDUTY_INTEGRATION_KEY}"
+        severity: critical
+        description: '{{ template "pagerduty.description" . }}'
+        details:
+          namespace: '{{ .CommonLabels.namespace }}'
+          service: '{{ .CommonLabels.service }}'
+          runbook: '{{ .CommonAnnotations.runbook_url }}'
+        links:
+          - href: '{{ .CommonAnnotations.dashboard_url }}'
+            text: Grafana Dashboard
+          - href: '{{ .CommonAnnotations.runbook_url }}'
+            text: Runbook
+
+  - name: slack-payments-team
+    slack_configs:
+      - api_url: "${SLACK_PAYMENTS_WEBHOOK}"
+        channel: "#payments-alerts"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}{{ if eq (index .GroupLabels "severity") "critical" }}danger{{ else }}warning{{ end }}{{ else }}good{{ end }}'
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+        actions:
+          - type: button
+            text: "Runbook"
+            url: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+          - type: button
+            text: "Dashboard"
+            url: '{{ (index .Alerts 0).Annotations.dashboard_url }}'
+          - type: button
+            text: "Silence"
+            url: '{{ template "slack.silence_url" . }}'
+
+  - name: pagerduty-payments
+    pagerduty_configs:
+      - routing_key: "${PAGERDUTY_PAYMENTS_KEY}"
+        severity: '{{ (index .GroupLabels "severity") }}'
+
+  - name: slack-platform-team
+    slack_configs:
+      - channel: "#platform-alerts"
+        send_resolved: true
+
+  - name: slack-staging
+    slack_configs:
+      - channel: "#staging-noise"
+        send_resolved: false     # don't flood with resolved notifications
+
+inhibit_rules:
+  # If a critical alert is firing, suppress warnings for the same service
+  - source_matchers:
+      - severity = critical
+    target_matchers:
+      - severity = warning
+    equal: [alertname, namespace, service]
+
+  # If a node is down, suppress all pod alerts on that node
+  - source_matchers:
+      - alertname = KubernetesNodeNotReady
+    target_matchers:
+      - alertname =~ "KubernetesPod.*|KubernetesContainer.*"
+    equal: [node]</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>AlertmanagerConfig CRD (Namespaced)</h3>
+    <p>The <code>AlertmanagerConfig</code> CRD (Prometheus Operator v0.43+) allows teams to define routing rules and receivers in their own namespace without access to the global Alertmanager configuration:</p>
+    <pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: payments-alertconfig
+  namespace: payments
+  labels:
+    alertmanagerConfig: kube-prometheus   # matches Alertmanager .spec.alertmanagerConfigSelector
+spec:
+  route:
+    receiver: payments-slack
+    matchers:
+      - name: namespace
+        value: payments
+    groupBy: [alertname, service]
+    groupWait: 30s
+    repeatInterval: 4h
+
+  receivers:
+    - name: payments-slack
+      slackConfigs:
+        - apiURL:
+            name: slack-secret
+            key: url
+          channel: "#payments-alerts"
+          sendResolved: true
+          title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+          text: |
+            *Service:* {{ .CommonLabels.service }}
+            *Namespace:* {{ .CommonLabels.namespace }}
+            *Description:* {{ .CommonAnnotations.description }}
+
+  inhibitRules:
+    - sourceMatch:
+        - name: severity
+          value: critical
+      targetMatch:
+        - name: severity
+          value: warning
+      equal: [service]</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Custom Notification Templates</h3>
+    <pre><code class="language-go">{{/* /etc/alertmanager/templates/slack.tmpl */}}
+{{ define "slack.title" -}}
+  [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]
+  {{ .CommonLabels.alertname }}
+  — {{ .CommonLabels.namespace }}/{{ .CommonLabels.service }}
+{{- end }}
+
+{{ define "slack.text" -}}
+{{ range .Alerts -}}
+*Alert:* {{ .Annotations.summary }}
+*Severity:* {{ .Labels.severity }}
+*Description:* {{ .Annotations.description }}
+*Since:* {{ .StartsAt | since }}
+{{ end }}
+{{- end }}
+
+{{ define "pagerduty.description" -}}
+  [{{ .CommonLabels.severity | toUpper }}] {{ .CommonLabels.alertname }}
+  Namespace: {{ .CommonLabels.namespace }}
+  {{ .CommonAnnotations.summary }}
+{{- end }}
+
+{{/* Convenience: build Alertmanager silence URL */}}
+{{ define "slack.silence_url" -}}
+  {{ .ExternalURL }}/#/silences/new?filter=%7B
+  {{- range .CommonLabels.SortedPairs -}}
+    {{- if ne .Name "severity" -}}
+      {{- .Name }}%3D"{{- .Value | urlquery }}"
+    {{- end -}}
+  {{- end -}}
+  %7D
+{{- end }}</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== ROUTING =================== -->
+    <h2 id="routing">Routing, Grouping &amp; Inhibition</h2>
+
+    <h3>Routing Decision Tree</h3>
+    <div class="diagram">Incoming alert: {alertname="HighErrorRate", severity="critical", team="payments", namespace="payments"}
+
+Route tree traversal (first match wins unless continue:true):
+│
+├─ matchers: severity=critical  ✓ MATCH
+│  receiver: pagerduty-critical
+│  continue: false
+│  └─ STOP — alert sent to pagerduty-critical
+│
+│  (if continue: true was set above, would also check:)
+├─ matchers: team=payments  (would match if continue:true)
+│  └─ routes:
+│      └─ matchers: severity=critical  ✓ would also match
+│         receiver: pagerduty-payments
+│
+└─ default: default-receiver (only reached if no route matched)</div>
+
+    <h3>Grouping — Batch vs Flood Control</h3>
+    <div class="callout callout-info">
+      <div class="callout-title">group_by Controls Notification Batching</div>
+      <p><code>group_by</code> determines which label dimensions create separate notification groups. <code>group_by: [alertname, namespace]</code> sends one notification per unique (alertname, namespace) combination, batching all pods in that namespace together. <code>group_by: [...]</code> (empty) groups everything into one notification — useful for catch-all receivers. <code>group_by: [alertname, namespace, pod]</code> sends separate notifications per pod — usually too noisy.</p>
+    </div>
+
+    <h3>Timing Parameters</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Parameter</th><th>Scope</th><th>Default</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>group_wait</code></td><td>Route</td><td>30s</td><td>How long to wait before sending the <em>first</em> notification for a new group — allows batching of simultaneous alerts</td></tr>
+          <tr><td><code>group_interval</code></td><td>Route</td><td>5m</td><td>How long to wait before sending updates about an <em>existing</em> group (new alerts added, or alerts resolved within the group)</td></tr>
+          <tr><td><code>repeat_interval</code></td><td>Route</td><td>4h</td><td>How long to wait before re-notifying about a group that is still firing and unchanged</td></tr>
+          <tr><td><code>resolve_timeout</code></td><td>Global</td><td>5m</td><td>How long after the last firing alert before marking a group as resolved and sending the resolve notification</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Inhibition Rules</h3>
+    <p>Inhibition suppresses lower-priority alerts when a higher-priority alert for the same system is already firing. This prevents alert floods during cascading failures where a root-cause alert fires alongside dozens of downstream symptom alerts.</p>
+    <pre><code class="language-yaml">inhibit_rules:
+  # 1. Critical suppresses warning for same service
+  - source_matchers: [severity="critical"]
+    target_matchers: [severity="warning"]
+    equal: [alertname, namespace, service]
+
+  # 2. Node down suppresses all pod/container alerts on that node
+  - source_matchers: [alertname="KubernetesNodeNotReady"]
+    target_matchers: [alertname=~"Kubernetes(Pod|Container|Deployment).*"]
+    equal: [node]
+
+  # 3. Cluster degraded suppresses individual namespace alerts
+  - source_matchers: [alertname="ClusterHighCPU"]
+    target_matchers: [alertname="NamespaceCPUQuotaExceeded"]
+    equal: [cluster]
+
+  # 4. Watchdog (deadman's switch) alert — when present suppresses nothing
+  # But absence of Watchdog alert should page (see DeadmanSwitch section)
+
+  # 5. Maintenance window suppression via custom label
+  - source_matchers: [alertname="MaintenanceWindow"]
+    target_matchers: [severity=~"warning|info"]
+    equal: [namespace]</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== SILENCES =================== -->
+    <h2 id="silences">Silences &amp; Maintenance Windows</h2>
+
+    <p>Silences temporarily suppress notifications for matching alerts without disabling the alert rule itself. The alert continues to fire and be visible in the Prometheus and Alertmanager UIs — it just doesn't page anyone during the silence window.</p>
+
+    <h3>amtool — Alertmanager CLI</h3>
+    <pre><code class="language-bash"># Install amtool
+go install github.com/prometheus/alertmanager/cmd/amtool@latest
+# Or: brew install alertmanager (macOS)
+
+# Configure amtool
+export ALERTMANAGER_URL=http://alertmanager.monitoring.svc:9093
+
+# List active silences
+amtool silence query
+
+# Create a silence (maintenance window)
+amtool silence add \
+  --author="jane.doe@company.com" \
+  --comment="Planned maintenance: payments database upgrade" \
+  --duration=2h \
+  alertname=~"Payments.*" namespace=payments
+
+# Create silence with specific expiry time
+amtool silence add \
+  --author="jane.doe" \
+  --comment="Batch job running — expected high CPU" \
+  --start="2024-01-15T22:00:00Z" \
+  --end="2024-01-16T02:00:00Z" \
+  namespace=batch
+
+# Expire (end) a silence early
+amtool silence expire <silence-id>
+
+# List current firing alerts (with matchers)
+amtool alert query
+amtool alert query --filter='alertname="KubernetesOOMKilling"'
+
+# Check what alerts a silence would suppress (dry-run)
+amtool silence add --dry-run namespace=payments severity=warning</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Silence via Alertmanager API</h3>
+    <pre><code class="language-bash"># Create silence programmatically (e.g., from deploy script)
+curl -s -X POST http://alertmanager:9093/api/v2/silences \
+  -H "Content-Type: application/json" \
+  -d '{
+    "matchers": [
+      {"name": "namespace", "value": "payments", "isRegex": false},
+      {"name": "alertname", "value": ".*", "isRegex": true}
+    ],
+    "startsAt": "2024-01-15T22:00:00.000Z",
+    "endsAt": "2024-01-15T23:00:00.000Z",
+    "createdBy": "deploy-bot",
+    "comment": "Automated silence during payments-v2.4 deployment"
+  }'
+
+# List silences
+curl -s http://alertmanager:9093/api/v2/silences | jq '.[] | {id:.id, comment:.comment, endsAt:.endsAt}'
+
+# Expire silence
+curl -s -X DELETE http://alertmanager:9093/api/v2/silence/<id></code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Deadman's Switch (Watchdog Alert)</h3>
+    <pre><code class="language-yaml"># Always-firing alert — confirms the alerting pipeline is working end-to-end.
+# If Prometheus or Alertmanager is down, this alert stops firing → absence triggers page.
+- alert: Watchdog
+  expr: vector(1)   # always true
+  labels:
+    severity: none
+    alertname: Watchdog
+  annotations:
+    summary: "Alertmanager pipeline is healthy"
+    description: "This alert is always firing and routed to a deadman receiver. If it stops, the pipeline is broken."</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml"># Alertmanager route for Watchdog → external heartbeat service
+# (PagerDuty Dead Man's Snitch, OpsGenie Heartbeat, VictorOps, etc.)
+- matchers:
+    - alertname = Watchdog
+  receiver: deadmans-snitch
+  group_wait: 0s
+  group_interval: 1m
+  repeat_interval: 50s    # must be less than heartbeat timeout
+
+receivers:
+  - name: deadmans-snitch
+    webhook_configs:
+      - url: https://nosnch.in/YOUR_SNITCH_ID    # Dead Man's Snitch URL
+        send_resolved: false</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== SLO ALERTS =================== -->
+    <h2 id="slo-alerts">SLO Burn Rate Alerts</h2>
+
+    <p>Standard threshold alerts (e.g., "error rate &gt; 1%") cannot detect slow budget burns that will exhaust your SLO before the end of the month. Multi-window burn rate alerting (from Google SRE's "The Art of SLOs") detects both fast burns (urgent) and slow burns (non-urgent) while keeping false positive rates low.</p>
+
+    <h3>Burn Rate Formula</h3>
+    <div class="callout callout-info">
+      <div class="callout-title">Burn Rate = How Fast You're Consuming Error Budget</div>
+      <p>A burn rate of 1× means you're consuming budget at exactly the sustainable rate (budget exhausted at exactly the SLO period end). A burn rate of 14.4× means you will exhaust your entire 30-day budget in 30/14.4 = 2.08 days.<br><br>
+      <code>burn_rate = error_rate / (1 - SLO)</code><br>
+      Example: SLO = 99.9%, current error rate = 5%: burn_rate = 0.05 / 0.001 = 50×</p>
+    </div>
+
+    <h3>Multi-Window Burn Rate Alert — Complete Implementation</h3>
+    <pre><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: payments-slo-alerts
+  namespace: payments
+  labels:
+    prometheus: kube-prometheus
+spec:
+  groups:
+    # --- Recording rules for efficiency ---
+    - name: payments.slo.recording
+      interval: 1m
+      rules:
+        - record: job:http_requests_total:rate5m
+          expr: sum by (job, code) (rate(http_requests_total{namespace="payments"}[5m]))
+        - record: job:http_requests_total:rate30m
+          expr: sum by (job, code) (rate(http_requests_total{namespace="payments"}[30m]))
+        - record: job:http_requests_total:rate1h
+          expr: sum by (job, code) (rate(http_requests_total{namespace="payments"}[1h]))
+        - record: job:http_requests_total:rate2h
+          expr: sum by (job, code) (rate(http_requests_total{namespace="payments"}[2h]))
+        - record: job:http_requests_total:rate6h
+          expr: sum by (job, code) (rate(http_requests_total{namespace="payments"}[6h]))
+        - record: job:http_requests_total:rate1d
+          expr: sum by (job, code) (rate(http_requests_total{namespace="payments"}[1d]))
+        - record: job:http_requests_total:rate3d
+          expr: sum by (job, code) (rate(http_requests_total{namespace="payments"}[3d]))
+
+        # Error ratio recording rules (good_requests / total_requests)
+        - record: job:http_request_error_ratio:rate5m
+          expr: |
+            sum(job:http_requests_total:rate5m{code=~"5.."})
+              / sum(job:http_requests_total:rate5m)
+
+    # --- SLO Burn Rate Alerts ---
+    # SLO: 99.9% availability over 30 days
+    # Error budget: 0.1% = 43.8 minutes/30d
+    - name: payments.slo.alerts
+      rules:
+        # TIER 1: Fast burn — page immediately
+        # 14.4× burn rate: exhausts budget in 2.08 days
+        # Two windows: 1h + 5m (both must be firing → reduces false positives)
+        - alert: PaymentsSLOBurnRateCritical
+          expr: |
+            (
+              (
+                sum(rate(http_requests_total{namespace="payments",code=~"5.."}[1h]))
+                / sum(rate(http_requests_total{namespace="payments"}[1h]))
+              ) > (14.4 * (1 - 0.999))
+            )
+            and
+            (
+              (
+                sum(rate(http_requests_total{namespace="payments",code=~"5.."}[5m]))
+                / sum(rate(http_requests_total{namespace="payments"}[5m]))
+              ) > (14.4 * (1 - 0.999))
+            )
+          for: 2m
+          labels:
+            severity: critical
+            team: payments
+            slo: availability
+          annotations:
+            summary: "Payments SLO: Fast burn rate — budget exhausts in ~2 days"
+            description: "Error rate is >{{ 14.4 | humanize }}× the sustainable rate. Current: {{ $value | humanizePercentage }}. SLO: 99.9%."
+            runbook_url: "https://wiki/runbooks/payments/slo-burn-rate"
+
+        # TIER 2: Moderate burn — page (lower urgency / business hours)
+        # 6× burn rate: exhausts budget in 5 days
+        # Windows: 6h + 30m
+        - alert: PaymentsSLOBurnRateWarning
+          expr: |
+            (
+              (
+                sum(rate(http_requests_total{namespace="payments",code=~"5.."}[6h]))
+                / sum(rate(http_requests_total{namespace="payments"}[6h]))
+              ) > (6 * (1 - 0.999))
+            )
+            and
+            (
+              (
+                sum(rate(http_requests_total{namespace="payments",code=~"5.."}[30m]))
+                / sum(rate(http_requests_total{namespace="payments"}[30m]))
+              ) > (6 * (1 - 0.999))
+            )
+          for: 15m
+          labels:
+            severity: warning
+            team: payments
+            slo: availability
+          annotations:
+            summary: "Payments SLO: Moderate burn rate — budget exhausts in ~5 days"
+
+        # TIER 3: Slow burn — ticket (no page)
+        # 3× burn rate: exhausts budget in 10 days
+        # Windows: 1d + 2h
+        - alert: PaymentsSLOBurnRateLow
+          expr: |
+            (
+              (
+                sum(rate(http_requests_total{namespace="payments",code=~"5.."}[1d]))
+                / sum(rate(http_requests_total{namespace="payments"}[1d]))
+              ) > (3 * (1 - 0.999))
+            )
+            and
+            (
+              (
+                sum(rate(http_requests_total{namespace="payments",code=~"5.."}[2h]))
+                / sum(rate(http_requests_total{namespace="payments"}[2h]))
+              ) > (3 * (1 - 0.999))
+            )
+          for: 1h
+          labels:
+            severity: info
+            team: payments
+            slo: availability
+          annotations:
+            summary: "Payments SLO: Slow burn — create reliability ticket"
+
+        # Budget exhaustion check (absolute remaining)
+        - alert: PaymentsSLOBudgetExhausted
+          expr: |
+            (
+              1 - (
+                (1 - (
+                  sum(rate(http_requests_total{namespace="payments",code!~"5.."}[30d]))
+                  / sum(rate(http_requests_total{namespace="payments"}[30d]))
+                )) / (1 - 0.999)
+              )
+            ) * 100 < 10
+          labels:
+            severity: critical
+            team: payments
+          annotations:
+            summary: "Payments SLO: Error budget below 10% remaining (30-day window)"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Burn Rate Alert Thresholds Reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tier</th><th>Burn Rate</th><th>Time to Exhaustion</th><th>Windows</th><th>Action</th><th>Severity</th></tr></thead>
+        <tbody>
+          <tr><td>1 (Fast)</td><td>14.4×</td><td>~2 days</td><td>1h + 5m</td><td>Page immediately</td><td><span class="badge badge-red">critical</span></td></tr>
+          <tr><td>2 (Moderate)</td><td>6×</td><td>~5 days</td><td>6h + 30m</td><td>Page (business hours)</td><td><span class="badge badge-yellow">warning</span></td></tr>
+          <tr><td>3 (Slow)</td><td>3×</td><td>~10 days</td><td>1d + 2h</td><td>Create ticket</td><td><span class="badge badge-blue">info</span></td></tr>
+          <tr><td>4 (Steady)</td><td>1×</td><td>30 days (budget exhausted at period end)</td><td>3d + 6h</td><td>Monitor</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== NOTIFICATION CHANNELS =================== -->
+    <h2 id="notification-channels">Notification Channels</h2>
+
+    <h3>PagerDuty Integration</h3>
+    <pre><code class="language-yaml">receivers:
+  - name: pagerduty-platform
+    pagerduty_configs:
+      - routing_key: "$PAGERDUTY_INTEGRATION_KEY"
+        severity: '{{ .GroupLabels.severity }}'
+        description: '{{ .CommonAnnotations.summary }}'
+        details:
+          cluster: '{{ .CommonLabels.cluster }}'
+          namespace: '{{ .CommonLabels.namespace }}'
+          service: '{{ .CommonLabels.service }}'
+          runbook: '{{ .CommonAnnotations.runbook_url }}'
+        links:
+          - href: '{{ .CommonAnnotations.dashboard_url }}'
+            text: Dashboard
+          - href: '{{ .CommonAnnotations.runbook_url }}'
+            text: Runbook
+        # Auto-resolve in PD when alert resolves
+        send_resolved: true</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Slack Integration</h3>
+    <pre><code class="language-yaml">receivers:
+  - name: slack-engineering
+    slack_configs:
+      - api_url: "$SLACK_WEBHOOK_URL"
+        channel: "#on-call-alerts"
+        send_resolved: true
+        icon_emoji: ':alert:'
+        username: 'Alertmanager'
+        title: |-
+          {{ if eq .Status "firing" -}}
+            :red_circle: [{{ .CommonLabels.severity | upper }}] {{ .CommonLabels.alertname }}
+          {{- else -}}
+            :large_green_circle: [RESOLVED] {{ .CommonLabels.alertname }}
+          {{- end }}
+        text: |-
+          *Cluster:* {{ .CommonLabels.cluster | default "n/a" }}
+          *Namespace:* {{ .CommonLabels.namespace | default "n/a" }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Firing alerts:* {{ .Alerts.Firing | len }}
+          {{ range .Alerts.Firing -}}
+          > {{ .Annotations.description }}
+          {{ end }}
+        actions:
+          - type: button
+            text: ':notebook: Runbook'
+            url: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+          - type: button
+            text: ':grafana: Dashboard'
+            url: '{{ (index .Alerts 0).Annotations.dashboard_url }}'</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Email</h3>
+    <pre><code class="language-yaml">receivers:
+  - name: email-platform
+    email_configs:
+      - to: platform-on-call@company.com
+        from: alertmanager@company.com
+        smarthost: smtp.company.com:587
+        auth_username: alertmanager@company.com
+        auth_password: "$SMTP_PASSWORD"
+        require_tls: true
+        send_resolved: true
+        html: '{{ template "email.html" . }}'
+        headers:
+          Subject: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — {{ .CommonLabels.namespace }}'</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>OpsGenie</h3>
+    <pre><code class="language-yaml">receivers:
+  - name: opsgenie-critical
+    opsgenie_configs:
+      - api_key: "$OPSGENIE_API_KEY"
+        message: '{{ .CommonLabels.alertname }} — {{ .CommonLabels.namespace }}'
+        description: '{{ .CommonAnnotations.description }}'
+        priority: |-
+          {{ if eq .CommonLabels.severity "critical" }}P1
+          {{- else if eq .CommonLabels.severity "warning" }}P3
+          {{- else }}P5{{ end }}
+        tags: '{{ .CommonLabels.team }},{{ .CommonLabels.namespace }}'
+        details:
+          runbook: '{{ .CommonAnnotations.runbook_url }}'
+        responders:
+          - name: platform-team
+            type: team
+        send_resolved: true</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Webhook (Generic)</h3>
+    <pre><code class="language-yaml">receivers:
+  - name: webhook-jira
+    webhook_configs:
+      - url: https://automation.company.com/alertmanager-webhook
+        send_resolved: true
+        http_config:
+          bearer_token: "$WEBHOOK_TOKEN"
+        max_alerts: 10    # limit alerts per webhook call to prevent payload explosion</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== GRAFANA ALERTING =================== -->
+    <h2 id="grafana-alerting">Grafana Unified Alerting</h2>
+
+    <p>Grafana 9.0+ includes a unified alerting engine that supports multi-datasource alert rules (Prometheus, Loki, Tempo, CloudWatch, Elasticsearch) through a single interface. It uses the same Alertmanager for routing. Teams that need log-based or trace-based alerts (not just metric-based) should consider Grafana alerting for those rule types.</p>
+
+    <h3>Grafana vs Prometheus Alerting Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Aspect</th><th>PrometheusRule + Alertmanager</th><th>Grafana Unified Alerting</th></tr></thead>
+        <tbody>
+          <tr><td>Rule storage</td><td>Kubernetes CRD (PrometheusRule)</td><td>Grafana database or provisioned YAML</td></tr>
+          <tr><td>Data sources</td><td>Prometheus only</td><td>Any Grafana data source</td></tr>
+          <tr><td>Log-based alerts</td><td>Via Loki ruler (PrometheusRule)</td><td>Native (Loki, Elasticsearch)</td></tr>
+          <tr><td>Trace-based alerts</td><td>Via Tempo metrics generator</td><td>Native (Tempo)</td></tr>
+          <tr><td>GitOps/CI support</td><td>Excellent (native K8s objects)</td><td>Via file provisioning or Terraform</td></tr>
+          <tr><td>Multi-condition alerts</td><td>Limited (single PromQL)</td><td>Yes (A &amp;&amp; B conditions from different sources)</td></tr>
+          <tr><td>Alert state persistence</td><td>In Prometheus TSDB</td><td>In Grafana database</td></tr>
+          <tr><td>Routing</td><td>Alertmanager</td><td>Built-in or external Alertmanager</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Grafana Alert Rule Provisioning</h3>
+    <pre><code class="language-yaml"># provisioning/alerting/rules.yaml (loaded by Grafana on startup)
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: Payments SLO
+    folder: SLOs
+    interval: 1m
+    rules:
+      - uid: payments-slo-burn
+        title: Payments High Burn Rate
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: prometheus-uid
+            model:
+              expr: |
+                sum(rate(http_requests_total{namespace="payments",code=~"5.."}[1h]))
+                / sum(rate(http_requests_total{namespace="payments"}[1h]))
+              instant: true
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus-uid
+            model:
+              expr: |
+                sum(rate(http_requests_total{namespace="payments",code=~"5.."}[5m]))
+                / sum(rate(http_requests_total{namespace="payments"}[5m]))
+              instant: true
+          # Threshold condition
+          - refId: C
+            datasourceUid: "-100"
+            model:
+              type: math
+              expression: "$A > 0.0144 && $B > 0.0144"
+        noDataState: NoData
+        execErrState: Alerting
+        for: 2m
+        labels:
+          severity: critical
+          team: payments
+        annotations:
+          summary: "Payments burn rate critical — dual window firing"
+          runbook_url: "https://wiki/runbooks/payments/slo-burn-rate"
+        isPaused: false
+
+# Contact points provisioning
+contactPoints:
+  - orgId: 1
+    name: PagerDuty
+    receivers:
+      - uid: pagerduty-receiver
+        type: pagerduty
+        settings:
+          integrationKey: "$PAGERDUTY_KEY"
+          severity: critical
+
+# Notification policies provisioning
+policies:
+  - orgId: 1
+    receiver: PagerDuty
+    group_by: [alertname, namespace]
+    group_wait: 30s
+    repeat_interval: 4h
+    routes:
+      - receiver: PagerDuty
+        matchers:
+          - severity = critical</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== ALERT QUALITY =================== -->
+    <h2 id="alert-quality">Alert Quality &amp; Hygiene</h2>
+
+    <h3>Alert Anti-Patterns</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Alerting on Symptoms That Don't Require Human Action</h4>
+        <p>An alert that fires, on-call checks, finds it auto-recovered, and closes it is a waste. Every alert must require a human decision that a machine cannot make automatically. If the correct response is "wait for it to recover," don't alert.</p>
+      </div>
+      <div class="card">
+        <h4>Threshold Not Matched to SLO</h4>
+        <p>Alerting at 0.1% error rate when your SLO allows 0.1% is meaningless — by definition you're within budget. Alert thresholds must be derived from SLO burn rates, not arbitrary percentages.</p>
+      </div>
+      <div class="card">
+        <h4>Missing Runbook Links</h4>
+        <p>An alert without a runbook URL forces the on-call engineer to spend 10–20 minutes figuring out what to do. Every alert must include <code>runbook_url</code> and <code>dashboard_url</code> annotations. A missing runbook is a blocker before shipping a new alert.</p>
+      </div>
+      <div class="card">
+        <h4>High False Positive Rate</h4>
+        <p>Once an on-call team learns that &gt;20% of alert pages are false positives, they begin ignoring alerts. Track false positive rate per alert and remove or retune any alert above 10% false positive rate.</p>
+      </div>
+      <div class="card">
+        <h4>Alerting on Every Individual Pod</h4>
+        <p>Alerting when one pod has high CPU in a 20-pod deployment is almost always noise. Alert on service-level aggregates (sum/avg across pods) unless the use case specifically requires per-pod alerting.</p>
+      </div>
+      <div class="card">
+        <h4>No Severity Tiers</h4>
+        <p>Without severity levels, everything is equally urgent. This leads to either alert fatigue (every warning pages) or missed incidents (people stop looking). Use at minimum: critical (page), warning (Slack), info (ticket).</p>
+      </div>
+    </div>
+
+    <h3>Alert Review Checklist</h3>
+    <ol class="step-list">
+      <li><strong>Does this alert require immediate human action?</strong> If the correct response is "watch for 30 minutes and if it gets worse, act," it is a warning, not a critical page. If it is a page, on-call must be able to act within 5 minutes of receiving it.</li>
+      <li><strong>Is there a runbook?</strong> The runbook must exist before the alert is enabled. The runbook must include: symptoms, potential causes, diagnostic commands, and resolution steps. A runbook that just says "check the logs" is not a runbook.</li>
+      <li><strong>Is the threshold calibrated?</strong> Use 2–4 weeks of historical data to set thresholds. A threshold at the 99.9th percentile of normal traffic will have near-zero false positives. A threshold at the 90th percentile will page constantly.</li>
+      <li><strong>Does this duplicate an existing alert?</strong> Two alerts that fire simultaneously for the same root cause double the on-call burden. Use inhibition rules so only the most specific alert pages.</li>
+      <li><strong>Is for: appropriate?</strong> A <code>for: 0m</code> on a noisy metric causes immediate paging on transient spikes. A <code>for: 15m</code> on a critical service outage causes 15 minutes of undetected downtime.</li>
+      <li><strong>Has this been reviewed by on-call?</strong> The engineers who receive pages are the correct reviewers for alert quality. A platform engineer who never gets paged should not unilaterally decide what gets paged.</li>
+      <li><strong>Is there a test?</strong> Alert rules should be tested via promtool or in a staging environment. Untested alert rules have subtle PromQL bugs that prevent them from ever firing when they should.</li>
+      <li><strong>Is there an owner?</strong> Every alert must have a <code>team</code> label so it routes to the correct team. Alerts with no team routing to a generic "default" receiver are routinely ignored.</li>
+    </ol>
+
+    <h3>Testing Alert Rules with promtool</h3>
+    <pre><code class="language-bash"># promtool test rules (unit tests for PromQL alert expressions)
+promtool test rules payments-alert-tests.yaml</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml"># payments-alert-tests.yaml
+rule_files:
+  - payments-alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      # Simulate 5% error rate (should trigger PaymentsHighErrorRate)
+      - series: 'http_requests_total{code="200",namespace="payments"}'
+        values: '0+95x10'    # 95 successful requests per minute for 10 minutes
+      - series: 'http_requests_total{code="500",namespace="payments"}'
+        values: '0+5x10'     # 5 errors per minute (5% error rate)
+
+    alert_rule_test:
+      - eval_time: 3m        # check state at 3 minutes
+        alertname: PaymentsHighErrorRate
+        exp_alerts: []       # should be Pending (for: 2m not yet elapsed)
+
+      - eval_time: 4m
+        alertname: PaymentsHighErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: payments
+              namespace: payments
+            exp_annotations:
+              runbook_url: "https://wiki.company.com/runbooks/payments/high-error-rate"</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== OPERATIONS =================== -->
+    <h2 id="operations">Metrics, Self-Monitoring &amp; Runbooks</h2>
+
+    <h3>Alertmanager Self-Metrics</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Metric</th><th>Alert Threshold</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>alertmanager_alerts_firing_total</code></td><td>—</td><td>Current count of firing alerts</td></tr>
+          <tr><td><code>alertmanager_notifications_total</code></td><td>—</td><td>Total notifications sent per receiver and integration</td></tr>
+          <tr><td><code>alertmanager_notifications_failed_total</code></td><td>&gt;0</td><td>Failed notification deliveries — on-call may not receive pages</td></tr>
+          <tr><td><code>alertmanager_cluster_members</code></td><td>&lt;3 for HA</td><td>Number of Alertmanager cluster members — watch for split-brain</td></tr>
+          <tr><td><code>alertmanager_silences{state="active"}</code></td><td>—</td><td>Active silences — unexpected high count may indicate suppression</td></tr>
+          <tr><td><code>alertmanager_config_hash</code></td><td>Changes unexpectedly</td><td>Configuration reload detection</td></tr>
+          <tr><td><code>prometheus_rule_evaluation_failures_total</code></td><td>&gt;0</td><td>Rule evaluation errors — alerts may not be firing correctly</td></tr>
+          <tr><td><code>prometheus_rule_evaluation_duration_seconds</code></td><td>p99 &gt; eval interval</td><td>Rules taking longer than evaluation interval — miss evaluations</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Meta-Alerts (Alerts About Alerting)</h3>
+    <pre><code class="language-yaml">groups:
+  - name: alerting-infrastructure
+    rules:
+      - alert: AlertmanagerNotificationsFailing
+        expr: rate(alertmanager_notifications_failed_total[5m]) > 0
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "Alertmanager failing to send notifications — on-call may not receive pages"
+          description: "Receiver {{ $labels.integration }} failing. Check credentials and endpoint connectivity."
+
+      - alert: AlertmanagerClusterMembersMissing
+        expr: alertmanager_cluster_members < 3
+        for: 3m
+        labels: {severity: warning}
+        annotations:
+          summary: "Alertmanager cluster has fewer than 3 members — HA degraded"
+
+      - alert: PrometheusRuleEvaluationFailures
+        expr: rate(prometheus_rule_evaluation_failures_total[5m]) > 0
+        for: 3m
+        labels: {severity: warning}
+        annotations:
+          summary: "Prometheus rule evaluation failures — some alerts may not fire"
+
+      - alert: PrometheusRuleEvaluationSlow
+        expr: |
+          prometheus_rule_group_last_duration_seconds
+            > prometheus_rule_group_interval_seconds
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Rule group {{ $labels.rule_group }} evaluation exceeds its interval"
+          description: "Evaluation taking {{ $value | humanizeDuration }}. Simplify expressions or add recording rules."
+
+      - alert: WatchdogSilent
+        expr: absent(alertmanager_alerts_firing_total{alertname="Watchdog"})
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "Watchdog alert missing — Prometheus or Alertmanager pipeline broken"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Runbooks</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Alert Not Firing When Expected</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Check Prometheus /alerts UI — is it Pending or Inactive?</li>
+          <li>Run alert expression in Prometheus /graph — does it return values above threshold?</li>
+          <li>Check PrometheusRule has correct label matching Prometheus ruleSelector</li>
+          <li>Check <code>prometheus_rule_evaluation_failures_total</code> for errors</li>
+          <li>Verify metric name and labels are correct: <code>kubectl port-forward svc/prometheus 9090</code></li>
+          <li>Run <code>promtool test rules alerts-test.yaml</code> to validate rule logic</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Alert Firing But No Notification Received</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Check Alertmanager UI — is the alert shown in Active Alerts?</li>
+          <li>Check if alert is silenced: <code>amtool silence query</code></li>
+          <li>Check if alert is inhibited: Alertmanager UI → Inhibitions tab</li>
+          <li>Check Alertmanager logs: <code>kubectl logs -l app.kubernetes.io/name=alertmanager</code></li>
+          <li>Check <code>alertmanager_notifications_failed_total</code> for the receiver</li>
+          <li>Verify webhook/Slack URL and credentials in Alertmanager secret</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Alert Fatigue / Too Many Pages</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Run alert frequency report: <code>sum by (alertname) (increase(alertmanager_notifications_total[7d]))</code></li>
+          <li>Identify top-5 noisiest alerts</li>
+          <li>For each: increase <code>for</code> duration, raise threshold, or convert to info/warning</li>
+          <li>Check if symptom alerts should be inhibited by a root-cause alert</li>
+          <li>Review false positive rate: did each page require human action?</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Alertmanager Split-Brain (HA)</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Check <code>alertmanager_cluster_members</code> on each replica</li>
+          <li>Check gossip connectivity: <code>amtool cluster show</code></li>
+          <li>Verify mesh port (9094) NetworkPolicy allows pod-to-pod traffic</li>
+          <li>Restart all Alertmanager pods simultaneously to reform cluster</li>
+          <li>Check PV mounts — volume contention can cause split-brain</li>
+        </ol>
+      </div>
+    </div>
+
+    <h3>Best Practices</h3>
+    <ol class="step-list">
+      <li><strong>Every alert must have a runbook.</strong> A runbook URL in annotations is not optional. An alert without a runbook is not production-ready. The runbook must describe: what triggered, likely causes, diagnostic steps, and resolution.</li>
+      <li><strong>Use multi-window burn rate for SLO alerts.</strong> Simple threshold alerts (error rate &gt; X%) miss slow burns. Multi-window burn rate alerts (1h + 5m windows) catch both fast and slow budget consumption while maintaining low false positive rates.</li>
+      <li><strong>Deduplicate with inhibition rules.</strong> Every cascading failure (node down → pods failing → app errors) generates dozens of alerts. Define inhibition rules so only the root-cause alert pages, suppressing all downstream symptoms.</li>
+      <li><strong>Test alert rules before deploying.</strong> Use <code>promtool test rules</code> to write unit tests for alert expressions. An untested alert rule that never fires during an actual incident is worse than no alert.</li>
+      <li><strong>Implement a deadman's switch.</strong> The Watchdog alert (always-firing) confirms end-to-end pipeline health. Route it to an external heartbeat service. If Prometheus or Alertmanager fails, you detect it within minutes instead of hours.</li>
+      <li><strong>Store Alertmanager configuration in Git with secret rotation.</strong> Credentials (PagerDuty integration keys, Slack webhooks) belong in Kubernetes Secrets referenced by the config — never in plaintext YAML. Use <code>$VARIABLE</code> syntax or <code>secretKeyRef</code> in AlertmanagerConfig CRD.</li>
+      <li><strong>Review alert noise weekly.</strong> Track notifications per alert over the past 7 days. Any alert generating &gt;5 pages/week that did not result in actual user-impacting incidents should be retuned or removed.</li>
+      <li><strong>Separate alert routing from alert rules.</strong> Use PrometheusRule for expressions and AlertmanagerConfig CRD for routing. Teams own their alert rules (in their namespace); platform owns the global Alertmanager config. This separation enables self-service alerting.</li>
+    </ol>
+
+    <details class="coverage">
+      <summary>Coverage Details</summary>
+      <ul class="coverage-body">
+        <li>Alert lifecycle states: Inactive → Pending → Firing → Resolved with timeline diagram</li>
+        <li>Alert state table: visibility, notification behavior per state</li>
+        <li>for: duration guidance table by severity (critical:0–1m, warning:5–15m, info:30m–1h)</li>
+        <li>PrometheusRule CRD: full YAML with recording rule + alerting rule, labels, annotations with humanize filters</li>
+        <li>Prometheus ruleSelector and ruleNamespaceSelector in Prometheus CR</li>
+        <li>Alert labels reference table: severity, team, service, namespace, env, page</li>
+        <li>Annotation template variables: $labels, $value, humanize/humanizePercentage/humanizeDuration/humanize1024 filters</li>
+        <li>Alertmanager architecture diagram: ingress → pipeline (silence/inhibition/routing/grouping/timing) → receivers</li>
+        <li>HA gossip protocol: all Prometheus instances send to all Alertmanager replicas, gossip deduplicates</li>
+        <li>Alertmanager CR: replicas 3, retention 120h, storage PVC, alertmanagerConfigSelector</li>
+        <li>Full alertmanager.yaml: global (resolve_timeout), templates, route tree (critical→PD, team→slack, staging→suppress)</li>
+        <li>Receiver configs: PagerDuty (routing_key, severity, details, links), Slack (color/title/text templates, action buttons with runbook/dashboard/silence links), email, OpsGenie, webhook</li>
+        <li>Inhibition rules: critical suppresses warning (same service), node-down suppresses pod alerts, cluster CPU suppresses namespace quota, maintenance window label</li>
+        <li>AlertmanagerConfig CRD: namespaced routing for team self-service, slackConfigs with secret reference, inhibitRules</li>
+        <li>Custom notification templates: slack.title, slack.text, pagerduty.description, slack.silence_url (Go text/template)</li>
+        <li>Routing decision tree diagram: first-match traversal, continue:true behavior</li>
+        <li>group_by cardinality control callout</li>
+        <li>Timing parameters table: group_wait/group_interval/repeat_interval/resolve_timeout</li>
+        <li>5 inhibition rule patterns with YAML</li>
+        <li>amtool CLI: silence add/query/expire, alert query/filter, dry-run flag</li>
+        <li>Alertmanager API: POST /api/v2/silences, GET silences, DELETE silence</li>
+        <li>Deadman's switch: Watchdog alert (vector(1)), route to external heartbeat, repeat_interval 50s</li>
+        <li>Burn rate formula: error_rate / (1 - SLO) with example</li>
+        <li>Multi-window burn rate alert: 4 tiers (14.4×/6×/3×/1×) with window pairs (1h+5m, 6h+30m, 1d+2h, 3d+6h)</li>
+        <li>Full PrometheusRule for SLO burn rate: recording rules (5m/30m/1h/2h/6h/1d/3d), 3-tier alert rules + budget exhausted alert</li>
+        <li>Burn rate thresholds reference table (tier/rate/time-to-exhaustion/windows/action/severity)</li>
+        <li>PagerDuty receiver: routing_key, severity, description, details, links, send_resolved</li>
+        <li>Slack receiver: color conditional, title/text template, action buttons (runbook/dashboard)</li>
+        <li>Email, OpsGenie, and webhook receiver configs</li>
+        <li>Grafana vs PrometheusRule alerting comparison table (8 aspects)</li>
+        <li>Grafana alert rule provisioning YAML: multi-condition (A && B from Prometheus), contact points, notification policies</li>
+        <li>6 alert anti-patterns: no human action, threshold not from SLO, missing runbook, false positives, per-pod alerting, no severity tiers</li>
+        <li>8-point alert review checklist: human action, runbook, threshold, deduplication, for: duration, on-call review, testing, owner</li>
+        <li>promtool test rules: payments-alert-tests.yaml with input_series, alert_rule_test, eval_time, exp_alerts</li>
+        <li>8 Alertmanager self-metrics with thresholds</li>
+        <li>5 meta-alert PrometheusRule rules: NotificationsFailing, ClusterMembersMissing, RuleEvaluationFailures, RuleEvaluationSlow, WatchdogSilent</li>
+        <li>4 runbooks: alert not firing, no notification received, alert fatigue, Alertmanager split-brain</li>
+        <li>8 best practices: runbook required, multi-window burn rate, inhibition deduplication, promtool testing, deadman's switch, secrets rotation, weekly noise review, rule/routing separation</li>
+      </ul>
+    </details>
+
+  </main>
+</div>
+
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-toggle');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => { btt.style.display = main.scrollTop > 400 ? 'flex' : 'none'; });
+btt.addEventListener('click', () => main.scrollTo({ top: 0, behavior: 'smooth' }));
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = pre.querySelector('.copy-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const code = pre.querySelector('code');
+    navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  });
+});
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const tocLinks = document.querySelectorAll('.toc a');
+if (headings.length && tocLinks.length) {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove('toc-active'));
+        const active = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('toc-active');
+      }
+    });
+  }, { root: main, rootMargin: '0px 0px -70% 0px' });
+  headings.forEach(h => obs.observe(h));
+}
+document.getElementById('nav-filter').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

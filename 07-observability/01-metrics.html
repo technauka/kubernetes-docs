@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metrics &amp; Prometheus | Kubernetes Documentation</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#30363d;
+  --border:#30363d; --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --accent:#58a6ff; --accent2:#388bfd; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --orange:#d18616; --code-bg:#161b22;
+}
+[data-theme="light"] {
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eaeef2; --bg4:#d0d7de;
+  --border:#d0d7de; --text:#24292f; --text2:#57606a; --text3:#6e7781;
+  --accent:#0969da; --accent2:#0550ae; --green:#1a7f37; --yellow:#9a6700;
+  --red:#cf222e; --purple:#8250df; --orange:#953800; --code-bg:#f6f8fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-filter{padding:12px 16px;border-bottom:1px solid var(--border);}
+.sidebar-filter input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;}
+.sidebar-filter input:focus{outline:none;border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
+.page-header{margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.breadcrumb{font-size:13px;color:var(--text3);margin-bottom:12px;}
+.breadcrumb a{color:var(--text3);}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;margin-bottom:12px;}
+.page-desc{font-size:16px;color:var(--text2);line-height:1.6;}
+.meta-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.tag{background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:12px;color:var(--text2);}
+.tag.int{border-color:var(--yellow);color:var(--yellow);}
+.tag.adv{border-color:var(--red);color:var(--red);}
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:16px;color:var(--text2);}
+ul,ol{margin:0 0 16px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'SF Mono','Fira Code',monospace;font-size:13px;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+.copy-btn:hover{color:var(--text);}
+.callout{border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid;}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.warning{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-size:13px;font-weight:700;margin-bottom:6px;}
+.callout.danger .callout-title{color:var(--red);}
+.callout.warning .callout-title{color:var(--yellow);}
+.callout.info .callout-title{color:var(--accent);}
+.callout.success .callout-title{color:var(--green);}
+.callout p{margin-bottom:0;font-size:14px;}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);border-bottom:1px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h4{margin:0 0 10px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card.info{border-color:var(--accent);}
+.card.warning{border-color:var(--yellow);}
+.card.success{border-color:var(--green);}
+.card.danger{border-color:var(--red);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'SF Mono','Fira Code',monospace;font-size:13px;line-height:1.8;overflow-x:auto;}
+.diagram .box{display:inline-block;border:1px solid var(--border);padding:4px 12px;border-radius:4px;background:var(--bg3);}
+.diagram .box.green{border-color:var(--green);color:var(--green);}
+.diagram .box.blue{border-color:var(--accent);color:var(--accent);}
+.diagram .box.yellow{border-color:var(--yellow);color:var(--yellow);}
+.diagram .box.purple{border-color:var(--purple);color:var(--purple);}
+.diagram .box.red{border-color:var(--red);color:var(--red);}
+.steps{display:flex;flex-direction:column;gap:0;margin:20px 0;}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step-num{width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.step-num.green{background:var(--green);}
+.step-content h4{margin:0 0 4px;font-size:14px;color:var(--text);}
+.step-content p{margin:0;font-size:13px;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge.red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge.green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge.yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge.blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge.purple{background:rgba(188,140,255,.15);color:var(--purple);}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden;}
+details.coverage summary{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;border-top:1px solid var(--border);}
+.coverage-body li{font-size:13px;color:var(--text2);}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:32px;}
+.toc-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{font-size:13px;margin-bottom:4px;}
+.toc a{color:var(--text2);}
+.toc a:hover{color:var(--accent);}
+.toc a.active{color:var(--accent);}
+.toolbar{position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:100;}
+.toolbar button{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+.toolbar button:hover{color:var(--text);}
+.back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;opacity:0;transition:opacity .3s;}
+.back-to-top.visible{opacity:1;}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;}
+@media(max-width:768px){
+  .hamburger{display:block;}
+  .sidebar{position:fixed;left:-280px;top:0;z-index:150;transition:left .25s;}
+  .sidebar.open{left:0;}
+  .main{padding:24px 20px;}
+}
+.k{color:#ff7b72;} .s{color:#a5d6ff;} .c{color:#8b949e;font-style:italic;} .n{color:#ffa657;} .cm{color:#3fb950;}
+</style>
+</head>
+<body>
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+<nav class="sidebar">
+  <div class="sidebar-header"><div class="logo">K8s <span>Docs</span></div></div>
+  <div class="sidebar-filter"><input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="00-observability-overview.html">Observability Overview</a>
+    <a href="01-metrics.html" class="active">Metrics &amp; Prometheus</a>
+    <a href="02-logging.html">Logging</a>
+    <a href="03-tracing.html">Distributed Tracing</a>
+    <a href="04-events.html">Kubernetes Events</a>
+    <a href="05-dashboards.html">Dashboards &amp; Grafana</a>
+    <a href="06-alerting.html">Alerting</a>
+    <a href="07-profiling.html">Profiling</a>
+  </div>
+</nav>
+
+<main class="main" id="main">
+  <div class="toolbar"><button onclick="toggleTheme()">Theme</button></div>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-observability-overview.html">Observability</a> › Metrics &amp; Prometheus</div>
+    <h1>Metrics &amp; Prometheus</h1>
+    <p class="page-desc">Prometheus architecture, metric types, scrape configuration, ServiceMonitor/PodMonitor CRDs, PromQL from basic to advanced, recording rules, cardinality management, kube-prometheus-stack, and long-term storage with Thanos and Mimir.</p>
+    <div class="meta-tags">
+      <span class="tag int">Intermediate</span>
+      <span class="tag adv">Advanced</span>
+      <span class="tag">Prometheus</span>
+      <span class="tag">PromQL</span>
+      <span class="tag">Thanos</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">On This Page</div>
+    <ol>
+      <li><a href="#architecture">Prometheus Architecture</a></li>
+      <li><a href="#metric-types">Metric Types</a></li>
+      <li><a href="#scrape-config">Scrape Configuration</a></li>
+      <li><a href="#prometheus-operator">Prometheus Operator</a></li>
+      <li><a href="#kube-prometheus-stack">kube-prometheus-stack</a></li>
+      <li><a href="#key-metrics">Key Kubernetes Metrics</a></li>
+      <li><a href="#promql">PromQL</a></li>
+      <li><a href="#recording-rules">Recording Rules</a></li>
+      <li><a href="#cardinality">Cardinality Management</a></li>
+      <li><a href="#long-term">Long-Term Storage: Thanos &amp; Mimir</a></li>
+      <li><a href="#remote-write">Remote Write &amp; Federation</a></li>
+      <li><a href="#observability">Metrics, Alerts &amp; Runbooks</a></li>
+      <li><a href="#best-practices">Best Practices</a></li>
+    </ol>
+  </div>
+
+  <details class="coverage">
+    <summary>Coverage Checklist</summary>
+    <ul class="coverage-body">
+      <li>Prometheus pull model vs push model</li>
+      <li>Prometheus TSDB architecture</li>
+      <li>4 metric types: Counter/Gauge/Histogram/Summary</li>
+      <li>Histogram vs Summary tradeoffs</li>
+      <li>scrape_configs: static, service discovery, relabeling</li>
+      <li>Prometheus Operator: ServiceMonitor / PodMonitor / PrometheusRule</li>
+      <li>kube-prometheus-stack Helm install and configuration</li>
+      <li>Key K8s metrics: cAdvisor, kube-state-metrics, node_exporter, API server</li>
+      <li>PromQL: selectors, range vectors, functions, aggregation</li>
+      <li>PromQL: rate/irate, histogram_quantile, absent, topk</li>
+      <li>Recording rules: naming convention, evaluation interval</li>
+      <li>Cardinality: explosion causes, TSDB cardinality analysis</li>
+      <li>Label dropping via relabeling</li>
+      <li>Thanos: sidecar, store gateway, querier, compactor</li>
+      <li>Mimir: horizontal scalability, multi-tenant</li>
+      <li>Remote write configuration</li>
+      <li>Federation for multi-cluster</li>
+      <li>5 metrics, 4 alerts, 5 runbooks, 8 best practices</li>
+    </ul>
+  </details>
+
+  <!-- ───── ARCHITECTURE ───── -->
+  <h2 id="architecture">Prometheus Architecture</h2>
+
+  <p>Prometheus uses a pull-based model — it scrapes metrics from targets at a configurable interval. Targets expose metrics on an HTTP endpoint (typically <code>/metrics</code>) in the Prometheus exposition format.</p>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── Prometheus pull architecture ──────────────────────────────────────</span>
+<br>
+<br><span class="box blue">Prometheus Server</span>
+<br>  ├── <span class="box">Retrieval</span>: scrapes /metrics from targets on schedule
+<br>  │   └── Service Discovery (K8s API, static, DNS, EC2, ...)
+<br>  │
+<br>  ├── <span class="box">TSDB</span> (Time Series Database)
+<br>  │   ├── In-memory: active head block (2h)
+<br>  │   ├── WAL (Write-Ahead Log): crash recovery
+<br>  │   └── On-disk: persistent blocks (compressed, indexed)
+<br>  │
+<br>  ├── <span class="box">Rules Engine</span>: recording rules + alerting rules (evaluated every 15s)
+<br>  │
+<br>  └── <span class="box">HTTP API</span>: PromQL queries (Grafana, tooling, manual)
+<br>
+<br>          │ Alerts
+<br>          ▼
+<br><span class="box yellow">Alertmanager</span>: dedup, grouping, routing, silencing → PagerDuty/Slack
+<br>
+<br><span style="color:var(--text3)">Scrape targets:</span>
+<br><span class="box green">App pods</span>  <span class="box green">node_exporter</span>  <span class="box green">kube-state-metrics</span>  <span class="box green">cAdvisor</span>  <span class="box green">etcd</span>  <span class="box green">API server</span>
+  </div>
+
+  <div class="callout info">
+    <div class="callout-title">Pull vs Push</div>
+    <p>Prometheus pulls metrics from targets. This means the monitoring system controls the scrape rate, and targets cannot overwhelm Prometheus with data. The downside: short-lived jobs (batch, CronJob) may not live long enough to be scraped. Use <code>pushgateway</code> for these cases — push metrics before the job exits, then Prometheus scrapes the gateway.</p>
+  </div>
+
+  <h3>TSDB Storage Format</h3>
+
+  <table>
+    <thead><tr><th>Component</th><th>Duration</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Head block</td><td>~2h (in memory + WAL)</td><td>Active write target; fast appends; WAL ensures durability</td></tr>
+      <tr><td>Persistent blocks</td><td>2h chunks, compacted to larger</td><td>Immutable, compressed, indexed; default retention 15d</td></tr>
+      <tr><td>Compaction</td><td>Background process</td><td>Merges small blocks into larger; deduplicates; improves query speed</td></tr>
+      <tr><td>Retention</td><td>Default 15d (configurable)</td><td><code>--storage.tsdb.retention.time=30d</code> or <code>--storage.tsdb.retention.size=50GB</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── METRIC TYPES ───── -->
+  <h2 id="metric-types">Metric Types</h2>
+
+  <table>
+    <thead><tr><th>Type</th><th>Behavior</th><th>Use Case</th><th>PromQL Function</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Counter</strong></td>
+        <td>Monotonically increasing; resets to 0 on restart</td>
+        <td>Total requests, errors, bytes sent</td>
+        <td><code>rate()</code>, <code>increase()</code></td>
+      </tr>
+      <tr>
+        <td><strong>Gauge</strong></td>
+        <td>Can go up or down; current value</td>
+        <td>Memory usage, queue depth, temperature, active connections</td>
+        <td>Direct use, <code>delta()</code>, <code>deriv()</code></td>
+      </tr>
+      <tr>
+        <td><strong>Histogram</strong></td>
+        <td>Samples observations into configurable buckets; exposes _bucket, _count, _sum</td>
+        <td>Request latency, response sizes — percentile queries at query time</td>
+        <td><code>histogram_quantile()</code></td>
+      </tr>
+      <tr>
+        <td><strong>Summary</strong></td>
+        <td>Calculates quantiles client-side; exposes pre-calculated quantiles, _count, _sum</td>
+        <td>Pre-calculated percentiles where aggregation across instances is not needed</td>
+        <td>Direct quantile labels</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Histogram vs Summary</h3>
+
+  <table>
+    <thead><tr><th>Property</th><th>Histogram</th><th>Summary</th></tr></thead>
+    <tbody>
+      <tr><td>Quantile calculation</td><td>Server-side (PromQL at query time)</td><td>Client-side (in instrumented code)</td></tr>
+      <tr><td>Aggregation across instances</td><td><span class="badge green">Yes</span> — sum buckets then quantile</td><td><span class="badge red">No</span> — quantiles cannot be summed</td></tr>
+      <tr><td>Configurable accuracy</td><td>Depends on bucket boundaries</td><td>Configurable quantile error bound</td></tr>
+      <tr><td>Query performance</td><td>CPU-intensive at query time</td><td>Cheap at query time (pre-calculated)</td></tr>
+      <tr><td>Recommendation</td><td><span class="badge green">Preferred</span> for Kubernetes workloads</td><td>Legacy; avoid for new instrumentation</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-title">Native Histograms (Prometheus 2.40+)</div>
+    <p>Native histograms use a sparse exponential bucket schema — they automatically adapt bucket boundaries, eliminate the need to pre-configure buckets, and provide better accuracy with lower cardinality. Enabled with <code>--enable-feature=native-histograms</code>. The OTel SDK and Prometheus client libraries support native histograms in recent versions.</p>
+  </div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Prometheus exposition format examples</span>
+
+<span class="c"># Counter</span>
+http_requests_total{method="GET",status="200"} 12345
+
+<span class="c"># Gauge</span>
+process_resident_memory_bytes 45678901
+
+<span class="c"># Histogram (automatic _bucket, _count, _sum)</span>
+http_request_duration_seconds_bucket{le="0.005"} 100
+http_request_duration_seconds_bucket{le="0.01"}  200
+http_request_duration_seconds_bucket{le="0.025"} 350
+http_request_duration_seconds_bucket{le="0.05"}  400
+http_request_duration_seconds_bucket{le="+Inf"}  500
+http_request_duration_seconds_count              500
+http_request_duration_seconds_sum                12.345</code></pre>
+
+  <!-- ───── SCRAPE CONFIG ───── -->
+  <h2 id="scrape-config">Scrape Configuration</h2>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># prometheus.yaml — scrape configuration</span>
+<span class="k">global</span>:
+  <span class="k">scrape_interval</span>: <span class="s">15s</span>         <span class="c"># Default scrape interval</span>
+  <span class="k">evaluation_interval</span>: <span class="s">15s</span>     <span class="c"># Rules evaluation interval</span>
+  <span class="k">scrape_timeout</span>: <span class="s">10s</span>
+
+<span class="k">scrape_configs</span>:
+
+<span class="c"># Scrape Kubernetes API server</span>
+- <span class="k">job_name</span>: <span class="s">kubernetes-apiservers</span>
+  <span class="k">kubernetes_sd_configs</span>:
+  - <span class="k">role</span>: <span class="s">endpoints</span>
+    <span class="k">namespaces</span>:
+      <span class="k">names</span>: [<span class="s">default</span>]
+  <span class="k">scheme</span>: <span class="s">https</span>
+  <span class="k">tls_config</span>:
+    <span class="k">ca_file</span>: <span class="s">/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</span>
+  <span class="k">bearer_token_file</span>: <span class="s">/var/run/secrets/kubernetes.io/serviceaccount/token</span>
+  <span class="k">relabel_configs</span>:
+  - <span class="k">source_labels</span>: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+    <span class="k">action</span>: <span class="s">keep</span>
+    <span class="k">regex</span>: <span class="s">default;kubernetes;https</span>
+
+<span class="c"># Scrape all pods with annotation prometheus.io/scrape: "true"</span>
+- <span class="k">job_name</span>: <span class="s">kubernetes-pods</span>
+  <span class="k">kubernetes_sd_configs</span>:
+  - <span class="k">role</span>: <span class="s">pod</span>
+  <span class="k">relabel_configs</span>:
+  - <span class="k">source_labels</span>: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+    <span class="k">action</span>: <span class="s">keep</span>
+    <span class="k">regex</span>: <span class="s">true</span>
+  - <span class="k">source_labels</span>: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    <span class="k">action</span>: <span class="s">replace</span>
+    <span class="k">target_label</span>: <span class="s">__metrics_path__</span>
+    <span class="k">regex</span>: <span class="s">(.+)</span>
+  - <span class="k">source_labels</span>: [__meta_kubernetes_namespace]
+    <span class="k">action</span>: <span class="s">replace</span>
+    <span class="k">target_label</span>: <span class="s">namespace</span>
+  - <span class="k">source_labels</span>: [__meta_kubernetes_pod_name]
+    <span class="k">action</span>: <span class="s">replace</span>
+    <span class="k">target_label</span>: <span class="s">pod</span></code></pre>
+
+  <!-- ───── PROMETHEUS OPERATOR ───── -->
+  <h2 id="prometheus-operator">Prometheus Operator</h2>
+
+  <p>The Prometheus Operator extends Kubernetes with CRDs that let you declare Prometheus instances and scrape targets as Kubernetes objects, enabling GitOps-compatible monitoring configuration.</p>
+
+  <h3>Core CRDs</h3>
+
+  <table>
+    <thead><tr><th>CRD</th><th>Purpose</th><th>Key Fields</th></tr></thead>
+    <tbody>
+      <tr><td><code>Prometheus</code></td><td>Declares a Prometheus instance</td><td>replicas, retention, storage, ruleSelector, serviceMonitorSelector</td></tr>
+      <tr><td><code>Alertmanager</code></td><td>Declares an Alertmanager instance</td><td>replicas, configSecret</td></tr>
+      <tr><td><code>ServiceMonitor</code></td><td>Selects Services to scrape via label selectors</td><td>selector, endpoints (port, path, interval), namespaceSelector</td></tr>
+      <tr><td><code>PodMonitor</code></td><td>Selects Pods to scrape directly</td><td>selector, podMetricsEndpoints, namespaceSelector</td></tr>
+      <tr><td><code>PrometheusRule</code></td><td>Recording rules and alerting rules</td><td>groups (name, interval, rules)</td></tr>
+      <tr><td><code>ScrapeConfig</code></td><td>Raw scrape config for non-K8s targets</td><td>staticConfigs, httpSDConfigs</td></tr>
+    </tbody>
+  </table>
+
+  <h3>ServiceMonitor</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># ServiceMonitor: tells Prometheus Operator which Services to scrape</span>
+<span class="k">apiVersion</span>: <span class="s">monitoring.coreos.com/v1</span>
+<span class="k">kind</span>: <span class="s">ServiceMonitor</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">myapp</span>
+  <span class="k">namespace</span>: <span class="s">production</span>
+  <span class="k">labels</span>:
+    <span class="k">team</span>: <span class="s">backend</span>    <span class="c"># Must match Prometheus.spec.serviceMonitorSelector</span>
+<span class="k">spec</span>:
+  <span class="k">selector</span>:
+    <span class="k">matchLabels</span>:
+      <span class="k">app</span>: <span class="s">myapp</span>      <span class="c"># Selects Services with this label</span>
+  <span class="k">namespaceSelector</span>:
+    <span class="k">matchNames</span>: [<span class="s">production</span>]
+  <span class="k">endpoints</span>:
+  - <span class="k">port</span>: <span class="s">metrics</span>          <span class="c"># Named port on the Service</span>
+    <span class="k">path</span>: <span class="s">/metrics</span>
+    <span class="k">interval</span>: <span class="s">30s</span>
+    <span class="k">scrapeTimeout</span>: <span class="s">10s</span>
+    <span class="k">scheme</span>: <span class="s">http</span>
+    <span class="k">relabelings</span>:
+    - <span class="k">sourceLabels</span>: [__meta_kubernetes_pod_node_name]
+      <span class="k">targetLabel</span>: <span class="s">node</span>
+    <span class="k">metricRelabelings</span>:
+    <span class="c"># Drop high-cardinality metrics at ingest time</span>
+    - <span class="k">sourceLabels</span>: [__name__]
+      <span class="k">regex</span>: <span class="s">go_gc_.*</span>
+      <span class="k">action</span>: <span class="s">drop</span></code></pre>
+
+  <h3>PrometheusRule</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="k">apiVersion</span>: <span class="s">monitoring.coreos.com/v1</span>
+<span class="k">kind</span>: <span class="s">PrometheusRule</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="s">myapp-rules</span>
+  <span class="k">namespace</span>: <span class="s">production</span>
+  <span class="k">labels</span>:
+    <span class="k">team</span>: <span class="s">backend</span>
+<span class="k">spec</span>:
+  <span class="k">groups</span>:
+  - <span class="k">name</span>: <span class="s">myapp.recording</span>
+    <span class="k">interval</span>: <span class="s">30s</span>
+    <span class="k">rules</span>:
+    - <span class="k">record</span>: <span class="s">job:http_requests:rate5m</span>
+      <span class="k">expr</span>: <span class="s">sum by (job) (rate(http_requests_total[5m]))</span>
+  - <span class="k">name</span>: <span class="s">myapp.alerts</span>
+    <span class="k">rules</span>:
+    - <span class="k">alert</span>: <span class="s">HighErrorRate</span>
+      <span class="k">expr</span>: <span class="s">rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.01</span>
+      <span class="k">for</span>: <span class="s">5m</span>
+      <span class="k">labels</span>:
+        <span class="k">severity</span>: <span class="s">warning</span>
+      <span class="k">annotations</span>:
+        <span class="k">summary</span>: <span class="s">"High error rate on {{ $labels.job }}"</span>
+        <span class="k">description</span>: <span class="s">"Error rate is {{ $value | humanizePercentage }}"</span></code></pre>
+
+  <!-- ───── KUBE-PROMETHEUS-STACK ───── -->
+  <h2 id="kube-prometheus-stack">kube-prometheus-stack</h2>
+
+  <p>The <code>kube-prometheus-stack</code> Helm chart is the standard way to deploy the full Prometheus monitoring stack with pre-built dashboards, recording rules, and alert rules for Kubernetes.</p>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Add Helm repo and install</span>
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --values kps-values.yaml</code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># kps-values.yaml — production configuration</span>
+<span class="k">prometheus</span>:
+  <span class="k">prometheusSpec</span>:
+    <span class="k">retention</span>: <span class="s">15d</span>
+    <span class="k">retentionSize</span>: <span class="s">50GB</span>
+    <span class="k">storageSpec</span>:
+      <span class="k">volumeClaimTemplate</span>:
+        <span class="k">spec</span>:
+          <span class="k">storageClassName</span>: <span class="s">fast-ssd</span>
+          <span class="k">accessModes</span>: [<span class="s">ReadWriteOnce</span>]
+          <span class="k">resources</span>:
+            <span class="k">requests</span>:
+              <span class="k">storage</span>: <span class="s">100Gi</span>
+    <span class="k">resources</span>:
+      <span class="k">requests</span>:
+        <span class="k">cpu</span>: <span class="s">500m</span>
+        <span class="k">memory</span>: <span class="s">2Gi</span>
+      <span class="k">limits</span>:
+        <span class="k">memory</span>: <span class="s">4Gi</span>
+    <span class="c"># Accept ServiceMonitors from all namespaces</span>
+    <span class="k">serviceMonitorSelectorNilUsesHelmValues</span>: <span class="s">false</span>
+    <span class="k">podMonitorSelectorNilUsesHelmValues</span>: <span class="s">false</span>
+    <span class="k">ruleSelectorNilUsesHelmValues</span>: <span class="s">false</span>
+    <span class="c"># TSDB compaction and query tuning</span>
+    <span class="k">tsdb</span>:
+      <span class="k">outOfOrderTimeWindow</span>: <span class="s">10m</span>   <span class="c"># Accept late-arriving samples</span>
+    <span class="k">walCompression</span>: <span class="s">true</span>
+
+<span class="k">alertmanager</span>:
+  <span class="k">alertmanagerSpec</span>:
+    <span class="k">storage</span>:
+      <span class="k">volumeClaimTemplate</span>:
+        <span class="k">spec</span>:
+          <span class="k">storageClassName</span>: <span class="s">standard</span>
+          <span class="k">resources</span>:
+            <span class="k">requests</span>:
+              <span class="k">storage</span>: <span class="s">10Gi</span>
+
+<span class="k">grafana</span>:
+  <span class="k">adminPassword</span>: <span class="s">changeme-use-secret</span>
+  <span class="k">persistence</span>:
+    <span class="k">enabled</span>: <span class="s">true</span>
+    <span class="k">size</span>: <span class="s">10Gi</span>
+
+<span class="k">nodeExporter</span>:
+  <span class="k">enabled</span>: <span class="s">true</span>
+
+<span class="k">kubeStateMetrics</span>:
+  <span class="k">enabled</span>: <span class="s">true</span></code></pre>
+
+  <!-- ───── KEY METRICS ───── -->
+  <h2 id="key-metrics">Key Kubernetes Metrics</h2>
+
+  <h3>Container Resources (cAdvisor)</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>container_cpu_usage_seconds_total</code></td><td>Counter</td><td>CPU seconds consumed by container</td></tr>
+      <tr><td><code>container_memory_working_set_bytes</code></td><td>Gauge</td><td>Working set memory (OOM killer uses this)</td></tr>
+      <tr><td><code>container_memory_rss</code></td><td>Gauge</td><td>Resident set size</td></tr>
+      <tr><td><code>container_network_receive_bytes_total</code></td><td>Counter</td><td>Network bytes received by container</td></tr>
+      <tr><td><code>container_fs_reads_bytes_total</code></td><td>Counter</td><td>Filesystem bytes read</td></tr>
+      <tr><td><code>container_oom_events_total</code></td><td>Counter</td><td>OOM kill events per container</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Kubernetes State (kube-state-metrics)</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>kube_pod_status_phase</code></td><td>Gauge</td><td>Pod phase (Running/Pending/Failed) — labels: phase</td></tr>
+      <tr><td><code>kube_pod_container_status_restarts_total</code></td><td>Counter</td><td>Container restart count</td></tr>
+      <tr><td><code>kube_deployment_status_replicas_unavailable</code></td><td>Gauge</td><td>Unavailable replicas in a Deployment</td></tr>
+      <tr><td><code>kube_node_status_condition</code></td><td>Gauge</td><td>Node conditions (Ready, MemoryPressure, DiskPressure)</td></tr>
+      <tr><td><code>kube_horizontalpodautoscaler_status_current_replicas</code></td><td>Gauge</td><td>Current HPA replica count</td></tr>
+      <tr><td><code>kube_persistentvolumeclaim_status_phase</code></td><td>Gauge</td><td>PVC binding status</td></tr>
+    </tbody>
+  </table>
+
+  <h3>API Server</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>apiserver_request_duration_seconds</code></td><td>API request latency histogram by verb, resource, scope</td></tr>
+      <tr><td><code>apiserver_request_total</code></td><td>Total API requests by verb, resource, code</td></tr>
+      <tr><td><code>apiserver_current_inflight_requests</code></td><td>In-flight requests (mutating and read-only)</td></tr>
+      <tr><td><code>apiserver_admission_webhook_admission_duration_seconds</code></td><td>Admission webhook latency</td></tr>
+      <tr><td><code>etcd_object_counts</code></td><td>Count of objects stored in etcd by resource type</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── PROMQL ───── -->
+  <h2 id="promql">PromQL</h2>
+
+  <p>PromQL (Prometheus Query Language) is a functional query language for time series data. It operates on selectors, range vectors, and a rich set of built-in functions.</p>
+
+  <h3>Selectors and Labels</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Instant vector: current value</span>
+http_requests_total
+
+<span class="c"># Label equality filter</span>
+http_requests_total{job="myapp", status="200"}
+
+<span class="c"># Label regex match</span>
+http_requests_total{status=~"5.."}        <span class="c"># 5xx errors</span>
+http_requests_total{status!~"2.."}        <span class="c"># Not 2xx</span>
+
+<span class="c"># Range vector: samples over a time window</span>
+http_requests_total[5m]                   <span class="c"># Last 5 minutes of samples</span>
+
+<span class="c"># Offset: look back in time</span>
+http_requests_total offset 1h             <span class="c"># Value 1 hour ago</span>
+
+<span class="c"># Subquery: range query over instant expression</span>
+rate(http_requests_total[5m])[1h:5m]      <span class="c"># rate over 5m, sampled every 5m for 1h</span></code></pre>
+
+  <h3>Essential Functions</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># rate(): per-second rate of increase of a counter (avg over window)</span>
+<span class="c"># Use for alerting — smooths out spikes</span>
+rate(http_requests_total[5m])
+
+<span class="c"># irate(): instant rate — uses last two samples only</span>
+<span class="c"># More responsive to spikes; noisy for alerts</span>
+irate(http_requests_total[5m])
+
+<span class="c"># increase(): total increase over window (rate * window seconds)</span>
+increase(http_requests_total[1h])    <span class="c"># Approx requests in last hour</span>
+
+<span class="c"># histogram_quantile(): calculate percentile from histogram</span>
+histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+
+<span class="c"># sum by: aggregate across labels</span>
+sum by (namespace, pod) (rate(container_cpu_usage_seconds_total[5m]))
+
+<span class="c"># without: aggregate, dropping specified labels</span>
+sum without (instance, pod) (rate(http_requests_total[5m]))
+
+<span class="c"># topk: top N time series by value</span>
+topk(10, rate(http_requests_total[5m]))
+
+<span class="c"># absent: alert when metric is missing (target down)</span>
+absent(up{job="myapp"} == 1)
+
+<span class="c"># predict_linear: forecast gauge value</span>
+predict_linear(node_filesystem_avail_bytes[1h], 4*3600) &lt; 0
+<span class="c"># Will disk be full in 4 hours?</span></code></pre>
+
+  <h3>Common Production Queries</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Container CPU utilization % (vs request)</span>
+sum by (namespace, pod, container) (
+  rate(container_cpu_usage_seconds_total{container!=""}[5m])
+) /
+sum by (namespace, pod, container) (
+  kube_pod_container_resource_requests{resource="cpu", container!=""}
+) * 100
+
+<span class="c"># Container memory utilization % (vs limit)</span>
+sum by (namespace, pod, container) (
+  container_memory_working_set_bytes{container!=""}
+) /
+sum by (namespace, pod, container) (
+  kube_pod_container_resource_limits{resource="memory", container!=""}
+) * 100
+
+<span class="c"># Error rate for HTTP services</span>
+sum by (job) (rate(http_requests_total{status=~"5.."}[5m]))
+/
+sum by (job) (rate(http_requests_total[5m]))
+
+<span class="c"># p99 latency across all instances of a service</span>
+histogram_quantile(0.99,
+  sum by (job, le) (
+    rate(http_request_duration_seconds_bucket{job="myapp"}[5m])
+  )
+)
+
+<span class="c"># Pods NOT running (pending/failed/unknown)</span>
+count by (namespace) (
+  kube_pod_status_phase{phase!="Running", phase!="Succeeded"}
+)
+
+<span class="c"># Nodes with memory pressure</span>
+kube_node_status_condition{condition="MemoryPressure", status="true"} == 1</code></pre>
+
+  <!-- ───── RECORDING RULES ───── -->
+  <h2 id="recording-rules">Recording Rules</h2>
+
+  <p>Recording rules pre-compute expensive PromQL expressions and store the result as a new time series. This dramatically speeds up dashboard load times and reduces query-time CPU load.</p>
+
+  <div class="callout info">
+    <div class="callout-title">Naming Convention</div>
+    <p>Recording rule metrics follow the convention: <code>level:metric:operations</code>. For example, <code>job:http_requests:rate5m</code> means: aggregated by job, from http_requests, using rate over 5m. This convention makes it easy to identify pre-computed metrics from raw ones.</p>
+  </div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># PrometheusRule with recording rules</span>
+<span class="k">groups</span>:
+- <span class="k">name</span>: <span class="s">kubernetes-resources.recording</span>
+  <span class="k">interval</span>: <span class="s">30s</span>
+  <span class="k">rules</span>:
+
+  <span class="c"># CPU utilization ratio (pre-computed for dashboard)</span>
+  - <span class="k">record</span>: <span class="s">namespace_pod_container:container_cpu_usage_seconds_total:sum_irate</span>
+    <span class="k">expr</span>: |
+      sum by (namespace, pod, container) (
+        irate(container_cpu_usage_seconds_total{job="kubelet", container!=""}[5m])
+      )
+
+  <span class="c"># Request rate per job</span>
+  - <span class="k">record</span>: <span class="s">job:http_requests_total:rate5m</span>
+    <span class="k">expr</span>: |
+      sum by (job, status) (rate(http_requests_total[5m]))
+
+  <span class="c"># Error ratio — used by SLO burn rate alert</span>
+  - <span class="k">record</span>: <span class="s">job:http_request_errors:ratio_rate5m</span>
+    <span class="k">expr</span>: |
+      sum by (job) (rate(http_requests_total{status=~"5.."}[5m]))
+      /
+      sum by (job) (rate(http_requests_total[5m]))
+
+  <span class="c"># p99 latency recording rule</span>
+  - <span class="k">record</span>: <span class="s">job:http_request_duration_seconds:histogram_quantile99_rate5m</span>
+    <span class="k">expr</span>: |
+      histogram_quantile(0.99,
+        sum by (job, le) (
+          rate(http_request_duration_seconds_bucket[5m])
+        )
+      )</code></pre>
+
+  <!-- ───── CARDINALITY ───── -->
+  <h2 id="cardinality">Cardinality Management</h2>
+
+  <p>Cardinality is the number of unique time series in Prometheus. It is the primary driver of Prometheus memory usage and query performance. High cardinality is the most common operational problem.</p>
+
+  <h3>Cardinality Analysis</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Check total time series count</span>
+prometheus_tsdb_head_series
+
+<span class="c"># Top 10 jobs by series count (PromQL)</span>
+topk(10,
+  count by (job) ({__name__=~".+"})
+)
+
+<span class="c"># Top 10 metrics by series count</span>
+topk(10,
+  count by (__name__) ({__name__=~".+"})
+)
+
+<span class="c"># Series count for a specific metric</span>
+count(http_requests_total)
+
+<span class="c"># cardinality API endpoint (Prometheus 2.14+)</span>
+curl http://prometheus:9090/api/v1/status/tsdb | jq .data.headStats
+
+<span class="c"># Detailed cardinality analysis</span>
+curl http://prometheus:9090/api/v1/status/tsdb?limit=20 | \
+  jq '.data.labelValueCountByLabelName | sort_by(.labelValueCount) | reverse | .[0:10]'</code></pre>
+
+  <h3>Reducing Cardinality</h3>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code"><span class="c"># Drop high-cardinality labels via metric relabeling in ServiceMonitor</span>
+<span class="k">metricRelabelings</span>:
+<span class="c"># Drop pod-template-hash label (changes every deployment, creates new series)</span>
+- <span class="k">action</span>: <span class="s">labeldrop</span>
+  <span class="k">regex</span>: <span class="s">pod_template_hash</span>
+
+<span class="c"># Drop entire metrics that are not needed</span>
+- <span class="k">sourceLabels</span>: [__name__]
+  <span class="k">regex</span>: <span class="s">go_gc_duration_seconds.*</span>
+  <span class="k">action</span>: <span class="s">drop</span>
+
+<span class="c"># Replace high-cardinality URL paths with bucketed versions</span>
+- <span class="k">sourceLabels</span>: [path]
+  <span class="k">regex</span>: <span class="s">/api/users/[0-9]+</span>
+  <span class="k">targetLabel</span>: <span class="s">path</span>
+  <span class="k">replacement</span>: <span class="s">/api/users/:id</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Prometheus per-scrape cardinality limit (prevent a single job from exploding)</span>
+<span class="k">scrape_configs</span>:
+- <span class="k">job_name</span>: <span class="s">myapp</span>
+  <span class="k">sample_limit</span>: <span class="n">10000</span>    <span class="c"># Max samples per scrape (drops the scrape if exceeded)</span>
+  <span class="k">label_limit</span>: <span class="n">64</span>        <span class="c"># Max labels per sample</span>
+  <span class="k">label_name_length_limit</span>: <span class="n">128</span>
+  <span class="k">label_value_length_limit</span>: <span class="n">256</span></code></pre>
+
+  <!-- ───── LONG-TERM ───── -->
+  <h2 id="long-term">Long-Term Storage: Thanos &amp; Mimir</h2>
+
+  <p>Prometheus stores data locally with a default retention of 15 days. For long-term storage, multi-cluster aggregation, and high availability, use Thanos or Grafana Mimir.</p>
+
+  <h3>Thanos Architecture</h3>
+
+  <div class="diagram">
+<span style="color:var(--text3)">── Thanos components ─────────────────────────────────────────────────</span>
+<br>
+<br><span class="box blue">Prometheus</span> (per cluster)
+<br>  └── <span class="box">Thanos Sidecar</span>
+<br>       ├── Exposes StoreAPI for real-time data (last 2h)
+<br>       └── Uploads TSDB blocks to object storage every 2h
+<br>                                  │
+<br>                           <span class="box yellow">Object Storage</span> (S3/GCS/Azure Blob)
+<br>                           └── Long-term TSDB blocks (years)
+<br>                                  │
+<br>                       <span class="box">Thanos Store Gateway</span>
+<br>                       └── StoreAPI for historical data
+<br>
+<br><span class="box">Thanos Querier</span>
+<br>  ├── Aggregates StoreAPI from Sidecar + Store Gateway
+<br>  ├── Deduplication across HA Prometheus pairs
+<br>  └── Exposes PromQL API (Grafana data source)
+<br>
+<br><span class="box">Thanos Compactor</span> (single instance)
+<br>  ├── Compacts and downsamples old blocks in object storage
+<br>  └── Retention enforcement
+<br>
+<br><span class="box">Thanos Ruler</span> (optional)
+<br>  └── Evaluates recording/alert rules across global view</div>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Thanos Sidecar: prometheus.yaml addition</span>
+<span class="c"># Add to kube-prometheus-stack values:</span>
+<span class="k">prometheus</span>:
+  <span class="k">prometheusSpec</span>:
+    <span class="k">thanos</span>:
+      <span class="k">image</span>: <span class="s">quay.io/thanos/thanos:v0.35.0</span>
+      <span class="k">objectStorageConfig</span>:
+        <span class="k">existingSecret</span>:
+          <span class="k">name</span>: <span class="s">thanos-objstore-secret</span>
+          <span class="k">key</span>: <span class="s">objstore.yml</span>
+---
+<span class="c"># objstore.yml (stored as Secret)</span>
+type: S3
+config:
+  bucket: my-thanos-bucket
+  endpoint: s3.amazonaws.com
+  region: us-east-1
+  aws_sdk_auth: true    <span class="c"># Use IRSA</span></code></pre>
+
+  <h3>Grafana Mimir</h3>
+
+  <p>Grafana Mimir is a horizontally scalable, multi-tenant Prometheus-compatible backend. It is the successor to Cortex and replaces the Thanos Sidecar + Store Gateway pattern with a unified write path.</p>
+
+  <table>
+    <thead><tr><th>Feature</th><th>Thanos</th><th>Mimir</th></tr></thead>
+    <tbody>
+      <tr><td>Architecture</td><td>Sidecar to existing Prometheus</td><td>Replaces Prometheus write path; Prometheus only for scraping</td></tr>
+      <tr><td>Scalability</td><td>Scales via object storage; query latency depends on Querier</td><td>Horizontally scaled Ingester/Querier/Compactor</td></tr>
+      <tr><td>Multi-tenancy</td><td>Limited (namespace-based)</td><td>First-class; X-Scope-OrgID header</td></tr>
+      <tr><td>Operations</td><td>Multiple components to operate</td><td>More complex; monolithic mode available for small clusters</td></tr>
+      <tr><td>Use case</td><td>Multiple clusters, HA, long-term storage</td><td>SaaS-scale, multi-tenant, high write throughput</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ───── REMOTE WRITE ───── -->
+  <h2 id="remote-write">Remote Write &amp; Federation</h2>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Remote write: ship metrics to external backend</span>
+<span class="k">remote_write</span>:
+- <span class="k">url</span>: <span class="s">https://mimir.example.com/api/v1/push</span>
+  <span class="k">headers</span>:
+    <span class="k">X-Scope-OrgID</span>: <span class="s">production</span>
+  <span class="k">remote_timeout</span>: <span class="s">30s</span>
+  <span class="k">queue_config</span>:
+    <span class="k">capacity</span>: <span class="n">10000</span>
+    <span class="k">max_shards</span>: <span class="n">30</span>
+    <span class="k">min_shards</span>: <span class="n">5</span>
+    <span class="k">max_samples_per_send</span>: <span class="n">5000</span>
+    <span class="k">batch_send_deadline</span>: <span class="s">5s</span>
+  <span class="k">write_relabel_configs</span>:
+  <span class="c"># Only send metrics with specific labels to reduce egress</span>
+  - <span class="k">sourceLabels</span>: [__name__]
+    <span class="k">regex</span>: <span class="s">job:.*|kube_.*|node_.*</span>
+    <span class="k">action</span>: <span class="s">keep</span></code></pre>
+
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code"><span class="c"># Federation: aggregate subset of metrics from child Prometheus</span>
+<span class="k">scrape_configs</span>:
+- <span class="k">job_name</span>: <span class="s">federate</span>
+  <span class="k">honor_labels</span>: <span class="s">true</span>
+  <span class="k">metrics_path</span>: <span class="s">/federate</span>
+  <span class="k">params</span>:
+    <span class="k">match[]</span>:
+    - <span class="s">'{__name__=~"job:.*"}'</span>        <span class="c"># Only recording rules</span>
+    - <span class="s">up</span>
+  <span class="k">static_configs</span>:
+  - <span class="k">targets</span>:
+    - <span class="s">prometheus-cluster-a:9090</span>
+    - <span class="s">prometheus-cluster-b:9090</span></code></pre>
+
+  <!-- ───── OBSERVABILITY OF PROMETHEUS ───── -->
+  <h2 id="observability">Metrics, Alerts &amp; Runbooks</h2>
+
+  <h3>Key Prometheus Self-Metrics</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>prometheus_tsdb_head_series</code></td><td>Current active time series count (primary cardinality indicator)</td></tr>
+      <tr><td><code>prometheus_tsdb_storage_blocks_bytes</code></td><td>Disk usage of persistent TSDB blocks</td></tr>
+      <tr><td><code>prometheus_target_scrape_pool_sync_total</code></td><td>Scrape pool sync operations</td></tr>
+      <tr><td><code>up</code></td><td>1 if target is up, 0 if down — the most important scrape health metric</td></tr>
+      <tr><td><code>prometheus_rule_evaluation_duration_seconds</code></td><td>Rule evaluation latency (p99 &gt; 10s = rules falling behind)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Alerts</h3>
+  <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="c"># Alert: Prometheus target down</span>
+- <span class="k">alert</span>: <span class="s">PrometheusTargetDown</span>
+  <span class="k">expr</span>: <span class="s">up == 0</span>
+  <span class="k">for</span>: <span class="s">5m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Scrape target {{ $labels.job }} / {{ $labels.instance }} is down"</span>
+
+<span class="c"># Alert: Prometheus cardinality too high</span>
+- <span class="k">alert</span>: <span class="s">PrometheusHighCardinality</span>
+  <span class="k">expr</span>: <span class="s">prometheus_tsdb_head_series > 2000000</span>
+  <span class="k">for</span>: <span class="s">15m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Prometheus has >2M active series — memory pressure risk"</span>
+
+<span class="c"># Alert: Prometheus rule evaluation slow</span>
+- <span class="k">alert</span>: <span class="s">PrometheusRuleEvaluationSlow</span>
+  <span class="k">expr</span>: <span class="s">prometheus_rule_evaluation_duration_seconds{quantile="0.9"} > 1</span>
+  <span class="k">for</span>: <span class="s">10m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Rule evaluation p90 > 1s — rules may miss evaluation windows"</span>
+
+<span class="c"># Alert: Remote write queue filling</span>
+- <span class="k">alert</span>: <span class="s">PrometheusRemoteWriteQueueFull</span>
+  <span class="k">expr</span>: |
+    prometheus_remote_storage_shard_capacity -
+    prometheus_remote_storage_pending_examples &lt; 100
+  <span class="k">for</span>: <span class="s">5m</span>
+  <span class="k">annotations</span>:
+    <span class="k">summary</span>: <span class="s">"Remote write queue almost full — samples may be dropped"</span></code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Prometheus OOM / High Memory</h4>
+      <p>1. Check <code>prometheus_tsdb_head_series</code> — if &gt;2M investigate cardinality<br>2. Find top series producers: <code>topk(10, count by (job) ({__name__=~".+"}))</code><br>3. Add <code>metricRelabelings</code> to drop unused metrics or labels<br>4. Increase memory limit as temporary measure</p>
+    </div>
+    <div class="card">
+      <h4>Target Scrape Failures</h4>
+      <p>1. Check target health: Prometheus UI → Targets<br>2. Verify pod is running: <code>kubectl get pod</code><br>3. Check ServiceMonitor selector matches Service labels<br>4. Verify <code>metrics</code> port is correct name in Service spec</p>
+    </div>
+    <div class="card">
+      <h4>Rules Evaluation Falling Behind</h4>
+      <p>1. Check <code>prometheus_rule_evaluation_duration_seconds</code><br>2. Identify slow rules: <code>prometheus_rule_evaluation_failures_total</code><br>3. Simplify expensive recording rules or increase evaluation interval<br>4. Add Prometheus resources (CPU) if queries are compute-bound</p>
+    </div>
+    <div class="card">
+      <h4>Remote Write Dropping Samples</h4>
+      <p>1. Check <code>prometheus_remote_storage_failed_samples_total</code><br>2. Verify remote endpoint is reachable<br>3. Increase <code>queue_config.max_shards</code> or <code>capacity</code><br>4. Add <code>write_relabel_configs</code> to reduce remote write volume</p>
+    </div>
+    <div class="card">
+      <h4>TSDB Disk Full</h4>
+      <p>1. Check <code>prometheus_tsdb_storage_blocks_bytes</code><br>2. Reduce retention: <code>--storage.tsdb.retention.size</code><br>3. Add disk to Prometheus PVC<br>4. Enable remote write to offload historical data to Thanos/Mimir</p>
+    </div>
+  </div>
+
+  <!-- ───── BEST PRACTICES ───── -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num green">1</div>
+      <div class="step-content">
+        <h4>Use kube-prometheus-stack as the baseline</h4>
+        <p>Don't build your own scrape configuration from scratch. The kube-prometheus-stack includes pre-built ServiceMonitors, recording rules, and 20+ Grafana dashboards covering Kubernetes core components out of the box.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">2</div>
+      <div class="step-content">
+        <h4>Never use high-cardinality labels in metrics</h4>
+        <p>User IDs, request IDs, session tokens, or arbitrary string values as label values will explode cardinality. Instrument at the service boundary, not at the per-request level. Use traces for per-request detail.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h4>Write recording rules for all dashboard and alert expressions</h4>
+        <p>If a PromQL expression appears in a Grafana dashboard or alert rule, it should have a corresponding recording rule. This pre-computes the result, reduces query time from seconds to milliseconds, and reduces Prometheus CPU load.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
+      <div class="step-content">
+        <h4>Use Histogram over Summary for new instrumentation</h4>
+        <p>Histograms allow aggregation across pod instances using <code>histogram_quantile()</code>. Summaries calculate quantiles in-process and cannot be aggregated — useless for Kubernetes where you always have multiple replicas.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">5</div>
+      <div class="step-content">
+        <h4>Set sample_limit per scrape job</h4>
+        <p>Without a <code>sample_limit</code>, a single misbehaving application can push millions of time series into Prometheus and cause an OOM. Set <code>sample_limit: 10000</code> for most jobs; higher only when justified.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">6</div>
+      <div class="step-content">
+        <h4>Deploy Thanos or Mimir for production clusters</h4>
+        <p>Single-node Prometheus with local retention is not production-ready. It is a single point of failure and loses history on pod restart. Use Thanos Sidecar + object storage for HA and long-term retention with minimal operational complexity.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">7</div>
+      <div class="step-content">
+        <h4>Alert on absence of expected metrics</h4>
+        <p>Use <code>absent()</code> to alert when a time series disappears entirely — this catches target-down scenarios that won't fire rate-based alerts (because there are no samples to compute a rate from).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">8</div>
+      <div class="step-content">
+        <h4>Use <code>rate()</code> over <code>irate()</code> for alerts</h4>
+        <p><code>irate()</code> uses only the last two samples and is highly sensitive to single-sample spikes, causing flapping alerts. Use <code>rate()</code> with a 5–10 minute window for alerting. Reserve <code>irate()</code> for exploratory dashboards where responsiveness is more important than stability.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="back-to-top" id="back-to-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+</main>
+
+<script>
+function toggleTheme(){
+  const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  if(t !== 'dark') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('k8s-theme', t);
+}
+(function(){
+  const t = localStorage.getItem('k8s-theme');
+  if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+})();
+function copyCode(btn){
+  const pre = btn.parentElement;
+  navigator.clipboard.writeText(pre.querySelector('code').innerText).then(()=>{
+    btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+function filterNav(v){
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display = a.textContent.toLowerCase().includes(v.toLowerCase()) ? '' : 'none';
+  });
+}
+const main = document.getElementById('main');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>{ btt.classList.toggle('visible', main.scrollTop > 400); });
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    const link = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+    if(link) link.classList.toggle('active', e.isIntersecting);
+  });
+},{root: main, rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('h2[id]').forEach(h=>observer.observe(h));
+</script>
+</body>
+</html>

@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storage Overview | Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sidebar-logo{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;}
+.sidebar-title{font-weight:600;font-size:14px;}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text);outline:none;}
+.sidebar-search input:focus{border-color:var(--accent);}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+.theme-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3);cursor:pointer;background:none;border:none;color:var(--text2);}
+
+/* Top bar */
+.topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:99;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--text);font-size:18px;}
+.breadcrumb{font-size:13px;color:var(--text3);}
+.breadcrumb span{color:var(--text2);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.back-to-top{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+.back-to-top.visible{opacity:1;}
+
+/* Layout */
+.main-wrapper{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;padding:64px 40px 80px;max-width:900px;min-width:0;overflow-y:auto;height:100vh;}
+.toc-sidebar{width:var(--toc-w);flex-shrink:0;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);background:var(--bg);}
+.toc-sidebar h4{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.toc-sidebar a{display:block;font-size:12px;color:var(--text3);padding:3px 0 3px 8px;border-left:2px solid transparent;transition:all .15s;}
+.toc-sidebar a:hover{color:var(--text2);}
+.toc-sidebar a.active{color:var(--accent);border-left-color:var(--accent);}
+.toc-sidebar a.toc-h3{padding-left:16px;}
+
+/* Content */
+h1{font-size:32px;font-weight:700;margin-bottom:8px;line-height:1.3;}
+h2{font-size:22px;font-weight:600;margin:48px 0 16px;padding-top:8px;border-top:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:16px;color:var(--text2);}
+.lead{font-size:17px;color:var(--text2);margin-bottom:24px;}
+.page-meta{display:flex;gap:16px;margin-bottom:32px;flex-wrap:wrap;}
+.meta-badge{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.meta-badge.green{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.3);}
+.meta-badge.blue{background:rgba(88,166,255,.12);color:var(--accent);border-color:rgba(88,166,255,.3);}
+.meta-badge.yellow{background:rgba(210,153,34,.12);color:var(--yellow);border-color:rgba(210,153,34,.3);}
+
+/* Coverage block */
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+
+/* Code */
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin-bottom:20px;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;}
+p code,li code,td code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;font-size:12px;border:1px solid var(--border);color:var(--text2);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+
+/* Callouts */
+.callout{border-radius:8px;padding:14px 16px;margin-bottom:20px;border-left:4px solid;display:flex;gap:10px;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;font-size:14px;}
+.callout-body strong{display:block;margin-bottom:4px;}
+.callout.info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout.warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout.danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout.tip{background:rgba(63,185,80,.08);border-color:var(--green);}
+
+/* Diagrams */
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px;overflow-x:auto;}
+.diagram pre{background:none;border:none;padding:0;margin:0;font-size:13px;color:var(--text2);}
+
+/* Section nav */
+.section-nav{display:flex;justify-content:space-between;margin-top:64px;padding-top:24px;border-top:1px solid var(--border);}
+.section-nav a{display:flex;flex-direction:column;gap:4px;max-width:45%;}
+.section-nav a .nav-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.section-nav a .nav-title{font-size:14px;color:var(--accent);}
+.section-nav a.next{text-align:right;}
+
+/* Access mode badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-rwo{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-rox{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-rwx{background:rgba(188,140,255,.15);color:var(--purple);}
+.badge-rwop{background:rgba(210,153,34,.15);color:var(--yellow);}
+
+/* Storage primitive cards */
+.primitive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:24px;}
+.primitive-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.primitive-card h4{margin:0 0 6px;font-size:14px;color:var(--text);}
+.primitive-card p{margin:0;font-size:13px;color:var(--text3);}
+.primitive-card .tag{font-size:11px;padding:2px 6px;border-radius:10px;background:var(--bg3);color:var(--text3);margin-bottom:8px;display:inline-block;}
+.primitive-card .tag.ephemeral{background:rgba(210,153,34,.15);color:var(--yellow);}
+.primitive-card .tag.persistent{background:rgba(63,185,80,.15);color:var(--green);}
+
+/* Lifecycle flow */
+.lifecycle{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-bottom:24px;}
+.lifecycle-step{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:13px;color:var(--text2);white-space:nowrap;}
+.lifecycle-step.active{background:rgba(88,166,255,.12);border-color:var(--accent);color:var(--accent);}
+.lifecycle-arrow{color:var(--text3);padding:0 8px;font-size:14px;}
+
+/* Storage section file list */
+.file-list{list-style:none;padding:0;margin-bottom:24px;}
+.file-list li{padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;}
+.file-list li .file-num{font-size:11px;padding:2px 8px;background:var(--bg3);border-radius:10px;color:var(--text3);white-space:nowrap;margin-top:1px;}
+.file-list li .file-info strong{font-size:14px;display:block;color:var(--text);}
+.file-list li .file-info span{font-size:13px;color:var(--text3);}
+
+@media(max-width:1100px){.toc-sidebar{display:none;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-wrapper{margin-left:0;}
+  .main-content{padding:64px 20px 80px;}
+  .topbar{left:0;}
+  .hamburger{display:block;}
+  .coverage-body{grid-template-columns:1fr !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">K8s</div>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="sidebar-filter" placeholder="Filter topics…" oninput="filterNav(this.value)">
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">00 — Foundations</div>
+      <a href="../00-foundations/00-kubernetes-overview.html">Kubernetes Overview</a>
+      <a href="../00-foundations/01-cluster-architecture.html">Cluster Architecture</a>
+      <a href="../00-foundations/02-api-machinery.html">API Machinery</a>
+      <a href="../00-foundations/03-kubectl-and-client.html">kubectl &amp; Client</a>
+      <a href="../00-foundations/04-objects-and-manifests.html">Objects &amp; Manifests</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">01 — Workloads</div>
+      <a href="../01-workloads/00-pods.html">Pods</a>
+      <a href="../01-workloads/01-deployments.html">Deployments</a>
+      <a href="../01-workloads/02-statefulsets.html">StatefulSets</a>
+      <a href="../01-workloads/03-daemonsets.html">DaemonSets</a>
+      <a href="../01-workloads/04-jobs-and-cronjobs.html">Jobs &amp; CronJobs</a>
+      <a href="../01-workloads/05-replicasets.html">ReplicaSets</a>
+      <a href="../01-workloads/06-horizontal-pod-autoscaler.html">HPA</a>
+      <a href="../01-workloads/07-vertical-pod-autoscaler.html">VPA</a>
+      <a href="../01-workloads/08-pod-disruption-budgets.html">PDBs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">02 — Scheduling</div>
+      <a href="../02-scheduling/00-scheduler-overview.html">Scheduler Overview</a>
+      <a href="../02-scheduling/01-node-affinity.html">Node Affinity</a>
+      <a href="../02-scheduling/02-pod-affinity-antiaffinity.html">Pod Affinity</a>
+      <a href="../02-scheduling/03-taints-and-tolerations.html">Taints &amp; Tolerations</a>
+      <a href="../02-scheduling/04-resource-management.html">Resource Management</a>
+      <a href="../02-scheduling/05-priority-and-preemption.html">Priority &amp; Preemption</a>
+      <a href="../02-scheduling/06-topology-spread.html">Topology Spread</a>
+      <a href="../02-scheduling/07-custom-scheduler.html">Custom Scheduler</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">03 — Networking</div>
+      <a href="../03-networking/00-networking-model.html">Networking Model</a>
+      <a href="../03-networking/01-services.html">Services</a>
+      <a href="../03-networking/02-dns.html">DNS</a>
+      <a href="../03-networking/03-ingress.html">Ingress</a>
+      <a href="../03-networking/04-cni-plugins.html">CNI Plugins</a>
+      <a href="../03-networking/05-ingress.html">Ingress Deep Dive</a>
+      <a href="../03-networking/06-gateway-api.html">Gateway API</a>
+      <a href="../03-networking/07-network-policies.html">Network Policies</a>
+      <a href="../03-networking/08-ipv4-ipv6-dual-stack.html">IPv4/IPv6 Dual-Stack</a>
+      <a href="../03-networking/09-load-balancing.html">Load Balancing</a>
+      <a href="../03-networking/10-service-mesh.html">Service Mesh</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">04 — Storage</div>
+      <a href="00-storage-overview.html" class="active">Storage Overview</a>
+      <a href="01-volumes.html">Volumes</a>
+      <a href="02-persistent-volumes.html">Persistent Volumes</a>
+      <a href="03-storage-classes.html">Storage Classes</a>
+      <a href="04-csi-drivers.html">CSI Drivers</a>
+      <a href="05-volume-snapshots.html">Volume Snapshots</a>
+      <a href="06-stateful-storage-patterns.html">Stateful Patterns</a>
+      <a href="07-storage-capacity.html">Storage Capacity</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">05 — Configuration</div>
+      <a href="../05-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../05-configuration/01-secrets.html">Secrets</a>
+      <a href="../05-configuration/02-resource-quotas.html">Resource Quotas</a>
+      <a href="../05-configuration/03-limit-ranges.html">Limit Ranges</a>
+      <a href="../05-configuration/04-namespaces.html">Namespaces</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">☀️</span> Toggle theme
+    </button>
+  </div>
+</aside>
+
+<!-- Top bar -->
+<div class="topbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div class="breadcrumb">04 — Storage <span>/ Storage Overview</span></div>
+  <div class="topbar-right">
+    <button class="back-to-top" id="back-to-top" onclick="scrollToTop()">↑ Top</button>
+  </div>
+</div>
+
+<!-- Main wrapper -->
+<div class="main-wrapper">
+<main class="main-content" id="main-content">
+
+<h1>Storage Overview</h1>
+<p class="lead">The complete map of Kubernetes storage — from ephemeral scratch space to durable, replicated block and file volumes — with the primitives, lifecycle, and decision framework you need to choose the right storage type for every workload.</p>
+
+<div class="page-meta">
+  <span class="meta-badge green">Section 04 of 13</span>
+  <span class="meta-badge blue">File 1 of 8</span>
+  <span class="meta-badge yellow">Platform Engineer</span>
+</div>
+
+<details class="coverage">
+  <summary>What This Page Covers</summary>
+  <div class="coverage-body">
+    <li>Kubernetes storage taxonomy — ephemeral vs persistent, inline vs external</li>
+    <li>All ephemeral volume types: emptyDir, configMap, secret, downwardAPI, projected, generic ephemeral, CSI ephemeral</li>
+    <li>Persistent volume lifecycle: PV → PVC → bind → mount → use → reclaim</li>
+    <li>PersistentVolume spec anatomy — capacity, accessModes, volumeMode, reclaim policy, storageClassName, nodeAffinity</li>
+    <li>PersistentVolumeClaim spec — resource requests, selector, volumeMode, volumeName, binding modes</li>
+    <li>StorageClass fields — provisioner, parameters, reclaimPolicy, volumeBindingMode, allowVolumeExpansion, mountOptions</li>
+    <li>Static vs dynamic provisioning — full compare with example manifests</li>
+    <li>Access modes in depth — RWO/ROX/RWX/RWOP definitions, CSI driver support matrix, cloud-provider reality</li>
+    <li>Volume modes — Filesystem vs Block, use cases for raw block devices</li>
+    <li>Reclaim policies — Retain (operator action required), Delete (cloud default), Recycle (deprecated)</li>
+    <li>Binding modes — Immediate vs WaitForFirstConsumer and why it matters for topology</li>
+    <li>Volume expansion — allowVolumeExpansion, online vs offline resize, FileSystemResizePending condition</li>
+    <li>CSI architecture overview — external provisioner/attacher/resizer/snapshotter sidecars, node plugin, driver registration</li>
+    <li>Storage capacity tracking (GA 1.24) — CSIStorageCapacity object, scheduler capacity awareness</li>
+    <li>Local volumes — local PV, nodeAffinity requirement, WaitForFirstConsumer, no dynamic provisioner</li>
+    <li>Encryption at rest — cloud KMS integration, etcd encryption for Secrets, CSI driver-level encryption</li>
+    <li>Volume snapshots overview — VolumeSnapshotClass, VolumeSnapshot, VolumeSnapshotContent (deep-dived in 05)</li>
+    <li>Cross-cutting storage decisions — access pattern matrix, cloud provider support table</li>
+    <li>Section roadmap — links and summaries for all 7 subsequent storage files</li>
+    <li>6 metrics + 4 alerting rules + 5 troubleshooting runbooks</li>
+    <li>8 best practices for production storage</li>
+  </div>
+</details>
+
+<!-- ============================================================ -->
+<h2 id="taxonomy">Storage Taxonomy</h2>
+
+<p>Kubernetes storage breaks cleanly into two axes: <strong>lifetime</strong> (ephemeral vs persistent) and <strong>source</strong> (cluster-native vs external CSI driver). Understanding where a volume type falls on these axes determines how it behaves when a pod is deleted, rescheduled, or when the node fails.</p>
+
+<div class="diagram">
+<pre>
+┌─────────────────────────────────────────────────────────────────────┐
+│                      KUBERNETES STORAGE TAXONOMY                    │
+│                                                                     │
+│   EPHEMERAL (tied to pod lifetime)                                  │
+│   ┌─────────────┬──────────────┬────────────┬─────────────────────┐ │
+│   │  emptyDir   │  configMap   │  secret    │  downwardAPI        │ │
+│   │  (scratch)  │  (config     │  (creds,   │  (pod metadata)     │ │
+│   │             │   files)     │   tokens)  │                     │ │
+│   ├─────────────┴──────────────┴────────────┴─────────────────────┤ │
+│   │  projected  (combines configMap+secret+downwardAPI+SAToken)   │ │
+│   ├────────────────────────────────────────────────────────────────┤ │
+│   │  generic ephemeral volume  (PVC created/deleted with pod)     │ │
+│   │  CSI ephemeral volume      (inline CSI, no PVC object)        │ │
+│   └────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│   PERSISTENT (outlives pod)                                         │
+│   ┌────────────────────────────────────────────────────────────────┐ │
+│   │  PersistentVolume (PV)  ←bound to→  PersistentVolumeClaim     │ │
+│   │                                         (PVC)                 │ │
+│   │  Provisioned by:                                               │ │
+│   │    • Static  — admin creates PV manually                      │ │
+│   │    • Dynamic — StorageClass triggers CSI driver               │ │
+│   │                                                               │ │
+│   │  Backed by:                                                    │ │
+│   │    Cloud block (EBS, Persistent Disk, Azure Disk)             │ │
+│   │    Cloud file (EFS, Filestore, Azure Files)                   │ │
+│   │    Network (NFS, iSCSI, Ceph RBD, CephFS, GlusterFS)         │ │
+│   │    Local (local PV — node affinity required)                  │ │
+│   └────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<h3 id="ephemeral-types">Ephemeral Volume Types</h3>
+
+<div class="primitive-grid">
+  <div class="primitive-card">
+    <span class="tag ephemeral">Ephemeral</span>
+    <h4>emptyDir</h4>
+    <p>Empty directory created when pod starts. Lives in host RAM (<code>medium: Memory</code>) or disk. Shared across all containers in the pod. Lost on pod removal.</p>
+  </div>
+  <div class="primitive-card">
+    <span class="tag ephemeral">Ephemeral</span>
+    <h4>configMap</h4>
+    <p>ConfigMap keys projected as files. Changes to the ConfigMap propagate into the volume within ~1min (kubelet sync period). Optional keys and subPath available.</p>
+  </div>
+  <div class="primitive-card">
+    <span class="tag ephemeral">Ephemeral</span>
+    <h4>secret</h4>
+    <p>Secret keys projected as files with mode 0644 by default. Same update semantics as configMap. Stored in tmpfs on node (not written to disk).</p>
+  </div>
+  <div class="primitive-card">
+    <span class="tag ephemeral">Ephemeral</span>
+    <h4>downwardAPI</h4>
+    <p>Pod metadata (name, namespace, labels, annotations, resource limits) exposed as files. Useful for apps that need to know their own identity at runtime.</p>
+  </div>
+  <div class="primitive-card">
+    <span class="tag ephemeral">Ephemeral</span>
+    <h4>projected</h4>
+    <p>Combines configMap + secret + downwardAPI + serviceAccountToken into a single mount directory. Token has a configurable expiry (<code>expirationSeconds</code>).</p>
+  </div>
+  <div class="primitive-card">
+    <span class="tag ephemeral">Ephemeral</span>
+    <h4>Generic Ephemeral</h4>
+    <p>Pod spec includes an inline PVC template. The PVC is created with the pod and deleted with it. Supports any StorageClass — enables ephemeral use of cloud SSDs.</p>
+  </div>
+  <div class="primitive-card">
+    <span class="tag ephemeral">Ephemeral</span>
+    <h4>CSI Ephemeral</h4>
+    <p>Inline CSI volume — no PVC/PV objects created. Driver must declare <code>volumeLifecycleModes: Ephemeral</code>. Used for secrets stores (Secrets Store CSI Driver), node-local caches.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pv-lifecycle">PersistentVolume Lifecycle</h2>
+
+<p>Every persistent volume in Kubernetes goes through a defined lifecycle. Understanding each phase prevents data loss and leaking cloud resources.</p>
+
+<div class="lifecycle">
+  <div class="lifecycle-step">Provision<br><small>static or dynamic</small></div>
+  <div class="lifecycle-arrow">→</div>
+  <div class="lifecycle-step active">Bind<br><small>PVC → PV matched</small></div>
+  <div class="lifecycle-arrow">→</div>
+  <div class="lifecycle-step">Available<br><small>PVC Bound</small></div>
+  <div class="lifecycle-arrow">→</div>
+  <div class="lifecycle-step">In Use<br><small>Pod mounts volume</small></div>
+  <div class="lifecycle-arrow">→</div>
+  <div class="lifecycle-step">Released<br><small>PVC deleted, PV Released</small></div>
+  <div class="lifecycle-arrow">→</div>
+  <div class="lifecycle-step">Reclaim<br><small>Retain / Delete</small></div>
+</div>
+
+<h3 id="pv-phase">PV Phase Values</h3>
+<table>
+  <tr><th>Phase</th><th>Meaning</th><th>Next Action</th></tr>
+  <tr><td><code>Available</code></td><td>PV exists, not bound to any PVC</td><td>Wait for matching PVC</td></tr>
+  <tr><td><code>Bound</code></td><td>PV is bound to exactly one PVC</td><td>Pod can mount</td></tr>
+  <tr><td><code>Released</code></td><td>PVC was deleted; data still on storage backend</td><td>Admin reclaims or deletes</td></tr>
+  <tr><td><code>Failed</code></td><td>Automatic reclamation failed</td><td>Manual intervention</td></tr>
+</table>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Released ≠ Available</strong> A <code>Released</code> PV cannot be rebound to a new PVC automatically — the <code>claimRef</code> field still points to the old PVC. To reuse a Retained PV, delete the <code>claimRef</code> manually: <code>kubectl patch pv &lt;name&gt; -p '{"spec":{"claimRef":null}}'</code></div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pv-anatomy">PersistentVolume Anatomy</h2>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-example
+  annotations:
+    pv.kubernetes.io/provisioned-by: ebs.csi.aws.com   # set by dynamic provisioner
+spec:
+  capacity:
+    storage: 20Gi                     # declared capacity; CSI may report actual
+  accessModes:
+    - ReadWriteOnce                   # RWO: single node at a time
+  volumeMode: Filesystem              # or Block for raw device
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: gp3-encrypted
+  mountOptions:
+    - noatime
+    - discard
+  csi:
+    driver: ebs.csi.aws.com
+    volumeHandle: vol-0abc123def456789
+    fsType: ext4
+    volumeAttributes:
+      throughput: "250"
+  nodeAffinity:                       # required for local PVs, optional for CSI
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.ebs.csi.aws.com/zone
+              operator: In
+              values: [us-east-1a]</code></pre>
+
+<h3 id="access-modes">Access Modes</h3>
+
+<table>
+  <tr><th>Mode</th><th>Short</th><th>Meaning</th><th>Typical Drivers</th></tr>
+  <tr>
+    <td><span class="badge badge-rwo">ReadWriteOnce</span></td>
+    <td>RWO</td>
+    <td>One node can mount read-write. Multiple pods on the <em>same node</em> can use it simultaneously.</td>
+    <td>EBS, Azure Disk, GCE PD, local</td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-rox">ReadOnlyMany</span></td>
+    <td>ROX</td>
+    <td>Many nodes can mount read-only.</td>
+    <td>EFS, NFS, CephFS, Azure Files</td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-rwx">ReadWriteMany</span></td>
+    <td>RWX</td>
+    <td>Many nodes can mount read-write.</td>
+    <td>EFS, CephFS, GlusterFS, NFS, Azure Files (SMB/NFS)</td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-rwop">ReadWriteOncePod</span></td>
+    <td>RWOP</td>
+    <td>Only a single pod cluster-wide can mount read-write. GA 1.29. Stronger than RWO.</td>
+    <td>Any CSI driver (enforced by Kubernetes, not driver)</td>
+  </tr>
+</table>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>RWO vs RWOP</strong> RWO allows multiple pods on the <em>same node</em> to share a volume. RWOP enforces single-pod access cluster-wide at the Kubernetes layer — the CSI driver doesn't need to implement it. RWOP is the right choice for any workload where shared access would cause data corruption.</div>
+</div>
+
+<h3 id="volume-modes">Volume Modes</h3>
+
+<table>
+  <tr><th>volumeMode</th><th>What the pod sees</th><th>Use case</th></tr>
+  <tr><td><code>Filesystem</code> (default)</td><td>A formatted filesystem directory</td><td>99% of workloads — databases, app data, logs</td></tr>
+  <tr><td><code>Block</code></td><td>A raw block device path (e.g. <code>/dev/xvda</code>)</td><td>Databases that manage their own I/O (Ceph OSD, PostgreSQL on raw disk, SAP HANA)</td></tr>
+</table>
+
+<p>With <code>volumeMode: Block</code>, the container spec uses <code>volumeDevices</code> instead of <code>volumeMounts</code>:</p>
+
+<pre><code>containers:
+- name: db
+  image: postgres:16
+  volumeDevices:
+    - name: data
+      devicePath: /dev/xvda    # raw block — no filesystem layer
+volumes:
+- name: data
+  persistentVolumeClaim:
+    claimName: raw-block-pvc</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="pvc-anatomy">PersistentVolumeClaim Anatomy</h2>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: production
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 20Gi             # minimum size — dynamic provisioner provisions exactly this
+  storageClassName: gp3-encrypted
+  # selector:                   # for static binding only
+  #   matchLabels:
+  #     type: fast-ssd
+  # volumeName: pv-specific     # pin to a specific PV (static only)</code></pre>
+
+<h3 id="pvc-binding">Binding Logic</h3>
+
+<p>The bind controller matches a PVC to a PV by finding the smallest PV that satisfies:</p>
+<ol style="color:var(--text2);padding-left:24px;margin-bottom:16px;font-size:14px;">
+  <li>storageClassName matches (or both are empty)</li>
+  <li>accessModes requested ⊆ accessModes available</li>
+  <li>volumeMode matches</li>
+  <li>capacity ≥ requested storage</li>
+  <li>selector labels match (if specified)</li>
+</ol>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Capacity over-provisioning</strong> If the smallest matching PV is 100Gi and the PVC requests 20Gi, the PVC binds to the 100Gi PV — but the pod only sees 100Gi of space (not just 20Gi). You cannot resize down. Dynamic provisioning provisions exactly the requested size.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="storageclass">StorageClass</h2>
+
+<p>A StorageClass is the template used by the dynamic provisioner to create PVs on demand. It encodes all provisioner-specific parameters so consumers need only specify a class name.</p>
+
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-encrypted
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  iopsPerGB: "3000"
+  throughput: "125"
+  encrypted: "true"
+  kmsKeyId: arn:aws:kms:us-east-1:123456789012:key/mrk-abc123
+reclaimPolicy: Delete          # Delete or Retain
+volumeBindingMode: WaitForFirstConsumer   # or Immediate
+allowVolumeExpansion: true
+mountOptions:
+  - noatime</code></pre>
+
+<h3 id="reclaim-policies">Reclaim Policies</h3>
+
+<table>
+  <tr><th>Policy</th><th>What Happens When PVC Deleted</th><th>Production Default</th></tr>
+  <tr><td><code>Delete</code></td><td>PV and underlying cloud storage deleted immediately</td><td>✓ Cloud StorageClasses default to Delete</td></tr>
+  <tr><td><code>Retain</code></td><td>PV moves to Released state; data preserved; admin must clean up</td><td>Preferred for stateful data — safer</td></tr>
+  <tr><td><code>Recycle</code></td><td><em>Deprecated.</em> Ran <code>rm -rf</code> on the volume. Removed in 1.25.</td><td>✗ Do not use</td></tr>
+</table>
+
+<div class="callout danger">
+  <div class="callout-icon">🔴</div>
+  <div class="callout-body"><strong>Default cloud StorageClasses use Delete</strong> On EKS, GKE, and AKS, the default StorageClass uses <code>reclaimPolicy: Delete</code>. If you delete a PVC (e.g., from <code>helm uninstall</code> without volumeClaimTemplates protection), the data is gone. Use <code>Retain</code> for any production database or use a Velero backup policy.</div>
+</div>
+
+<h3 id="binding-modes">Binding Modes</h3>
+
+<table>
+  <tr><th>Mode</th><th>When PV is Provisioned</th><th>Use Case</th></tr>
+  <tr><td><code>Immediate</code></td><td>When PVC is created — provisioner runs immediately regardless of pod scheduling</td><td>NFS, CephFS, EFS — topology-agnostic storage</td></tr>
+  <tr><td><code>WaitForFirstConsumer</code></td><td>When a pod using the PVC is scheduled — provisioner knows the node's zone</td><td>EBS, Azure Disk, GCE PD — zonal block storage must land in pod's AZ</td></tr>
+</table>
+
+<div class="callout info">
+  <div class="callout-icon">ℹ️</div>
+  <div class="callout-body"><strong>Why WaitForFirstConsumer matters</strong> With <code>Immediate</code>, the EBS volume might be provisioned in <code>us-east-1a</code> while the pod scheduler later places the pod on a node in <code>us-east-1b</code>. The pod gets stuck in <code>Pending</code> because EBS is zonal. WaitForFirstConsumer delays provisioning until the scheduler commits to a node, ensuring co-location.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="static-vs-dynamic">Static vs Dynamic Provisioning</h2>
+
+<table>
+  <tr><th>Aspect</th><th>Static Provisioning</th><th>Dynamic Provisioning</th></tr>
+  <tr><td>PV creation</td><td>Admin creates PV manifests manually</td><td>StorageClass + provisioner create PV on demand</td></tr>
+  <tr><td>Workflow</td><td>Admin creates volume in cloud console → writes PV YAML → deploys</td><td>Developer creates PVC → done</td></tr>
+  <tr><td>Flexibility</td><td>Admin controls exact volume ID, size, IOPS</td><td>Parameters in StorageClass</td></tr>
+  <tr><td>Self-service</td><td>No — requires admin for each volume</td><td>Yes</td></tr>
+  <tr><td>Pre-existing data</td><td>Yes — can import existing cloud volumes</td><td>No — always creates new volume</td></tr>
+  <tr><td>Use case</td><td>Migration, production databases with specific volume IDs, local PVs</td><td>General-purpose — recommended default</td></tr>
+</table>
+
+<h4>Static Provisioning Example (import existing EBS volume)</h4>
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: imported-prod-db
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""              # empty = not managed by StorageClass
+  csi:
+    driver: ebs.csi.aws.com
+    volumeHandle: vol-0existingvolumeid   # existing EBS volume ID
+    fsType: xfs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prod-db-claim
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: ""
+  volumeName: imported-prod-db      # pin to specific PV</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="volume-expansion">Volume Expansion</h2>
+
+<p>Expanding a PVC requires the StorageClass to have <code>allowVolumeExpansion: true</code>. You resize by editing the PVC's <code>spec.resources.requests.storage</code> to a larger value — you cannot shrink a PVC.</p>
+
+<pre><code># Expand PVC from 20Gi to 50Gi
+kubectl patch pvc postgres-data -p '{"spec":{"resources":{"requests":{"storage":"50Gi"}}}}'
+
+# Watch status
+kubectl get pvc postgres-data -w
+# NAME           STATUS   VOLUME              CAPACITY   ACCESS MODES
+# postgres-data  Bound    pvc-abc...          20Gi       RWO       # initially
+# postgres-data  Bound    pvc-abc...          50Gi       RWO       # after expansion</code></pre>
+
+<h3 id="expansion-modes">Offline vs Online Expansion</h3>
+
+<table>
+  <tr><th>Type</th><th>Requires Pod Restart</th><th>Mechanism</th></tr>
+  <tr><td>Controller expansion (cloud volume resize)</td><td>No (CSI driver resizes cloud volume while pod runs)</td><td>CSI <code>ControllerExpandVolume</code></td></tr>
+  <tr><td>Node expansion (filesystem resize)</td><td>Sometimes — driver-dependent</td><td>CSI <code>NodeExpandVolume</code> runs <code>resize2fs</code>/<code>xfs_growfs</code></td></tr>
+  <tr><td>Offline resize (legacy)</td><td>Yes — must delete pod to unmount first</td><td>Required for plugins that don't support online node expansion</td></tr>
+</table>
+
+<p>The PVC condition <code>FileSystemResizePending</code> indicates the cloud volume has been resized but the filesystem on the node hasn't been expanded yet. This clears after the pod mounts the volume and the kubelet runs the filesystem resize.</p>
+
+<pre><code>kubectl describe pvc postgres-data | grep -A 3 Conditions
+# Conditions:
+#   Type                      Status
+#   FileSystemResizePending   True    # waiting for pod to remount
+</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="csi-overview">CSI Architecture Overview</h2>
+
+<p>The Container Storage Interface (CSI) is the standard API between Kubernetes and storage drivers. Every production storage driver (EBS, Azure Disk, Ceph, etc.) implements CSI. The architecture separates the driver into two halves: a <strong>controller plugin</strong> (runs as a Deployment, calls cloud APIs) and a <strong>node plugin</strong> (runs as a DaemonSet, handles node-level mount/format/unmount).</p>
+
+<div class="diagram">
+<pre>
+┌─────────────────────────────────────────────────────────────────┐
+│                     CSI ARCHITECTURE                            │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  CONTROLLER SIDE (Deployment)                            │  │
+│  │                                                          │  │
+│  │  ┌──────────────────────┐    ┌────────────────────────┐  │  │
+│  │  │  CSI Driver          │    │  Kubernetes Sidecars   │  │  │
+│  │  │  (controller plugin) │◄───│  external-provisioner  │  │  │
+│  │  │                      │    │  external-attacher     │  │  │
+│  │  │  Implements:         │    │  external-resizer      │  │  │
+│  │  │  CreateVolume        │    │  external-snapshotter  │  │  │
+│  │  │  DeleteVolume        │    └────────────────────────┘  │  │
+│  │  │  ControllerPublish   │                                 │  │
+│  │  │  ControllerExpand    │                                 │  │
+│  │  └──────────────────────┘                                 │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  NODE SIDE (DaemonSet — runs on every worker node)       │  │
+│  │                                                          │  │
+│  │  ┌──────────────────────┐    ┌────────────────────────┐  │  │
+│  │  │  CSI Driver          │    │  node-driver-registrar │  │  │
+│  │  │  (node plugin)       │◄───│  (registers with       │  │  │
+│  │  │                      │    │   kubelet plugin dir)  │  │  │
+│  │  │  Implements:         │    └────────────────────────┘  │  │
+│  │  │  NodeStageVolume     │                                 │  │
+│  │  │  NodePublishVolume   │    ← kubelet calls these        │  │
+│  │  │  NodeExpandVolume    │      via gRPC Unix socket       │  │
+│  │  │  NodeUnpublishVolume │                                 │  │
+│  │  └──────────────────────┘                                 │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  CSIDriver object (cluster-scoped): declares driver capabilities│
+│  (podInfoOnMount, attachRequired, volumeLifecycleModes, etc.)  │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<h3 id="csi-driver-object">CSIDriver Object</h3>
+
+<pre><code>apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: ebs.csi.aws.com
+spec:
+  attachRequired: true              # driver manages attach/detach (most block drivers)
+  podInfoOnMount: true              # kubelet passes pod name/namespace to NodePublish
+  volumeLifecycleModes:
+    - Persistent                    # supports PV/PVC
+    # - Ephemeral                   # supports inline CSI ephemeral volumes
+  fsGroupPolicy: File               # how fsGroup chown works: None/File/ReadWriteOnceWithFSType
+  tokenRequests:                    # request audience-specific tokens (e.g., for cloud auth)
+    - audience: sts.amazonaws.com
+      expirationSeconds: 86400
+  requiresRepublish: false</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="storage-capacity">Storage Capacity Tracking</h2>
+
+<p>GA in Kubernetes 1.24. When enabled, the CSI driver's external-provisioner creates <code>CSIStorageCapacity</code> objects that report available capacity per topology zone. The kube-scheduler uses this information to avoid scheduling pods on nodes where the required storage capacity isn't available.</p>
+
+<pre><code># CSIStorageCapacity is created automatically by external-provisioner
+apiVersion: storage.k8s.io/v1
+kind: CSIStorageCapacity
+metadata:
+  name: capacity-us-east-1a-gp3
+  namespace: kube-system
+storageClassName: gp3-encrypted
+nodeTopology:
+  matchLabels:
+    topology.ebs.csi.aws.com/zone: us-east-1a
+capacity: 5Ti                # available capacity in this zone</code></pre>
+
+<p>Enable in the StorageClass by referencing <code>volumeBindingMode: WaitForFirstConsumer</code> — the scheduler only reads CSIStorageCapacity when using WaitForFirstConsumer. Enable in the CSI driver deployment with <code>--feature-gates=Topology=true</code> on the external-provisioner sidecar.</p>
+
+<!-- ============================================================ -->
+<h2 id="local-volumes">Local Volumes</h2>
+
+<p>Local PVs expose a node-local disk, directory, or partition as a PV — with full RWO access and block device support. Unlike <code>hostPath</code>, local PVs track node affinity so the scheduler binds pods to the correct node. There is no dynamic provisioner for local PVs (the <a href="https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner">local static provisioner</a> automates PV creation from a discovery directory).</p>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-ssd-node1
+spec:
+  capacity:
+    storage: 400Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain   # always Retain for local PVs
+  storageClassName: local-ssd
+  volumeMode: Filesystem
+  local:
+    path: /mnt/disks/ssd1
+  nodeAffinity:                 # REQUIRED — ties PV to a specific node
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [worker-node-1]
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-ssd
+provisioner: kubernetes.io/no-provisioner   # no dynamic provisioner
+volumeBindingMode: WaitForFirstConsumer     # REQUIRED for local PVs</code></pre>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body"><strong>Node failure with local PVs</strong> If the node with the local PV fails, the pod using it will be stuck in <code>Pending</code> until the node comes back. Local PVs have no replication — data is tied to a single node. Use a distributed storage system (Ceph, Longhorn) if you need durability without node affinity.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="encryption">Encryption at Rest</h2>
+
+<h3 id="cloud-kms">Cloud KMS Integration</h3>
+<p>Most cloud CSI drivers support volume-level encryption via cloud KMS. Specify the KMS key in the StorageClass parameters:</p>
+
+<pre><code># AWS EBS gp3 with KMS
+parameters:
+  encrypted: "true"
+  kmsKeyId: arn:aws:kms:us-east-1:123456:key/mrk-abc123
+
+# GCE PD with Cloud KMS
+parameters:
+  disk-encryption-kms-key: projects/my-proj/locations/us-east1/keyRings/my-ring/cryptoKeys/my-key
+
+# Azure Disk with disk encryption set
+parameters:
+  diskEncryptionSetID: /subscriptions/.../diskEncryptionSets/my-des</code></pre>
+
+<h3 id="etcd-encryption">etcd Encryption (Secrets)</h3>
+<p>Kubernetes Secrets stored in etcd are base64-encoded but not encrypted by default. Configure the API server with an <code>EncryptionConfiguration</code> to encrypt Secrets at rest using AES-GCM, AES-CBC, or KMS provider:</p>
+
+<pre><code>apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources: [secrets]
+    providers:
+      - aescbc:
+          keys:
+            - name: key1
+              secret: &lt;base64-encoded-32-byte-key&gt;
+      - identity: {}   # fallback — allows reading unencrypted secrets during rotation</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="snapshots-overview">Volume Snapshots Overview</h2>
+
+<p>Volume snapshots provide point-in-time copies of PVs for backup and restore. Three custom resources (installed via the volume-snapshots CRDs, not included in core Kubernetes):</p>
+
+<table>
+  <tr><th>Resource</th><th>Scope</th><th>Analogous To</th></tr>
+  <tr><td><code>VolumeSnapshotClass</code></td><td>Cluster</td><td>StorageClass — defines driver and deletion policy</td></tr>
+  <tr><td><code>VolumeSnapshot</code></td><td>Namespace</td><td>PVC — user requests a snapshot</td></tr>
+  <tr><td><code>VolumeSnapshotContent</code></td><td>Cluster</td><td>PV — actual snapshot on the backend</td></tr>
+</table>
+
+<p>Deep coverage including CSI snapshot controller, restore workflow, and cross-namespace snapshot cloning is in <a href="05-volume-snapshots.html">05-volume-snapshots.html</a>.</p>
+
+<!-- ============================================================ -->
+<h2 id="decision-matrix">Storage Decision Matrix</h2>
+
+<table>
+  <tr><th>Workload Need</th><th>Recommended Type</th><th>AccessMode</th><th>Notes</th></tr>
+  <tr><td>Temporary scratch space (build cache, tmp files)</td><td>emptyDir</td><td>N/A</td><td>Use <code>medium: Memory</code> for RAM disk</td></tr>
+  <tr><td>App configuration / environment</td><td>configMap or secret volume</td><td>N/A</td><td>Auto-updates; don't use for binary data &gt;1MiB</td></tr>
+  <tr><td>Database (MySQL, PostgreSQL, MongoDB)</td><td>PVC with block storage (gp3, Premium SSD)</td><td>RWO or RWOP</td><td>WaitForFirstConsumer; StatefulSet + volumeClaimTemplates</td></tr>
+  <tr><td>Shared read-write (NFS-style)</td><td>PVC with EFS/CephFS/Azure Files</td><td>RWX</td><td>Higher latency than block; avoid for random I/O DBs</td></tr>
+  <tr><td>Shared read-only (media, ML models)</td><td>PVC with ROX-capable driver</td><td>ROX</td><td>Or use OCI artifact / object storage + init container</td></tr>
+  <tr><td>High-performance local NVMe</td><td>Local PV</td><td>RWO</td><td>No portability; manual PV management; local-static-provisioner</td></tr>
+  <tr><td>Ephemeral cloud SSD (larger than node disk)</td><td>Generic ephemeral volume</td><td>RWO</td><td>PVC created/deleted with pod; uses any StorageClass</td></tr>
+  <tr><td>Secrets store (Vault, AWS SSM)</td><td>CSI ephemeral (Secrets Store CSI Driver)</td><td>N/A</td><td>No PV/PVC; mounts secrets from external vault as files</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="cloud-support">Cloud Provider Support Matrix</h2>
+
+<table>
+  <tr><th>Driver</th><th>RWO</th><th>ROX</th><th>RWX</th><th>RWOP</th><th>Block</th><th>Snapshot</th><th>Expand</th></tr>
+  <tr><td>AWS EBS (ebs.csi.aws.com)</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>✓</td><td>✓</td><td>✓ online</td></tr>
+  <tr><td>AWS EFS (efs.csi.aws.com)</td><td>✓</td><td>✓</td><td>✓</td><td>✗</td><td>✗</td><td>✗</td><td>✓ auto</td></tr>
+  <tr><td>GCE PD (pd.csi.storage.gke.io)</td><td>✓</td><td>✓</td><td>✗</td><td>✓</td><td>✓</td><td>✓</td><td>✓ online</td></tr>
+  <tr><td>GCE Filestore (filestore.csi.storage.gke.io)</td><td>✓</td><td>✓</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>✓</td></tr>
+  <tr><td>Azure Disk (disk.csi.azure.com)</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>✓</td><td>✓</td><td>✓ online</td></tr>
+  <tr><td>Azure Files (file.csi.azure.com)</td><td>✓</td><td>✓</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>✓</td></tr>
+  <tr><td>Ceph RBD (rbd.csi.ceph.com)</td><td>✓</td><td>✓</td><td>✗</td><td>✓</td><td>✓</td><td>✓</td><td>✓ online</td></tr>
+  <tr><td>CephFS (cephfs.csi.ceph.com)</td><td>✓</td><td>✓</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>✓</td></tr>
+  <tr><td>Local (kubernetes.io/no-provisioner)</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>✓</td><td>✗</td><td>✗</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="metrics">Metrics and Alerting</h2>
+
+<h3 id="key-metrics">Key Metrics</h3>
+<table>
+  <tr><th>Metric</th><th>Source</th><th>Alert Threshold</th></tr>
+  <tr><td><code>kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes</code></td><td>kubelet</td><td>&gt; 85% → warn; &gt; 95% → critical</td></tr>
+  <tr><td><code>kubelet_volume_stats_inodes_used / kubelet_volume_stats_inodes_free</code></td><td>kubelet</td><td>&gt; 85% inode usage</td></tr>
+  <tr><td><code>kube_persistentvolumeclaim_status_phase</code></td><td>kube-state-metrics</td><td>phase != Bound for &gt; 5m</td></tr>
+  <tr><td><code>kube_persistentvolume_status_phase</code></td><td>kube-state-metrics</td><td>phase = Failed</td></tr>
+  <tr><td><code>storage_operation_duration_seconds</code></td><td>kubelet</td><td>P99 mount time &gt; 30s</td></tr>
+  <tr><td><code>csi_operations_seconds</code></td><td>CSI driver (external sidecar metrics)</td><td>P99 provision time &gt; 60s</td></tr>
+</table>
+
+<h3 id="alert-rules">Alerting Rules</h3>
+<pre><code>groups:
+- name: storage
+  rules:
+  - alert: PVCDiskAlmostFull
+    expr: |
+      (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.85
+    for: 5m
+    labels: {severity: warning}
+    annotations:
+      summary: "PVC {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full"
+
+  - alert: PVCDiskCritical
+    expr: |
+      (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.95
+    for: 2m
+    labels: {severity: critical}
+
+  - alert: PVCNotBound
+    expr: kube_persistentvolumeclaim_status_phase{phase!="Bound"} == 1
+    for: 10m
+    labels: {severity: warning}
+    annotations:
+      summary: "PVC {{ $labels.persistentvolumeclaim }} stuck in {{ $labels.phase }}"
+
+  - alert: PVFailed
+    expr: kube_persistentvolume_status_phase{phase="Failed"} == 1
+    for: 1m
+    labels: {severity: critical}
+    annotations:
+      summary: "PV {{ $labels.persistentvolume }} is in Failed state"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Troubleshooting Runbooks</h2>
+
+<h3>Runbook: PVC Stuck in Pending</h3>
+<pre><code># 1. Describe the PVC
+kubectl describe pvc &lt;name&gt; -n &lt;ns&gt;
+# Events section will show binding failures
+
+# 2. Common causes:
+# "no persistent volumes available for this claim" → no matching static PV; wrong storageClassName
+# "waiting for a volume to be created" → provisioner can't create volume (check events + provisioner logs)
+# "waiting for first consumer" → WaitForFirstConsumer + no pod using PVC yet (expected)
+
+# 3. Check CSI driver controller logs
+kubectl logs -n kube-system -l app=ebs-csi-controller -c csi-provisioner --tail=50
+
+# 4. Check StorageClass exists and is spelled correctly
+kubectl get storageclass
+kubectl describe storageclass &lt;name&gt;</code></pre>
+
+<h3>Runbook: Pod Stuck in ContainerCreating (Volume Mount Failure)</h3>
+<pre><code># 1. Describe pod to see volume mount error
+kubectl describe pod &lt;name&gt; -n &lt;ns&gt;
+# Look for: "Unable to attach or mount volumes"
+
+# 2. Common: previous pod crashed and volume is still attached to old node
+# Check VolumeAttachment objects
+kubectl get volumeattachment | grep &lt;pv-name&gt;
+kubectl delete volumeattachment &lt;stuck-attachment&gt;   # force detach (risky if node still up)
+
+# 3. Check node-side CSI plugin
+kubectl logs -n kube-system -l app=ebs-csi-node -c csi-driver --tail=50
+
+# 4. Check if node has reached attachment limit (AWS: m5.xlarge = 25 volumes)
+kubectl describe node &lt;node&gt; | grep "Allocatable" -A 5 | grep attachable</code></pre>
+
+<h3>Runbook: PVC Expand Not Completing</h3>
+<pre><code># 1. Check PVC conditions
+kubectl describe pvc &lt;name&gt; | grep -A 5 Conditions
+# If FileSystemResizePending: pod must be running to trigger NodeExpandVolume
+
+# 2. Ensure pod is running (not crashed) — kubelet triggers filesystem resize on mount
+# 3. Check kubelet logs for resize errors
+journalctl -u kubelet | grep -i "resize" | tail -20
+
+# 4. If StorageClass does not have allowVolumeExpansion:true, the patch will be rejected
+kubectl get storageclass &lt;name&gt; -o yaml | grep allowVolumeExpansion</code></pre>
+
+<h3>Runbook: Released PV Cannot Rebind</h3>
+<pre><code># PV is Released (previous PVC deleted) but new PVC won't bind to it
+# The PV still has claimRef pointing to the old PVC
+
+kubectl get pv &lt;name&gt; -o yaml | grep -A 6 claimRef
+# claimRef:
+#   name: old-pvc
+#   namespace: production
+#   uid: abc-123
+
+# Remove claimRef to make PV Available again
+kubectl patch pv &lt;name&gt; --type=json \
+  -p '[{"op":"remove","path":"/spec/claimRef"}]'</code></pre>
+
+<h3>Runbook: Inode Exhaustion (disk usage looks fine but writes fail)</h3>
+<pre><code># Symptoms: pod gets ENOSPC but df shows plenty of disk space
+# Cause: filesystem has no free inodes (too many small files)
+
+# Check inode usage
+kubectl exec -it &lt;pod&gt; -- df -i
+# Filesystem   Inodes   IUsed   IFree IUse% Mounted on
+# /dev/xvda   6553600 6553600       0  100% /data   ← full inodes!
+
+# Monitor via kubelet_volume_stats_inodes_used metric
+# Long-term fix: increase PVC size (more inodes on ext4/xfs) or clean up small files</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="section-roadmap">Section Roadmap</h2>
+
+<p>This overview covers the framework. Each subsequent file goes deep on one topic:</p>
+
+<ul class="file-list">
+  <li>
+    <span class="file-num">04/01</span>
+    <div class="file-info">
+      <strong><a href="01-volumes.html">01-volumes.html</a></strong>
+      <span>All volume types in detail — emptyDir, configMap, secret, projected, hostPath, NFS, gitRepo (deprecated), CSI inline; subPath; volumeMounts lifecycle; init containers and shared volumes</span>
+    </div>
+  </li>
+  <li>
+    <span class="file-num">04/02</span>
+    <div class="file-info">
+      <strong><a href="02-persistent-volumes.html">02-persistent-volumes.html</a></strong>
+      <span>PV/PVC deep dive — binding algorithm, volumeClaimTemplates in StatefulSets, orphaned PVCs, finalizers, PVC protection, label selectors, capacity over-provisioning gotchas</span>
+    </div>
+  </li>
+  <li>
+    <span class="file-num">04/03</span>
+    <div class="file-info">
+      <strong><a href="03-storage-classes.html">03-storage-classes.html</a></strong>
+      <span>StorageClass deep dive — all provisioner parameters for EBS/GCE/Azure/Ceph; default StorageClass; allowedTopologies; bindingMode edge cases; StorageClass migration</span>
+    </div>
+  </li>
+  <li>
+    <span class="file-num">04/04</span>
+    <div class="file-info">
+      <strong><a href="04-csi-drivers.html">04-csi-drivers.html</a></strong>
+      <span>CSI deep dive — driver deployment patterns; external sidecar responsibilities; NodeStage vs NodePublish; volume health monitoring; driver upgrade strategy; writing a minimal CSI driver</span>
+    </div>
+  </li>
+  <li>
+    <span class="file-num">04/05</span>
+    <div class="file-info">
+      <strong><a href="05-volume-snapshots.html">05-volume-snapshots.html</a></strong>
+      <span>Snapshot lifecycle; snapshot controller + CRD installation; pre-provisioned snapshots; restore to new PVC; cross-namespace clone; VolumeGroupSnapshot (alpha); backup strategies</span>
+    </div>
+  </li>
+  <li>
+    <span class="file-num">04/06</span>
+    <div class="file-info">
+      <strong><a href="06-stateful-storage-patterns.html">06-stateful-storage-patterns.html</a></strong>
+      <span>StatefulSet storage patterns; volumeClaimTemplates; ordered provisioning; pod identity + stable storage; distributed DBs on Kubernetes (PostgreSQL, Cassandra, Kafka); Longhorn and Rook-Ceph</span>
+    </div>
+  </li>
+  <li>
+    <span class="file-num">04/07</span>
+    <div class="file-info">
+      <strong><a href="07-storage-capacity.html">07-storage-capacity.html</a></strong>
+      <span>CSIStorageCapacity objects; capacity-aware scheduling; topology constraints; multi-zone capacity planning; node volume limits (AWS instance type limits); capacity monitoring</span>
+    </div>
+  </li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol style="color:var(--text2);padding-left:24px;font-size:14px;line-height:2;">
+  <li><strong>Use WaitForFirstConsumer</strong> for any zonal block storage (EBS, Azure Disk, GCE PD). Immediate binding creates cross-AZ attachment failures.</li>
+  <li><strong>Default to Retain</strong> for production data. Override back to Delete only for ephemeral/test namespaces. The cloud default (Delete) will destroy data on helm uninstall.</li>
+  <li><strong>Set allowVolumeExpansion: true</strong> on every StorageClass. It costs nothing to enable and prevents emergency PV migrations when a database outgrows its disk.</li>
+  <li><strong>Alert on PVC fill &gt;85%</strong>. CSI expansion is online but requires capacity — don't let a volume hit 100% before alerting fires.</li>
+  <li><strong>Use volumeClaimTemplates in StatefulSets</strong>, not a single shared PVC. Each pod instance gets its own isolated volume with a stable name (<code>data-pod-0</code>, <code>data-pod-1</code>).</li>
+  <li><strong>Never use hostPath for production workloads</strong>. It bypasses all Kubernetes storage accounting, has no access mode enforcement, and is a security risk. Use local PVs instead.</li>
+  <li><strong>Use RWOP instead of RWO</strong> for single-writer workloads (GA 1.29). It prevents split-brain from two pods accidentally claiming the same volume when a node is partitioned.</li>
+  <li><strong>Monitor inode usage separately from bytes</strong>. Workloads creating many small files (build caches, log aggregators, ML feature stores) exhaust inodes long before disk space.</li>
+</ol>
+
+<!-- ============================================================ -->
+<div class="section-nav">
+  <a href="../03-networking/10-service-mesh.html">
+    <span class="nav-label">← Previous</span>
+    <span class="nav-title">Service Mesh</span>
+  </a>
+  <a href="01-volumes.html" class="next">
+    <span class="nav-label">Next →</span>
+    <span class="nav-title">Volumes</span>
+  </a>
+</div>
+
+</main>
+
+<!-- TOC sidebar -->
+<aside class="toc-sidebar">
+  <h4>On This Page</h4>
+  <a href="#taxonomy">Storage Taxonomy</a>
+  <a href="#ephemeral-types" class="toc-h3">Ephemeral Types</a>
+  <a href="#pv-lifecycle">PV Lifecycle</a>
+  <a href="#pv-phase" class="toc-h3">PV Phase Values</a>
+  <a href="#pv-anatomy">PV Anatomy</a>
+  <a href="#access-modes" class="toc-h3">Access Modes</a>
+  <a href="#volume-modes" class="toc-h3">Volume Modes</a>
+  <a href="#pvc-anatomy">PVC Anatomy</a>
+  <a href="#pvc-binding" class="toc-h3">Binding Logic</a>
+  <a href="#storageclass">StorageClass</a>
+  <a href="#reclaim-policies" class="toc-h3">Reclaim Policies</a>
+  <a href="#binding-modes" class="toc-h3">Binding Modes</a>
+  <a href="#static-vs-dynamic">Static vs Dynamic</a>
+  <a href="#volume-expansion">Volume Expansion</a>
+  <a href="#csi-overview">CSI Architecture</a>
+  <a href="#storage-capacity">Storage Capacity</a>
+  <a href="#local-volumes">Local Volumes</a>
+  <a href="#encryption">Encryption</a>
+  <a href="#snapshots-overview">Snapshots Overview</a>
+  <a href="#decision-matrix">Decision Matrix</a>
+  <a href="#cloud-support">Cloud Support</a>
+  <a href="#metrics">Metrics &amp; Alerting</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#section-roadmap">Section Roadmap</a>
+  <a href="#best-practices">Best Practices</a>
+</aside>
+</div>
+
+<script>
+// Theme
+(function(){
+  const t = localStorage.getItem('k8s-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('theme-icon').textContent = t === 'dark' ? '☀️' : '🌙';
+})();
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  document.getElementById('theme-icon').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+
+// Sidebar
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// Back to top
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => {
+  btt.classList.toggle('visible', main.scrollTop > 300);
+});
+function scrollToTop(){ main.scrollTo({top:0,behavior:'smooth'}); }
+
+// Copy buttons
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.onclick = () => {
+    navigator.clipboard.writeText(pre.innerText.replace('Copy','').trim());
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  };
+  pre.appendChild(btn);
+});
+
+// TOC active state
+const tocLinks = document.querySelectorAll('.toc-sidebar a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(a => a.classList.remove('active'));
+      const active = document.querySelector(`.toc-sidebar a[href="#${e.target.id}"]`);
+      if(active) active.classList.add('active');
+    }
+  });
+},{root: main, rootMargin:'-10% 0px -80% 0px'});
+document.querySelectorAll('h2[id],h3[id]').forEach(h => observer.observe(h));
+
+// Sidebar filter
+function filterNav(val){
+  const q = val.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

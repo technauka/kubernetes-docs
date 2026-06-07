@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Platform Engineering Overview — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.07)}
+main{flex:1;overflow-y:auto;padding:0;max-width:960px}
+.content{padding:40px 48px 80px}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:36px}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px}
+.breadcrumb a{color:var(--text3)}
+h1{font-size:32px;font-weight:700;line-height:1.2;margin-bottom:10px}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--text2)}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:14px;color:var(--text2)}
+ul,ol{margin:0 0 14px 20px;color:var(--text2)}
+li{margin-bottom:4px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:'JetBrains Mono','Fira Code',monospace;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;background:var(--bg3);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout strong{display:block;margin-bottom:4px;font-size:13px}
+.callout p{margin:0;font-size:13px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+td{padding:9px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin:0 0 8px;color:var(--text);font-size:14px;text-transform:none;letter-spacing:0}
+.card p{margin:0;font-size:13px}
+.card .tag{margin-top:8px;display:inline-block}
+.section-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:13px;color:var(--text2);transition:all .15s}
+.section-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:0 0 32px;display:inline-block;min-width:280px;max-width:420px}
+.toc-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:18px}
+.toc li{margin-bottom:3px;font-size:13px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;line-height:1}
+.btt{position:fixed;bottom:32px;right:32px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden}
+details.coverage summary{padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;flex-shrink:0}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+.coverage-body li{font-size:12px;color:var(--text2);margin-bottom:2px}
+/* maturity model */
+.maturity-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.maturity-level{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.maturity-level .level-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:8px}
+.l1{background:rgba(248,81,73,.15);color:var(--red)}
+.l2{background:rgba(210,153,34,.15);color:var(--yellow)}
+.l3{background:rgba(88,166,255,.15);color:var(--accent)}
+.l4{background:rgba(63,185,80,.15);color:var(--green)}
+.maturity-level h4{margin:0 0 6px;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text)}
+.maturity-level ul{margin:0;padding-left:14px;font-size:12px}
+/* section links grid */
+.section-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0}
+.section-link{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;transition:border-color .15s}
+.section-link:hover{border-color:var(--accent);text-decoration:none}
+.section-link .sl-num{font-size:11px;color:var(--text3);margin-bottom:4px}
+.section-link .sl-title{font-size:14px;font-weight:600;color:var(--accent);margin-bottom:4px}
+.section-link .sl-desc{font-size:12px;color:var(--text3)}
+@media(max-width:768px){.sidebar{display:none;position:fixed;z-index:300;height:100vh}.sidebar.open{display:flex}.topbar{display:flex}.content{padding:24px 20px 60px}.coverage-body{grid-template-columns:1fr}.maturity-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter…" id="nav-filter"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Overview</a>
+    <a href="../01-getting-started/01-core-concepts.html">Core Concepts</a>
+    <a href="../01-getting-started/02-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/03-kubectl-basics.html">kubectl Basics</a>
+    <a href="../01-getting-started/04-first-deployment.html">First Deployment</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../02-workloads/00-pods.html">Pods</a>
+    <a href="../02-workloads/01-deployments.html">Deployments</a>
+    <a href="../02-workloads/02-statefulsets.html">StatefulSets</a>
+    <a href="../02-workloads/03-daemonsets.html">DaemonSets</a>
+    <a href="../02-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../02-workloads/05-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="../02-workloads/06-vertical-pod-autoscaler.html">VPA</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+    <a href="../03-networking/03-network-policies.html">Network Policies</a>
+    <a href="../03-networking/04-dns.html">DNS</a>
+    <a href="../03-networking/05-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">PV &amp; PVC</a>
+    <a href="../04-storage/02-storage-classes.html">StorageClasses</a>
+    <a href="../04-storage/03-stateful-storage-patterns.html">Stateful Patterns</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="../05-security/00-security-overview.html">Overview</a>
+    <a href="../05-security/01-rbac.html">RBAC</a>
+    <a href="../05-security/02-pod-security.html">Pod Security</a>
+    <a href="../05-security/03-network-security.html">Network Security</a>
+    <a href="../05-security/04-secrets-management.html">Secrets Management</a>
+    <a href="../05-security/05-supply-chain-security.html">Supply Chain</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../06-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../06-configuration/01-resource-management.html">Resources</a>
+    <a href="../06-configuration/02-scheduling.html">Scheduling</a>
+    <a href="../06-configuration/03-helm.html">Helm</a>
+    <a href="../06-configuration/04-kustomize.html">Kustomize</a>
+    <a href="../06-configuration/05-admission-controllers.html">Admission</a>
+    <a href="../06-configuration/06-crd-operators.html">CRDs &amp; Operators</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="../07-observability/00-observability-overview.html">Overview</a>
+    <a href="../07-observability/01-metrics.html">Metrics</a>
+    <a href="../07-observability/02-logging.html">Logging</a>
+    <a href="../07-observability/03-tracing.html">Distributed Tracing</a>
+    <a href="../07-observability/04-events.html">Events</a>
+    <a href="../07-observability/05-dashboards.html">Dashboards</a>
+    <a href="../07-observability/06-alerting.html">Alerting</a>
+    <a href="../07-observability/07-profiling.html">Continuous Profiling</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Platform Engineering</div>
+    <a href="00-platform-overview.html" class="active">Overview</a>
+    <a href="01-cluster-provisioning.html">Cluster Provisioning</a>
+    <a href="02-gitops.html">GitOps</a>
+    <a href="03-ci-cd-pipelines.html">CI/CD Pipelines</a>
+    <a href="04-developer-portal.html">Developer Portal</a>
+    <a href="05-policy-enforcement.html">Policy Enforcement</a>
+    <a href="06-multi-tenancy.html">Multi-Tenancy</a>
+    <a href="07-cost-management.html">Cost Management</a>
+    <a href="08-service-catalog.html">Service Catalog</a>
+    <a href="09-secrets-automation.html">Secrets Automation</a>
+    <a href="10-platform-apis.html">Platform APIs</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Production Operations</div>
+    <a href="../09-production-operations/00-operations-overview.html">Overview</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span style="font-size:14px;font-weight:600;color:var(--text)">Platform Engineering Overview</span>
+</div>
+
+<main id="main">
+<div class="content">
+
+<div class="breadcrumb"><a href="../index.html">Home</a> › Platform Engineering</div>
+
+<div class="page-header">
+  <h1>Platform Engineering Overview</h1>
+  <div class="page-meta">
+    <span>Internal Developer Platforms on Kubernetes</span>
+    <span class="tag">IDP</span>
+    <span class="tag">Golden Path</span>
+    <span class="tag">Backstage</span>
+    <span class="tag">Crossplane</span>
+    <span class="tag">Platform Engineer</span>
+  </div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#what-is-platform-engineering">What Is Platform Engineering?</a></li>
+    <li><a href="#platform-vs-devops">Platform Engineering vs DevOps vs SRE</a></li>
+    <li><a href="#idp-capabilities">IDP Capability Map</a></li>
+    <li><a href="#platform-as-product">Platform as a Product</a></li>
+    <li><a href="#golden-paths">Golden Paths &amp; Paved Roads</a></li>
+    <li><a href="#tooling-landscape">Tooling Landscape</a></li>
+    <li><a href="#reference-architecture">Reference Architecture</a></li>
+    <li><a href="#maturity-model">Platform Maturity Model</a></li>
+    <li><a href="#team-topologies">Team Topologies</a></li>
+    <li><a href="#dx-metrics">Developer Experience Metrics</a></li>
+    <li><a href="#section-guide">Section Guide</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="what-is-platform-engineering">1. What Is Platform Engineering?</h2>
+
+<p>Platform engineering is the discipline of designing and building self-service toolchains and workflows — collectively called an <strong>Internal Developer Platform (IDP)</strong> — that enable product teams to deploy, run, and observe their software in production without requiring deep infrastructure expertise for every task.</p>
+
+<p>The goal is not to build the most technically sophisticated infrastructure. It is to <em>reduce cognitive load on application developers</em> while maintaining the guardrails (security, cost control, compliance) that the organisation requires.</p>
+
+<div class="callout callout-info">
+  <strong>Platform engineering vs "just a Kubernetes cluster"</strong>
+  <p>A Kubernetes cluster is infrastructure. A platform wraps that cluster with golden-path workflows, self-service provisioning, pre-integrated observability, policy enforcement, and a developer portal — so that a new team can go from zero to production in hours, not weeks, while automatically complying with company standards.</p>
+</div>
+
+<h3>Why Platform Engineering Emerged</h3>
+
+<p>The cloud-native ecosystem solved infrastructure scalability but created a new problem: the number of tools, concepts, and decisions required to deploy a service grew dramatically. A developer shipping a feature now needed to understand Kubernetes YAML, Helm charts, Prometheus scrape configs, Grafana dashboards, Vault secrets paths, network policies, and CI pipeline YAML — all before the first production deployment.</p>
+
+<pre><code>Before platform engineering (developer cognitive load):
+  ┌──────────────────────────────────────────────────────────┐
+  │ Write code → Write Dockerfile → Write Helm chart →       │
+  │ Configure CI → Configure CD → Set up monitoring →        │
+  │ Create alerts → Request secrets → Configure NetworkPolicy│
+  │ → Write runbook → Set resource limits → ...              │
+  │                                              ~40 tasks   │
+  └──────────────────────────────────────────────────────────┘
+
+After platform engineering (developer cognitive load):
+  ┌─────────────────────────────────────────────┐
+  │ Write code → Push to git                    │
+  │  → Platform handles everything else         │
+  │                                   ~2 tasks  │
+  └─────────────────────────────────────────────┘
+  (Security, observability, networking pre-wired by platform)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="platform-vs-devops">2. Platform Engineering vs DevOps vs SRE</h2>
+
+<table>
+  <tr><th>Dimension</th><th>DevOps</th><th>SRE</th><th>Platform Engineering</th></tr>
+  <tr>
+    <td>Primary goal</td>
+    <td>Break dev/ops silos; continuous delivery</td>
+    <td>Reliability of production services (SLOs, error budgets)</td>
+    <td>Developer productivity; reduce cognitive load</td>
+  </tr>
+  <tr>
+    <td>Core output</td>
+    <td>Cultural practices, CI/CD pipelines</td>
+    <td>SLO frameworks, incident response, automation to replace toil</td>
+    <td>Internal Developer Platform (IDP)</td>
+  </tr>
+  <tr>
+    <td>Who are the customers?</td>
+    <td>The organisation (cultural transformation)</td>
+    <td>End users (reliability) and operators (toil reduction)</td>
+    <td>Product/feature teams (developers)</td>
+  </tr>
+  <tr>
+    <td>Key metric</td>
+    <td>DORA metrics (deployment freq, lead time, MTTR, change failure rate)</td>
+    <td>SLO compliance, error budget burn rate, toil %</td>
+    <td>Time to first deployment, developer NPS, self-service ratio</td>
+  </tr>
+  <tr>
+    <td>Infrastructure ownership</td>
+    <td>Shared (everyone owns their pipeline)</td>
+    <td>Shared (product teams own SLOs, SRE owns platform reliability)</td>
+    <td>Platform team owns the platform; product teams own their apps</td>
+  </tr>
+  <tr>
+    <td>Relationship to Kubernetes</td>
+    <td>Kubernetes is part of the CD pipeline</td>
+    <td>Kubernetes is a production environment to make reliable</td>
+    <td>Kubernetes is the infrastructure substrate the platform abstracts</td>
+  </tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>These roles are complementary, not competing</strong>
+  <p>A mature engineering organisation practises all three: DevOps culture (fast feedback loops), SRE principles (error budgets, toil reduction), and platform engineering (IDP to scale developer autonomy). The platform team's work enables both DevOps and SRE practices at scale.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="idp-capabilities">3. IDP Capability Map</h2>
+
+<p>An Internal Developer Platform is not a single product — it is a composition of capabilities across five planes:</p>
+
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│                  Developer Experience Plane                      │
+│  Backstage portal / CLI tools / VS Code extensions / Docs       │
+│  Service catalog / Templates / Scorecards / TechDocs            │
+├─────────────────────────────────────────────────────────────────┤
+│                   Application Plane                              │
+│  Golden path templates / Helm charts / Kustomize overlays       │
+│  CI pipelines (Tekton/GitHub Actions) / CD (Argo CD/Flux)       │
+│  Feature flags / Release automation / Preview environments       │
+├─────────────────────────────────────────────────────────────────┤
+│                   Security & Policy Plane                        │
+│  OPA/Gatekeeper policies / Kyverno / Pod Security Standards     │
+│  Secrets management (Vault/ESO) / SBOM / Image signing          │
+│  Network policies / RBAC templates / Admission webhooks         │
+├─────────────────────────────────────────────────────────────────┤
+│                   Infrastructure Plane                           │
+│  Cluster provisioning (Cluster API / EKS Blueprints / Crossplane│
+│  Cloud resources (Crossplane / ACK / Terraform / Pulumi)        │
+│  DNS / TLS (cert-manager / external-dns) / Load balancers       │
+├─────────────────────────────────────────────────────────────────┤
+│                   Observability Plane                            │
+│  Metrics (Prometheus/Thanos) / Logs (Loki) / Traces (Tempo)     │
+│  Dashboards (Grafana) / Alerting (Alertmanager) / Profiling      │
+│  Events / Runbooks / On-call rotation (PagerDuty/Opsgenie)      │
+└─────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h3>Capability Ownership Model</h3>
+
+<table>
+  <tr><th>Capability</th><th>Platform Team Provides</th><th>Product Team Configures</th></tr>
+  <tr><td>Kubernetes clusters</td><td>Provisioning, upgrades, node pools, add-ons</td><td>Namespace resource quotas, workload specs</td></tr>
+  <tr><td>CI/CD pipelines</td><td>Pipeline templates, shared tasks, image registry</td><td>Pipeline triggers, test commands, deploy targets</td></tr>
+  <tr><td>Observability</td><td>Prometheus stack, Loki, Tempo, Grafana, Alertmanager</td><td>ServiceMonitors, dashboards, alert rules, SLOs</td></tr>
+  <tr><td>Secrets</td><td>Vault clusters, ESO install, access policies</td><td>SecretStore references, ExternalSecret paths</td></tr>
+  <tr><td>Networking</td><td>Ingress controllers, cert-manager, external-dns, service mesh</td><td>Ingress resources, certificates, network policies</td></tr>
+  <tr><td>Policy</td><td>Gatekeeper/Kyverno install, baseline policies</td><td>Namespace-scoped exceptions (via PR review)</td></tr>
+  <tr><td>Cloud resources</td><td>Crossplane providers, Compositions, XRDs</td><td>Claim YAML files (e.g., PostgreSQL, S3 bucket)</td></tr>
+  <tr><td>Developer portal</td><td>Backstage instance, plugins, RBAC</td><td>catalog-info.yaml, TechDocs, templates</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="platform-as-product">4. Platform as a Product</h2>
+
+<p>The most important mindset shift in platform engineering: treat the internal developer platform as a <strong>product</strong> with users (developers), a roadmap, feedback loops, and success metrics — not as an IT service delivered on a project basis.</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>Understand your users</h4>
+    <p>Run developer surveys (quarterly NPS), shadow sessions (watch a dev onboard), and track support ticket patterns. Build what reduces the most common pain, not what is technically interesting.</p>
+    <span class="tag">user research</span>
+  </div>
+  <div class="card">
+    <h4>Treat abstractions as contracts</h4>
+    <p>When you publish a golden-path Helm chart or Crossplane Composition, that is a public API. Breaking changes require versioning and migration paths, just like a REST API.</p>
+    <span class="tag">API design</span>
+  </div>
+  <div class="card">
+    <h4>Measure developer productivity</h4>
+    <p>DORA metrics (deployment frequency, lead time), time to first deploy for new services, self-service ratio (platform-provisioned vs ticket-provisioned resources).</p>
+    <span class="tag">DORA</span>
+  </div>
+  <div class="card">
+    <h4>Maintain a public roadmap</h4>
+    <p>Publish what the platform team is building and when. Invite RFCs for major changes. Developers who understand the roadmap stop building workarounds.</p>
+    <span class="tag">transparency</span>
+  </div>
+  <div class="card">
+    <h4>Provide SLOs for the platform itself</h4>
+    <p>If the platform's CI system has 99.5% availability and 10-minute P99 build time, publish that. Platform reliability directly multiplies or divides developer throughput.</p>
+    <span class="tag">platform SLOs</span>
+  </div>
+  <div class="card">
+    <h4>Avoid forced adoption</h4>
+    <p>Mandate security guardrails (policy enforcement). Make everything else opt-in by being better than the alternative. Forced tools without value create shadow IT.</p>
+    <span class="tag">adoption</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="golden-paths">5. Golden Paths &amp; Paved Roads</h2>
+
+<p>A <strong>golden path</strong> is a well-lit, well-maintained route from code to production that embeds all organisational standards by default. Developers can deviate from it, but the golden path should be the easiest option — not a constraint.</p>
+
+<h3>What a Golden Path Typically Includes</h3>
+
+<pre><code>Developer runs: backstage-cli create --template go-microservice
+
+Result: a Git repository pre-configured with:
+├── src/                          # Application code skeleton
+├── Dockerfile                    # Multi-stage, distroless base, non-root user
+├── helm/                         # Helm chart (resources/limits/probes/PDB/HPA)
+│   └── values.yaml               # Sane defaults (replica:2, readinessProbe, etc.)
+├── .github/workflows/            # CI: lint → test → build → sign → push
+│   ├── ci.yaml                   # (or .tekton/pipeline.yaml for in-cluster CI)
+│   └── cd.yaml                   # ArgoCD app-of-apps update on merge to main
+├── config/                       # Kustomize overlays: dev/staging/prod
+├── catalog-info.yaml             # Backstage service catalog registration
+├── docs/                         # TechDocs skeleton (mkdocs.yml + index.md)
+├── .policy/                      # Pre-approved exceptions file (if needed)
+└── monitoring/
+    ├── servicemonitor.yaml       # Pre-wired to platform Prometheus
+    ├── dashboard.json            # Grafana dashboard (RED metrics)
+    └── alerts.yaml               # PrometheusRule with basic SLO alerts</code></pre>
+
+<h3>Golden Path vs Escape Hatch</h3>
+
+<table>
+  <tr><th>Situation</th><th>Recommendation</th></tr>
+  <tr><td>Standard HTTP microservice (Go, Java, Python, Node.js)</td><td>Use golden path template — covers 90% of services</td></tr>
+  <tr><td>ML training job (GPU, large memory, spot instances)</td><td>Specialised template; golden path extended for batch/GPU workloads</td></tr>
+  <tr><td>Stateful service needing custom storage topology</td><td>Escape hatch: custom Helm chart, but must pass Gatekeeper policies</td></tr>
+  <tr><td>Legacy service not yet containerised</td><td>Migration path: platform provides lift-and-shift guide + VM-based workload support</td></tr>
+  <tr><td>Security-sensitive service (handles PII/PCI)</td><td>Hardened golden path variant with additional network policies, encryption, audit logging</td></tr>
+</table>
+
+<div class="callout callout-warn">
+  <strong>Escape hatches must still pass policy</strong>
+  <p>Teams that deviate from the golden path are not exempt from Gatekeeper/Kyverno policies. The golden path builds compliance in by default; escape hatches must achieve compliance explicitly. OPA policies are the non-negotiable layer; golden paths are the convenience layer on top.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="tooling-landscape">6. Tooling Landscape</h2>
+
+<h3>Platform Engineering Tool Categories</h3>
+
+<table>
+  <tr><th>Category</th><th>Open Source / CNCF</th><th>Commercial / Managed</th></tr>
+  <tr>
+    <td>Developer portal</td>
+    <td>Backstage (CNCF), Port</td>
+    <td>Cortex, OpsLevel, Rely.io</td>
+  </tr>
+  <tr>
+    <td>Cluster provisioning</td>
+    <td>Cluster API, kOps, k3s</td>
+    <td>EKS Blueprints (CDK/Terraform), GKE Autopilot, AKS</td>
+  </tr>
+  <tr>
+    <td>Infrastructure as Code (cloud resources)</td>
+    <td>Crossplane (CNCF), ACK, Terraform, Pulumi</td>
+    <td>AWS CDK, Terraform Cloud, Pulumi Cloud</td>
+  </tr>
+  <tr>
+    <td>GitOps / CD</td>
+    <td>Argo CD (CNCF), Flux (CNCF)</td>
+    <td>Harness, Spinnaker (CD Foundation)</td>
+  </tr>
+  <tr>
+    <td>CI pipelines</td>
+    <td>Tekton (CNCF), Dagger, Woodpecker</td>
+    <td>GitHub Actions, GitLab CI, CircleCI, Jenkins</td>
+  </tr>
+  <tr>
+    <td>Policy enforcement</td>
+    <td>OPA Gatekeeper (CNCF), Kyverno (CNCF)</td>
+    <td>Styra DAS, Nirmata</td>
+  </tr>
+  <tr>
+    <td>Secrets management</td>
+    <td>Vault (HashiCorp/BSL), External Secrets Operator</td>
+    <td>AWS Secrets Manager, GCP Secret Manager, Azure Key Vault</td>
+  </tr>
+  <tr>
+    <td>Service mesh</td>
+    <td>Istio (CNCF), Linkerd (CNCF), Cilium</td>
+    <td>AWS App Mesh, Google Traffic Director</td>
+  </tr>
+  <tr>
+    <td>Image registry</td>
+    <td>Harbor (CNCF), Zot</td>
+    <td>ECR, GAR, ACR, Docker Hub, JFrog Artifactory</td>
+  </tr>
+  <tr>
+    <td>Image signing</td>
+    <td>Cosign / Sigstore (CNCF), Notary v2</td>
+    <td>AWS Signer</td>
+  </tr>
+  <tr>
+    <td>Network / DNS / TLS</td>
+    <td>cert-manager (CNCF), external-dns, MetalLB</td>
+    <td>AWS ACM, Cloudflare, Route53</td>
+  </tr>
+  <tr>
+    <td>Cost management</td>
+    <td>OpenCost (CNCF), Kubecost</td>
+    <td>AWS Cost Explorer, CloudHealth, Apptio</td>
+  </tr>
+  <tr>
+    <td>Preview environments</td>
+    <td>vCluster, Argo CD ApplicationSets</td>
+    <td>Environments by Render, Railway, Architect</td>
+  </tr>
+  <tr>
+    <td>Feature flags</td>
+    <td>OpenFeature (CNCF), Flagd</td>
+    <td>LaunchDarkly, Statsig, Split</td>
+  </tr>
+</table>
+
+<h3>CNCF Landscape Positioning</h3>
+
+<pre><code>CNCF Platform Engineering Relevant Projects (2024):
+
+Graduated:  Argo, Flux, OPA, Harbor, Backstage (incubating → graduated)
+Incubating: Crossplane, Kyverno, Cluster API, cert-manager, external-dns, OpenCost
+Sandbox:    Headlamp, KubeVela, Kratix, OpenFeature (graduated 2024)
+
+Key patterns these tools address:
+  Crossplane    → Kubernetes-native IaC (cloud resources as CRDs)
+  Cluster API   → Kubernetes-native cluster lifecycle management
+  Backstage     → Developer portal and service catalog
+  Argo CD       → GitOps continuous delivery
+  Flux          → GitOps with Helm/Kustomize reconciliation
+  Kyverno       → Policy-as-code without Rego
+  OPA           → Policy engine (Gatekeeper for K8s admission)
+  cert-manager  → Automated TLS certificate lifecycle
+  external-dns  → DNS record sync from Kubernetes Ingress/Service</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="reference-architecture">7. Reference Architecture</h2>
+
+<pre><code>┌─────────────────────────────────────────────────────────────────────┐
+│                     Developer Workflow                               │
+│                                                                      │
+│  git push  →  CI Pipeline (GitHub Actions / Tekton)                  │
+│              │  lint / test / build / sign / push image              │
+│              │  update Helm values / Kustomize image tag             │
+│              ▼                                                       │
+│         GitOps Repo (argocd-apps / fleet)                           │
+│              │                                                       │
+│              ▼                                                       │
+│         Argo CD / Flux  ←──────── Drift detection                   │
+│              │  reconcile desired state from Git                     │
+│              ▼                                                       │
+│  ┌───────────────────────────────────────────────────────────┐      │
+│  │              Kubernetes Cluster                            │      │
+│  │                                                            │      │
+│  │  ┌─────────────────────┐  ┌──────────────────────────┐   │      │
+│  │  │  Admission Control  │  │   Namespace (team-A)      │   │      │
+│  │  │  Gatekeeper/Kyverno │  │   workloads / services    │   │      │
+│  │  │  OPA policies       │  │   ConfigMaps / secrets    │   │      │
+│  │  └─────────────────────┘  └──────────────────────────┘   │      │
+│  │                                                            │      │
+│  │  ┌─────────────────────┐  ┌──────────────────────────┐   │      │
+│  │  │  Networking         │  │   Observability           │   │      │
+│  │  │  Ingress NGINX      │  │   Prometheus / Loki       │   │      │
+│  │  │  cert-manager       │  │   Tempo / Grafana         │   │      │
+│  │  │  external-dns       │  │   Alertmanager            │   │      │
+│  │  │  Cilium / Istio     │  │   Pyroscope               │   │      │
+│  │  └─────────────────────┘  └──────────────────────────┘   │      │
+│  │                                                            │      │
+│  │  ┌─────────────────────┐  ┌──────────────────────────┐   │      │
+│  │  │  Secrets            │  │   Infrastructure          │   │      │
+│  │  │  Vault + ESO        │  │   Crossplane providers    │   │      │
+│  │  │  Secret rotation    │  │   RDS / S3 / SQS claims   │   │      │
+│  │  └─────────────────────┘  └──────────────────────────┘   │      │
+│  └───────────────────────────────────────────────────────────┘      │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                Backstage Developer Portal                     │   │
+│  │  Service catalog / Templates / TechDocs / Scorecards          │   │
+│  │  Kubernetes plugin / Argo CD plugin / Cost plugin             │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h3>Multi-Cluster Platform Architecture</h3>
+
+<pre><code>Management Cluster (platform-managed)          Workload Clusters
+┌───────────────────────────────┐         ┌──────────────────┐
+│  Argo CD / Flux               │────────▶│  cluster: dev    │
+│  Crossplane control plane     │         │  (team namespaces│
+│  Vault                        │────────▶│   + policies)    │
+│  Backstage                    │         └──────────────────┘
+│  Harbor (image registry)      │         ┌──────────────────┐
+│  Policy validation webhook    │────────▶│  cluster: staging│
+│  Platform observability stack │         └──────────────────┘
+└───────────────────────────────┘         ┌──────────────────┐
+                                    ──────▶│  cluster: prod-1 │
+                                    │      └──────────────────┘
+                                    ──────▶│  cluster: prod-2 │
+                                           │  (regional)      │
+                                           └──────────────────┘
+
+Fleet management: Cluster API (provisioning) + Argo CD ApplicationSets
+                  (deploy platform add-ons uniformly across all clusters)</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="maturity-model">8. Platform Maturity Model</h2>
+
+<div class="maturity-grid">
+  <div class="maturity-level">
+    <span class="level-badge l1">Level 1</span>
+    <h4>Provisional</h4>
+    <ul>
+      <li>Manual cluster provisioning</li>
+      <li>Ad-hoc CI/CD per team</li>
+      <li>No shared observability</li>
+      <li>Secrets in environment variables</li>
+      <li>No policy enforcement</li>
+      <li>Deployments require ops tickets</li>
+    </ul>
+  </div>
+  <div class="maturity-level">
+    <span class="level-badge l2">Level 2</span>
+    <h4>Operationalized</h4>
+    <ul>
+      <li>Cluster provisioning scripted (Terraform)</li>
+      <li>Shared CI templates (GitHub Actions)</li>
+      <li>Basic Prometheus + Grafana</li>
+      <li>Vault for secrets</li>
+      <li>Some RBAC standards</li>
+      <li>Manual CD (kubectl apply)</li>
+    </ul>
+  </div>
+  <div class="maturity-level">
+    <span class="level-badge l3">Level 3</span>
+    <h4>Scalable</h4>
+    <ul>
+      <li>Cluster API / EKS Blueprints</li>
+      <li>GitOps (Argo CD / Flux)</li>
+      <li>Full LGTM observability stack</li>
+      <li>External Secrets Operator</li>
+      <li>Gatekeeper policies enforced</li>
+      <li>Golden path templates</li>
+      <li>Self-service namespaces</li>
+    </ul>
+  </div>
+  <div class="maturity-level">
+    <span class="level-badge l4">Level 4</span>
+    <h4>Optimising</h4>
+    <ul>
+      <li>Full IDP with Backstage portal</li>
+      <li>Crossplane cloud resources</li>
+      <li>Preview environments</li>
+      <li>Multi-cluster fleet management</li>
+      <li>Cost attribution per team</li>
+      <li>SLO-driven deployments</li>
+      <li>Platform SLOs published</li>
+      <li>Developer NPS tracked</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout callout-info">
+  <strong>Don't skip levels</strong>
+  <p>Organisations that jump from Level 1 directly to Backstage + Crossplane + Argo CD typically fail to adopt any of it because the prerequisite operational practices are absent. Build Level 2 (reliable deployments, working observability) before automating Level 3 (GitOps, policy). Add the portal (Level 4) last — it has no value if the underlying platform is unreliable.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="team-topologies">9. Team Topologies</h2>
+
+<p>Matthew Skelton and Manuel Pais's <em>Team Topologies</em> framework describes how platform engineering teams relate to other teams:</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>Platform Team (Enabling)</h4>
+    <p>Owns the IDP. Treats product teams as customers. Measures developer productivity. Works in 6–12-week cycles. Publishes roadmap and SLOs.</p>
+    <span class="tag">platform</span>
+  </div>
+  <div class="card">
+    <h4>Stream-Aligned Team</h4>
+    <p>Product/feature teams that own end-to-end delivery of a product stream. They <em>use</em> the platform — they do not manage infrastructure, CI tooling, or observability backends.</p>
+    <span class="tag">consumer</span>
+  </div>
+  <div class="card">
+    <h4>Complicated Subsystem Team</h4>
+    <p>Owns deeply specialised components (ML platform, data pipelines, real-time event bus). Interfaces with platform team for infrastructure; interfaces with stream-aligned teams as a service provider.</p>
+    <span class="tag">specialist</span>
+  </div>
+  <div class="card">
+    <h4>SRE / Reliability Team</h4>
+    <p>Owns availability targets, incident response, and toil automation. Embedded in platform team or parallel. Uses the IDP to deploy reliability tooling (chaos engineering, synthetic monitors, runbooks).</p>
+    <span class="tag">reliability</span>
+  </div>
+</div>
+
+<h3>Platform Team Sizing</h3>
+
+<table>
+  <tr><th>Organisation Size</th><th>Engineers</th><th>Platform Team Size</th><th>Focus</th></tr>
+  <tr><td>Startup (&lt;30 engineers)</td><td>—</td><td>1–2 (infra-aware engineers)</td><td>Basic CI/CD + managed K8s (EKS/GKE)</td></tr>
+  <tr><td>Scale-up (30–150 engineers)</td><td>—</td><td>3–6</td><td>GitOps + observability + policy + Vault</td></tr>
+  <tr><td>Mid-size (150–500 engineers)</td><td>—</td><td>6–12</td><td>Full IDP + Backstage + Crossplane + cost</td></tr>
+  <tr><td>Enterprise (&gt;500 engineers)</td><td>—</td><td>12–30+</td><td>Multi-cluster fleet + compliance + portals</td></tr>
+</table>
+
+<div class="callout callout-warn">
+  <strong>Ratio rule of thumb</strong>
+  <p>A platform team should support 10–15 stream-aligned engineers per platform engineer. Ratio below 8:1 means the platform is over-staffed relative to demand. Above 20:1, developer experience degrades (slow onboarding, long wait times for platform changes).</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="dx-metrics">10. Developer Experience Metrics</h2>
+
+<p>Measuring platform value requires metrics that reflect the developer experience, not just infrastructure uptime.</p>
+
+<h3>DORA Metrics (Google DevOps Research)</h3>
+
+<table>
+  <tr><th>Metric</th><th>Elite</th><th>High</th><th>Medium</th><th>Low</th></tr>
+  <tr><td>Deployment frequency</td><td>Multiple per day</td><td>Daily to weekly</td><td>Weekly to monthly</td><td>Monthly or slower</td></tr>
+  <tr><td>Lead time for changes</td><td>&lt; 1 hour</td><td>1 day – 1 week</td><td>1 week – 1 month</td><td>&gt; 1 month</td></tr>
+  <tr><td>Change failure rate</td><td>&lt; 5%</td><td>5–10%</td><td>10–15%</td><td>&gt; 15%</td></tr>
+  <tr><td>MTTR (mean time to restore)</td><td>&lt; 1 hour</td><td>&lt; 1 day</td><td>1 day – 1 week</td><td>&gt; 1 week</td></tr>
+</table>
+
+<h3>Platform-Specific Metrics</h3>
+
+<pre><code># Prometheus metrics to track platform health
+# (many from DORA, some platform-specific)
+
+# Time to first production deployment for new services
+# Measured via Argo CD: time from ApplicationSet creation to Healthy
+histogram_quantile(0.90,
+  rate(argocd_app_sync_total_duration_seconds_bucket[7d])
+)
+
+# Self-service ratio: platform-provisioned vs ticket-provisioned resources
+# Track: number of Crossplane claims created vs infra tickets
+sum(increase(crossplane_managed_resource_ready_total[30d]))
+  / (sum(increase(crossplane_managed_resource_ready_total[30d])) + jira_infra_tickets_30d)
+
+# CI pipeline P90 duration (developer wait time)
+histogram_quantile(0.90,
+  rate(tekton_pipelinerun_duration_seconds_bucket{status="success"}[7d])
+)
+
+# Platform availability (GitOps reconciliation loop health)
+1 - (
+  rate(argocd_app_sync_total{phase="Error"}[24h])
+  / rate(argocd_app_sync_total[24h])
+)
+
+# Developer NPS — tracked via quarterly survey (not Prometheus)
+# Target: NPS > 30 (platform is net positive to developers)</code></pre>
+
+<h3>SPACE Framework (GitHub Research)</h3>
+
+<table>
+  <tr><th>Dimension</th><th>Metric Examples</th></tr>
+  <tr><td><strong>S</strong>atisfaction</td><td>Developer NPS, survey scores, onboarding satisfaction</td></tr>
+  <tr><td><strong>P</strong>erformance</td><td>Code review cycle time, deployment success rate, incident MTTR</td></tr>
+  <tr><td><strong>A</strong>ctivity</td><td>Deployments per week, PRs merged, features shipped</td></tr>
+  <tr><td><strong>C</strong>ommunication</td><td>Documentation quality score, knowledge-sharing sessions</td></tr>
+  <tr><td><strong>E</strong>fficiency</td><td>Time waiting for CI, on-call interruption rate, toil %</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="section-guide">11. Section Guide</h2>
+
+<p>The Platform Engineering section covers 10 detailed topics. Each builds on this overview:</p>
+
+<div class="section-links">
+  <a class="section-link" href="01-cluster-provisioning.html">
+    <div class="sl-num">08 — 01</div>
+    <div class="sl-title">Cluster Provisioning</div>
+    <div class="sl-desc">Cluster API, EKS Blueprints, kOps, kubeadm, cluster add-ons, node pools, upgrade strategies</div>
+  </a>
+  <a class="section-link" href="02-gitops.html">
+    <div class="sl-num">08 — 02</div>
+    <div class="sl-title">GitOps</div>
+    <div class="sl-desc">Argo CD (app-of-apps, ApplicationSets, sync waves), Flux (Kustomize/Helm controllers, image automation), Git branching strategies</div>
+  </a>
+  <a class="section-link" href="03-ci-cd-pipelines.html">
+    <div class="sl-num">08 — 03</div>
+    <div class="sl-title">CI/CD Pipelines</div>
+    <div class="sl-desc">Tekton Pipelines, GitHub Actions, image build/sign/push, progressive delivery (canary/blue-green), Argo Rollouts</div>
+  </a>
+  <a class="section-link" href="04-developer-portal.html">
+    <div class="sl-num">08 — 04</div>
+    <div class="sl-title">Developer Portal</div>
+    <div class="sl-desc">Backstage: service catalog, Software Templates, TechDocs, plugins (K8s/Argo/cost), scorecards, onboarding automation</div>
+  </a>
+  <a class="section-link" href="05-policy-enforcement.html">
+    <div class="sl-num">08 — 05</div>
+    <div class="sl-title">Policy Enforcement</div>
+    <div class="sl-desc">OPA Gatekeeper ConstraintTemplates, Kyverno policies (validate/mutate/generate), Rego authoring, policy-as-code testing</div>
+  </a>
+  <a class="section-link" href="06-multi-tenancy.html">
+    <div class="sl-num">08 — 06</div>
+    <div class="sl-title">Multi-Tenancy</div>
+    <div class="sl-desc">Namespace-per-team, vCluster, Hierarchical Namespaces (HNC), ResourceQuota, LimitRange, network isolation patterns</div>
+  </a>
+  <a class="section-link" href="07-cost-management.html">
+    <div class="sl-num">08 — 07</div>
+    <div class="sl-title">Cost Management</div>
+    <div class="sl-desc">OpenCost/Kubecost, cost allocation by namespace/team, rightsizing, Spot instances, Karpenter, showback vs chargeback</div>
+  </a>
+  <a class="section-link" href="08-service-catalog.html">
+    <div class="sl-num">08 — 08</div>
+    <div class="sl-title">Service Catalog</div>
+    <div class="sl-desc">Crossplane Compositions (XRDs/Claims), AWS ACK, cloud resource self-service, composition validation, provider configuration</div>
+  </a>
+  <a class="section-link" href="09-secrets-automation.html">
+    <div class="sl-num">08 — 09</div>
+    <div class="sl-title">Secrets Automation</div>
+    <div class="sl-desc">External Secrets Operator, Vault Agent Injector vs ESO, secret rotation, IRSA/Workload Identity, sealed secrets</div>
+  </a>
+  <a class="section-link" href="10-platform-apis.html">
+    <div class="sl-num">08 — 10</div>
+    <div class="sl-title">Platform APIs</div>
+    <div class="sl-desc">CRD-based platform APIs, Crossplane XRDs as abstractions, Kubernetes API aggregation, admission webhooks for platform logic</div>
+  </a>
+</div>
+
+<details class="coverage">
+  <summary>Coverage Checklist</summary>
+  <ul class="coverage-body">
+    <li>Platform engineering definition and goal (reduce developer cognitive load)</li>
+    <li>Before/after cognitive load diagram (40 tasks → 2 tasks)</li>
+    <li>Platform engineering vs DevOps vs SRE comparison table</li>
+    <li>IDP five-plane capability map diagram (developer experience/application/security/infrastructure/observability)</li>
+    <li>Capability ownership table (platform provides vs product team configures)</li>
+    <li>Platform as a product: 6 principle cards (user research/API contracts/DORA/roadmap/platform SLOs/opt-in adoption)</li>
+    <li>Golden path anatomy: git push → repo structure with all pre-configured files</li>
+    <li>Golden path vs escape hatch decision table (5 scenarios)</li>
+    <li>Escape hatch must still pass policy — callout</li>
+    <li>Platform engineering tool landscape table (12 categories, CNCF and commercial options)</li>
+    <li>CNCF graduated/incubating/sandbox projects reference</li>
+    <li>Reference architecture diagram: CI → GitOps repo → Argo CD → K8s cluster (all planes)</li>
+    <li>Multi-cluster platform architecture (management cluster + workload clusters, fleet management)</li>
+    <li>Platform maturity model: 4 levels (Provisional/Operationalized/Scalable/Optimising) with characteristics</li>
+    <li>Don't skip levels callout (portal before reliable platform fails)</li>
+    <li>Team Topologies: platform/stream-aligned/complicated-subsystem/SRE team cards</li>
+    <li>Platform team sizing table (startup to enterprise with ratios)</li>
+    <li>Ratio rule of thumb callout (10–15 developers per platform engineer)</li>
+    <li>DORA metrics table with elite/high/medium/low thresholds</li>
+    <li>Platform-specific PromQL metrics (time-to-deploy, self-service ratio, CI P90, GitOps availability)</li>
+    <li>SPACE framework (Satisfaction/Performance/Activity/Communication/Efficiency)</li>
+    <li>Section guide with links to all 10 detail pages and descriptions</li>
+  </ul>
+</details>
+
+</div>
+</main>
+
+<button class="btt" id="btt" title="Back to top">↑</button>
+
+<script>
+const sidebar = document.getElementById('sidebar');
+document.getElementById('hamburger').addEventListener('click', () => sidebar.classList.toggle('open'));
+document.getElementById('btt').addEventListener('click', () => document.getElementById('main').scrollTo({top:0,behavior:'smooth'}));
+document.getElementById('main').addEventListener('scroll', function(){
+  document.getElementById('btt').style.display = this.scrollTop > 400 ? 'flex' : 'none';
+});
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn'; btn.textContent = 'copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.innerText.replace(/^copy\n/,''));
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+document.getElementById('nav-filter').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+const tocLinks = document.querySelectorAll('.toc a');
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+}, {root: document.getElementById('main'), rootMargin: '-20% 0px -70% 0px'});
+headings.forEach(h => obs.observe(h));
+</script>
+</body>
+</html>

@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StatefulSets — Kubernetes Docs</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;--sidebar-w:280px;--toc-w:240px;}
+:root[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#24292f;--text2:#57606a;--text3:#6e7781;--accent:#0969da;--accent2:#0550ae;--green:#1a7f37;--yellow:#9a6700;--red:#d1242f;--purple:#8250df;--orange:#953800;--code-bg:#f6f8fa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6;}
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sidebar-logo{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;}
+.sidebar-search{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;margin-top:10px;}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);text-decoration:none;transition:background .15s,color .15s;}
+.nav-section a:hover{background:var(--bg3);color:var(--text);}
+.nav-section a.active{color:var(--accent);background:var(--bg3);border-left:2px solid var(--accent);}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;min-width:0;}
+.main-content{flex:1;min-width:0;padding:40px 48px;max-width:960px;}
+.toc-wrap{width:var(--toc-w);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-left:1px solid var(--border);}
+.page-header{margin-bottom:32px;}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.breadcrumb a{color:var(--text3);text-decoration:none;}
+.breadcrumb a:hover{color:var(--accent);}
+h1{font-size:32px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:12px;}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text);}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;font-family:'SFMono-Regular',Consolas,monospace;color:var(--text);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;padding:3px 8px;cursor:pointer;}
+.copy-btn:hover{background:var(--bg4);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout-title{font-weight:700;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.callout-info .callout-title{color:var(--accent);}
+.callout-warn .callout-title{color:var(--yellow);}
+.callout-danger .callout-title{color:var(--red);}
+.callout-success .callout-title{color:var(--green);}
+.callout p{margin:0;font-size:14px;}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:var(--bg2);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin:16px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.card-title{font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;}
+.card p{font-size:13px;margin:0;color:var(--text2);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--text2);overflow-x:auto;white-space:pre;}
+details.coverage{background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:0;margin-bottom:32px;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);list-style:none;display:flex;align-items:center;gap:8px;}
+details.coverage summary::-webkit-details-marker{display:none;}
+details.coverage summary::before{content:"▶";font-size:11px;transition:transform .2s;}
+details.coverage[open] summary::before{transform:rotate(90deg);}
+details.coverage .coverage-body{padding:4px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;}
+details.coverage .coverage-body li{font-size:13px;color:var(--text2);padding:2px 0;list-style:none;padding-left:16px;position:relative;}
+details.coverage .coverage-body li::before{content:"•";position:absolute;left:4px;color:var(--accent);}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px;}
+.toc-list{list-style:none;margin:0;padding:0;}
+.toc-list li{margin-bottom:2px;}
+.toc-list a{font-size:12px;color:var(--text2);text-decoration:none;display:block;padding:3px 0;border-left:2px solid transparent;padding-left:8px;}
+.toc-list a:hover{color:var(--text);}
+.toc-list a.active{color:var(--accent);border-left-color:var(--accent);}
+.page-nav{display:flex;justify-content:space-between;margin-top:56px;padding-top:20px;border-top:1px solid var(--border);}
+.page-nav a{display:flex;flex-direction:column;gap:4px;color:var(--text2);text-decoration:none;max-width:45%;}
+.page-nav a:hover{color:var(--accent);}
+.page-nav .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.page-nav .nav-title{font-size:14px;font-weight:600;}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;position:sticky;top:0;z-index:99;align-items:center;justify-content:space-between;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;}
+.topbar-title{font-size:14px;font-weight:600;}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:12px;}
+.back-top{position:fixed;bottom:32px;right:32px;background:var(--accent);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.back-top.visible{opacity:1;}
+@media(max-width:1200px){.toc-wrap{display:none;}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-wrap{margin-left:0;}.topbar{display:flex;}.main-content{padding:20px 16px;}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="../index.html" class="sidebar-logo">⎈ Kubernetes Docs</a>
+  </div>
+  <input type="text" class="sidebar-search" placeholder="Filter navigation…" id="nav-search">
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/06-stateful-sets-storage.html">Stateful Storage Patterns</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="00-workloads-overview.html">Workloads Overview</a>
+    <a href="01-pods.html">Pods</a>
+    <a href="02-deployments.html">Deployments</a>
+    <a href="03-statefulsets.html" class="active">StatefulSets</a>
+    <a href="04-daemonsets.html">DaemonSets</a>
+    <a href="05-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="06-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="07-vertical-pod-autoscaler.html">VPA</a>
+    <a href="08-pod-disruption-budgets.html">PodDisruptionBudgets</a>
+    <a href="09-resource-management.html">Resource Management</a>
+    <a href="10-scheduling.html">Scheduling</a>
+    <a href="11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">☰</button>
+  <span class="topbar-title">StatefulSets</span>
+  <button class="theme-btn" id="theme-btn-top">☀</button>
+</div>
+
+<div class="main-wrap">
+<main class="main-content" id="main-content">
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="../index.html">Home</a> › <a href="00-workloads-overview.html">Workloads</a> › StatefulSets
+    </div>
+    <h1>StatefulSets</h1>
+    <div class="page-meta">
+      <span>Section 5.3</span>
+      <span>Stable Identity · Ordered Lifecycle · Update Strategies · Scaling</span>
+      <span>Intermediate–Advanced</span>
+    </div>
+  </div>
+
+  <details class="coverage">
+    <summary>▶ What This Page Covers</summary>
+    <div class="coverage-body">
+      <li>StatefulSet controller mechanics vs Deployment controller</li>
+      <li>Full annotated StatefulSet spec — every significant field</li>
+      <li>Stable pod identity: ordinal index, name format, DNS hostname</li>
+      <li>Headless service requirement: clusterIP:None, publishNotReadyAddresses</li>
+      <li>DNS record structure per pod — stable addresses across rescheduling</li>
+      <li>OrderedReady pod management: creation and deletion sequencing</li>
+      <li>Parallel pod management: concurrent creation/deletion, identity preserved</li>
+      <li>OrderedReady deadlock: causes, detection, resolution</li>
+      <li>RollingUpdate strategy: reverse-ordinal update order</li>
+      <li>Partition field: canary upgrades, freezing lower ordinals</li>
+      <li>OnDelete strategy: manual upgrade workflow</li>
+      <li>Scale-up and scale-down sequencing with OrderedReady</li>
+      <li>volumeClaimTemplates: naming, immutability, multiple templates</li>
+      <li>PVC lifecycle: orphaned PVCs, persistentVolumeClaimRetentionPolicy</li>
+      <li>StatefulSet vs Deployment: when to use each</li>
+      <li>Forced rollout: --cascade=orphan pattern</li>
+      <li>Controller status fields: currentReplicas, updatedReplicas, readyReplicas</li>
+      <li>StatefulSet conditions and observedGeneration</li>
+      <li>Operational commands reference</li>
+      <li>5 metrics + 4 alerts + 5 runbooks + 8 best practices</li>
+    </div>
+  </details>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Companion Page: Stateful Storage Patterns</div>
+    <p>This page covers StatefulSet <em>controller mechanics</em>: spec fields, pod identity, update strategies, and scaling behavior. For storage-focused content — volumeClaimTemplates in depth, persistent volume lifecycle, distributed databases (PostgreSQL, Kafka, Cassandra, MongoDB) on Kubernetes, Longhorn, and Rook-Ceph — see <a href="../04-storage/06-stateful-sets-storage.html">Stateful Storage Patterns</a>.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="controller-mechanics">Controller Mechanics</h2>
+
+  <p>The StatefulSet controller is fundamentally different from the Deployment controller. Where Deployments treat pods as interchangeable and manage a fleet of ReplicaSets, the StatefulSet controller manages pods <em>directly</em> — there is no intermediate ReplicaSet layer. Each pod is individually tracked by its ordinal index, and the controller enforces strict lifecycle ordering.</p>
+
+  <div class="diagram">StatefulSet object model (no ReplicaSet intermediary):
+
+  StatefulSet: postgres (replicas: 3, serviceName: postgres-headless)
+       │
+       ├── Pod: postgres-0  ←── stable name; PVC: data-postgres-0
+       │     ownerRef: StatefulSet/postgres
+       │
+       ├── Pod: postgres-1  ←── stable name; PVC: data-postgres-1
+       │     ownerRef: StatefulSet/postgres
+       │
+       └── Pod: postgres-2  ←── stable name; PVC: data-postgres-2
+             ownerRef: StatefulSet/postgres
+
+  Contrast with Deployment:
+  Deployment → ReplicaSet (hash suffix) → Pods (random hash suffix)
+  StatefulSet → Pods (ordinal suffix) directly
+
+  Pod name format:  {statefulset-name}-{ordinal}
+  PVC name format:  {template-name}-{pod-name}  =  {template-name}-{statefulset-name}-{ordinal}</div>
+
+  <!-- ============================================================ -->
+  <h2 id="full-spec">Full StatefulSet Spec</h2>
+
+  <pre><code>apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: data
+spec:
+  # ── Identity ──────────────────────────────────────────────────────
+  serviceName: postgres-headless   # REQUIRED: name of headless Service
+                                   # creates stable DNS per pod
+
+  replicas: 3
+
+  # Selector is IMMUTABLE after creation
+  selector:
+    matchLabels:
+      app: postgres
+
+  # ── Pod management ────────────────────────────────────────────────
+  podManagementPolicy: OrderedReady   # OrderedReady (default) | Parallel
+
+  # ── Update strategy ───────────────────────────────────────────────
+  updateStrategy:
+    type: RollingUpdate              # RollingUpdate (default) | OnDelete
+    rollingUpdate:
+      partition: 0                   # only update pods with ordinal >= partition
+      maxUnavailable: 1              # 1.24+ GA: allow multiple pods down during update
+                                     # default 1; percentage or absolute
+
+  # ── PVC retention ─────────────────────────────────────────────────
+  persistentVolumeClaimRetentionPolicy:   # GA 1.27
+    whenDeleted: Retain              # Retain | Delete
+    whenScaled: Retain               # Retain | Delete
+
+  # ── Revision history ──────────────────────────────────────────────
+  revisionHistoryLimit: 10           # number of ControllerRevisions to keep (default 10)
+                                     # unlike Deployment, StatefulSet uses ControllerRevision objects
+
+  # ── Min ready ─────────────────────────────────────────────────────
+  minReadySeconds: 0                 # same semantics as Deployment
+
+  # ── Pod template ──────────────────────────────────────────────────
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 60
+      subdomain: postgres-headless   # auto-injected from serviceName; do not set manually
+      containers:
+      - name: postgres
+        image: postgres:16
+        ports:
+        - name: postgres
+          containerPort: 5432
+        env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name   # "postgres-0", "postgres-1", etc.
+        - name: ORDINAL
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name   # parse ordinal from pod name in app
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres", "-h", "localhost"]
+          periodSeconds: 5
+          failureThreshold: 6
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            memory: "2Gi"
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+
+  # ── Volume claim templates ────────────────────────────────────────
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: ebs-gp3
+      resources:
+        requests:
+          storage: 100Gi</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="stable-identity">Stable Pod Identity</h2>
+
+  <p>Each StatefulSet pod has three components of stable identity that persist across pod deletion and rescheduling:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Identity Component</th><th>Format</th><th>Example (postgres, ordinal 1)</th><th>Persists Across Reschedule?</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Pod name</strong></td>
+          <td><code>{sts-name}-{ordinal}</code></td>
+          <td><code>postgres-1</code></td>
+          <td>Yes — same ordinal, same name</td>
+        </tr>
+        <tr>
+          <td><strong>DNS hostname</strong></td>
+          <td><code>{pod-name}.{headless-svc}.{ns}.svc.cluster.local</code></td>
+          <td><code>postgres-1.postgres-headless.data.svc.cluster.local</code></td>
+          <td>Yes — DNS resolves to new pod IP after reschedule</td>
+        </tr>
+        <tr>
+          <td><strong>PVC binding</strong></td>
+          <td><code>{template-name}-{pod-name}</code></td>
+          <td><code>data-postgres-1</code></td>
+          <td>Yes — same PVC re-attached to rescheduled pod</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Identity Survives Node Failure</div>
+    <p>When the node running <code>postgres-1</code> fails, Kubernetes eventually evicts the pod. The StatefulSet controller creates a new pod also named <code>postgres-1</code> on a healthy node. The same PVC <code>data-postgres-1</code> is attached to this new pod (after the old VolumeAttachment is force-deleted if the node is truly gone). The DNS hostname <code>postgres-1.postgres-headless.data.svc.cluster.local</code> resolves to the new pod IP. From other pods' perspective, <code>postgres-1</code> has the same address and data as before.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="headless-service">Headless Service</h2>
+
+  <p>The <code>serviceName</code> field in a StatefulSet spec references a <strong>headless service</strong> (<code>clusterIP: None</code>). This service must exist before the StatefulSet is created — the controller does not create it automatically. Without the headless service, pod DNS hostnames are not created.</p>
+
+  <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-headless
+  namespace: data
+  labels:
+    app: postgres
+spec:
+  clusterIP: None              # headless: no VIP, only DNS A records per pod
+  publishNotReadyAddresses: true  # include not-yet-Ready pods in DNS
+                                  # CRITICAL for init containers that use DNS for peer discovery
+  selector:
+    app: postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432</code></pre>
+
+  <div class="diagram">DNS records created by headless service "postgres-headless" in namespace "data":
+
+  Service DNS (round-robin A records — all pod IPs):
+  postgres-headless.data.svc.cluster.local → [10.0.1.10, 10.0.1.11, 10.0.1.12]
+
+  Per-pod DNS A records (stable, resolves to pod's current IP):
+  postgres-0.postgres-headless.data.svc.cluster.local → 10.0.1.10
+  postgres-1.postgres-headless.data.svc.cluster.local → 10.0.1.11
+  postgres-2.postgres-headless.data.svc.cluster.local → 10.0.1.12
+
+  When postgres-1 is rescheduled to a new node (new IP: 10.0.2.15):
+  postgres-1.postgres-headless.data.svc.cluster.local → 10.0.2.15  (updated)
+  postgres-0 and postgres-2 still resolve to their original IPs
+
+  With publishNotReadyAddresses: true:
+  → postgres-2 included in DNS even during init (before readiness probe passes)
+  → Allows postgres-0 to discover postgres-2 as a peer during cluster bootstrap
+
+  Short hostname (within same namespace):
+  postgres-0.postgres-headless  →  resolves within data namespace</div>
+
+  <!-- ============================================================ -->
+  <h2 id="ordered-ready">OrderedReady Pod Management</h2>
+
+  <p><code>OrderedReady</code> (the default) enforces strict sequential ordering for all pod lifecycle operations. The controller never creates the next pod until the current one is Running and Ready. It never deletes the next pod until the current one is fully terminated.</p>
+
+  <div class="diagram">Scale-up (0 → 3 replicas) with OrderedReady:
+
+  Step 1: Create postgres-0
+          Wait for postgres-0 to be Running + Ready
+  Step 2: Create postgres-1
+          Wait for postgres-1 to be Running + Ready
+  Step 3: Create postgres-2
+          Wait for postgres-2 to be Running + Ready
+  Done: all 3 pods running
+
+  Scale-down (3 → 1 replica) with OrderedReady:
+  Step 1: Delete postgres-2
+          Wait for postgres-2 to be fully Terminated
+  Step 2: Delete postgres-1
+          Wait for postgres-1 to be fully Terminated
+  Done: only postgres-0 remains
+
+  Key invariant: at no point during scale-down is postgres-0 deleted before postgres-1
+  (protects primary in primary/replica setups)</div>
+
+  <h3>OrderedReady Deadlock</h3>
+
+  <p>If pod-N is stuck not-Ready (readiness probe failing indefinitely), the StatefulSet controller blocks: it will not create pod-N+1 or proceed with any further operations. This is a known deadlock condition.</p>
+
+  <pre><code># Diagnose: identify the stuck pod
+kubectl get pods -n data -l app=postgres
+# NAME         READY   STATUS    RESTARTS   AGE
+# postgres-0   1/1     Running   0          10m
+# postgres-1   0/1     Running   5          3m   ← stuck not-Ready
+# postgres-2   0/0     Pending   0          0s   ← never created
+
+# Check why postgres-1 is not Ready
+kubectl describe pod postgres-1 -n data   # → readiness probe failure events
+kubectl logs postgres-1 -n data           # → application error
+
+# Resolution options:
+
+# Option A: Fix the underlying issue (app bug, missing config, dependency down)
+# Controller automatically proceeds once pod-1 becomes Ready
+
+# Option B: Temporary — delete the stuck pod to let it restart
+kubectl delete pod postgres-1 -n data
+
+# Option C: If app can run with Parallel management, change policy
+kubectl patch sts postgres -n data -p '{"spec":{"podManagementPolicy":"Parallel"}}'
+# WARNING: Parallel on a database that requires leader election is unsafe
+
+# Option D: Use partition to skip the stuck pod
+kubectl patch sts postgres -n data -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":2}}}}'</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="parallel">Parallel Pod Management</h2>
+
+  <p><code>Parallel</code> pod management creates and deletes all pods simultaneously without waiting for each to be Running/Ready first. Pods still get stable names and PVCs — only the lifecycle <em>ordering</em> changes. Use for applications that can handle concurrent initialisation (stateless-ish shards, cache nodes that resync on startup).</p>
+
+  <pre><code>spec:
+  podManagementPolicy: Parallel
+  # All 3 pods created at the same time:
+  # postgres-0, postgres-1, postgres-2 all created simultaneously
+  # None waits for the others to be Ready before starting
+  # Faster cluster restart; dangerous for primary/replica databases</code></pre>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">Parallel Is Unsafe for Leader-Elected Databases</div>
+    <p>For PostgreSQL with Patroni, Galera Cluster, or Cassandra bootstrap, all replicas starting simultaneously can race for primary election or corrupt the cluster state. Use <code>OrderedReady</code> for initial cluster bootstrap, then switch to <code>Parallel</code> only for rolling restarts on a healthy, fully-initialized cluster where the application can handle concurrent startup.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="update-strategies">Update Strategies</h2>
+
+  <h3>RollingUpdate (Default)</h3>
+
+  <p>StatefulSet RollingUpdate proceeds in <strong>reverse ordinal order</strong> (highest ordinal first), one pod at a time. This is the opposite of scale-up order — it updates replicas before the primary (ordinal 0), minimising risk of primary disruption.</p>
+
+  <div class="diagram">RollingUpdate with replicas=3 (updating postgres:15 → postgres:16):
+
+  Step 1: Update postgres-2 (highest ordinal)
+          Delete postgres-2 → wait Terminated
+          Create new postgres-2 with new image → wait Running+Ready (+ minReadySeconds)
+
+  Step 2: Update postgres-1
+          Delete postgres-1 → wait Terminated
+          Create new postgres-1 → wait Running+Ready
+
+  Step 3: Update postgres-0 (primary / lowest ordinal — updated last)
+          Delete postgres-0 → wait Terminated
+          Create new postgres-0 → wait Running+Ready
+
+  Total pods running during update: always ≥ 2 (with default maxUnavailable=1)
+
+  Reverse order rationale:
+  postgres-0 is typically the primary/leader
+  Updating replicas first allows failover testing before touching the primary</div>
+
+  <h3>maxUnavailable in RollingUpdate (GA 1.24)</h3>
+
+  <pre><code>updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    partition: 0
+    maxUnavailable: 2    # allow 2 pods to be simultaneously unavailable during update
+                         # speeds up update of large StatefulSets
+                         # default: 1 (one pod at a time)
+                         # percentage: "33%" → floor(replicas × 0.33)
+    # WARNING: for quorum-based systems (Kafka, etcd), maxUnavailable must
+    # not exceed (replicas - quorum_size)
+    # For 3-node etcd (quorum=2): maxUnavailable must be 1</code></pre>
+
+  <h3>Partition — Canary Upgrades</h3>
+
+  <p>The <code>partition</code> field divides the StatefulSet at a boundary: pods with ordinal ≥ partition are updated; pods with ordinal &lt; partition are frozen at their current version. This enables controlled canary upgrades where you update one replica, validate it, then lower the partition.</p>
+
+  <pre><code># Scenario: postgres StatefulSet, 5 replicas (0-4), upgrading postgres:15 → postgres:16
+
+# Step 1: Start canary — only update the highest ordinal
+kubectl patch sts postgres -n data \
+  -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":4}}}}'
+# Only postgres-4 gets updated; postgres-0 through postgres-3 stay at old version
+
+# Step 2: Validate postgres-4 is healthy
+kubectl exec postgres-4 -n data -- psql -U postgres -c "SELECT version();"
+kubectl logs postgres-4 -n data | tail -50
+
+# Step 3: Expand canary to include pod-3 and pod-4
+kubectl patch sts postgres -n data \
+  -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":3}}}}'
+
+# Step 4: Full rollout (update all including primary postgres-0)
+kubectl patch sts postgres -n data \
+  -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":0}}}}'
+
+# Emergency freeze: set partition to replicas count to prevent ANY further updates
+kubectl patch sts postgres -n data \
+  -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":5}}}}'
+# No pods will be updated; existing state is preserved</code></pre>
+
+  <h3>OnDelete Strategy</h3>
+
+  <p>With <code>OnDelete</code>, the controller only updates a pod when you manually delete it. This gives complete control over update timing — essential for databases where you need to perform a controlled failover before restarting a node.</p>
+
+  <pre><code>updateStrategy:
+  type: OnDelete
+
+# Update workflow for a 3-node Patroni PostgreSQL cluster:
+
+# 1. Update the image in the StatefulSet spec (no pods restart yet)
+kubectl set image sts/postgres postgres=postgres:16 -n data
+
+# 2. Verify patroni replica status (postgres-2 and postgres-1 are replicas)
+kubectl exec postgres-0 -n data -- patronictl list
+
+# 3. Restart replica first (controller creates updated postgres-2)
+kubectl delete pod postgres-2 -n data
+# Wait for postgres-2 to rejoin as replica...
+kubectl exec postgres-0 -n data -- patronictl list
+
+# 4. Restart second replica
+kubectl delete pod postgres-1 -n data
+
+# 5. Trigger manual failover (promotes postgres-1 or postgres-2 to primary)
+kubectl exec postgres-0 -n data -- patronictl switchover postgres --master postgres-0
+
+# 6. Now postgres-0 is a replica; restart it safely
+kubectl delete pod postgres-0 -n data</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="scaling">Scaling Behavior</h2>
+
+  <h3>Scale-Up Sequencing</h3>
+
+  <pre><code># Scale from 3 to 5 replicas
+kubectl scale sts postgres -n data --replicas=5
+
+# With OrderedReady:
+# postgres-3 created and must become Running+Ready before postgres-4 is created
+# New PVCs created automatically: data-postgres-3, data-postgres-4
+
+# With Parallel:
+# postgres-3 and postgres-4 created simultaneously</code></pre>
+
+  <h3>Scale-Down and PVC Orphaning</h3>
+
+  <pre><code># Scale from 5 to 3 replicas
+kubectl scale sts postgres -n data --replicas=3
+
+# With OrderedReady (scale-down is always sequential, highest-ordinal-first):
+# postgres-4 deleted (pod only — PVC data-postgres-4 remains by default)
+# Wait for postgres-4 Terminated
+# postgres-3 deleted
+# Wait for postgres-3 Terminated
+# PVCs data-postgres-3 and data-postgres-4 are ORPHANED (not deleted)
+
+# Check for orphaned PVCs after scale-down:
+kubectl get pvc -n data -l app=postgres
+# NAME             STATUS   VOLUME          CAPACITY   ACCESS MODES   STORAGECLASS
+# data-postgres-0  Bound    pvc-abc123      100Gi      RWO            ebs-gp3
+# data-postgres-1  Bound    pvc-def456      100Gi      RWO            ebs-gp3
+# data-postgres-2  Bound    pvc-ghi789      100Gi      RWO            ebs-gp3
+# data-postgres-3  Bound    pvc-jkl012      100Gi      RWO            ebs-gp3   ← ORPHANED
+# data-postgres-4  Bound    pvc-mno345      100Gi      RWO            ebs-gp3   ← ORPHANED
+
+# Scale back to 5: orphaned PVCs are automatically re-used (same names re-attached)</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="volumeclaim-templates">volumeClaimTemplates</h2>
+
+  <p>See <a href="../04-storage/06-stateful-sets-storage.html#volumeclaim-templates">Stateful Storage Patterns § volumeClaimTemplates</a> for full coverage including naming convention, immutability, multiple templates, and the <code>--cascade=orphan</code> migration pattern. Key points summarised here:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Aspect</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr><td>PVC naming</td><td><code>{template.metadata.name}-{statefulset-name}-{ordinal}</code></td></tr>
+        <tr><td>Immutability</td><td><code>volumeClaimTemplates</code> cannot be modified after StatefulSet creation. Delete with <code>--cascade=orphan</code> and recreate to change.</td></tr>
+        <tr><td>PVC on pod delete</td><td>Retained — PVC persists; pod is recreated and re-attaches same PVC</td></tr>
+        <tr><td>PVC on StatefulSet delete</td><td>Retained by default; controlled by <code>persistentVolumeClaimRetentionPolicy.whenDeleted</code></td></tr>
+        <tr><td>PVC on scale-down</td><td>Retained by default; controlled by <code>persistentVolumeClaimRetentionPolicy.whenScaled</code></td></tr>
+        <tr><td>Scale-up re-bind</td><td>Existing PVCs from previous scale-up are re-used if names match</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="controller-revisions">ControllerRevisions and Rollback</h2>
+
+  <p>Unlike Deployments (which use ReplicaSets for history), StatefulSets store revision history in <strong>ControllerRevision</strong> objects — lightweight objects containing only the diff from the previous revision.</p>
+
+  <pre><code># List ControllerRevisions for a StatefulSet
+kubectl get controllerrevision -n data -l app=postgres \
+  -o custom-columns='NAME:.metadata.name,REVISION:.revision,AGE:.metadata.creationTimestamp'
+
+# Roll back StatefulSet (same command as Deployment)
+kubectl rollout undo sts/postgres -n data
+kubectl rollout undo sts/postgres -n data --to-revision=3
+
+# Check rollout status
+kubectl rollout status sts/postgres -n data
+# Waiting for partitioned roll out to finish: 0 out of 3 new pods have been updated...
+# partitioned roll out complete: 3 new pods have been updated...
+
+# Watch pod updates in real time
+kubectl get pods -n data -l app=postgres -w</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="status-fields">Status Fields</h2>
+
+  <pre><code>kubectl get sts postgres -n data -o yaml | yq .status
+# replicas: 3                     # total pods (Running + Pending + Terminating)
+# readyReplicas: 3                 # pods with all containers Ready
+# currentReplicas: 3               # pods at currentRevision (old version during update)
+# updatedReplicas: 2               # pods at updateRevision (new version during update)
+# availableReplicas: 3             # pods Ready for >= minReadySeconds (1.26+)
+# currentRevision: postgres-7d9f   # ControllerRevision name of current spec
+# updateRevision: postgres-9a2b    # ControllerRevision name of target spec (during update)
+# observedGeneration: 4            # last generation processed by controller
+#                                    compare with metadata.generation to detect lag
+# collisionCount: 0                # hash collision counter for revision names</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Status Field</th><th>Meaning During Rolling Update</th></tr></thead>
+      <tbody>
+        <tr><td><code>replicas</code></td><td>Total pod count (always equals desired unless scaling)</td></tr>
+        <tr><td><code>currentReplicas</code></td><td>Pods still running the old revision</td></tr>
+        <tr><td><code>updatedReplicas</code></td><td>Pods running the new revision (target)</td></tr>
+        <tr><td><code>readyReplicas</code></td><td>Pods that are Running + all probes passing</td></tr>
+        <tr><td><code>currentRevision == updateRevision</code></td><td>Update complete — all pods on same revision</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="forced-rollout">Forced Spec Changes with --cascade=orphan</h2>
+
+  <p>Because <code>volumeClaimTemplates</code> and <code>selector</code> are immutable, some changes require deleting and recreating the StatefulSet. The <code>--cascade=orphan</code> flag deletes the StatefulSet object while leaving its pods and PVCs running — a zero-downtime StatefulSet spec update.</p>
+
+  <pre><code># Scenario: need to change volumeClaimTemplates storage size or storageClass
+
+# Step 1: Delete the StatefulSet object, leave pods running
+kubectl delete sts postgres -n data --cascade=orphan
+# Pods continue running: postgres-0, postgres-1, postgres-2 still alive
+# PVCs still exist and bound
+# No traffic interruption
+
+# Step 2: Apply new StatefulSet manifest (with updated volumeClaimTemplates)
+kubectl apply -f postgres-statefulset-v2.yaml
+# Controller re-adopts existing pods (they already match the selector)
+# New volumeClaimTemplates apply only to NEWLY CREATED pods (e.g., scale-up)
+
+# Step 3: For existing pods to get new PVC spec, manually migrate data:
+# - Scale up to get new pods with new PVC size
+# - Copy data from old PVCs to new PVCs
+# - Delete old pods (controller creates replacements with new PVCs)
+
+# Note: existing PVCs are NOT automatically resized by this process
+# Use PVC expansion (kubectl edit pvc) for in-place size increases</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="useful-commands">Operational Commands</h2>
+
+  <pre><code># Watch pod creation/deletion during scaling or update
+kubectl get pods -n data -l app=postgres -w
+
+# Check rollout status (blocks until complete or times out)
+kubectl rollout status sts/postgres -n data --timeout=10m
+
+# Trigger a rolling restart without spec change
+kubectl rollout restart sts/postgres -n data
+
+# Pause a rolling update (set partition to current updatedReplicas count)
+# Get current updatedReplicas
+UPDATED=$(kubectl get sts postgres -n data -o jsonpath='{.status.updatedReplicas}')
+REPLICAS=$(kubectl get sts postgres -n data -o jsonpath='{.spec.replicas}')
+# Freeze at current progress (don't update pods 0..UPDATED-1)
+kubectl patch sts postgres -n data \
+  -p "{\"spec\":{\"updateStrategy\":{\"rollingUpdate\":{\"partition\":$((REPLICAS - UPDATED))}}}}"
+
+# Force delete a stuck Terminating pod (node failure recovery)
+kubectl delete pod postgres-1 -n data --grace-period=0 --force
+
+# Check all PVCs for a StatefulSet
+kubectl get pvc -n data -l app=postgres --sort-by='.metadata.name'
+
+# Describe to see events (scale, update, probe failures)
+kubectl describe sts postgres -n data
+
+# Get ControllerRevision history
+kubectl get controllerrevision -n data -l app=postgres</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="sts-vs-deployment">StatefulSet vs Deployment — When to Use Each</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Use StatefulSet When…</th><th>Use Deployment When…</th></tr></thead>
+      <tbody>
+        <tr><td>Each replica needs its own persistent data (per-pod PVC)</td><td>All replicas share a read volume, or use no persistent storage</td></tr>
+        <tr><td>Pods must discover each other by stable DNS name (Cassandra seeds, Kafka broker IDs, etcd peers)</td><td>Pod identity is irrelevant; any replica can serve any request</td></tr>
+        <tr><td>Ordered startup is required (replica must not start before primary)</td><td>All pods can start concurrently without coordination</td></tr>
+        <tr><td>Ordered shutdown is required (must drain highest-ordinal replica first)</td><td>Any pod can be terminated independently</td></tr>
+        <tr><td>Application uses its own hostname for peer registration (pod name embedded in config)</td><td>Application is stateless or uses external service discovery</td></tr>
+        <tr><td>Rolling upgrades must proceed in a controlled sequence with validation</td><td>Rolling updates can proceed at any speed with maxSurge/maxUnavailable</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="metrics">Metrics, Alerts, and Runbooks</h2>
+
+  <h3>Key Metrics</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Source</th><th>Alert Condition</th></tr></thead>
+      <tbody>
+        <tr><td><code>kube_statefulset_status_replicas_ready</code></td><td>kube-state-metrics</td><td>&lt; <code>kube_statefulset_replicas</code> for &gt; 5m</td></tr>
+        <tr><td><code>kube_statefulset_status_replicas_current != kube_statefulset_status_replicas_updated</code></td><td>kube-state-metrics</td><td>Rollout in progress; alert if stale &gt; 30m</td></tr>
+        <tr><td><code>kube_statefulset_status_observed_generation != kube_statefulset_metadata_generation</code></td><td>kube-state-metrics</td><td>Controller not processing updates; possible controller issue</td></tr>
+        <tr><td><code>kube_persistentvolumeclaim_status_phase{phase="Lost"}</code></td><td>kube-state-metrics</td><td>PVC Lost — pod stuck Pending; immediate alert</td></tr>
+        <tr><td><code>kube_pod_status_ready{condition="false"}</code> for StatefulSet pods</td><td>kube-state-metrics</td><td>Not-Ready pod blocking OrderedReady progression</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Alerting Rules</h3>
+  <pre><code>groups:
+- name: statefulset-health
+  rules:
+  - alert: StatefulSetNotFullyReady
+    expr: |
+      kube_statefulset_status_replicas_ready
+        < kube_statefulset_replicas
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} not fully ready"
+
+  - alert: StatefulSetRolloutStuck
+    expr: |
+      kube_statefulset_status_replicas_updated
+        != kube_statefulset_replicas
+      and
+      kube_statefulset_status_replicas_current
+        != kube_statefulset_status_replicas_updated
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      summary: "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} rollout has not completed in 30 minutes"
+
+  - alert: StatefulSetPVCLost
+    expr: |
+      kube_persistentvolumeclaim_status_phase{phase="Lost"} == 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is Lost — StatefulSet pod will be stuck Pending"
+
+  - alert: StatefulSetReplicasMismatch
+    expr: |
+      kube_statefulset_replicas
+        != kube_statefulset_status_replicas_ready
+    for: 10m
+    labels:
+      severity: warning</code></pre>
+
+  <h3>Runbooks</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">Pod Stuck — OrderedReady Deadlock</div>
+      <p>Identify stuck pod: <code>kubectl get pods -l app=NAME</code> — look for a pod that has been not-Ready for a long time while higher-ordinal pods are Pending. Check: <code>kubectl describe pod NAME-N</code> for probe failures or image pull errors. Fix the root cause, or delete the stuck pod to trigger a restart. If the root cause is irreproducible, consider <code>Parallel</code> temporarily.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Rollout Stuck at Partition</div>
+      <p>Check current partition: <code>kubectl get sts NAME -o jsonpath='{.spec.updateStrategy.rollingUpdate.partition}'</code>. If partition is higher than 0, either lower it intentionally or reset to 0 to complete the rollout. Also check <code>status.updatedReplicas</code> vs <code>spec.replicas</code> to confirm rollout progress.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">PVC Lost — Pod Stuck Pending</div>
+      <p>PVC phase Lost means the bound PV no longer exists. Check: <code>kubectl describe pvc NAME</code>. To recover: create a new PV with the same <code>volumeHandle</code> pointing to the original storage, patch the PV's <code>claimRef</code> to reference the PVC's name and UID. See <a href="../04-storage/02-persistent-volumes.html">Persistent Volumes § Lost recovery</a>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Force Delete Stuck Terminating Pod</div>
+      <p>Pod stuck Terminating after node failure: <code>kubectl delete pod NAME --grace-period=0 --force</code>. Also delete the stale VolumeAttachment: <code>kubectl delete volumeattachment NAME</code>. The StatefulSet controller will create a replacement pod. Verify the new pod attaches the PVC cleanly before declaring recovery complete.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Orphaned PVCs After Scale-Down</div>
+      <p>List: <code>kubectl get pvc -n NS -l app=NAME</code>. Identify which PVCs have no corresponding running pod. If scaling back up is not planned, back up data and delete manually. If data is needed: <code>kubectl exec</code> into a pod with the PVC mounted, or create a temporary pod to access the PVC before deletion.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="best-practices">Best Practices</h2>
+
+  <ol>
+    <li><strong>Always create the headless service before the StatefulSet</strong> — the StatefulSet controller references the service by name in <code>serviceName</code> but does not create it. If the service is missing, pod DNS hostnames are not registered. Apply manifests in order: Service → StatefulSet. Use <code>publishNotReadyAddresses: true</code> for peer-discovery during initialization.</li>
+    <li><strong>Use <code>OrderedReady</code> for initial bootstrap, evaluate <code>Parallel</code> for restarts</strong> — <code>OrderedReady</code> prevents bootstrap races (e.g., two Cassandra nodes joining the ring simultaneously). After the cluster is fully initialized and stable, <code>Parallel</code> can be used for faster rolling restarts since the application already knows its identity and can handle concurrent startup.</li>
+    <li><strong>Set <code>partition</code> to <code>replicas</code> before risky upgrades</strong> — freeze all updates by setting <code>partition: N</code> (equal to replica count). Update the spec, validate in staging, then lower the partition incrementally. This is safer than <code>OnDelete</code> because the partition can be lowered remotely without needing to delete pods manually.</li>
+    <li><strong>Use <code>terminationGracePeriodSeconds</code> appropriate to your database</strong> — PostgreSQL needs time to finish checkpoints and close WAL (30–60s minimum). Cassandra needs time to flush memtables (60–120s). Kafka needs time to complete log segment flushes and gracefully hand off partition leadership. The default 30s is too short for most databases.</li>
+    <li><strong>Keep <code>revisionHistoryLimit</code> at the default (10)</strong> — StatefulSet ControllerRevisions are small (only diffs) unlike Deployment ReplicaSets (which include full pod specs). There is little reason to reduce this, and doing so removes rollback capability. Unlike Deployments, ControllerRevisions do not consume meaningful etcd space.</li>
+    <li><strong>Set <code>persistentVolumeClaimRetentionPolicy.whenDeleted: Retain</code> and <code>whenScaled: Retain</code> for production</strong> — the default behavior (both Retain) is the safest. Only use Delete for ephemeral test environments. Recovering accidentally deleted database PVCs is painful and may involve data loss.</li>
+    <li><strong>Monitor <code>readyReplicas</code> separately from <code>replicas</code></strong> — a StatefulSet can show <code>replicas: 3</code> while <code>readyReplicas: 2</code> indefinitely without triggering any error. Set alerts on the difference. A long-running mismatch indicates a stuck pod that is blocking OrderedReady progression.</li>
+    <li><strong>Test failover and recovery procedures under realistic conditions</strong> — simulate node failure (<code>kubectl drain</code>), test that the pod reschedules and re-attaches its PVC, verify the application recovers correctly. Many database-specific failure modes only surface under real I/O conditions, not in smoke tests.</li>
+  </ol>
+
+  <div class="page-nav">
+    <a href="02-deployments.html">
+      <span class="nav-label">← Previous</span>
+      <span class="nav-title">Deployments</span>
+    </a>
+    <a href="04-daemonsets.html" style="text-align:right">
+      <span class="nav-label">Next →</span>
+      <span class="nav-title">DaemonSets</span>
+    </a>
+  </div>
+
+</main>
+
+<aside class="toc-wrap">
+  <div class="toc-title">On This Page</div>
+  <ul class="toc-list" id="toc-list">
+    <li><a href="#controller-mechanics">Controller Mechanics</a></li>
+    <li><a href="#full-spec">Full StatefulSet Spec</a></li>
+    <li><a href="#stable-identity">Stable Pod Identity</a></li>
+    <li><a href="#headless-service">Headless Service</a></li>
+    <li><a href="#ordered-ready">OrderedReady Management</a></li>
+    <li><a href="#parallel">Parallel Management</a></li>
+    <li><a href="#update-strategies">Update Strategies</a></li>
+    <li><a href="#scaling">Scaling Behavior</a></li>
+    <li><a href="#volumeclaim-templates">volumeClaimTemplates</a></li>
+    <li><a href="#controller-revisions">ControllerRevisions &amp; Rollback</a></li>
+    <li><a href="#status-fields">Status Fields</a></li>
+    <li><a href="#forced-rollout">Forced Spec Changes</a></li>
+    <li><a href="#useful-commands">Operational Commands</a></li>
+    <li><a href="#sts-vs-deployment">StatefulSet vs Deployment</a></li>
+    <li><a href="#metrics">Metrics &amp; Alerts</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ul>
+</aside>
+</div>
+
+<button class="back-top" id="back-top" title="Back to top">↑</button>
+
+<script>
+const root=document.documentElement;
+const saved=localStorage.getItem('k8s-theme')||'dark';
+root.setAttribute('data-theme',saved);
+function toggleTheme(){const t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);localStorage.setItem('k8s-theme',t);}
+document.getElementById('theme-btn-top').addEventListener('click',toggleTheme);
+document.getElementById('hamburger').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');});
+const main=document.getElementById('main-content');
+const backTop=document.getElementById('back-top');
+main.addEventListener('scroll',()=>{backTop.classList.toggle('visible',main.scrollTop>400);});
+backTop.addEventListener('click',()=>{main.scrollTo({top:0,behavior:'smooth'});});
+document.querySelectorAll('pre').forEach(pre=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.querySelector('code').innerText);
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+  pre.appendChild(btn);
+});
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc-list a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:main,rootMargin:'-10% 0px -80% 0px'});
+headings.forEach(h=>obs.observe(h));
+document.getElementById('nav-search').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+</script>
+</body>
+</html>

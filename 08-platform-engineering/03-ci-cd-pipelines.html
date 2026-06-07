@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CI/CD Pipelines — Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.nav-section{padding:8px 0}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.07)}
+main{flex:1;overflow-y:auto;padding:0;max-width:960px}
+.content{padding:40px 48px 80px}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:36px}
+.breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px}
+.breadcrumb a{color:var(--text3)}
+h1{font-size:32px;font-weight:700;line-height:1.2;margin-bottom:10px}
+.page-meta{font-size:13px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--text2)}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:14px;color:var(--text2)}
+ul,ol{margin:0 0 14px 20px;color:var(--text2)}
+li{margin-bottom:4px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:'JetBrains Mono','Fira Code',monospace;margin:16px 0;position:relative}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;background:var(--bg3);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout strong{display:block;margin-bottom:4px;font-size:13px}
+.callout p{margin:0;font-size:13px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+td{padding:9px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,.02)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin:0 0 8px;color:var(--text);font-size:14px;text-transform:none;letter-spacing:0}
+.card p{margin:0;font-size:13px}
+.card .tag{margin-top:8px;display:inline-block}
+.section-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:13px;color:var(--text2);transition:all .15s}
+.section-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:0 0 32px;display:inline-block;min-width:280px;max-width:420px}
+.toc-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:18px}
+.toc li{margin-bottom:3px;font-size:13px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.topbar{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;line-height:1}
+.btt{position:fixed;bottom:32px;right:32px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:32px 0;overflow:hidden}
+details.coverage summary{padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:11px;transition:transform .2s;flex-shrink:0}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+.coverage-body li{font-size:12px;color:var(--text2);margin-bottom:2px}
+@media(max-width:768px){.sidebar{display:none;position:fixed;z-index:300;height:100vh}.sidebar.open{display:flex}.topbar{display:flex}.content{padding:24px 20px 60px}.coverage-body{grid-template-columns:1fr}.card-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span>K8s</span> Docs</div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter…" id="nav-filter"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-kubernetes-overview.html">Overview</a>
+    <a href="../01-getting-started/01-core-concepts.html">Core Concepts</a>
+    <a href="../01-getting-started/02-cluster-architecture.html">Cluster Architecture</a>
+    <a href="../01-getting-started/03-kubectl-basics.html">kubectl Basics</a>
+    <a href="../01-getting-started/04-first-deployment.html">First Deployment</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Workloads</div>
+    <a href="../02-workloads/00-pods.html">Pods</a>
+    <a href="../02-workloads/01-deployments.html">Deployments</a>
+    <a href="../02-workloads/02-statefulsets.html">StatefulSets</a>
+    <a href="../02-workloads/03-daemonsets.html">DaemonSets</a>
+    <a href="../02-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    <a href="../02-workloads/05-horizontal-pod-autoscaler.html">HPA</a>
+    <a href="../02-workloads/06-vertical-pod-autoscaler.html">VPA</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Networking</div>
+    <a href="../03-networking/00-networking-overview.html">Overview</a>
+    <a href="../03-networking/01-services.html">Services</a>
+    <a href="../03-networking/02-ingress.html">Ingress</a>
+    <a href="../03-networking/03-network-policies.html">Network Policies</a>
+    <a href="../03-networking/04-dns.html">DNS</a>
+    <a href="../03-networking/05-service-mesh.html">Service Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Storage</div>
+    <a href="../04-storage/00-storage-overview.html">Overview</a>
+    <a href="../04-storage/01-persistent-volumes.html">PV &amp; PVC</a>
+    <a href="../04-storage/02-storage-classes.html">StorageClasses</a>
+    <a href="../04-storage/03-stateful-storage-patterns.html">Stateful Patterns</a>
+    <a href="../04-storage/04-csi-drivers.html">CSI Drivers</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="../05-security/00-security-overview.html">Overview</a>
+    <a href="../05-security/01-rbac.html">RBAC</a>
+    <a href="../05-security/02-pod-security.html">Pod Security</a>
+    <a href="../05-security/03-network-security.html">Network Security</a>
+    <a href="../05-security/04-secrets-management.html">Secrets Management</a>
+    <a href="../05-security/05-supply-chain-security.html">Supply Chain</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Configuration</div>
+    <a href="../06-configuration/00-configmaps.html">ConfigMaps</a>
+    <a href="../06-configuration/01-resource-management.html">Resources</a>
+    <a href="../06-configuration/02-scheduling.html">Scheduling</a>
+    <a href="../06-configuration/03-helm.html">Helm</a>
+    <a href="../06-configuration/04-kustomize.html">Kustomize</a>
+    <a href="../06-configuration/05-admission-controllers.html">Admission</a>
+    <a href="../06-configuration/06-crd-operators.html">CRDs &amp; Operators</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Observability</div>
+    <a href="../07-observability/00-observability-overview.html">Overview</a>
+    <a href="../07-observability/01-metrics.html">Metrics</a>
+    <a href="../07-observability/02-logging.html">Logging</a>
+    <a href="../07-observability/03-tracing.html">Distributed Tracing</a>
+    <a href="../07-observability/04-events.html">Events</a>
+    <a href="../07-observability/05-dashboards.html">Dashboards</a>
+    <a href="../07-observability/06-alerting.html">Alerting</a>
+    <a href="../07-observability/07-profiling.html">Continuous Profiling</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Platform Engineering</div>
+    <a href="00-platform-overview.html">Overview</a>
+    <a href="01-cluster-provisioning.html">Cluster Provisioning</a>
+    <a href="02-gitops.html">GitOps</a>
+    <a href="03-ci-cd-pipelines.html" class="active">CI/CD Pipelines</a>
+    <a href="04-developer-portal.html">Developer Portal</a>
+    <a href="05-policy-enforcement.html">Policy Enforcement</a>
+    <a href="06-multi-tenancy.html">Multi-Tenancy</a>
+    <a href="07-cost-management.html">Cost Management</a>
+    <a href="08-service-catalog.html">Service Catalog</a>
+    <a href="09-secrets-automation.html">Secrets Automation</a>
+    <a href="10-platform-apis.html">Platform APIs</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Production Operations</div>
+    <a href="../09-production-operations/00-operations-overview.html">Overview</a>
+  </div>
+</nav>
+
+<div class="topbar" id="topbar">
+  <button class="hamburger" id="hamburger">&#9776;</button>
+  <span style="font-size:14px;font-weight:600;color:var(--text)">CI/CD Pipelines</span>
+</div>
+
+<main id="main">
+<div class="content">
+
+<div class="breadcrumb"><a href="../index.html">Home</a> › <a href="00-platform-overview.html">Platform Engineering</a> › CI/CD Pipelines</div>
+
+<div class="page-header">
+  <h1>CI/CD Pipelines</h1>
+  <div class="page-meta">
+    <span>From commit to production — build, test, sign, deploy</span>
+    <span class="tag">Tekton</span>
+    <span class="tag">GitHub Actions</span>
+    <span class="tag">Cosign</span>
+    <span class="tag">Argo Rollouts</span>
+    <span class="tag">Canary</span>
+  </div>
+</div>
+
+<div class="section-nav">
+  <a href="02-gitops.html">← GitOps</a>
+  <a href="04-developer-portal.html">Developer Portal →</a>
+</div>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#pipeline-architecture">CI/CD Pipeline Architecture</a></li>
+    <li><a href="#github-actions">GitHub Actions for Kubernetes</a></li>
+    <li><a href="#tekton">Tekton Pipelines</a></li>
+    <li><a href="#image-build">Container Image Build (Buildkit / Kaniko)</a></li>
+    <li><a href="#image-sign">Image Signing with Cosign</a></li>
+    <li><a href="#sbom">SBOM Generation</a></li>
+    <li><a href="#registry-push">Registry Push &amp; Tag Strategy</a></li>
+    <li><a href="#gitops-promotion">GitOps Promotion from CI</a></li>
+    <li><a href="#argo-rollouts">Progressive Delivery: Argo Rollouts</a></li>
+    <li><a href="#canary">Canary Deployments</a></li>
+    <li><a href="#blue-green">Blue-Green Deployments</a></li>
+    <li><a href="#flagger">Flagger (Flux Progressive Delivery)</a></li>
+    <li><a href="#pipeline-observability">Pipeline Observability</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pipeline-architecture">1. CI/CD Pipeline Architecture</h2>
+
+<pre><code>Complete CI/CD flow:
+
+Developer
+  │── git push / PR ──▶ GitHub / GitLab
+                              │
+                    ┌─────────▼──────────┐
+                    │    CI Pipeline      │
+                    │                    │
+                    │  lint + unit test  │
+                    │  integration test  │
+                    │  build image       │
+                    │  SBOM generation   │
+                    │  vulnerability scan│
+                    │  sign image        │
+                    │  push to registry  │
+                    └─────────┬──────────┘
+                              │ update image tag in GitOps repo
+                              ▼
+                    ┌─────────────────────┐
+                    │   GitOps Repo (Git) │
+                    │  services/order-svc │
+                    │  overlays/staging/  │
+                    │  image: ...v1.4.3   │
+                    └─────────┬───────────┘
+                              │ Argo CD / Flux detects change
+                              ▼
+                    ┌─────────────────────┐
+                    │  Argo CD / Flux     │
+                    │  sync to staging    │
+                    └─────────┬───────────┘
+                              │
+                    ┌─────────▼──────────┐
+                    │  Progressive CD    │
+                    │  (Argo Rollouts /  │
+                    │   Flagger)         │
+                    │  canary: 10%→50%→  │
+                    │  100% or rollback  │
+                    └─────────┬──────────┘
+                              │ promote to production (GitOps PR / auto)
+                              ▼
+                         Production</code></pre>
+
+<h3>CI vs CD Separation</h3>
+
+<table>
+  <tr><th>Phase</th><th>Runs in</th><th>Outputs</th><th>Tools</th></tr>
+  <tr><td><strong>CI</strong> (Continuous Integration)</td><td>External CI (GitHub Actions, Tekton)</td><td>Verified image, SBOM, signatures, updated GitOps repo</td><td>GitHub Actions, Tekton, GitLab CI, Jenkins</td></tr>
+  <tr><td><strong>CD</strong> (Continuous Delivery)</td><td>In-cluster (GitOps agent)</td><td>Running workload, deployment state</td><td>Argo CD, Flux, Argo Rollouts, Flagger</td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>The CI/CD contract</strong>
+  <p>CI produces an immutable, signed, scanned container image and updates a GitOps repository with the new tag. CD is entirely the responsibility of the in-cluster GitOps agent — CI never <code>kubectl apply</code>s directly to production. This separation means CI credentials never touch production clusters.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="github-actions">2. GitHub Actions for Kubernetes</h2>
+
+<h3>Full CI Workflow — Build, Scan, Sign, Push, Promote</h3>
+
+<pre><code"># .github/workflows/ci.yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: 123456789.dkr.ecr.us-east-1.amazonaws.com
+  IMAGE_NAME: order-service
+
+permissions:
+  contents: write        # update GitOps repo
+  id-token: write        # OIDC for keyless Cosign signing
+  packages: write        # push to GHCR (if used)
+  security-events: write # upload SARIF scan results
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Lint & Test ─────────────────────────────────────────
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: true
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+
+      - name: Unit tests
+        run: go test ./... -race -coverprofile=coverage.out
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.out
+
+      # ── Docker Build & Push ──────────────────────────────────
+      - name: Configure AWS credentials (OIDC — no long-lived keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789:role/github-actions-ecr
+          aws-region: us-east-1
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=,suffix=,format=short     # short git SHA
+            type=semver,pattern={{version}}            # v1.4.2 on tag
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true    # generate SLSA provenance attestation
+          sbom: true          # generate SBOM attestation
+
+      # ── Vulnerability Scan ───────────────────────────────────
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: 1   # fail on CRITICAL/HIGH
+
+      - name: Upload Trivy SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+      # ── Cosign Keyless Signing ───────────────────────────────
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image (keyless OIDC)
+        if: github.event_name != 'pull_request'
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cosign sign --yes \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+
+      # ── GitOps Promotion ─────────────────────────────────────
+      - name: Update image tag in GitOps repo (staging)
+        if: github.event_name != 'pull_request'
+        env:
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          SHORT_SHA="${GIT_SHA:0:7}"
+          git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/myorg/platform-gitops.git
+          cd platform-gitops
+          yq eval -i ".images[0].newTag = \"${SHORT_SHA}\"" \
+            services/order-service/overlays/staging/kustomization.yaml
+          git config user.email "ci-bot@example.com"
+          git config user.name "CI Bot"
+          git add services/order-service/overlays/staging/kustomization.yaml
+          git commit -m "chore: update order-service to ${SHORT_SHA} in staging"
+          git push</code></pre>
+
+<h3>GitHub Actions: Reusable Workflows</h3>
+
+<pre><code># .github/workflows/reusable-build.yaml (platform team maintains)
+name: Reusable Build & Push
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        required: true
+        type: string
+      dockerfile:
+        required: false
+        type: string
+        default: Dockerfile
+    outputs:
+      digest:
+        description: "Image digest"
+        value: ${{ jobs.build.outputs.digest }}
+      tag:
+        description: "Short SHA tag"
+        value: ${{ jobs.build.outputs.tag }}
+    secrets:
+      ecr-role-arn:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      tag: ${{ steps.tag.outputs.value }}
+    steps:
+      # ... (same build/scan/sign steps as above)
+
+# Usage in a service repo:
+# .github/workflows/ci.yaml
+jobs:
+  build:
+    uses: myorg/.github/.github/workflows/reusable-build.yaml@main
+    with:
+      image-name: order-service
+    secrets:
+      ecr-role-arn: ${{ secrets.ECR_ROLE_ARN }}</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="tekton">3. Tekton Pipelines</h2>
+
+<p>Tekton is a Kubernetes-native CI/CD framework. Pipelines run as Pods in the cluster, which means they share cluster RBAC, service accounts, and can access internal cluster resources (useful for integration tests against real services).</p>
+
+<h3>Tekton Object Hierarchy</h3>
+
+<pre><code>Task          → defines a set of Steps (containers run sequentially in a Pod)
+Pipeline      → defines a sequence/graph of Tasks
+PipelineRun   → instantiation of a Pipeline with parameters and workspaces
+TaskRun       → instantiation of a Task
+Workspace     → shared volume between steps (PVC / emptyDir / Secret / ConfigMap)
+TriggerTemplate → creates PipelineRun on events (webhooks)
+EventListener   → HTTP endpoint that receives webhooks and fires TriggerTemplates</code></pre>
+
+<h3>Task: Run Tests</h3>
+
+<pre><code>apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: go-test
+spec:
+  params:
+    - name: package
+      type: string
+      default: "./..."
+  workspaces:
+    - name: source
+  steps:
+    - name: unit-test
+      image: golang:1.22-alpine
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: GOFLAGS
+          value: "-mod=vendor"
+        - name: CGO_ENABLED
+          value: "0"
+      script: |
+        #!/bin/sh
+        set -ex
+        go test $(params.package) \
+          -race \
+          -coverprofile=/tmp/coverage.out \
+          -v 2>&1 | tee /tmp/test-output.txt
+        go tool cover -html=/tmp/coverage.out -o /tmp/coverage.html
+    - name: lint
+      image: golangci/golangci-lint:v1.59-alpine
+      workingDir: $(workspaces.source.path)
+      script: |
+        golangci-lint run --timeout 5m</code></pre>
+
+<h3>Task: Build and Push with Kaniko</h3>
+
+<pre><code>apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: kaniko-build
+spec:
+  params:
+    - name: IMAGE
+      description: Full image name with registry
+    - name: DOCKERFILE
+      default: Dockerfile
+    - name: CONTEXT
+      default: "."
+  workspaces:
+    - name: source
+    - name: docker-credentials
+      optional: true
+  results:
+    - name: IMAGE_DIGEST
+      description: Digest of the built image
+    - name: IMAGE_URL
+      description: Full image URL with digest
+  steps:
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:v1.23.0-debug
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: DOCKER_CONFIG
+          value: /kaniko/.docker
+      command:
+        - /kaniko/executor
+      args:
+        - --dockerfile=$(params.DOCKERFILE)
+        - --context=$(params.CONTEXT)
+        - --destination=$(params.IMAGE)
+        - --cache=true
+        - --cache-repo=$(params.IMAGE)-cache
+        - --compressed-caching=false
+        - --snapshot-mode=redo
+        - --use-new-run
+        - --digest-file=/tekton/results/IMAGE_DIGEST
+      volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker
+  volumes:
+    - name: docker-config
+      projected:
+        sources:
+          - secret:
+              name: ecr-credentials</code></pre>
+
+<h3>Full Pipeline: CI for Go Service</h3>
+
+<pre><code">apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: go-service-ci
+spec:
+  params:
+    - name: git-url
+    - name: git-revision
+      default: main
+    - name: image-name
+    - name: gitops-repo-url
+    - name: gitops-path
+
+  workspaces:
+    - name: shared-data     # Git clone workspace
+    - name: git-credentials
+
+  tasks:
+    - name: clone
+      taskRef:
+        resolver: hub
+        params:
+          - name: catalog
+            value: tekton-catalog-pipeline
+          - name: type
+            value: artifact
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: version
+            value: "0.9"
+      workspaces:
+        - name: output
+          workspace: shared-data
+        - name: ssh-directory
+          workspace: git-credentials
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+
+    - name: test
+      runAfter: [clone]
+      taskRef:
+        name: go-test
+      workspaces:
+        - name: source
+          workspace: shared-data
+
+    - name: build
+      runAfter: [test]
+      taskRef:
+        name: kaniko-build
+      workspaces:
+        - name: source
+          workspace: shared-data
+      params:
+        - name: IMAGE
+          value: $(params.image-name):$(tasks.clone.results.commit)
+
+    - name: scan
+      runAfter: [build]
+      taskRef:
+        name: trivy-scan
+      params:
+        - name: IMAGE
+          value: $(params.image-name)@$(tasks.build.results.IMAGE_DIGEST)
+        - name: SEVERITY
+          value: "CRITICAL,HIGH"
+        - name: EXIT_CODE
+          value: "1"
+
+    - name: sign
+      runAfter: [scan]
+      taskRef:
+        name: cosign-sign
+      params:
+        - name: IMAGE
+          value: $(params.image-name)@$(tasks.build.results.IMAGE_DIGEST)
+
+    - name: update-gitops
+      runAfter: [sign]
+      taskRef:
+        name: git-update-deployment
+      workspaces:
+        - name: source
+          workspace: shared-data
+        - name: ssh-directory
+          workspace: git-credentials
+      params:
+        - name: GIT_REPOSITORY
+          value: $(params.gitops-repo-url)
+        - name: GIT_PATH_FILES
+          value: $(params.gitops-path)
+        - name: NEW_TAG
+          value: $(tasks.clone.results.commit)</code></pre>
+
+<h3>EventListener + Trigger — Webhook-based PipelineRun</h3>
+
+<pre><code">apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-webhook
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: tekton-triggers-sa
+  triggers:
+    - name: github-push
+      interceptors:
+        - ref:
+            name: github
+          params:
+            - name: secretRef
+              value:
+                secretName: github-webhook-secret
+                secretKey: token
+            - name: eventTypes
+              value: [push]
+        - ref:
+            name: cel
+          params:
+            - name: filter
+              value: "body.ref == 'refs/heads/main'"
+      bindings:
+        - ref: github-push-binding
+      template:
+        ref: github-push-template
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-push-binding
+spec:
+  params:
+    - name: gitrevision
+      value: $(body.head_commit.id)
+    - name: gitrepositoryurl
+      value: $(body.repository.clone_url)
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: github-push-template
+spec:
+  params:
+    - name: gitrevision
+    - name: gitrepositoryurl
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: go-service-ci-run-
+      spec:
+        pipelineRef:
+          name: go-service-ci
+        params:
+          - name: git-url
+            value: $(tt.params.gitrepositoryurl)
+          - name: git-revision
+            value: $(tt.params.gitrevision)
+          - name: image-name
+            value: 123456789.dkr.ecr.us-east-1.amazonaws.com/order-service
+        workspaces:
+          - name: shared-data
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ReadWriteOnce]
+                resources:
+                  requests:
+                    storage: 1Gi
+          - name: git-credentials
+            secret:
+              secretName: github-ssh-key</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="image-build">4. Container Image Build (BuildKit / Kaniko)</h2>
+
+<h3>Production Dockerfile — Multi-Stage, Distroless, Non-Root</h3>
+
+<pre><code"># ── Stage 1: Build ──────────────────────────────────────────────────
+FROM golang:1.22-alpine AS builder
+
+# Install build deps
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /app
+
+# Copy go.mod first for layer caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Build with CGO disabled, trimpath for reproducible builds
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -trimpath \
+    -ldflags="-s -w \
+              -X main.version=$(git describe --tags --always 2>/dev/null || echo 'dev') \
+              -X main.commitSHA=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
+    -o /app/server ./cmd/server
+
+# ── Stage 2: Runtime ─────────────────────────────────────────────────
+# Use distroless — no shell, no package manager, minimal attack surface
+FROM gcr.io/distroless/static-debian12:nonroot
+
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /app/server /app/server
+
+# Run as non-root user (distroless nonroot = UID 65532)
+USER nonroot:nonroot
+
+EXPOSE 8080 6060
+
+ENTRYPOINT ["/app/server"]</code></pre>
+
+<h3>BuildKit vs Kaniko</h3>
+
+<table>
+  <tr><th>Feature</th><th>BuildKit (docker buildx)</th><th>Kaniko</th></tr>
+  <tr><td>Docker daemon required</td><td>No (rootless mode)</td><td>No</td></tr>
+  <tr><td>Runs in Kubernetes</td><td>Yes (DinD or rootless)</td><td>Yes (single pod, no daemon)</td></tr>
+  <tr><td>Cache</td><td>Registry cache, local, GitHub Actions cache</td><td>Registry cache (--cache-repo)</td></tr>
+  <tr><td>Multi-platform</td><td>Yes (QEMU emulation or native builders)</td><td>Per-arch build only (no cross-arch)</td></tr>
+  <tr><td>Security</td><td>Rootless available; DinD needs privileged</td><td>Runs in userspace; no privileged required</td></tr>
+  <tr><td>Speed</td><td>Fast (parallel layer build, smart caching)</td><td>Slower (sequential layers, no parallelism)</td></tr>
+  <tr><td>Best for</td><td>GitHub Actions, external CI, fast builds</td><td>Kubernetes-native CI (Tekton), air-gapped</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="image-sign">5. Image Signing with Cosign</h2>
+
+<p>Cosign (part of Sigstore) provides keyless container image signing using ephemeral keys anchored to OIDC identity. In CI, the GitHub Actions OIDC token or Tekton ServiceAccount token proves the pipeline's identity — no long-lived signing keys to rotate.</p>
+
+<h3>Keyless Signing in CI</h3>
+
+<pre><code"># Keyless signing — uses OIDC identity (no key management)
+# In GitHub Actions:
+COSIGN_EXPERIMENTAL=1 cosign sign --yes \
+  --rekor-url https://rekor.sigstore.dev \
+  123456789.dkr.ecr.us-east-1.amazonaws.com/order-service@sha256:abc123...
+
+# The signature is stored in the OCI registry as a separate artifact:
+# 123456789.dkr.ecr.us-east-1.amazonaws.com/order-service:sha256-abc123....sig
+
+# Verify signature (in admission webhook or manually):
+COSIGN_EXPERIMENTAL=1 cosign verify \
+  --certificate-identity-regexp="https://github.com/myorg/order-service/.github/workflows/ci.yaml" \
+  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+  123456789.dkr.ecr.us-east-1.amazonaws.com/order-service@sha256:abc123...</code></pre>
+
+<h3>Key-based Signing (for air-gapped / private Rekor)</h3>
+
+<pre><code"># Generate signing key pair (run once, store private key in Vault)
+cosign generate-key-pair
+
+# Sign with private key
+cosign sign --key cosign.key \
+  --annotations "git-sha=${GITHUB_SHA}" \
+  --annotations "pipeline-url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+  123456789.dkr.ecr.us-east-1.amazonaws.com/order-service:${TAG}
+
+# Verify with public key (admission webhook uses cosign.pub)
+cosign verify --key cosign.pub \
+  123456789.dkr.ecr.us-east-1.amazonaws.com/order-service:${TAG}</code></pre>
+
+<h3>Enforcing Signatures via Kyverno Policy</h3>
+
+<pre><code>apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signature
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: check-image-signature
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: ["production", "staging"]
+      verifyImages:
+        - imageReferences:
+            - "123456789.dkr.ecr.us-east-1.amazonaws.com/*"
+          attestors:
+            - count: 1
+              entries:
+                - keyless:
+                    subject: "https://github.com/myorg/*/.github/workflows/ci.yaml@refs/heads/main"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev
+          mutateDigest: true      # replace :tag with @sha256 digest
+          verifyDigest: true      # reject images without digest</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="sbom">6. SBOM Generation</h2>
+
+<p>A Software Bill of Materials (SBOM) lists every package and dependency in a container image. SBOMs enable vulnerability auditing, license compliance checking, and rapid incident response ("which images contain log4j?").</p>
+
+<pre><code"># Generate SBOM with Syft (SPDX or CycloneDX format)
+syft 123456789.dkr.ecr.us-east-1.amazonaws.com/order-service@sha256:abc123 \
+  -o spdx-json=sbom.spdx.json \
+  -o cyclonedx-json=sbom.cdx.json
+
+# Attest SBOM to the image (stored in OCI registry alongside image)
+cosign attest --yes \
+  --predicate sbom.spdx.json \
+  --type spdxjson \
+  123456789.dkr.ecr.us-east-1.amazonaws.com/order-service@sha256:abc123
+
+# Verify and extract SBOM from image:
+cosign verify-attestation \
+  --type spdxjson \
+  --key cosign.pub \
+  123456789.dkr.ecr.us-east-1.amazonaws.com/order-service@sha256:abc123 \
+  | jq '.payload | @base64d | fromjson | .predicate'
+
+# Audit SBOM for known vulnerabilities (Grype):
+grype sbom:sbom.spdx.json --fail-on high</code></pre>
+
+<div class="callout callout-info">
+  <strong>Docker Buildx native SBOM</strong>
+  <p>When using <code>docker buildx build --sbom=true --provenance=true</code>, Docker BuildKit generates an SPDX SBOM and SLSA provenance attestation automatically and attaches them to the image manifest. These are stored as OCI artifacts in the registry and can be verified with Cosign or Docker Scout.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="registry-push">7. Registry Push &amp; Tag Strategy</h2>
+
+<h3>Image Tag Strategy</h3>
+
+<table>
+  <tr><th>Tag</th><th>Format</th><th>Mutable</th><th>Use Case</th></tr>
+  <tr><td>Git SHA</td><td><code>abc1234</code> (7-char)</td><td>No</td><td>Primary deployment tag — immutable, auditable</td></tr>
+  <tr><td>Semver</td><td><code>v1.4.2</code></td><td>No (once pushed)</td><td>Release artifacts; Helm chart <code>appVersion</code></td></tr>
+  <tr><td>latest</td><td><code>latest</code></td><td>Yes</td><td>Development only — never deploy with :latest in production</td></tr>
+  <tr><td>Branch</td><td><code>main</code>, <code>pr-123</code></td><td>Yes</td><td>Preview / feature branches; CI testing only</td></tr>
+  <tr><td>Date + SHA</td><td><code>20240115-abc1234</code></td><td>No</td><td>Sortable + unique; used by Flux alphabetical ImagePolicy</td></tr>
+</table>
+
+<div class="callout callout-danger">
+  <strong>Never deploy <code>:latest</code> to production</strong>
+  <p><code>:latest</code> is a mutable tag — it changes with every push. Kubernetes caches image layers and may not pull a new <code>:latest</code> unless <code>imagePullPolicy: Always</code> is set (which adds latency to every pod start). Use immutable SHA-based tags. If you use <code>imagePullPolicy: Always</code> with <code>:latest</code>, a broken push will take down new pod restarts cluster-wide.</p>
+</div>
+
+<pre><code"># ECR lifecycle policy — clean up old tags, keep recent and tagged images
+aws ecr put-lifecycle-policy \
+  --repository-name order-service \
+  --lifecycle-policy '{
+    "rules": [
+      {
+        "rulePriority": 1,
+        "description": "Keep semver tags forever",
+        "selection": {
+          "tagStatus": "tagged",
+          "tagPrefixList": ["v"],
+          "countType": "imageCountMoreThan",
+          "countNumber": 9999
+        },
+        "action": {"type": "expire"}
+      },
+      {
+        "rulePriority": 2,
+        "description": "Keep last 50 SHA-tagged images",
+        "selection": {
+          "tagStatus": "tagged",
+          "tagPrefixList": ["sha-", ""],
+          "countType": "imageCountMoreThan",
+          "countNumber": 50
+        },
+        "action": {"type": "expire"}
+      },
+      {
+        "rulePriority": 3,
+        "description": "Expire untagged images after 7 days",
+        "selection": {
+          "tagStatus": "untagged",
+          "countType": "sinceImagePushed",
+          "countUnit": "days",
+          "countNumber": 7
+        },
+        "action": {"type": "expire"}
+      }
+    ]
+  }'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="gitops-promotion">8. GitOps Promotion from CI</h2>
+
+<pre><code"># Complete GitOps promotion script (used in CI after image push + sign)
+#!/bin/bash
+set -euo pipefail
+
+GITOPS_REPO="https://x-access-token:${GITOPS_TOKEN}@github.com/myorg/platform-gitops.git"
+SERVICE="order-service"
+NEW_TAG="${GITHUB_SHA:0:7}"
+ENV="${1:-staging}"   # default to staging; pass 'production' for prod promotion
+
+git clone "${GITOPS_REPO}" /tmp/gitops
+cd /tmp/gitops
+
+# Update image tag in Kustomize overlay
+yq eval -i ".images[] |= select(.name == \"*/${SERVICE}\").newTag = \"${NEW_TAG}\"" \
+  "services/${SERVICE}/overlays/${ENV}/kustomization.yaml"
+
+# Verify the change looks correct
+git diff
+
+git config user.email "ci-bot@myorg.com"
+git config user.name "CI Bot"
+git add "services/${SERVICE}/overlays/${ENV}/"
+git commit -m "chore(${ENV}): update ${SERVICE} to ${NEW_TAG}
+
+Source: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+Image: ${REGISTRY}/${SERVICE}@${IMAGE_DIGEST}"
+
+# Retry push in case of concurrent commits
+for i in 1 2 3; do
+  git pull --rebase origin main && git push && break || sleep $((i * 5))
+done</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="argo-rollouts">9. Progressive Delivery: Argo Rollouts</h2>
+
+<p>Argo Rollouts extends Kubernetes with advanced deployment strategies — canary, blue-green, and experiment-based — with automated metric analysis gates that roll back if error rate or latency thresholds are breached.</p>
+
+<h3>Install</h3>
+
+<pre><code">kubectl create namespace argo-rollouts
+kubectl apply -n argo-rollouts \
+  -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+
+# kubectl plugin
+kubectl argo rollouts version</code></pre>
+
+<h3>Rollout CRD (replaces Deployment)</h3>
+
+<pre><code">apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: order-service
+  namespace: order-service
+spec:
+  replicas: 10
+  revisionHistoryLimit: 5
+
+  selector:
+    matchLabels:
+      app: order-service
+
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: 123456789.dkr.ecr.us-east-1.amazonaws.com/order-service:abc1234
+          ports:
+            - containerPort: 8080
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {memory: 512Mi}
+          readinessProbe:
+            httpGet: {path: /health/ready, port: 8080}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+  strategy:
+    canary:
+      # Traffic management via NGINX Ingress (header-based or weight-based)
+      canaryService: order-service-canary
+      stableService: order-service-stable
+      trafficRouting:
+        nginx:
+          stableIngress: order-service-ingress
+          annotationPrefix: nginx.ingress.kubernetes.io
+          additionalIngressAnnotations:
+            canary-by-header: X-Canary
+
+      # Canary rollout steps
+      steps:
+        - setWeight: 5         # 5% traffic to canary
+        - pause: {duration: 5m}  # wait 5 minutes
+        - analysis:            # automated metric analysis
+            templates:
+              - templateName: success-rate
+            args:
+              - name: service-name
+                value: order-service-canary
+        - setWeight: 20
+        - pause: {duration: 10m}
+        - setWeight: 50
+        - pause: {}            # manual approval (indefinite pause)
+        - setWeight: 100
+
+      # Analysis during rollout (continuous background check)
+      analysis:
+        templates:
+          - templateName: success-rate
+        startingStep: 1        # start analysis at step 1
+        args:
+          - name: service-name
+            value: order-service-canary</code></pre>
+
+<h3>AnalysisTemplate — Metric Gates</h3>
+
+<pre><code">apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: order-service
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: success-rate
+      interval: 1m
+      successCondition: result[0] >= 0.95       # 95% success rate required
+      failureLimit: 3                             # 3 consecutive failures → abort
+      provider:
+        prometheus:
+          address: http://prometheus.observability.svc:9090
+          query: |
+            sum(rate(
+              http_requests_total{
+                app="{{args.service-name}}",
+                status!~"5.."
+              }[5m]
+            )) /
+            sum(rate(
+              http_requests_total{
+                app="{{args.service-name}}"
+              }[5m]
+            ))
+
+    - name: latency-p99
+      interval: 1m
+      successCondition: result[0] < 0.5          # p99 < 500ms
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus.observability.svc:9090
+          query: |
+            histogram_quantile(0.99,
+              sum(rate(
+                http_request_duration_seconds_bucket{
+                  app="{{args.service-name}}"
+                }[5m]
+              )) by (le)
+            )
+
+    - name: error-rate
+      interval: 1m
+      successCondition: result[0] < 0.01         # error rate < 1%
+      failureCondition: result[0] >= 0.05        # abort if > 5% errors
+      provider:
+        prometheus:
+          address: http://prometheus.observability.svc:9090
+          query: |
+            sum(rate(
+              http_requests_total{app="{{args.service-name}}",status=~"5.."}[5m]
+            )) /
+            sum(rate(
+              http_requests_total{app="{{args.service-name}}"}[5m]
+            ))</code></pre>
+
+<h3>Rollout CLI Commands</h3>
+
+<pre><code"># Watch rollout progress
+kubectl argo rollouts get rollout order-service --watch
+
+# Pause a rollout at current step
+kubectl argo rollouts pause order-service
+
+# Promote (advance past a manual pause step)
+kubectl argo rollouts promote order-service
+
+# Abort and roll back to stable
+kubectl argo rollouts abort order-service
+
+# Retry after abort
+kubectl argo rollouts retry rollout order-service
+
+# Set image (trigger new rollout)
+kubectl argo rollouts set image order-service \
+  order-service=123456789.dkr.ecr.us-east-1.amazonaws.com/order-service:abc5678
+
+# Undo to previous version
+kubectl argo rollouts undo order-service</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="canary">10. Canary Deployments in Detail</h2>
+
+<h3>Traffic Splitting Options</h3>
+
+<table>
+  <tr><th>Method</th><th>Mechanism</th><th>Granularity</th><th>Requires</th></tr>
+  <tr><td>Pod-count canary</td><td>N canary pods out of total → N% traffic</td><td>Coarse (1/10 = 10%)</td><td>Nothing extra (default Argo Rollouts)</td></tr>
+  <tr><td>NGINX Ingress weight</td><td><code>canary-weight</code> annotation</td><td>1% granularity</td><td>NGINX Ingress Controller</td></tr>
+  <tr><td>Istio VirtualService</td><td>HTTPRoute weight split</td><td>1% granularity</td><td>Istio service mesh</td></tr>
+  <tr><td>AWS ALB weighted target groups</td><td>Listener rule weights</td><td>1% granularity</td><td>AWS ALB Controller</td></tr>
+  <tr><td>Header-based</td><td>Route specific users to canary by header</td><td>0 or 100%</td><td>NGINX / Istio</td></tr>
+</table>
+
+<h3>NGINX Ingress Canary Configuration</h3>
+
+<pre><code">---
+# Stable service (selects only stable pods)
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service-stable
+spec:
+  selector:
+    app: order-service
+
+---
+# Canary service (selects only canary pods — Argo Rollouts manages pod labels)
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service-canary
+spec:
+  selector:
+    app: order-service
+
+---
+# Primary Ingress (stable)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: order-service-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /order
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service-stable
+                port:
+                  number: 80
+
+# Argo Rollouts controller creates and manages the canary Ingress automatically:
+# (annotations are set/removed by rollout controller)
+# nginx.ingress.kubernetes.io/canary: "true"
+# nginx.ingress.kubernetes.io/canary-weight: "20"</code></pre>
+
+<h3>Istio-based Canary with VirtualService</h3>
+
+<pre><code"># Argo Rollouts manages these weights automatically:
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: order-service
+spec:
+  hosts:
+    - order-service
+  http:
+    - route:
+        - destination:
+            host: order-service-stable
+          weight: 80
+        - destination:
+            host: order-service-canary
+          weight: 20   # ← Argo Rollouts updates this during rollout
+
+# Rollout trafficRouting config for Istio:
+# strategy:
+#   canary:
+#     trafficRouting:
+#       istio:
+#         virtualService:
+#           name: order-service
+#         destinationRule:
+#           name: order-service-destrule
+#           canarySubsetName: canary
+#           stableSubsetName: stable</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="blue-green">11. Blue-Green Deployments</h2>
+
+<pre><code">apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: order-service-bg
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: 123456789.dkr.ecr.us-east-1.amazonaws.com/order-service:abc1234
+
+  strategy:
+    blueGreen:
+      # Active service: currently receiving production traffic
+      activeService: order-service-active
+      # Preview service: new version (green) before promotion
+      previewService: order-service-preview
+
+      # Auto-promote to active after analysis passes
+      autoPromotionEnabled: false     # require manual kubectl argo rollouts promote
+
+      # Scale down old (blue) replicas after this duration
+      scaleDownDelaySeconds: 30
+
+      # Run analysis against preview before promoting
+      prePromotionAnalysis:
+        templates:
+          - templateName: success-rate
+        args:
+          - name: service-name
+            value: order-service-preview
+
+      # Run analysis after promotion (watch for regressions)
+      postPromotionAnalysis:
+        templates:
+          - templateName: success-rate
+        args:
+          - name: service-name
+            value: order-service-active</code></pre>
+
+<h3>Blue-Green vs Canary Decision Guide</h3>
+
+<table>
+  <tr><th>Factor</th><th>Use Blue-Green</th><th>Use Canary</th></tr>
+  <tr><td>Database schema change</td><td>Yes (run migration against preview, validate, then promote)</td><td>Risky (both versions hit same DB simultaneously)</td></tr>
+  <tr><td>Stateful services</td><td>Yes (swap traffic atomically after testing)</td><td>Risky (canary pods may have different state)</td></tr>
+  <tr><td>Gradual risk reduction</td><td>No (all-or-nothing switch)</td><td>Yes (expose 5%, 20%, 50%, 100%)</td></tr>
+  <tr><td>Long rollout acceptable</td><td>No (instant switch or rollback)</td><td>Yes (hours-long rollout with analysis)</td></tr>
+  <tr><td>Cost concern</td><td>2× resource usage during cutover</td><td>Slightly above normal (canary pods added)</td></tr>
+  <tr><td>Traffic isolation testing</td><td>Yes (full green env accessible via preview Service)</td><td>Partial (5% real traffic is canary)</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="flagger">12. Flagger (Flux Progressive Delivery)</h2>
+
+<p>Flagger is the progressive delivery operator for Flux (and compatible with Argo CD). It automates canary and blue-green deployments using Kubernetes Deployments (not Rollout CRDs), making adoption easier for existing workloads.</p>
+
+<pre><code">helm upgrade --install flagger flagger/flagger \
+  --namespace flagger-system \
+  --create-namespace \
+  --set meshProvider=nginx \
+  --set metricsServer=http://prometheus.observability.svc:9090</code></pre>
+
+<pre><code">apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: order-service
+  namespace: order-service
+spec:
+  # Target: the existing Deployment to wrap
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+
+  # Ingress for traffic routing
+  ingressRef:
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    name: order-service
+
+  # Autoscaling (HPA follows canary/primary)
+  autoscalerRef:
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    name: order-service
+
+  service:
+    port: 80
+    targetPort: 8080
+    gateways: []
+    hosts:
+      - api.example.com
+
+  analysis:
+    # Promote when 5 consecutive analysis runs pass
+    interval: 1m
+    threshold: 5
+    maxWeight: 50          # max canary weight before full promotion
+    stepWeight: 10         # increase by 10% each interval
+
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99          # minimum 99% success rate
+        interval: 1m
+
+      - name: request-duration
+        thresholdRange:
+          max: 500         # maximum 500ms
+        interval: 1m
+
+    # Custom metric using PromQL
+    metrics:
+      - name: error-rate
+        templateRef:
+          name: error-rate
+          namespace: flagger-system
+        thresholdRange:
+          max: 0.01
+        interval: 1m
+
+    # Run integration tests as webhook before promotion
+    webhooks:
+      - name: integration-test
+        type: pre-rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 30s
+        metadata:
+          type: bash
+          cmd: "curl -sd 'anon' http://order-service-canary.order-service/checkout | grep 'order_id'"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="pipeline-observability">13. Pipeline Observability</h2>
+
+<h3>Tekton Metrics</h3>
+
+<pre><code"># Tekton exposes Prometheus metrics on port 9090 of each controller
+# Key metrics:
+tekton_pipelines_controller_pipelinerun_duration_seconds_bucket  # pipeline duration histogram
+tekton_pipelines_controller_pipelinerun_count{status}            # success/failure counts
+tekton_pipelines_controller_taskrun_duration_seconds_bucket
+tekton_pipelines_controller_taskrun_count{status}
+tekton_pipelines_controller_reconcile_count                      # reconciliation health</code></pre>
+
+<h3>PrometheusRule — Pipeline Alerts</h3>
+
+<pre><code">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pipeline-alerts
+  namespace: tekton-pipelines
+spec:
+  groups:
+    - name: ci-pipelines
+      rules:
+        - alert: PipelineHighFailureRate
+          expr: |
+            (
+              rate(tekton_pipelines_controller_pipelinerun_count{status="failed"}[1h])
+              /
+              rate(tekton_pipelines_controller_pipelinerun_count[1h])
+            ) > 0.20
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "CI pipeline failure rate > 20% for last hour"
+
+        - alert: PipelineSlowBuilds
+          expr: |
+            histogram_quantile(0.90,
+              rate(tekton_pipelines_controller_pipelinerun_duration_seconds_bucket[1h])
+            ) > 600
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "P90 pipeline duration > 10 minutes"
+
+- alert: ArgoCDRolloutDegraded
+  expr: |
+    rollout_info{phase!~"Healthy|Paused|Progressing"} == 1
+  for: 10m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Argo Rollout {{ $labels.name }} is {{ $labels.phase }}"</code></pre>
+
+<h3>Deployment Frequency Dashboard</h3>
+
+<pre><code"># PromQL: deployment frequency per service per day (DORA metric)
+# Counts GitOps repo commits that update image tags
+increase(
+  argocd_app_sync_total{
+    app=~".*order-service.*",
+    phase="Succeeded"
+  }[24h]
+)
+
+# Lead time proxy: time from last commit to successful sync
+# (requires custom metric or CI instrumentation)
+
+# Change failure rate:
+(
+  rate(argocd_app_info{sync_status="Unknown"}[7d])
+  + rate(argocd_app_info{health_status="Degraded"}[7d])
+) /
+rate(argocd_app_sync_total{phase="Succeeded"}[7d])</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="best-practices">14. Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>1. Separate CI (image build) from CD (deploy)</h4>
+    <p>CI builds and pushes images, updates GitOps repo. CD is entirely handled by the in-cluster GitOps agent. CI never runs <code>kubectl apply</code> against production. This hard separation means CI credential compromise cannot directly affect production clusters.</p>
+  </div>
+  <div class="card">
+    <h4>2. Use OIDC — never long-lived CI credentials</h4>
+    <p>GitHub Actions, GitLab CI, and Tekton all support OIDC-based credential issuance to AWS/GCP/Azure. Use <code>aws-actions/configure-aws-credentials</code> with <code>role-to-assume</code>. No <code>AWS_ACCESS_KEY_ID</code> in repository secrets.</p>
+  </div>
+  <div class="card">
+    <h4>3. Pin every action and image version</h4>
+    <p>Use full SHA pins for GitHub Actions (<code>uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683</code>) and image tags. Floating <code>@v4</code> or <code>:latest</code> references are a supply chain attack vector.</p>
+  </div>
+  <div class="card">
+    <h4>4. Fail CI on CRITICAL vulnerabilities</h4>
+    <p>Trivy/Grype should exit non-zero on CRITICAL/HIGH CVEs. Teams should triage them within the sprint. Add exceptions with justification for false positives — not <code>exit-code: 0</code> for all.</p>
+  </div>
+  <div class="card">
+    <h4>5. Use AnalysisTemplates for automated rollback</h4>
+    <p>Argo Rollouts with Prometheus-based AnalysisTemplates gate promotion on error rate and latency. A misconfigured deploy that raises errors from 0.1% to 3% will be rolled back automatically, without on-call intervention.</p>
+  </div>
+  <div class="card">
+    <h4>6. Start with canary for all production services</h4>
+    <p>Even a 5%→100% canary with 5-minute pause is better than a simultaneous 100% rollout. It limits blast radius for configuration bugs, memory leaks, and serialisation errors that only manifest under real traffic.</p>
+  </div>
+  <div class="card">
+    <h4>7. Use reusable workflows / shared Tekton Tasks</h4>
+    <p>Platform team maintains the canonical build/scan/sign/push pipeline template. Service teams call it, they do not copy it. Updates (e.g., new Trivy version, new signing key) propagate automatically to all services.</p>
+  </div>
+  <div class="card">
+    <h4>8. Tag images with git SHA — never :latest in production</h4>
+    <p>Mutable tags create non-reproducible deployments. SHA-based tags mean every deployment is traceable to a specific commit. Add git SHA as an image label for <code>docker inspect</code>-level audit trail.</p>
+  </div>
+</div>
+
+<details class="coverage">
+  <summary>Coverage Checklist</summary>
+  <ul class="coverage-body">
+    <li>CI/CD pipeline architecture diagram (commit → CI → GitOps repo → Argo CD → progressive delivery)</li>
+    <li>CI vs CD separation table (where each runs, credentials, outputs)</li>
+    <li>CI/CD contract callout (CI never kubectl applies to production)</li>
+    <li>Full GitHub Actions CI workflow: OIDC auth, Buildx multi-platform, docker/metadata-action tags, docker/build-push-action (sbom+provenance), Trivy SARIF scan, Cosign keyless signing, GitOps repo promotion</li>
+    <li>GitHub Actions reusable workflows (workflow_call with inputs/outputs/secrets)</li>
+    <li>Tekton object hierarchy (Task/Pipeline/PipelineRun/TaskRun/Workspace/TriggerTemplate/EventListener)</li>
+    <li>Tekton Task: go-test (unit test + lint steps, shared workspace)</li>
+    <li>Tekton Task: kaniko-build (executor with cache, digest result output, ECR credentials volume)</li>
+    <li>Full Tekton Pipeline: clone → test → build → scan → sign → update-gitops (with task dependencies)</li>
+    <li>Tekton EventListener + TriggerBinding + TriggerTemplate (GitHub webhook → PipelineRun)</li>
+    <li>Production Dockerfile: multi-stage Go build (trimpath, ldflags, CGO_ENABLED=0) + distroless nonroot runtime</li>
+    <li>BuildKit vs Kaniko comparison table (daemon/K8s/cache/multi-platform/security/speed)</li>
+    <li>Cosign keyless signing in GitHub Actions (COSIGN_EXPERIMENTAL, sign + verify commands)</li>
+    <li>Cosign key-based signing (generate-key-pair, sign with --annotations, verify)</li>
+    <li>Kyverno ClusterPolicy: verifyImages (keyless, subject regexp, issuer, mutateDigest, verifyDigest)</li>
+    <li>SBOM generation with Syft (spdx-json + cyclonedx-json formats)</li>
+    <li>Cosign attest for SBOM attestation + verify-attestation + Grype audit</li>
+    <li>Docker Buildx native SBOM+provenance callout (--sbom=true --provenance=true)</li>
+    <li>Image tag strategy table (SHA/semver/latest/branch/date+SHA with mutability)</li>
+    <li>Never :latest in production callout (imagePullPolicy risks)</li>
+    <li>ECR lifecycle policy JSON (keep semver, keep 50 SHA-tagged, expire untagged after 7d)</li>
+    <li>GitOps promotion script: yq update kustomization, git commit with run URL + digest, retry push loop</li>
+    <li>Argo Rollouts install (kubectl apply + plugin)</li>
+    <li>Rollout CRD: replicas, canary strategy, canaryService+stableService, NGINX traffic routing, canary steps (setWeight/pause/analysis), background analysis</li>
+    <li>AnalysisTemplate: success-rate metric (Prometheus PromQL), latency-p99, error-rate with failureCondition</li>
+    <li>kubectl argo rollouts CLI: get --watch, pause, promote, abort, retry, set image, undo</li>
+    <li>Canary traffic splitting options table (pod-count/NGINX/Istio/ALB/header-based)</li>
+    <li>NGINX Ingress canary: stable + canary Services + primary Ingress (Argo Rollouts manages canary Ingress)</li>
+    <li>Istio VirtualService weight-based canary + Rollout trafficRouting config</li>
+    <li>Blue-Green Rollout CRD (activeService/previewService, autoPromotionEnabled, prePromotionAnalysis/postPromotionAnalysis)</li>
+    <li>Blue-Green vs Canary decision guide table (5 factors)</li>
+    <li>Flagger Helm install + Canary CRD (targetRef Deployment, NGINX ingress, analysis interval/threshold/stepWeight/maxWeight, metrics, webhooks)</li>
+    <li>Tekton Prometheus metrics reference (pipelinerun/taskrun duration buckets + counts)</li>
+    <li>PrometheusRule: PipelineHighFailureRate (&gt;20%), PipelineSlowBuilds (P90 &gt;10min), ArgoCDRolloutDegraded</li>
+    <li>DORA metrics PromQL (deployment frequency, change failure rate from Argo CD sync metrics)</li>
+    <li>8 best practices cards</li>
+  </ul>
+</details>
+
+</div>
+</main>
+
+<button class="btt" id="btt" title="Back to top">↑</button>
+
+<script>
+const sidebar = document.getElementById('sidebar');
+document.getElementById('hamburger').addEventListener('click', () => sidebar.classList.toggle('open'));
+document.getElementById('btt').addEventListener('click', () => document.getElementById('main').scrollTo({top:0,behavior:'smooth'}));
+document.getElementById('main').addEventListener('scroll', function(){
+  document.getElementById('btt').style.display = this.scrollTop > 400 ? 'flex' : 'none';
+});
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn'; btn.textContent = 'copy';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pre.innerText.replace(/^copy\n/,''));
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+  pre.appendChild(btn);
+});
+document.getElementById('nav-filter').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+const tocLinks = document.querySelectorAll('.toc a');
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+}, {root: document.getElementById('main'), rootMargin: '-20% 0px -70% 0px'});
+headings.forEach(h => obs.observe(h));
+</script>
+</body>
+</html>

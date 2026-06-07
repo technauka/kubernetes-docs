@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacity Planning | Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+#sidebar-header h1{font-size:14px;font-weight:600;color:var(--text);}
+#sidebar-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+#sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+#sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none;}
+#sidebar-search input:focus{border-color:var(--accent);}
+#sidebar-nav{overflow-y:auto;flex:1;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);}
+#main{flex:1;overflow-y:auto;padding:40px 48px;position:relative;}
+.page-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.page-header .breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.page-header .breadcrumb span{color:var(--text2);}
+.page-header h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-header .subtitle{color:var(--text2);font-size:16px;line-height:1.6;}
+.page-header .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+#toc{float:right;width:220px;margin:0 0 24px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;position:sticky;top:24px;}
+#toc h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+#toc a{display:block;font-size:12px;color:var(--text2);padding:3px 0;border-left:2px solid transparent;padding-left:8px;transition:all .15s;}
+#toc a:hover{color:var(--text);text-decoration:none;}
+#toc a.active{color:var(--accent);border-left-color:var(--accent);}
+#toc a.toc-h3{padding-left:18px;font-size:11px;}
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);clear:both;}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px;}
+h4{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;}
+p{color:var(--text2);line-height:1.7;margin-bottom:12px;}
+ul,ol{color:var(--text2);line-height:1.7;padding-left:20px;margin-bottom:12px;}
+li{margin-bottom:4px;}
+strong{color:var(--text);font-weight:600;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:12px;color:var(--text);line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);color:var(--text);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card-accent-blue{border-top:3px solid var(--accent);}
+.card-accent-green{border-top:3px solid var(--green);}
+.card-accent-yellow{border-top:3px solid var(--yellow);}
+.card-accent-red{border-top:3px solid var(--red);}
+.card-accent-purple{border-top:3px solid var(--purple);}
+.card-accent-orange{border-top:3px solid var(--orange);}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout-body p,.callout-body ul{font-size:13px;margin:0;}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.diagram .title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:16px 0;}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:16px 0;}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.metric-val{font-size:28px;font-weight:700;color:var(--accent);font-family:monospace;}
+.metric-label{font-size:12px;color:var(--text2);margin-top:4px;}
+.metric-note{font-size:11px;color:var(--text3);margin-top:4px;}
+#back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;z-index:100;}
+#back-top.visible{opacity:1;}
+#back-top:hover{background:var(--bg4);color:var(--text);}
+.formula{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--yellow);margin:12px 0;}
+.tag{display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--text2);margin:2px;}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Kubernetes Docs</h1>
+    <p>Production-Grade Reference</p>
+  </div>
+  <div id="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)" />
+  </div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Getting Started</div>
+      <a href="../00-foundations/00-overview.html">00 Foundations Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Core Concepts</div>
+      <a href="../01-core-concepts/00-architecture.html">Architecture</a>
+      <a href="../01-core-concepts/01-pods.html">Pods</a>
+      <a href="../01-core-concepts/02-workloads.html">Workloads</a>
+      <a href="../01-core-concepts/03-services-networking.html">Services & Networking</a>
+      <a href="../01-core-concepts/04-storage.html">Storage</a>
+      <a href="../01-core-concepts/05-configuration.html">Configuration</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Cluster Operations</div>
+      <a href="../02-cluster-operations/00-cluster-overview.html">Cluster Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Workload Management</div>
+      <a href="../03-workload-management/00-workload-overview.html">Workload Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Networking</div>
+      <a href="../04-networking/00-networking-overview.html">Networking Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Security</div>
+      <a href="../05-security/00-security-overview.html">Security Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Observability</div>
+      <a href="../06-observability/00-observability-overview.html">Observability Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Storage & Data</div>
+      <a href="../07-storage-data/00-storage-overview.html">Storage Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-platform-overview.html">Platform Overview</a>
+      <a href="../08-platform-engineering/07-cost-management.html">Cost Management</a>
+      <a href="../08-platform-engineering/08-service-catalog.html">Service Catalog</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="00-production-overview.html">Production Overview</a>
+      <a href="01-capacity-planning.html" class="active">Capacity Planning</a>
+      <a href="02-performance-tuning.html">Performance Tuning</a>
+      <a href="03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="04-security-hardening.html">Security Hardening</a>
+      <a href="05-network-operations.html">Network Operations</a>
+      <a href="06-storage-operations.html">Storage Operations</a>
+      <a href="07-certificate-management.html">Certificate Management</a>
+      <a href="08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="09-incident-response.html">Incident Response</a>
+      <a href="10-sre-practices.html">SRE Practices</a>
+    </div>
+  </nav>
+</div>
+
+<div id="main">
+
+<nav id="toc">
+  <h3>On This Page</h3>
+  <a href="#fundamentals">Fundamentals</a>
+  <a href="#dimensions">Capacity Dimensions</a>
+  <a href="#node-sizing">Node Sizing</a>
+  <a href="#current-utilization">Current Utilization</a>
+  <a href="#right-sizing">Right-Sizing Workloads</a>
+  <a href="#headroom">Headroom &amp; Safety Margins</a>
+  <a href="#forecasting">Demand Forecasting</a>
+  <a href="#autoscaling">Autoscaling Strategy</a>
+  <a href="#node-pools">Node Pool Architecture</a>
+  <a href="#stateful">Stateful Workloads</a>
+  <a href="#ip-exhaustion">IP Exhaustion</a>
+  <a href="#alerts">Capacity Alerts</a>
+  <a href="#review-cadence">Review Cadence</a>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">09 — Production Operations / <span>01 Capacity Planning</span></div>
+  <h1>Capacity Planning</h1>
+  <p class="subtitle">Sizing clusters to meet today's demand and tomorrow's growth — balancing headroom, cost efficiency, and autoscaling safety nets.</p>
+  <div class="meta">
+    <span class="badge badge-blue">Operations</span>
+    <span class="badge badge-green">FinOps</span>
+    <span class="badge badge-yellow">Autoscaling</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="fundamentals">Fundamentals</h2>
+
+<p>Capacity planning answers two questions: <em>Do we have enough resources today?</em> and <em>When do we need to add more?</em> In Kubernetes, the complexity comes from three independent resource dimensions — CPU, memory, and pod count — layered on top of autoscaling, spot variability, and the gap between what workloads <em>request</em> and what they <em>use</em>.</p>
+
+<div class="diagram">
+  <div class="title">Capacity Supply vs Demand</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Node allocatable capacity
+  ┌─────────────────────────────────────────────────────────────┐
+  │  System reserved  │  Kube reserved  │  Available for pods   │
+  └─────────────────────────────────────────────────────────────┘
+                                         ┌─────────────────────┐
+                                         │  Requested (sum)    │
+                                         │  ├── Actual usage   │
+                                         │  └── Slack (waste)  │
+                                         │  Headroom buffer    │
+                                         │  Free (unscheduled) │
+                                         └─────────────────────┘
+  Warning zones:
+    Requests / Allocatable &gt; 80%  → near saturation
+    Actual usage / Requests &lt; 25% → over-provisioned (right-size first)
+    Headroom &lt; 1 full node        → autoscaler can't absorb node failure</pre>
+</div>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body">
+    <strong>Requests drive scheduling, not usage</strong>
+    <p>The Kubernetes scheduler packs pods based on <strong>requests</strong>, not actual resource consumption. A pod that requests 4 CPU but uses 0.1 CPU blocks 4 CPU worth of scheduling capacity. Over-requested workloads cause artificial node saturation while actual utilization stays low — always right-size requests before adding nodes.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="dimensions">Capacity Dimensions</h2>
+
+<p>Kubernetes clusters can hit limits on any of five independent dimensions. Hitting any single one blocks further scheduling even when others are available:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Dimension</th><th>What Limits It</th><th>How to Check</th><th>Expansion Strategy</th></tr></thead>
+  <tbody>
+    <tr><td><strong>CPU (requests)</strong></td><td>Sum of pod CPU requests vs node allocatable CPU</td><td><code>kubectl resource-capacity --sort cpu.request</code></td><td>Add nodes, right-size requests, enable VPA</td></tr>
+    <tr><td><strong>Memory (requests)</strong></td><td>Sum of pod memory requests vs node allocatable memory</td><td><code>kubectl resource-capacity --sort mem.request</code></td><td>Add nodes, right-size requests, enable VPA</td></tr>
+    <tr><td><strong>Pod count</strong></td><td><code>--max-pods</code> per node (default 110, AWS VPC CNI varies by instance)</td><td><code>kubectl describe node | grep Capacity</code></td><td>Increase max-pods (VPC CNI prefix delegation), add nodes</td></tr>
+    <tr><td><strong>IP addresses</strong></td><td>VPC subnet CIDR /24 = 251 usable IPs; shared with nodes</td><td><code>aws ec2 describe-subnets | jq '.[] | .AvailableIpAddressCount'</code></td><td>Add subnets/secondary CIDRs, enable prefix delegation</td></tr>
+    <tr><td><strong>Storage (PV)</strong></td><td>EBS volume limits per instance type (28–128 attachments)</td><td><code>kubectl get pvc -A | grep Bound</code></td><td>Use EFS/S3 for shared storage, increase instance size</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="node-sizing">Node Sizing Strategy</h2>
+
+<h3>Instance family selection</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Workload Profile</th><th>AWS Family</th><th>CPU:Memory Ratio</th><th>Use Case</th></tr></thead>
+  <tbody>
+    <tr><td>General purpose</td><td>m7i, m6i, m5</td><td>1:4</td><td>Mixed microservices, most production workloads</td></tr>
+    <tr><td>CPU-intensive</td><td>c7i, c6i, c5</td><td>1:2</td><td>API servers, data processing, encoding</td></tr>
+    <tr><td>Memory-intensive</td><td>r7i, r6i, r5</td><td>1:8</td><td>JVM apps, in-memory caches, analytics</td></tr>
+    <tr><td>Burstable / dev</td><td>t3, t4g</td><td>1:2–4</td><td>Development, CI runners, low-traffic services</td></tr>
+    <tr><td>GPU / ML</td><td>p4, g5, g4dn</td><td>—</td><td>Model training, inference, video</td></tr>
+    <tr><td>ARM / cost-optimized</td><td>m7g, c7g, r7g (Graviton)</td><td>1:4</td><td>Same as above families; ~20% cheaper</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Node size tradeoffs</h3>
+
+<div class="two-col">
+  <div class="card card-accent-blue">
+    <h3>Fewer, larger nodes</h3>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;margin-top:8px;">
+      <li>Lower per-node overhead (daemon sets, kube-reserved)</li>
+      <li>Fewer node reboots during upgrades</li>
+      <li>Better bin-packing for large pods</li>
+      <li><strong>Risk:</strong> larger blast radius per node failure</li>
+      <li><strong>Risk:</strong> fragmentation for small pods</li>
+      <li>Use: m7i.4xlarge (16 vCPU / 64 GiB) as baseline</li>
+    </ul>
+  </div>
+  <div class="card card-accent-green">
+    <h3>More, smaller nodes</h3>
+    <ul style="font-size:13px;color:var(--text2);padding-left:16px;margin-top:8px;">
+      <li>Smaller blast radius per node failure</li>
+      <li>Better fault isolation with PodAntiAffinity</li>
+      <li>Higher overhead ratio (DaemonSets cost more)</li>
+      <li><strong>Risk:</strong> more nodes to manage/upgrade</li>
+      <li><strong>Risk:</strong> IP exhaustion faster</li>
+      <li>Use: m7i.xlarge (4 vCPU / 16 GiB) for isolation-critical</li>
+    </ul>
+  </div>
+</div>
+
+<h3>kube-reserved and system-reserved budgets</h3>
+
+<p>Kubernetes reserves resources on each node for the kubelet, system daemons, and eviction threshold before pods can be scheduled. Always set these explicitly in your node configuration:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># EKS managed node group bootstrap configuration
+# /etc/eks/bootstrap.sh extra args (via launch template userData)
+--kubelet-extra-args '
+  --kube-reserved=cpu=250m,memory=1Gi,ephemeral-storage=1Gi
+  --system-reserved=cpu=250m,memory=500Mi,ephemeral-storage=1Gi
+  --eviction-hard=memory.available<500Mi,nodefs.available<10%,nodefs.inodesFree<5%
+  --eviction-soft=memory.available<1Gi,nodefs.available<15%
+  --eviction-soft-grace-period=memory.available=2m,nodefs.available=2m
+  --max-pods=110
+'</code></pre>
+
+<h3>Effective allocatable capacity formula</h3>
+
+<div class="formula">
+  allocatable_cpu = node_cpu − kube_reserved_cpu − system_reserved_cpu<br>
+  allocatable_mem = node_mem − kube_reserved_mem − system_reserved_mem − eviction_threshold<br><br>
+  Example: m7i.xlarge (4 vCPU / 16 GiB)<br>
+  CPU: 4000m − 250m − 250m = 3500m per node<br>
+  Mem: 16384Mi − 1024Mi − 512Mi − 500Mi = 14348Mi per node
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Verify actual allocatable on a running node
+kubectl get node ip-10-0-1-42.us-east-1.compute.internal \
+  -o jsonpath='{.status.allocatable}' | jq .
+
+# Output:
+# {
+#   "cpu": "3920m",
+#   "memory": "14902836Ki",
+#   "pods": "110",
+#   "ephemeral-storage": "99Gi"
+# }</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="current-utilization">Measuring Current Utilization</h2>
+
+<h3>kubectl resource-capacity (krew)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Per-node CPU and memory requests vs allocatable
+kubectl resource-capacity --sort cpu.request
+
+# Output (example):
+# NODE                              CPU REQUESTS   CPU LIMITS   MEMORY REQUESTS   MEMORY LIMITS
+# ip-10-0-1-42.us-east-1.compute   2350m/3920m    4000m/3920m  8Gi/14.2Gi        16Gi/14.2Gi
+# ip-10-0-1-55.us-east-1.compute   1100m/3920m    2000m/3920m  4Gi/14.2Gi        8Gi/14.2Gi
+
+# Include actual usage (requires metrics-server)
+kubectl resource-capacity --util --sort cpu.util
+
+# Per-pod breakdown on a node
+kubectl resource-capacity --pods --node ip-10-0-1-42.us-east-1.compute \
+  --sort cpu.request</code></pre>
+
+<h3>PromQL — cluster-wide utilization</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># Cluster CPU request utilization (requested / allocatable)
+sum(kube_pod_container_resource_requests{resource="cpu"})
+  /
+sum(kube_node_status_allocatable{resource="cpu"})
+
+# Cluster memory request utilization
+sum(kube_pod_container_resource_requests{resource="memory"})
+  /
+sum(kube_node_status_allocatable{resource="memory"})
+
+# Per-namespace CPU request share (top consumers)
+sort_desc(
+  sum by (namespace) (kube_pod_container_resource_requests{resource="cpu"})
+    /
+  scalar(sum(kube_node_status_allocatable{resource="cpu"}))
+)
+
+# Actual CPU usage as % of allocatable
+sum(rate(container_cpu_usage_seconds_total{container!=""}[5m]))
+  /
+sum(kube_node_status_allocatable{resource="cpu"})
+
+# Node-level memory pressure (usage approaching allocatable)
+max by (node) (
+  (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+    /
+  node_memory_MemTotal_bytes
+)
+
+# Pods per node vs max-pods limit
+sum by (node) (kube_pod_info{pod_phase="Running"})
+  /
+max by (node) (kube_node_status_capacity{resource="pods"})</code></pre>
+
+<h3>Namespace-level capacity report</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">#!/bin/bash
+# Weekly capacity report script
+echo "=== Cluster Capacity Report $(date +%Y-%m-%d) ==="
+
+echo ""
+echo "--- Node Summary ---"
+kubectl get nodes -o custom-columns=\
+'NAME:.metadata.name,STATUS:.status.conditions[-1].type,CPU:.status.allocatable.cpu,MEMORY:.status.allocatable.memory,PODS:.status.allocatable.pods'
+
+echo ""
+echo "--- Top CPU-Requesting Namespaces ---"
+kubectl top pods -A --sort-by=cpu 2>/dev/null | \
+  awk 'NR==1 || NR<=20' | column -t
+
+echo ""
+echo "--- ResourceQuota Usage ---"
+kubectl get resourcequota -A -o custom-columns=\
+'NAMESPACE:.metadata.namespace,NAME:.metadata.name,CPU-REQ:.status.used.requests\.cpu,CPU-LIM:.status.used.limits\.cpu,MEM-REQ:.status.used.requests\.memory'
+
+echo ""
+echo "--- Nodes Near CPU Request Saturation (>75%) ---"
+kubectl resource-capacity --sort cpu.request 2>/dev/null | \
+  awk 'NR==1 || ($3+0)/$4+0 > 0.75'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="right-sizing">Right-Sizing Workloads</h2>
+
+<p>Before adding nodes, eliminate request waste. Most clusters see 40–70% CPU over-provisioning — a VPA recommendation pass typically reduces cluster size by 20–40% with no reliability impact.</p>
+
+<h3>VPA recommendation workflow</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Step 1: Deploy VPA in Off mode (recommendation-only — no pod restarts)
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: payment-service-vpa
+  namespace: payments
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payment-service
+  updatePolicy:
+    updateMode: "Off"   # recommendation only
+  resourcePolicy:
+    containerPolicies:
+      - containerName: payment-service
+        minAllowed:
+          cpu: 100m
+          memory: 128Mi
+        maxAllowed:
+          cpu: 4
+          memory: 8Gi
+        controlledValues: RequestsAndLimits</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Step 2: Read recommendations after 24h+ of data
+kubectl describe vpa payment-service-vpa -n payments
+
+# Output:
+#   Recommendation:
+#     Container Recommendations:
+#       Container Name:  payment-service
+#         Lower Bound:
+#           Cpu:     100m
+#           Memory:  256Mi
+#         Target:
+#           Cpu:     350m      ← recommended request
+#           Memory:  512Mi
+#         Uncapped Target:
+#           Cpu:     350m
+#           Memory:  480Mi
+#         Upper Bound:
+#           Cpu:     1200m
+#           Memory:  2Gi
+
+# Step 3: Bulk export all VPA recommendations across cluster
+kubectl get vpa -A -o json | jq -r '
+  .items[] |
+  .metadata.namespace + "/" + .metadata.name + "  " +
+  (.status.recommendation.containerRecommendations[]? |
+    .containerName + "  cpu:" +
+    .target.cpu + "  mem:" + .target.memory)'</code></pre>
+
+<h3>Goldilocks dashboard</h3>
+
+<p>Goldilocks (covered in depth in <a href="../08-platform-engineering/07-cost-management.html">Section 08-07</a>) installs VPAs for every Deployment in a labeled namespace and visualizes recommendations in a dashboard:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Label a namespace for Goldilocks analysis
+kubectl label namespace payments goldilocks.fairwinds.com/enabled=true
+
+# Access dashboard (port-forward)
+kubectl port-forward -n goldilocks svc/goldilocks-dashboard 8080:80</code></pre>
+
+<h3>Common right-sizing patterns</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Pattern</th><th>Symptom</th><th>VPA says</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>CPU over-requested</td><td>CPU request 2000m, usage 80m</td><td>Target: 150m</td><td>Lower request to 200m; add 20% safety margin</td></tr>
+    <tr><td>Memory under-requested</td><td>OOMKilled events, memory request 256Mi</td><td>Target: 1.2Gi</td><td>Raise request to 1.5Gi; set limit at 2Gi</td></tr>
+    <tr><td>Limits ≫ Requests</td><td>CPU limit 8000m on 100m request</td><td>Target: 200m</td><td>Align: request 200m, limit 400m (2× ratio)</td></tr>
+    <tr><td>No limits set</td><td>Pod using 100% node CPU during spike</td><td>N/A</td><td>Set CPU limit at 3× VPA target; memory limit at 1.5× target</td></tr>
+    <tr><td>Batch job with prod sizing</td><td>Daily job with 4cpu/8Gi running 5 min/day</td><td>Target: 1cpu/2Gi</td><td>Lower requests; consider PriorityClass: batch-low</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout callout-info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <strong>VPA + HPA conflict rule</strong>
+    <p>Do not use VPA <code>updateMode: Auto</code> with HPA on the same CPU/memory metric — they fight each other. The recommended pattern: VPA on memory (HPA rarely scales on memory), HPA on CPU or a custom metric (RPS, queue depth). See <a href="../08-platform-engineering/07-cost-management.html">08-07</a> for full VPA/HPA strategy.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="headroom">Headroom &amp; Safety Margins</h2>
+
+<p>Headroom is the slack capacity you deliberately keep available to absorb: node failures, traffic spikes before autoscaling reacts, and rolling updates that temporarily double pod count.</p>
+
+<h3>Headroom targets by workload criticality</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Cluster Tier</th><th>CPU Headroom</th><th>Memory Headroom</th><th>Min Free Nodes</th><th>Rationale</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Production</strong></td><td>≥ 20%</td><td>≥ 25%</td><td>2 nodes (N+2)</td><td>Absorb node failure + autoscale lag (2–4 min on spot)</td></tr>
+    <tr><td><strong>Staging</strong></td><td>≥ 15%</td><td>≥ 20%</td><td>1 node (N+1)</td><td>Functional parity with some cost savings</td></tr>
+    <tr><td><strong>Development</strong></td><td>≥ 5%</td><td>≥ 10%</td><td>0</td><td>Autoscale freely; minor disruption acceptable</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Pause pods for guaranteed headroom</h3>
+
+<p>Karpenter and Cluster Autoscaler scale down idle nodes. A <em>pause pod</em> (a pod running <code>pause</code> image with real resource requests but zero workload cost) permanently reserves capacity on every node, preventing the autoscaler from reclaiming it:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capacity-reservation
+  namespace: kube-system
+spec:
+  replicas: 2   # one per AZ; adjust to match headroom target
+  selector:
+    matchLabels:
+      app: capacity-reservation
+  template:
+    metadata:
+      labels:
+        app: capacity-reservation
+    spec:
+      priorityClassName: batch-low   # evicted first when real pods need space
+      terminationGracePeriodSeconds: 0
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+          resources:
+            requests:
+              cpu: "1500m"      # reserves 1.5 CPU per node
+              memory: "3Gi"     # reserves 3 GiB memory per node
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop: ["ALL"]</code></pre>
+
+<div class="callout callout-info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <strong>How pause pods work with autoscaling</strong>
+    <p>When a real pod is pending, the scheduler evicts the low-priority pause pod (PriorityClass: batch-low) to make room. The now-evicted pause pod becomes pending, which triggers Karpenter to provision a new node. Net result: the new node is available for the next real workload burst, maintaining the headroom invariant.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="forecasting">Demand Forecasting</h2>
+
+<p>Capacity planning without a forecast is reactive. Use historical Prometheus data to project future demand.</p>
+
+<h3>Linear regression with predict_linear()</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># Predict CPU request total in 30 days based on last 14 days of growth
+predict_linear(
+  sum(kube_pod_container_resource_requests{resource="cpu"})[14d:1h],
+  30 * 24 * 3600
+)
+
+# As % of current allocatable — will we saturate?
+predict_linear(
+  sum(kube_pod_container_resource_requests{resource="cpu"})[14d:1h],
+  30 * 24 * 3600
+)
+  /
+sum(kube_node_status_allocatable{resource="cpu"})
+
+# Namespace-level forecast: payments team CPU growth
+predict_linear(
+  sum by (namespace) (
+    kube_pod_container_resource_requests{resource="cpu", namespace="payments"}
+  )[7d:1h],
+  14 * 24 * 3600
+)</code></pre>
+
+<h3>Seasonality and traffic patterns</h3>
+
+<p><code>predict_linear()</code> assumes constant growth. Real traffic has weekly cycles (weekday vs weekend) and seasonal spikes (end-of-month billing, Black Friday). For these, use longer lookback windows and apply multipliers manually:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">#!/bin/bash
+# Extract weekly peak-to-average ratio from Prometheus
+# Use this to size for peak, not average
+
+PROM_URL="http://prometheus.monitoring.svc:9090"
+
+# 7-day average CPU requests
+AVG=$(curl -s "${PROM_URL}/api/v1/query" \
+  --data-urlencode 'query=avg_over_time(sum(kube_pod_container_resource_requests{resource="cpu"})[7d:1h])' | \
+  jq -r '.data.result[0].value[1]')
+
+# 7-day peak CPU requests
+PEAK=$(curl -s "${PROM_URL}/api/v1/query" \
+  --data-urlencode 'query=max_over_time(sum(kube_pod_container_resource_requests{resource="cpu"})[7d:1h])' | \
+  jq -r '.data.result[0].value[1]')
+
+echo "Average CPU requests: ${AVG} cores"
+echo "Peak CPU requests:    ${PEAK} cores"
+echo "Peak-to-avg ratio:    $(echo "scale=2; $PEAK/$AVG" | bc)×"
+echo ""
+echo "Size cluster for PEAK × 1.3 safety margin = $(echo "scale=1; $PEAK*1.3" | bc) cores"</code></pre>
+
+<h3>Capacity planning spreadsheet model</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Input</th><th>Value</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Current CPU requests</td><td>120 cores</td><td>From Prometheus</td></tr>
+    <tr><td>Monthly growth rate</td><td>8%</td><td>From predict_linear 3-month trend</td></tr>
+    <tr><td>Peak-to-average multiplier</td><td>1.4×</td><td>From weekly seasonality analysis</td></tr>
+    <tr><td>Headroom buffer</td><td>20%</td><td>Production tier requirement</td></tr>
+    <tr><td>6-month CPU target</td><td>120 × (1.08^6) × 1.4 × 1.2 = <strong>282 cores</strong></td><td>Order nodes 4 weeks before hitting limit</td></tr>
+    <tr><td>Node size (m7i.4xlarge)</td><td>3.5 allocatable CPU per node</td><td>After kube/system reserved</td></tr>
+    <tr><td>Nodes needed in 6 months</td><td>282 / 3.5 = <strong>81 nodes</strong></td><td>vs 40 today → plan for doubling</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="autoscaling">Autoscaling Strategy</h2>
+
+<p>Autoscaling handles the short-term spikes; capacity planning handles the long-term trend. Both are required — autoscaling alone is not a substitute for planning.</p>
+
+<h3>Three-layer autoscaling model</h3>
+
+<div class="diagram">
+  <div class="title">Autoscaling Layers</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Layer 3 — Node autoscaling (Karpenter / Cluster Autoscaler)
+    Response time: 2–4 min (on-demand), 1–2 min (Karpenter)
+    Trigger: Pending pods that can't be scheduled
+    Action: Add / remove nodes
+
+  Layer 2 — Horizontal pod autoscaling (HPA / KEDA)
+    Response time: 15 sec–2 min (depends on metric scrape interval)
+    Trigger: CPU%, memory%, custom metric (RPS, queue depth)
+    Action: Scale replicas up/down
+
+  Layer 1 — Vertical pod autoscaling (VPA)
+    Response time: Minutes–hours (restarts pods)
+    Trigger: VPA updateMode != Off
+    Action: Right-size requests/limits per pod
+
+  ──────────────────────────────────────────────────────────────
+  Capacity planning: ensures Layer 3 has room to scale into
+  (burst headroom, savings plan coverage for baseline)</pre>
+</div>
+
+<h3>Karpenter NodePool tuning for capacity planning</h3>
+
+<p>Karpenter (covered in depth in <a href="../08-platform-engineering/01-cluster-provisioning.html">Section 08-01</a>) consolidates and provisions nodes. For capacity planning purposes, configure disruption budgets to prevent over-aggressive consolidation during business hours:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: production
+spec:
+  template:
+    spec:
+      requirements:
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot", "on-demand"]
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values:
+            - m7i.xlarge
+            - m7i.2xlarge
+            - m7i.4xlarge
+            - m6i.xlarge
+            - m6i.2xlarge
+            - m6i.4xlarge
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: production
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 30s
+    budgets:
+      # During business hours: consolidate at most 10% of nodes at once
+      - schedule: "0 9 * * 1-5"    # Mon-Fri 9am
+        duration: 8h
+        nodes: "10%"
+      # Off-hours: allow 20% consolidation
+      - nodes: "20%"
+  limits:
+    cpu: "500"
+    memory: "2000Gi"</code></pre>
+
+<h3>HPA configuration for spike absorption</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: payment-service
+  namespace: payments
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payment-service
+  minReplicas: 3    # ≥ 3 for multi-AZ spread
+  maxReplicas: 50
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60   # scale out at 60% CPU, not 80%
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "1000"     # 1000 RPS per pod
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60   # quick scale-up
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 60    # add up to 4 pods per minute
+        - type: Percent
+          value: 100
+          periodSeconds: 60    # or double, whichever is larger
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 min before scale-down
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60    # remove at most 2 pods per minute</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="node-pools">Node Pool Architecture</h2>
+
+<p>Separate node pools by workload class. This allows independent scaling, targeted instance selection, and cost isolation:</p>
+
+<div class="diagram">
+  <div class="title">Node Pool Topology</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  system pool  (2× m7i.xlarge, on-demand, multi-AZ)              │
+  │  Taint: CriticalAddonsOnly=true:NoSchedule                       │
+  │  Workloads: CoreDNS, kube-proxy, metrics-server, cert-manager    │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  observability pool  (3× m7i.2xlarge, on-demand, multi-AZ)      │
+  │  Taint: dedicated=observability:NoSchedule                       │
+  │  Workloads: Prometheus, Loki, Tempo, Pyroscope, Grafana          │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  production pool  (Karpenter managed, spot+on-demand, multi-AZ)  │
+  │  No taint — default pool                                         │
+  │  Workloads: All production services                              │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  batch pool  (Karpenter managed, spot-only)                      │
+  │  Taint: dedicated=batch:NoSchedule                               │
+  │  Workloads: Argo Workflows, Spark, ML training, CI runners       │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  gpu pool  (Karpenter managed, g5.xlarge, spot+on-demand)        │
+  │  Taint: nvidia.com/gpu=true:NoSchedule                           │
+  │  Workloads: ML inference, video encoding                         │
+  └──────────────────────────────────────────────────────────────────┘</pre>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Batch workload targeting the batch node pool
+spec:
+  tolerations:
+    - key: dedicated
+      value: batch
+      effect: NoSchedule
+  nodeSelector:
+    dedicated: batch
+  # Or with affinity for more control:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: dedicated
+                operator: In
+                values: ["batch"]</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="stateful">Stateful Workload Capacity</h2>
+
+<p>Stateful workloads (databases, Kafka, etcd) have additional capacity constraints beyond CPU and memory.</p>
+
+<h3>Prometheus StatefulSet sizing example</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Dimension</th><th>Calculation</th><th>Example Value</th></tr></thead>
+  <tbody>
+    <tr><td>Samples ingested/sec</td><td>Scrape targets × avg metrics × 1/scrape_interval</td><td>50,000 targets × 200 metrics × 1/15s = 667k samples/sec</td></tr>
+    <tr><td>CPU</td><td>~1 CPU per 100k active series</td><td>10M active series → 100m × 100 = 10 CPU</td></tr>
+    <tr><td>Memory (head chunk)</td><td>~3 KiB per active series</td><td>10M series × 3 KiB = 30 GiB RAM</td></tr>
+    <tr><td>Storage (TSDB)</td><td>bytes/sample × samples/sec × retention_seconds × 1.1 overhead</td><td>1.5B × 667k/s × 86400s × 15d × 1.1 ≈ 1.2 TiB per replica</td></tr>
+    <tr><td>IOPS</td><td>WAL: ~1000 IOPS; compaction bursts to 5000 IOPS</td><td>gp3 with 4000 IOPS provisioned</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>PostgreSQL/MySQL sizing heuristics</h3>
+<ul>
+  <li><strong>Connections:</strong> size memory for <code>max_connections × work_mem</code>; use PgBouncer connection pooler</li>
+  <li><strong>Shared buffers:</strong> 25% of instance RAM (OS will cache the rest via page cache)</li>
+  <li><strong>Storage:</strong> plan for 3× current data size (growth + WAL + vacuuming space)</li>
+  <li><strong>IOPS:</strong> OLTP writes need &gt;3000 IOPS sustained; use io2 or gp3 with provisioned IOPS</li>
+  <li><strong>CPU:</strong> OLTP is typically memory and I/O bound, not CPU bound; 4–8 vCPU is enough for most databases up to 100k QPS</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="ip-exhaustion">IP Exhaustion Planning</h2>
+
+<p>VPC CNI assigns a real VPC IP to every pod. With hundreds of pods per node, subnets exhaust quickly. Plan IP capacity as carefully as compute.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check available IPs per subnet
+aws ec2 describe-subnets \
+  --filters "Name=tag:kubernetes.io/cluster/my-cluster,Values=shared" \
+  --query 'Subnets[*].{Subnet:SubnetId,AZ:AvailabilityZone,Available:AvailableIpAddressCount,CIDR:CidrBlock}' \
+  --output table
+
+# Check current pod IP consumption
+kubectl get pods -A -o wide | grep -v '<none>' | \
+  awk '{print $8}' | sort | uniq -c | sort -rn | head -20
+
+# Count pods per node to understand IP density
+kubectl get pods -A -o wide --field-selector spec.nodeName=ip-10-0-1-42.us-east-1.compute.internal | wc -l</code></pre>
+
+<h3>EKS VPC CNI prefix delegation</h3>
+
+<p>Prefix delegation assigns a /28 prefix (16 IPs) per ENI slot instead of 1 IP, multiplying pod density by 16× with no subnet CIDR changes:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Enable prefix delegation on existing cluster
+kubectl set env daemonset aws-node \
+  -n kube-system \
+  ENABLE_PREFIX_DELEGATION=true \
+  WARM_PREFIX_TARGET=1
+
+# Verify (new nodes will get prefix IPs; existing nodes need rolling replacement)
+kubectl describe node ip-10-0-1-42.us-east-1.compute.internal | \
+  grep -A5 "Capacity"
+
+# max-pods with prefix delegation on m7i.xlarge:
+# ENIs: 4, slots/ENI: 4, prefix size: /28 (16 IPs)
+# max-pods = (4-1) × 4 × 16 - 1 = 191 pods (vs 58 without prefix)</code></pre>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Instance</th><th>Max pods (default)</th><th>Max pods (prefix delegation)</th></tr></thead>
+  <tbody>
+    <tr><td>t3.medium</td><td>17</td><td>110</td></tr>
+    <tr><td>m7i.xlarge</td><td>58</td><td>191</td></tr>
+    <tr><td>m7i.4xlarge</td><td>234</td><td>737 (capped at 110 or 250 by kubelet)</td></tr>
+    <tr><td>c7i.2xlarge</td><td>58</td><td>191</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="alerts">Capacity Alerts</h2>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: capacity-planning-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: capacity.planning
+      interval: 5m
+      rules:
+
+        # CPU request saturation
+        - alert: ClusterCPURequestSaturationHigh
+          expr: |
+            sum(kube_pod_container_resource_requests{resource="cpu"})
+              /
+            sum(kube_node_status_allocatable{resource="cpu"}) > 0.80
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Cluster CPU request utilization > 80%"
+            description: "CPU requests are {{ $value | humanizePercentage }} of allocatable. Autoscaler may not have enough headroom."
+            runbook_url: https://runbooks.example.com/capacity/cpu-saturation
+
+        - alert: ClusterCPURequestSaturationCritical
+          expr: |
+            sum(kube_pod_container_resource_requests{resource="cpu"})
+              /
+            sum(kube_node_status_allocatable{resource="cpu"}) > 0.90
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Cluster CPU request utilization > 90% — pending pods likely"
+            runbook_url: https://runbooks.example.com/capacity/cpu-saturation
+
+        # Memory request saturation
+        - alert: ClusterMemoryRequestSaturationHigh
+          expr: |
+            sum(kube_pod_container_resource_requests{resource="memory"})
+              /
+            sum(kube_node_status_allocatable{resource="memory"}) > 0.80
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Cluster memory request utilization > 80%"
+            runbook_url: https://runbooks.example.com/capacity/memory-saturation
+
+        # Pending pods (scheduling failure — often a capacity signal)
+        - alert: PodsPendingTooLong
+          expr: |
+            count(kube_pod_status_phase{phase="Pending"}) by (namespace) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pods pending > 10 min in namespace {{ $labels.namespace }}"
+            description: "{{ $value }} pods are pending. Check node capacity or resource quota."
+            runbook_url: https://runbooks.example.com/capacity/pending-pods
+
+        # Node CPU utilization (actual usage, not requests)
+        - alert: NodeCPUUtilizationHigh
+          expr: |
+            (1 - avg by (node) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.node }} CPU utilization > 85%"
+            runbook_url: https://runbooks.example.com/capacity/node-cpu-high
+
+        # Node memory pressure
+        - alert: NodeMemoryPressure
+          expr: |
+            (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+              /
+            node_memory_MemTotal_bytes > 0.90
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.instance }} memory usage > 90%"
+            runbook_url: https://runbooks.example.com/capacity/node-memory-pressure
+
+        # Pod count approaching max-pods limit
+        - alert: NodePodCapacityHigh
+          expr: |
+            sum by (node) (kube_pod_info{phase="Running"})
+              /
+            max by (node) (kube_node_status_capacity{resource="pods"}) > 0.85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.node }} pod capacity > 85%"
+            runbook_url: https://runbooks.example.com/capacity/node-pod-limit
+
+        # Namespace quota near limit
+        - alert: NamespaceCPUQuotaNearLimit
+          expr: |
+            kube_resourcequota{resource="requests.cpu", type="used"}
+              /
+            kube_resourcequota{resource="requests.cpu", type="hard"} > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Namespace {{ $labels.namespace }} CPU quota > 85% used"
+            runbook_url: https://runbooks.example.com/capacity/quota-near-limit
+
+        # Karpenter node provisioning failures
+        - alert: KarpenterNodeProvisioningFailed
+          expr: |
+            increase(karpenter_nodeclaims_disrupted_total{reason="failed"}[30m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Karpenter failed to provision nodes in last 30 min"
+            runbook_url: https://runbooks.example.com/capacity/karpenter-provisioning-failure
+
+        # Capacity forecast: will saturate in < 7 days
+        - alert: ClusterCPUForecastSaturation
+          expr: |
+            predict_linear(
+              sum(kube_pod_container_resource_requests{resource="cpu"})[3d:1h],
+              7 * 24 * 3600
+            )
+              /
+            sum(kube_node_status_allocatable{resource="cpu"}) > 0.90
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Cluster CPU requests forecast to reach 90% within 7 days"
+            runbook_url: https://runbooks.example.com/capacity/cpu-forecast</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="review-cadence">Capacity Review Cadence</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Cadence</th><th>Activity</th><th>Owner</th><th>Output</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Daily</strong></td><td>Check capacity alerts in Grafana/PagerDuty; review pending pods</td><td>On-call engineer</td><td>Immediate remediation if alerts firing</td></tr>
+    <tr><td><strong>Weekly</strong></td><td>Run capacity report script; review VPA recommendations top-10 namespaces; check Goldilocks dashboard</td><td>Platform team</td><td>Right-sizing tickets for top over-provisioned workloads</td></tr>
+    <tr><td><strong>Monthly</strong></td><td>CPU/memory trend analysis (30d); forecast next 90 days; review FinOps efficiency KPIs; update savings plan commitment</td><td>Platform + FinOps</td><td>Capacity plan document; savings plan adjustment</td></tr>
+    <tr><td><strong>Quarterly</strong></td><td>Full capacity audit: node pool sizing review; instance family refresh (new gen available?); VPC subnet headroom; storage PVC growth; multi-cluster capacity balance</td><td>Platform team lead</td><td>Architectural changes, subnet expansion, instance migration plan</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Monthly capacity review checklist</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">#!/bin/bash
+# Monthly capacity review — run on first Monday of each month
+set -euo pipefail
+
+PROM_URL="${PROM_URL:-http://prometheus.monitoring.svc:9090}"
+REPORT_DATE=$(date +%Y-%m-%d)
+
+echo "======================================"
+echo " Monthly Capacity Review: $REPORT_DATE"
+echo "======================================"
+
+echo ""
+echo "## 1. Node Summary"
+kubectl get nodes -o custom-columns=\
+'NAME:.metadata.name,TYPE:.metadata.labels.node\.kubernetes\.io/instance-type,STATUS:.status.conditions[-1].type,AGE:.metadata.creationTimestamp'
+
+echo ""
+echo "## 2. Cluster Utilization (30-day avg)"
+for METRIC in cpu memory; do
+  AVG=$(curl -s "${PROM_URL}/api/v1/query" \
+    --data-urlencode "query=avg_over_time((sum(kube_pod_container_resource_requests{resource=\"${METRIC}\"}) / sum(kube_node_status_allocatable{resource=\"${METRIC}\"}))[30d:1h])" | \
+    jq -r '.data.result[0].value[1] // "N/A"')
+  PEAK=$(curl -s "${PROM_URL}/api/v1/query" \
+    --data-urlencode "query=max_over_time((sum(kube_pod_container_resource_requests{resource=\"${METRIC}\"}) / sum(kube_node_status_allocatable{resource=\"${METRIC}\"}))[30d:1h])" | \
+    jq -r '.data.result[0].value[1] // "N/A"')
+  echo "  ${METRIC}: avg=${AVG} peak=${PEAK}"
+done
+
+echo ""
+echo "## 3. Top 10 CPU-Requesting Namespaces (30d avg)"
+curl -s "${PROM_URL}/api/v1/query" \
+  --data-urlencode 'query=sort_desc(sum by (namespace) (avg_over_time(kube_pod_container_resource_requests{resource="cpu"}[30d])))' | \
+  jq -r '.data.result[:10][] | "  \(.metric.namespace): \(.value[1]) cores"'
+
+echo ""
+echo "## 4. 90-day CPU Forecast"
+FORECAST=$(curl -s "${PROM_URL}/api/v1/query" \
+  --data-urlencode "query=predict_linear(sum(kube_pod_container_resource_requests{resource=\"cpu\"})[30d:1h], 90*24*3600) / sum(kube_node_status_allocatable{resource=\"cpu\"})" | \
+  jq -r '.data.result[0].value[1] // "N/A"')
+echo "  Projected utilization in 90 days: ${FORECAST}"
+
+echo ""
+echo "## 5. VPA Top Savings Opportunities"
+kubectl get vpa -A -o json 2>/dev/null | jq -r '
+  .items[] |
+  select(.status.recommendation != null) |
+  .metadata.namespace + "/" + .metadata.name' | head -10
+
+echo ""
+echo "## 6. Unattached PVCs (storage waste)"
+kubectl get pvc -A --field-selector=status.phase!=Bound 2>/dev/null | \
+  grep -v "^NAMESPACE" || echo "  None found"</code></pre>
+
+<!-- ============================================================ -->
+<h2>Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card card-accent-green">
+    <h3>Right-size before scaling out</h3>
+    <p>VPA recommendations typically reveal 40–60% CPU over-provisioning. Always run a right-sizing pass before concluding you need more nodes.</p>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>Reserve headroom with pause pods</h3>
+    <p>Never run at &gt; 80% request utilization in production. Use low-priority pause pods to maintain N+2 node headroom that autoscaling can reclaim instantly.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>Forecast from Prometheus data</h3>
+    <p>Use <code>predict_linear()</code> on 14–30 day windows for growth trends. Alert when the forecast projects saturation within 7 days.</p>
+  </div>
+  <div class="card card-accent-red">
+    <h3>Plan all five dimensions</h3>
+    <p>CPU and memory are obvious. Also plan pod count, IP addresses (VPC subnets), and storage PV/EBS attachment limits — any one can block scheduling.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>Separate pools by workload class</h3>
+    <p>System, observability, production, batch, and GPU pools scale independently, use appropriate instance families, and provide blast-radius isolation.</p>
+  </div>
+  <div class="card card-accent-orange">
+    <h3>Monthly review cadence</h3>
+    <p>Capacity planning is a monthly discipline, not a one-time event. Schedule the review, track the trend, and adjust savings plan commitments accordingly.</p>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<button id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none';
+  });
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>300);
+});
+document.querySelectorAll('pre').forEach(pre=>{
+  if(!pre.querySelector('.copy-btn'))return;
+});
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+const mainEl=document.getElementById('main');
+const headings=mainEl.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('#toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('#toc a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:mainEl,threshold:0.3});
+headings.forEach(h=>obs.observe(h));
+</script>
+</body>
+</html>

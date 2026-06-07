@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pod Security — PSA, seccomp, AppArmor, Capabilities | K8s Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+.sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.sidebar-header .logo{font-size:18px;font-weight:700;color:var(--text);}
+.sidebar-header .logo span{color:var(--accent);}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border);}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;}
+.sidebar-search input:focus{border-color:var(--accent);}
+.nav-section{padding:8px 0;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.nav-section a{display:block;padding:5px 16px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.06);}
+main{flex:1;overflow-y:auto;padding:40px 48px;max-width:1100px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-meta{color:var(--text3);font-size:13px;margin-bottom:32px;display:flex;gap:16px;flex-wrap:wrap;}
+h2{font-size:22px;font-weight:700;margin:40px 0 16px;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:17px;font-weight:600;margin:28px 0 10px;}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--text2);}
+p{margin-bottom:14px;color:var(--text2);}
+ul,ol{margin:0 0 14px 20px;color:var(--text2);}
+li{margin-bottom:4px;}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:16px 0;position:relative;}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;}
+:not(pre)>code{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:12px;color:var(--purple);}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:11px;padding:3px 8px;cursor:pointer;transition:all .15s;}
+.copy-btn:hover{color:var(--text);border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:8px 12px;text-align:left;border:1px solid var(--border);}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;border-left:3px solid;font-size:14px;}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--accent);}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--yellow);}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red);}
+.callout-success{background:rgba(63,185,80,.08);border-color:var(--green);}
+.callout strong{display:block;margin-bottom:4px;font-size:13px;}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;overflow-x:auto;}
+.diagram pre{background:none;border:none;padding:0;margin:0;font-size:12px;color:var(--text2);}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:32px;font-size:13px;}
+.toc h4{color:var(--text);margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;}
+.toc ol{margin:0 0 0 16px;}
+.toc li{margin-bottom:4px;}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:24px 0;overflow:hidden;}
+details.coverage summary{padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:8px;list-style:none;}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;color:var(--text3);}
+details[open].coverage summary::before{transform:rotate(90deg);}
+.coverage-body{padding:16px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.coverage-body li{font-size:12px;color:var(--text2);}
+#back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+#back-to-top.visible{display:flex;}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:18px;color:var(--text);}
+@media(max-width:768px){.hamburger{display:block;}.sidebar{position:fixed;left:-280px;top:0;z-index:100;transition:left .25s;}.sidebar.open{left:0;}main{padding:24px 16px;}}
+/* PSS comparison grid */
+.pss-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:20px 0;}
+.pss-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.pss-card h4{margin:0 0 8px;font-size:14px;}
+.pss-card ul{margin:0 0 0 16px;font-size:12px;}
+.pss-card li{margin-bottom:3px;}
+.pss-privileged{border-top:3px solid var(--red);}
+.pss-baseline{border-top:3px solid var(--yellow);}
+.pss-restricted{border-top:3px solid var(--green);}
+</style>
+</head>
+<body>
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+<nav class="sidebar">
+  <div class="sidebar-header"><div class="logo">K8s <span>Docs</span></div></div>
+  <div class="sidebar-search"><input type="text" placeholder="Filter navigation…" oninput="filterNav(this.value)"></div>
+  <div class="nav-section">
+    <div class="nav-section-title">Getting Started</div>
+    <a href="../01-getting-started/00-index.html">Overview</a>
+    <a href="../01-getting-started/02-architecture.html">Architecture</a>
+    <a href="../01-getting-started/04-kubectl.html">kubectl</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Advanced Workloads</div>
+    <a href="../05-workloads/09-resource-management.html">Resource Management</a>
+    <a href="../05-workloads/10-scheduling.html">Scheduling</a>
+    <a href="../05-workloads/11-pod-lifecycle.html">Pod Lifecycle</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Security</div>
+    <a href="00-security-overview.html">Security Overview</a>
+    <a href="01-rbac.html">RBAC</a>
+    <a href="02-pod-security.html" class="active">Pod Security</a>
+    <a href="03-network-policies.html">Network Policies</a>
+    <a href="04-secrets-management.html">Secrets Management</a>
+    <a href="05-service-accounts.html">Service Accounts</a>
+    <a href="06-admission-controllers.html">Admission Controllers</a>
+    <a href="07-image-security.html">Image Security</a>
+    <a href="08-audit-logging.html">Audit Logging</a>
+    <a href="09-encryption-at-rest.html">Encryption at Rest</a>
+    <a href="10-supply-chain-security.html">Supply Chain Security</a>
+    <a href="11-compliance.html">Compliance</a>
+  </div>
+</nav>
+
+<main id="main-content">
+<h1>Pod Security</h1>
+<div class="page-meta">
+  <span>Section 06 › 02</span>
+  <span>Last updated: 2025</span>
+  <span>~40 min read</span>
+</div>
+
+<div class="toc">
+  <h4>On this page</h4>
+  <ol>
+    <li><a href="#psp-removal">PSP Removal Background</a></li>
+    <li><a href="#psa">Pod Security Admission (PSA)</a></li>
+    <li><a href="#pss">Pod Security Standards</a></li>
+    <li><a href="#pss-fields">PSS Field-by-Field Reference</a></li>
+    <li><a href="#securitycontext">securityContext Deep Dive</a></li>
+    <li><a href="#capabilities">Linux Capabilities</a></li>
+    <li><a href="#seccomp">seccomp Profiles</a></li>
+    <li><a href="#apparmor">AppArmor</a></li>
+    <li><a href="#selinux">SELinux</a></li>
+    <li><a href="#privileged-risks">Privileged Container Risks</a></li>
+    <li><a href="#host-namespaces">Host Namespaces</a></li>
+    <li><a href="#migration">Migrating from PSP to PSA</a></li>
+    <li><a href="#kyverno-opa">Extending with Kyverno / OPA</a></li>
+    <li><a href="#metrics-alerts">Metrics &amp; Alerts</a></li>
+    <li><a href="#best-practices">Best Practices</a></li>
+  </ol>
+</div>
+
+<details class="coverage">
+  <summary>Coverage checklist</summary>
+  <div class="coverage-body">
+    <ul>
+      <li>PSP removal in 1.25 background</li>
+      <li>PSA: enforce / audit / warn modes</li>
+      <li>PSA namespace labels</li>
+      <li>PSA exemptions (namespaces, runtimeClasses, usernames)</li>
+      <li>PSS: privileged / baseline / restricted levels</li>
+      <li>PSS field-by-field complete reference table</li>
+      <li>securityContext: pod-level vs container-level fields</li>
+      <li>runAsUser / runAsGroup / fsGroup semantics</li>
+      <li>runAsNonRoot enforcement</li>
+      <li>allowPrivilegeEscalation</li>
+      <li>readOnlyRootFilesystem</li>
+      <li>capabilities: full Linux caps list, drop ALL + add pattern</li>
+      <li>Dangerous capabilities: CAP_SYS_ADMIN, CAP_NET_ADMIN, CAP_SYS_PTRACE</li>
+      <li>seccomp: RuntimeDefault, Localhost, Unconfined</li>
+      <li>Custom seccomp profile JSON example</li>
+    </ul>
+    <ul>
+      <li>AppArmor: profile modes (enforce/complain), K8s annotation (stable 1.30)</li>
+      <li>SELinux: seLinuxOptions fields</li>
+      <li>Privileged containers: kernel module load, device access, container escape</li>
+      <li>hostPID / hostNetwork / hostIPC risks</li>
+      <li>hostPath mount risks and mitigation</li>
+      <li>PSP → PSA migration checklist</li>
+      <li>Kyverno policies for pod security</li>
+      <li>OPA/Gatekeeper ConstraintTemplate for pod security</li>
+      <li>5 metrics, 4 alerts, 5 runbooks</li>
+      <li>8 best practices</li>
+    </ul>
+  </div>
+</details>
+
+<!-- PSP REMOVAL -->
+<h2 id="psp-removal">PSP Removal Background</h2>
+
+<p>PodSecurityPolicy (PSP) was the original Kubernetes mechanism for enforcing pod-level security constraints. It was deprecated in Kubernetes 1.21 and <strong>removed in 1.25</strong>. Clusters upgrading to 1.25+ must migrate to an alternative before the upgrade.</p>
+
+<p>PSP had several fundamental design flaws:</p>
+<ul>
+  <li><strong>Authorization complexity:</strong> PSPs were enforced via RBAC — a pod's ServiceAccount (or the user creating the pod) had to have <code>use</code> verb on the PSP. This created confusing interactions where PSPs existed but weren't being enforced.</li>
+  <li><strong>Silent non-enforcement:</strong> If no PSP matched a pod, the pod was rejected — but if any PSP matched (including permissive ones), the most permissive allowed policy won. This led to overly permissive PSPs being deployed just to unblock workloads.</li>
+  <li><strong>Namespace-level control was poor:</strong> PSPs were cluster-scoped objects with namespace-level applicability controlled by RBAC bindings — a confusing indirection.</li>
+</ul>
+
+<p><strong>Replacement options:</strong></p>
+<ul>
+  <li><strong>Pod Security Admission (PSA)</strong> — built into Kubernetes since 1.22 (GA 1.25). Label-based, simple, but not fully customizable.</li>
+  <li><strong>OPA/Gatekeeper</strong> — fully custom Rego policies via CRDs; maximum flexibility.</li>
+  <li><strong>Kyverno</strong> — Kubernetes-native YAML-based policies; lower learning curve than Rego.</li>
+  <li><strong>Kubewarden</strong> — WebAssembly-based policies.</li>
+</ul>
+
+<!-- PSA -->
+<h2 id="psa">Pod Security Admission (PSA)</h2>
+
+<p>PSA is a built-in admission controller (GA in 1.25) that enforces Pod Security Standards by evaluating pod specs against one of three levels. It is configured per-namespace using labels.</p>
+
+<h3>Modes</h3>
+<table>
+  <tr><th>Mode</th><th>Label</th><th>Effect on Violation</th></tr>
+  <tr><td><code>enforce</code></td><td><code>pod-security.kubernetes.io/enforce</code></td><td>Pod is rejected; cannot be created</td></tr>
+  <tr><td><code>audit</code></td><td><code>pod-security.kubernetes.io/audit</code></td><td>Pod is allowed; violation recorded in audit log</td></tr>
+  <tr><td><code>warn</code></td><td><code>pod-security.kubernetes.io/warn</code></td><td>Pod is allowed; warning message returned to client</td></tr>
+</table>
+
+<p>Each mode is independent and can reference a different level. A namespace can have all three modes active simultaneously with different levels:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Apply PSA labels to a namespace
+kubectl label namespace production \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/enforce-version=v1.28 \
+  pod-security.kubernetes.io/audit=restricted \
+  pod-security.kubernetes.io/audit-version=v1.28 \
+  pod-security.kubernetes.io/warn=restricted \
+  pod-security.kubernetes.io/warn-version=v1.28</code></pre>
+
+<div class="callout callout-info">
+  <strong>Pin the PSS version with -version labels.</strong>
+  Each mode label has a corresponding <code>-version</code> label (e.g., <code>pod-security.kubernetes.io/enforce-version=v1.28</code>). Without it, the version defaults to <code>latest</code>, which means a Kubernetes upgrade could change what's enforced and suddenly break workloads. Always pin to a specific version and bump it deliberately during upgrades.
+</div>
+
+<h3>PSA Exemptions</h3>
+<p>Some system workloads legitimately need privileged access. PSA supports three exemption types, configured in the <code>PodSecurity</code> admission plugin config (via kube-apiserver <code>--admission-control-config-file</code>):</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: apiserver.config.k8s.io/v1
+kind: AdmissionConfiguration
+plugins:
+- name: PodSecurity
+  configuration:
+    apiVersion: pod-security.admission.config.k8s.io/v1
+    kind: PodSecurityConfiguration
+    defaults:
+      enforce: "restricted"          # cluster-wide default for namespaces without labels
+      enforce-version: "latest"
+      audit: "restricted"
+      audit-version: "latest"
+      warn: "restricted"
+      warn-version: "latest"
+    exemptions:
+      usernames:                     # API server users exempt from PSA (e.g., cluster bootstrappers)
+      - "system:serviceaccount:kube-system:replicaset-controller"
+      runtimeClasses:                # RuntimeClasses exempt from PSA (e.g., kata-containers)
+      - "kata-containers"
+      namespaces:                    # Namespaces fully exempt from PSA
+      - kube-system
+      - kube-public
+      - cert-manager                 # cert-manager needs elevated permissions</code></pre>
+
+<div class="callout callout-warn">
+  <strong>Use namespace exemptions sparingly.</strong>
+  Exempting an entire namespace disables PSA enforcement for all pods in it. Prefer applying the <code>privileged</code> level to system namespaces rather than exempting them entirely — exemption bypasses audit and warn modes too, removing all visibility.
+</div>
+
+<h3>Graduation Timeline</h3>
+<table>
+  <tr><th>Version</th><th>Status</th><th>Notes</th></tr>
+  <tr><td>1.22</td><td>Alpha</td><td>PSA introduced; PSP still active</td></tr>
+  <tr><td>1.23</td><td>Beta (on by default)</td><td>Enabled by default; PSP still active</td></tr>
+  <tr><td>1.25</td><td>GA; PSP removed</td><td>Clusters must migrate before upgrading to 1.25</td></tr>
+</table>
+
+<!-- PSS OVERVIEW -->
+<h2 id="pss">Pod Security Standards</h2>
+
+<p>Pod Security Standards (PSS) define three levels, each a superset of restrictions from the previous level. The levels apply to pod specs as a whole — if any container in the pod violates the level, the entire pod is rejected.</p>
+
+<div class="pss-grid">
+  <div class="pss-card pss-privileged">
+    <h4><span class="badge badge-red">Privileged</span></h4>
+    <ul>
+      <li>No restrictions</li>
+      <li>All host namespace access allowed</li>
+      <li>Privileged containers allowed</li>
+      <li>Any capabilities allowed</li>
+      <li>Any seccomp profile (or none)</li>
+      <li><strong>Use:</strong> kube-system, CNI plugins, node agents, storage CSI drivers</li>
+    </ul>
+  </div>
+  <div class="pss-card pss-baseline">
+    <h4><span class="badge badge-yellow">Baseline</span></h4>
+    <ul>
+      <li>No privileged containers</li>
+      <li>No host namespaces (hostPID, hostIPC, hostNetwork)</li>
+      <li>No dangerous capabilities</li>
+      <li>No hostPath or restricted volume types</li>
+      <li>Host port restriction</li>
+      <li>AppArmor: only runtime/default or localhost profiles</li>
+      <li>seccomp: no restriction (Unconfined allowed)</li>
+      <li>No privilege escalation (Linux)</li>
+      <li><strong>Use:</strong> General workloads not needing host access</li>
+    </ul>
+  </div>
+  <div class="pss-card pss-restricted">
+    <h4><span class="badge badge-green">Restricted</span></h4>
+    <ul>
+      <li>All baseline restrictions plus:</li>
+      <li>Must drop ALL capabilities</li>
+      <li>seccompProfile: RuntimeDefault or Localhost required</li>
+      <li>runAsNonRoot: true</li>
+      <li>allowPrivilegeEscalation: false</li>
+      <li>Only specific volume types (configMap, CSI, downwardAPI, emptyDir, ephemeral, persistentVolumeClaim, projected, secret)</li>
+      <li><strong>Use:</strong> Untrusted workloads, public-facing services, high-security requirements</li>
+    </ul>
+  </div>
+</div>
+
+<!-- PSS FIELD REFERENCE -->
+<h2 id="pss-fields">PSS Field-by-Field Reference</h2>
+
+<p>This table maps every PSS check to its pod spec field, what each level allows, and any nuances.</p>
+
+<h3>Host Namespaces</h3>
+<table>
+  <tr><th>Field</th><th>Privileged</th><th>Baseline</th><th>Restricted</th><th>Notes</th></tr>
+  <tr><td><code>spec.hostNetwork</code></td><td>Any</td><td>Must be false or unset</td><td>Must be false or unset</td><td>Shares host network stack; bypasses CNI</td></tr>
+  <tr><td><code>spec.hostPID</code></td><td>Any</td><td>Must be false or unset</td><td>Must be false or unset</td><td>Can see and signal all host processes</td></tr>
+  <tr><td><code>spec.hostIPC</code></td><td>Any</td><td>Must be false or unset</td><td>Must be false or unset</td><td>Access host IPC namespace (shared memory, semaphores)</td></tr>
+</table>
+
+<h3>Privileged Containers</h3>
+<table>
+  <tr><th>Field</th><th>Privileged</th><th>Baseline</th><th>Restricted</th></tr>
+  <tr><td><code>containers[].securityContext.privileged</code></td><td>Any</td><td>Must be false or unset</td><td>Must be false or unset</td></tr>
+  <tr><td><code>initContainers[].securityContext.privileged</code></td><td>Any</td><td>Must be false or unset</td><td>Must be false or unset</td></tr>
+  <tr><td><code>ephemeralContainers[].securityContext.privileged</code></td><td>Any</td><td>Must be false or unset</td><td>Must be false or unset</td></tr>
+</table>
+
+<h3>Capabilities</h3>
+<table>
+  <tr><th>Field</th><th>Baseline</th><th>Restricted</th><th>Notes</th></tr>
+  <tr><td><code>securityContext.capabilities.add</code></td><td>Only: NET_BIND_SERVICE (or empty)</td><td>Empty (no adds after dropping ALL)</td><td>Baseline allows adding NET_BIND_SERVICE for port &lt;1024 binding</td></tr>
+  <tr><td><code>securityContext.capabilities.drop</code></td><td>No requirement</td><td>Must include ALL</td><td>Restricted requires dropping ALL first; then cannot add any</td></tr>
+</table>
+
+<h3>Privilege Escalation</h3>
+<table>
+  <tr><th>Field</th><th>Baseline</th><th>Restricted</th></tr>
+  <tr><td><code>securityContext.allowPrivilegeEscalation</code></td><td>No restriction</td><td>Must be false</td></tr>
+</table>
+
+<h3>Run As Non-Root</h3>
+<table>
+  <tr><th>Field</th><th>Baseline</th><th>Restricted</th></tr>
+  <tr><td><code>spec.securityContext.runAsNonRoot</code></td><td>No restriction</td><td>Must be true (pod or all containers)</td></tr>
+  <tr><td><code>containers[].securityContext.runAsNonRoot</code></td><td>No restriction</td><td>Must be true OR pod-level must be true</td></tr>
+  <tr><td><code>spec.securityContext.runAsUser</code></td><td>No restriction</td><td>Must not be 0 (if set)</td></tr>
+</table>
+
+<h3>seccomp</h3>
+<table>
+  <tr><th>Field</th><th>Baseline</th><th>Restricted</th></tr>
+  <tr><td><code>spec.securityContext.seccompProfile.type</code></td><td>No restriction (Unconfined allowed)</td><td>Must be RuntimeDefault or Localhost</td></tr>
+  <tr><td><code>containers[].securityContext.seccompProfile.type</code></td><td>No restriction</td><td>Must be RuntimeDefault or Localhost (OR pod-level set)</td></tr>
+</table>
+
+<h3>Volumes</h3>
+<table>
+  <tr><th>Baseline Allowed Volume Types</th><th>Restricted (subset of baseline)</th></tr>
+  <tr><td>configMap, csi, downwardAPI, emptyDir, ephemeral, hostPath (restricted), nfs, persistentVolumeClaim, projected, secret + all others except: hostPath to sensitive paths, inline volumes from sources not in the allowed list</td><td>configMap, csi, downwardAPI, emptyDir, ephemeral, persistentVolumeClaim, projected, secret only — no hostPath, no NFS</td></tr>
+</table>
+
+<h3>Host Ports</h3>
+<table>
+  <tr><th>Field</th><th>Baseline / Restricted</th></tr>
+  <tr><td><code>containers[].ports[].hostPort</code></td><td>Must be 0, unset, or defined — baseline allows 0/unset. Host ports > 0 violate baseline.</td></tr>
+</table>
+
+<h3>AppArmor (baseline only check)</h3>
+<table>
+  <tr><th>Annotation</th><th>Baseline: Allowed values</th></tr>
+  <tr><td><code>container.apparmor.security.beta.kubernetes.io/&lt;container&gt;</code></td><td><code>runtime/default</code> or <code>localhost/&lt;profile&gt;</code> — <code>unconfined</code> violates baseline</td></tr>
+</table>
+
+<h3>Sysctls</h3>
+<table>
+  <tr><th>Field</th><th>Baseline / Restricted</th></tr>
+  <tr><td><code>spec.securityContext.sysctls[].name</code></td><td>Only "safe" sysctls: <code>kernel.shm_rmid_forced</code>, <code>net.ipv4.ip_local_port_range</code>, <code>net.ipv4.ip_unprivileged_port_start</code>, <code>net.ipv4.tcp_syncookies</code>, <code>net.ipv4.ping_group_range</code></td></tr>
+</table>
+
+<!-- SECURITYCONTEXT DEEP DIVE -->
+<h2 id="securitycontext">securityContext Deep Dive</h2>
+
+<h3>Pod-Level vs Container-Level Fields</h3>
+<p>Some fields exist at both pod and container scope. Container-level overrides pod-level. Some fields only exist at one scope:</p>
+
+<table>
+  <tr><th>Field</th><th>Pod-Level</th><th>Container-Level</th><th>Notes</th></tr>
+  <tr><td><code>runAsUser</code></td><td>✅ Default for all containers</td><td>✅ Overrides pod-level</td><td>UID for process; must match image USER or be set explicitly</td></tr>
+  <tr><td><code>runAsGroup</code></td><td>✅ Primary GID for all containers</td><td>✅ Overrides pod-level</td><td></td></tr>
+  <tr><td><code>runAsNonRoot</code></td><td>✅</td><td>✅ Overrides pod-level</td><td>Kubelet verifies UID != 0 at container start; fails if image runs as root</td></tr>
+  <tr><td><code>fsGroup</code></td><td>✅ Only pod-level</td><td>❌</td><td>Supplemental GID applied to volume mounts; owns files in mounted volumes</td></tr>
+  <tr><td><code>fsGroupChangePolicy</code></td><td>✅ Only pod-level</td><td>❌</td><td><code>OnRootMismatch</code> (1.20+): only chown if root ownership wrong; avoids slow chown on large volumes</td></tr>
+  <tr><td><code>supplementalGroups</code></td><td>✅ Only pod-level</td><td>❌</td><td>Additional GIDs for all containers</td></tr>
+  <tr><td><code>seccompProfile</code></td><td>✅ Default for all containers</td><td>✅ Overrides pod-level</td><td>Container-level overrides pod-level profile</td></tr>
+  <tr><td><code>seLinuxOptions</code></td><td>✅ Default</td><td>✅ Overrides pod-level</td><td></td></tr>
+  <tr><td><code>sysctls</code></td><td>✅ Only pod-level</td><td>❌</td><td>Only safe sysctls without special runtime config</td></tr>
+  <tr><td><code>privileged</code></td><td>❌</td><td>✅ Only container-level</td><td></td></tr>
+  <tr><td><code>allowPrivilegeEscalation</code></td><td>❌</td><td>✅ Only container-level</td><td></td></tr>
+  <tr><td><code>capabilities</code></td><td>❌</td><td>✅ Only container-level</td><td></td></tr>
+  <tr><td><code>readOnlyRootFilesystem</code></td><td>❌</td><td>✅ Only container-level</td><td></td></tr>
+</table>
+
+<h3>Complete Restricted-Compliant securityContext</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: v1
+kind: Pod
+spec:
+  securityContext:                       # Pod-level
+    runAsNonRoot: true
+    runAsUser: 1000                      # must not be 0
+    runAsGroup: 3000
+    fsGroup: 2000                        # volume files owned by GID 2000
+    fsGroupChangePolicy: OnRootMismatch  # avoid slow recursive chown
+    seccompProfile:
+      type: RuntimeDefault               # applies to all containers unless overridden
+    sysctls: []                          # no unsafe sysctls
+  containers:
+  - name: app
+    image: myapp:latest
+    securityContext:                     # Container-level (overrides pod-level where applicable)
+      allowPrivilegeEscalation: false    # MUST be false for restricted
+      readOnlyRootFilesystem: true       # prevents writes to container rootfs
+      capabilities:
+        drop: ["ALL"]                    # MUST drop ALL for restricted
+        # add: ["NET_BIND_SERVICE"]      # only if binding port < 1024
+      seccompProfile:
+        type: RuntimeDefault             # can override pod-level per-container
+      runAsNonRoot: true                 # belt-and-suspenders with pod-level
+    volumeMounts:
+    - name: tmp
+      mountPath: /tmp                    # writable temp dir for apps that need it
+    - name: cache
+      mountPath: /app/cache
+  volumes:
+  - name: tmp
+    emptyDir: {}                         # allowed in restricted
+  - name: cache
+    emptyDir: {}
+  # NOT allowed in restricted:
+  # hostPath, NFS, secrets via env (allowed but discouraged), hostNetwork/PID/IPC</code></pre>
+
+<h3>fsGroup and Volume Ownership</h3>
+<p>When <code>fsGroup</code> is set, the kubelet changes ownership of mounted volumes to the specified GID. For large volumes (hundreds of thousands of files), this recursive <code>chown</code> causes significant pod startup latency. Use <code>fsGroupChangePolicy: OnRootMismatch</code> (GA 1.23) to skip the chown if the root directory already has the correct ownership.</p>
+
+<!-- CAPABILITIES -->
+<h2 id="capabilities">Linux Capabilities</h2>
+
+<p>Linux capabilities split root privilege into discrete units. When a container runs without <code>privileged: true</code>, it starts with a default set of capabilities inherited from the container runtime. The recommended security posture is <strong>drop ALL, add only what's needed</strong>.</p>
+
+<h3>Default Container Capabilities (containerd/CRI-O)</h3>
+<p>By default, containers receive these capabilities: <code>CHOWN</code>, <code>DAC_OVERRIDE</code>, <code>FSETID</code>, <code>FOWNER</code>, <code>MKNOD</code>, <code>NET_RAW</code>, <code>SETGID</code>, <code>SETUID</code>, <code>SETFCAP</code>, <code>SETPCAP</code>, <code>NET_BIND_SERVICE</code>, <code>SYS_CHROOT</code>, <code>KILL</code>, <code>AUDIT_WRITE</code>.</p>
+
+<div class="callout callout-warn">
+  <strong>NET_RAW in default capabilities is a known risk.</strong>
+  <code>NET_RAW</code> allows raw socket creation (ping, ARP spoofing, packet crafting). It's in the default set for compatibility but should be dropped in almost all workloads. Drop it explicitly: <code>capabilities.drop: ["NET_RAW"]</code> or <code>drop: ["ALL"]</code>.
+</div>
+
+<h3>Dangerous Capabilities Reference</h3>
+<table>
+  <tr><th>Capability</th><th>What It Allows</th><th>Attack Potential</th></tr>
+  <tr><td><code>CAP_SYS_ADMIN</code></td><td>Mount filesystems, modify kernel parameters, load kernel modules, many others</td><td><span class="badge badge-red">Container escape</span> — effectively root on host</td></tr>
+  <tr><td><code>CAP_SYS_PTRACE</code></td><td>Trace and inspect other processes; inject code</td><td><span class="badge badge-red">Process hijack</span> — can ptrace processes on host if hostPID=true</td></tr>
+  <tr><td><code>CAP_NET_ADMIN</code></td><td>Configure network interfaces, routes, firewall rules, packet mangling</td><td><span class="badge badge-red">Network attack</span> — ARP poison, traffic interception, iptables modification</td></tr>
+  <tr><td><code>CAP_SYS_MODULE</code></td><td>Load/unload kernel modules</td><td><span class="badge badge-red">Container escape</span> — insert rootkit kernel module</td></tr>
+  <tr><td><code>CAP_SYS_RAWIO</code></td><td>Direct access to I/O ports, /dev/mem, /dev/kmem</td><td><span class="badge badge-red">Container escape</span> via physical memory access</td></tr>
+  <tr><td><code>CAP_DAC_READ_SEARCH</code></td><td>Bypass file permission checks; read any file</td><td><span class="badge badge-yellow">Data exfiltration</span> — read /etc/shadow, host secrets</td></tr>
+  <tr><td><code>CAP_CHOWN</code></td><td>Change file ownership</td><td><span class="badge badge-yellow">Privilege</span> — change ownership of sensitive files</td></tr>
+  <tr><td><code>CAP_SETUID</code></td><td>Set UID; switch to any user including root</td><td><span class="badge badge-red">Root escalation</span></td></tr>
+  <tr><td><code>CAP_NET_RAW</code></td><td>Raw sockets, packet injection</td><td><span class="badge badge-yellow">Network attack</span></td></tr>
+  <tr><td><code>CAP_MKNOD</code></td><td>Create device files</td><td><span class="badge badge-yellow">Device access</span></td></tr>
+</table>
+
+<h3>Capability Drop ALL Pattern</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Minimum viable capabilities for most web applications
+securityContext:
+  capabilities:
+    drop: ["ALL"]
+    # Most apps need zero capabilities after dropping ALL
+    # Common exceptions:
+    # add: ["NET_BIND_SERVICE"]   # ONLY if binding port 80 or 443 as non-root
+    # add: ["SYS_NICE"]           # ONLY if app sets process priority (rare)
+    # add: ["IPC_LOCK"]           # ONLY if app uses mlock() for security (e.g., Vault)</code></pre>
+
+<!-- SECCOMP -->
+<h2 id="seccomp">seccomp Profiles</h2>
+
+<p>seccomp (secure computing mode) is a Linux kernel feature that restricts the syscalls a process can make. Kubernetes supports three seccomp profile types:</p>
+
+<table>
+  <tr><th>Type</th><th>Description</th><th>Security Level</th></tr>
+  <tr><td><code>Unconfined</code></td><td>No syscall filtering; all syscalls allowed</td><td><span class="badge badge-red">Minimum</span> — default before 1.27</td></tr>
+  <tr><td><code>RuntimeDefault</code></td><td>Container runtime's default profile (blocks ~100 dangerous syscalls)</td><td><span class="badge badge-yellow">Good baseline</span> — recommended for most workloads</td></tr>
+  <tr><td><code>Localhost</code></td><td>Custom JSON profile from <code>/var/lib/kubelet/seccomp/</code> on the node</td><td><span class="badge badge-green">Maximum</span> — application-specific allowlist</td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>RuntimeDefault is the cluster default since Kubernetes 1.27.</strong>
+  Starting in 1.27, the kubelet uses RuntimeDefault as the seccomp default for new pods when <code>SeccompDefault</code> feature gate is enabled (on by default in 1.27+). However, explicitly setting it in the pod spec is still best practice for clarity and portability.
+</div>
+
+<h3>RuntimeDefault Profile</h3>
+<p>The RuntimeDefault profile is defined by the container runtime. For containerd, it's based on Docker's default seccomp profile. It blocks syscalls including:</p>
+<ul>
+  <li><code>kexec_load</code> — load new kernel</li>
+  <li><code>keyctl</code>, <code>add_key</code>, <code>request_key</code> — kernel key management</li>
+  <li><code>ptrace</code> — process tracing (blocks in some profiles)</li>
+  <li><code>reboot</code>, <code>create_module</code>, <code>finit_module</code> — system-level ops</li>
+  <li><code>mount</code>, <code>umount2</code> — filesystem mounting</li>
+</ul>
+
+<h3>Custom Localhost Profile</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-json">// /var/lib/kubelet/seccomp/profiles/nginx.json
+// Allowlist approach — only permit needed syscalls
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "architectures": ["SCMP_ARCH_X86_64", "SCMP_ARCH_X86", "SCMP_ARCH_X32"],
+  "syscalls": [
+    {
+      "names": [
+        "accept4", "access", "arch_prctl", "bind", "brk", "capget", "capset",
+        "chdir", "chmod", "chown", "clone", "close", "connect", "dup", "dup2",
+        "epoll_create1", "epoll_ctl", "epoll_wait", "eventfd2", "execve",
+        "exit", "exit_group", "faccessat", "fchmod", "fchown", "fcntl",
+        "fstat", "fstatfs", "futex", "getcwd", "getdents64", "getegid",
+        "geteuid", "getgid", "getpid", "getppid", "getrandom", "gettid",
+        "gettimeofday", "getuid", "ioctl", "lseek", "lstat", "madvise",
+        "mkdir", "mmap", "mprotect", "munmap", "nanosleep", "open",
+        "openat", "pipe2", "poll", "prctl", "pread64", "read", "readlink",
+        "recv", "recvfrom", "recvmsg", "rename", "rt_sigaction",
+        "rt_sigprocmask", "rt_sigreturn", "send", "sendfile", "sendmsg",
+        "sendto", "set_robust_list", "setgid", "setgroups", "setuid",
+        "socket", "stat", "statfs", "sysinfo", "tgkill", "uname",
+        "unlink", "wait4", "write", "writev"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    }
+  ]
+}</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Use the custom localhost profile in a pod
+securityContext:
+  seccompProfile:
+    type: Localhost
+    localhostProfile: profiles/nginx.json   # relative to /var/lib/kubelet/seccomp/</code></pre>
+
+<div class="callout callout-warn">
+  <strong>Custom seccomp profiles must be present on every node.</strong>
+  Localhost profiles are read from the node's filesystem. You must ensure the profile file is deployed to every node before pods using it can be scheduled. Use a DaemonSet to distribute profiles, or use Seccomp Operator (CNCF) which manages profile distribution via CRDs.
+</div>
+
+<!-- APPARMOR -->
+<h2 id="apparmor">AppArmor</h2>
+
+<p>AppArmor is a Linux MAC (Mandatory Access Control) system that restricts program capabilities based on per-program profiles. It complements seccomp: seccomp restricts syscalls, AppArmor restricts file/capability/network access by pathname.</p>
+
+<h3>Profile Modes</h3>
+<table>
+  <tr><th>Mode</th><th>Description</th></tr>
+  <tr><td><code>enforce</code></td><td>Policy violations are blocked and logged</td></tr>
+  <tr><td><code>complain</code></td><td>Policy violations are logged but not blocked — useful for profile development</td></tr>
+  <tr><td><code>unconfined</code></td><td>No AppArmor restrictions applied</td></tr>
+</table>
+
+<h3>Kubernetes Integration</h3>
+<p>AppArmor support moved to GA in Kubernetes 1.30 with a dedicated <code>appArmorProfile</code> field in the securityContext. Prior to 1.30, annotations were used:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Kubernetes 1.30+ (GA): securityContext field
+spec:
+  securityContext:
+    appArmorProfile:
+      type: RuntimeDefault         # or Localhost
+  containers:
+  - name: app
+    securityContext:
+      appArmorProfile:
+        type: Localhost
+        localhostProfile: k8s-nginx  # profile name loaded on node
+
+---
+# Prior to 1.30: annotation-based (still supported for compatibility)
+metadata:
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/app: "runtime/default"
+    # or: localhost/<profile-name>
+    # or: unconfined (violates PSS baseline)</code></pre>
+
+<div class="callout callout-info">
+  <strong>AppArmor requires support from the node OS.</strong>
+  AppArmor is available on Debian/Ubuntu-based distributions and SUSE. It is not available on RHEL/CentOS/Fedora (which use SELinux instead). Check node OS before deploying AppArmor profiles — pods requesting a missing profile will fail to start.
+</div>
+
+<!-- SELINUX -->
+<h2 id="selinux">SELinux</h2>
+
+<p>SELinux (Security-Enhanced Linux) is a MAC system used on RHEL/CentOS/Fedora. It uses a label-based policy model where every process, file, and socket has a security label. Access is governed by policy rules between labels.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">spec:
+  securityContext:
+    seLinuxOptions:
+      level: "s0:c123,c456"    # MCS label for namespace isolation
+      role: "object_r"
+      type: "svirt_sandbox_file_t"
+      user: "system_u"
+  containers:
+  - name: app
+    securityContext:
+      seLinuxOptions:
+        type: "container_t"     # container-specific label</code></pre>
+
+<p>In most Kubernetes deployments on RHEL/CoreOS, the container runtime (CRI-O, containerd) automatically assigns SELinux labels to containers. Manual configuration is primarily needed when:</p>
+<ul>
+  <li>Accessing host volumes that need specific SELinux labels</li>
+  <li>Implementing MCS (Multi-Category Security) for strict container isolation</li>
+  <li>Running on OpenShift (which has a specific SELinux policy model)</li>
+</ul>
+
+<!-- PRIVILEGED RISKS -->
+<h2 id="privileged-risks">Privileged Container Risks</h2>
+
+<p>A <em>privileged container</em> (<code>securityContext.privileged: true</code>) disables most container isolation. It receives all capabilities, can access all host devices, shares the host's cgroups and namespaces for devices, and can typically escape to the host. <strong>It is effectively an unrestricted process on the host node.</strong></p>
+
+<div class="callout callout-danger">
+  <strong>Container escape via privileged container is trivially easy.</strong>
+  A privileged container can: load kernel modules, mount the host filesystem, access /dev/sda (raw disk), modify iptables, read /proc/1/root (host root filesystem). A typical escape:<br>
+  <code>nsenter --target 1 --mount --uts --ipc --net --pid -- /bin/bash</code><br>
+  This spawns a shell in the host's namespaces from inside a privileged container. Any workload that doesn't require host access has zero business being privileged.
+</div>
+
+<h3>What Actually Requires Privileged</h3>
+<table>
+  <tr><th>Workload Type</th><th>Requires Privileged?</th><th>Alternative</th></tr>
+  <tr><td>CNI plugins (calico-node, cilium-agent)</td><td>Often yes — needs to configure host network interfaces</td><td>Use specific capabilities + hostNetwork instead of full privileged</td></tr>
+  <tr><td>CSI drivers (storage)</td><td>Sometimes — for mount operations</td><td>Use only on specific CSI plugin containers; not main application</td></tr>
+  <tr><td>GPU workloads</td><td>Device access via device plugin — not full privileged</td><td>GPU device plugin via <code>resources.limits</code>; no privileged needed</td></tr>
+  <tr><td>Node monitoring agents (Datadog, Falco)</td><td>Partially — needs access to host proc, host net, host pid</td><td>Specific capabilities + hostPID/hostNetwork; not full privileged</td></tr>
+  <tr><td>Application containers (99%)</td><td>Never</td><td>Proper securityContext with drop ALL</td></tr>
+</table>
+
+<!-- HOST NAMESPACES -->
+<h2 id="host-namespaces">Host Namespaces</h2>
+
+<table>
+  <tr><th>Field</th><th>Risk When Enabled</th><th>Legitimate Use</th></tr>
+  <tr><td><code>hostNetwork: true</code></td><td>Pod shares host network stack; can bind to all host ports; traffic not routed through CNI policies; bypasses NetworkPolicy</td><td>CNI plugins, host-level monitoring (node-exporter), some service mesh data planes</td></tr>
+  <tr><td><code>hostPID: true</code></td><td>Pod can see and signal all processes on the host; can read /proc/&lt;host-pid&gt;/mem</td><td>System-level debuggers, Falco (for syscall monitoring), some monitoring agents</td></tr>
+  <tr><td><code>hostIPC: true</code></td><td>Pod can access host shared memory segments and semaphores; can read/write IPC data from other processes</td><td>Extremely rare — specific HPC or legacy enterprise applications</td></tr>
+</table>
+
+<h3>hostPath Volume Risks</h3>
+<p>The <code>hostPath</code> volume type mounts a directory from the host node's filesystem directly into the container. This creates a direct path to host data:</p>
+
+<table>
+  <tr><th>hostPath Mount</th><th>Risk</th></tr>
+  <tr><td><code>/</code></td><td>Full read/write access to host root filesystem — equivalent to privileged</td></tr>
+  <tr><td><code>/etc</code></td><td>Modify /etc/sudoers, /etc/passwd, host certs</td></tr>
+  <tr><td><code>/var/run/docker.sock</code> or <code>/run/containerd/containerd.sock</code></td><td>Full control of container runtime — can launch privileged containers</td></tr>
+  <tr><td><code>/proc</code></td><td>Read/write host kernel parameters, process memory</td></tr>
+  <tr><td><code>/var/lib/kubelet</code></td><td>Access to all pod secrets and service account tokens on the node</td></tr>
+  <tr><td><code>/sys</code></td><td>Modify kernel settings and hardware interfaces</td></tr>
+</table>
+
+<div class="callout callout-danger">
+  <strong>Mounting the container runtime socket grants full cluster access.</strong>
+  Mounting <code>/var/run/docker.sock</code> or <code>/run/containerd/containerd.sock</code> into a container lets that container launch new privileged containers on the host, bypass all pod security controls, and read all secrets cached on the node. This is a complete cluster compromise vector. Block it via admission policy.
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Kyverno policy: block mounting container runtime socket
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: block-runtime-socket
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: no-runtime-socket
+    match:
+      resources:
+        kinds: ["Pod"]
+    validate:
+      message: "Mounting container runtime socket is not allowed"
+      deny:
+        conditions:
+          any:
+          - key: "{{ request.object.spec.volumes[].hostPath.path | [contains(@, '/var/run/docker.sock'), contains(@, '/run/containerd')] | [] }}"
+            operator: AnyIn
+            value: [true]</code></pre>
+
+<!-- MIGRATION FROM PSP -->
+<h2 id="migration">Migrating from PSP to PSA</h2>
+
+<h3>Migration Strategy</h3>
+<ol>
+  <li><strong>Audit current PSP usage:</strong>
+    <pre><code>kubectl get psp -o json | jq '.items[] | {name:.metadata.name, privileged:.spec.privileged, hostNetwork:.spec.hostNetwork}'</code></pre>
+  </li>
+  <li><strong>Map PSPs to PSS levels:</strong> Identify which PSS level (privileged/baseline/restricted) each namespace's effective PSP corresponds to.</li>
+  <li><strong>Enable PSA in warn mode first:</strong> Apply <code>pod-security.kubernetes.io/warn=restricted</code> and run your workloads. Collect warnings. This is non-breaking.
+    <pre><code>kubectl label namespace my-app pod-security.kubernetes.io/warn=restricted</code></pre>
+  </li>
+  <li><strong>Enable PSA in audit mode:</strong> Add <code>pod-security.kubernetes.io/audit=restricted</code>. Check audit logs for violations.
+    <pre><code>kubectl get events -n my-app | grep -i "violated"</code></pre>
+  </li>
+  <li><strong>Fix violating workloads:</strong> Update pod specs to meet the target PSS level (add securityContext, drop capabilities, set seccomp, etc.).</li>
+  <li><strong>Enable enforce mode:</strong> Switch to <code>pod-security.kubernetes.io/enforce=restricted</code> when all violations are resolved.</li>
+  <li><strong>Remove PSP resources:</strong> Delete PSP objects and RBAC bindings granting <code>use</code> verb on PSPs.</li>
+</ol>
+
+<h3>PSP → PSS Field Mapping</h3>
+<table>
+  <tr><th>PSP Field</th><th>PSS Equivalent</th></tr>
+  <tr><td><code>privileged: false</code></td><td>Baseline: privileged=false enforced</td></tr>
+  <tr><td><code>hostPID/hostIPC/hostNetwork: false</code></td><td>Baseline: all three forbidden</td></tr>
+  <tr><td><code>allowedCapabilities: []</code></td><td>Restricted: drop ALL, no adds</td></tr>
+  <tr><td><code>requiredDropCapabilities: [ALL]</code></td><td>Restricted: drop ALL required</td></tr>
+  <tr><td><code>volumes: [configMap, emptyDir, ...]</code></td><td>Restricted: only allowed volume types</td></tr>
+  <tr><td><code>runAsNonRoot: true</code></td><td>Restricted: runAsNonRoot enforced</td></tr>
+  <tr><td><code>allowPrivilegeEscalation: false</code></td><td>Restricted: allowPrivilegeEscalation=false</td></tr>
+  <tr><td><code>seccomp: runtime/default</code></td><td>Restricted: seccompProfile RuntimeDefault</td></tr>
+  <tr><td><code>apparmor: runtime/default</code></td><td>Baseline: AppArmor unconfined violates baseline</td></tr>
+</table>
+
+<!-- KYVERNO AND OPA -->
+<h2 id="kyverno-opa">Extending with Kyverno / OPA</h2>
+
+<p>PSA is intentionally simple — it enforces only the three built-in PSS levels. For custom policies (e.g., "images must come from our registry", "all pods must have a specific label", "no latest tags"), use Kyverno or OPA/Gatekeeper.</p>
+
+<h3>Kyverno — enforce securityContext patterns</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Kyverno: require readOnlyRootFilesystem on all containers
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-ro-rootfs
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: check-readonly-rootfs
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    validate:
+      message: "readOnlyRootFilesystem must be true"
+      pattern:
+        spec:
+          containers:
+          - securityContext:
+              readOnlyRootFilesystem: true
+          =(initContainers):
+          - securityContext:
+              readOnlyRootFilesystem: true</code></pre>
+
+<h3>OPA/Gatekeeper — ConstraintTemplate for capabilities</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8snocapabilities
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sNoCapabilities
+      validation:
+        openAPIV3Schema:
+          properties:
+            allowedCapabilities:
+              type: array
+              items:
+                type: string
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8snocapabilities
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.containers[_]
+        cap := container.securityContext.capabilities.add[_]
+        not cap == input.parameters.allowedCapabilities[_]
+        msg := sprintf("Container %v has disallowed capability: %v", [container.name, cap])
+      }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sNoCapabilities
+metadata:
+  name: no-dangerous-caps
+spec:
+  match:
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+  parameters:
+    allowedCapabilities: ["NET_BIND_SERVICE"]  # only this cap is allowed to be added</code></pre>
+
+<!-- METRICS AND ALERTS -->
+<h2 id="metrics-alerts">Metrics &amp; Alerts</h2>
+
+<h3>Key Metrics</h3>
+<table>
+  <tr><th>Metric</th><th>Source</th><th>What It Tells You</th></tr>
+  <tr><td><code>pod_security_evaluations_total{decision="allow|deny|exempt",level,mode,policy}</code></td><td>kube-apiserver</td><td>PSA evaluation results per level/mode; track deny counts for violations</td></tr>
+  <tr><td><code>apiserver_admission_controller_admission_duration_seconds{name="PodSecurity"}</code></td><td>kube-apiserver</td><td>PSA admission latency — should be sub-millisecond</td></tr>
+  <tr><td><code>falco_events{rule,priority}</code></td><td>Falco</td><td>Runtime security events by rule and priority</td></tr>
+  <tr><td><code>container_processes{container, namespace}</code></td><td>cAdvisor/kubelet</td><td>Process count per container — unexpected process spike may indicate exec/shell spawn</td></tr>
+  <tr><td><code>apiserver_audit_event_total</code></td><td>kube-apiserver</td><td>Total audit events; correlated with PSA audit-mode violations</td></tr>
+</table>
+
+<h3>Alerts</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">groups:
+- name: pod-security.rules
+  rules:
+
+  - alert: PSAViolationsHigh
+    expr: |
+      rate(pod_security_evaluations_total{decision="deny",mode="enforce"}[5m]) > 0
+    annotations:
+      summary: "PSA enforce mode is rejecting pods in {{ $labels.namespace }}"
+      description: "Pod Security Admission ({{ $labels.level }}) is blocking pod creation. Check workload securityContext."
+    labels:
+      severity: warning
+
+  - alert: PrivilegedPodRunning
+    expr: |
+      count(kube_pod_container_info{container!=""}) by (namespace, pod)
+      # Implement via Falco rule: container.privileged=true → alert
+    annotations:
+      summary: "Privileged container detected: {{ $labels.pod }} in {{ $labels.namespace }}"
+    labels:
+      severity: critical
+
+  - alert: FalcoHighPriorityEvent
+    expr: |
+      rate(falco_events{priority="Critical"}[5m]) > 0
+    annotations:
+      summary: "Falco critical event: {{ $labels.rule }}"
+    labels:
+      severity: critical
+
+  - alert: ContainerRunningAsRoot
+    # Via Falco rule: user.uid=0 AND container=true → alert
+    annotations:
+      summary: "Container running as root: {{ $labels.container }} in {{ $labels.pod }}"
+    labels:
+      severity: warning</code></pre>
+
+<h3>Runbooks</h3>
+<ol>
+  <li><strong>PSA enforce mode blocking pods:</strong> Check <code>kubectl get events -n &lt;namespace&gt; | grep PolicyViolation</code>. Identify which PSS check failed. Options: fix the pod spec to comply, lower the namespace's enforce level if legitimate (and explain why), or add a PSA exemption for the specific workload. Do not blindly lower the PSS level — understand why the violation is occurring first.</li>
+
+  <li><strong>Privileged container detected at runtime:</strong> Identify the pod and node (<code>kubectl get pod -o wide</code>). If unauthorized: cordon the node, delete the pod, audit what it did (Falco logs, audit log). If authorized (CNI plugin, CSI driver): verify it matches expected workloads. Consider whether capabilities + specific access can replace full privileged.</li>
+
+  <li><strong>Falco critical event — shell spawned in container:</strong> Identify pod, container, and user who exec'd. Check <code>kubectl get events</code> and audit log for who triggered the exec. Determine if it was authorized (troubleshooting by a human) or automated (attacker executing code). If unauthorized: isolate the pod (remove from Service, set networkPolicy to deny all), preserve forensic evidence, trigger incident response.</li>
+
+  <li><strong>Container running as root (unexpected):</strong> Check the image's Dockerfile for USER instruction. If missing, add <code>USER nonroot</code> to the Dockerfile, rebuild, and redeploy. Add <code>runAsNonRoot: true</code> to the pod spec as a safety net — it causes the pod to fail to start if the image runs as root, forcing the issue to be resolved at deploy time rather than silently.</li>
+
+  <li><strong>Workload fails to start after PSA enforce upgrade:</strong> Use <code>kubectl describe pod &lt;pod&gt; -n &lt;ns&gt;</code> to see the specific PSA violation. Common issues: missing <code>seccompProfile</code> (add RuntimeDefault), missing <code>capabilities.drop: [ALL]</code>, <code>allowPrivilegeEscalation</code> not set to false. Apply the minimal fix rather than lowering the PSS level.</li>
+</ol>
+
+<!-- BEST PRACTICES -->
+<h2 id="best-practices">Best Practices</h2>
+
+<ol>
+  <li><strong>Apply PSA restricted to all tenant namespaces by default.</strong> Use cluster-level defaults in the PSA admission config to set <code>warn=restricted</code> and <code>audit=restricted</code> cluster-wide, with <code>enforce=baseline</code> as the cluster default. Teams that need to deploy to restricted-compliant workloads can remain on the cluster default. Override to privileged only for explicitly exempted system namespaces.</li>
+
+  <li><strong>Always use enforce + audit + warn together with the same level.</strong> Enforce alone gives no visibility before violations. Audit and warn together let you detect violations in existing workloads and new deployments before they hit enforce. Set all three to the same target level during migration; set all three to the same level in steady state.</li>
+
+  <li><strong>Drop ALL capabilities, then add only what's proven necessary.</strong> Start with <code>capabilities.drop: ["ALL"]</code>. Run the workload. If it fails, check the error, identify the needed syscall, determine which capability grants it, add only that capability. Most applications need zero capabilities after dropping ALL.</li>
+
+  <li><strong>Set seccompProfile RuntimeDefault as your baseline, consider Localhost for critical services.</strong> RuntimeDefault blocks ~100 dangerous syscalls with zero configuration. For services handling sensitive data (auth services, secret managers, payment processors), generate a custom allowlist profile using <code>strace</code> or Falco's syscall logging in complain mode, then deploy as Localhost profile.</li>
+
+  <li><strong>Use readOnlyRootFilesystem: true and back it with emptyDir mounts for writable paths.</strong> Set <code>readOnlyRootFilesystem: true</code> on all containers. If the application writes to disk (temp files, caches, logs), mount specific writable directories as <code>emptyDir</code>. This prevents malware from writing persistence or tooling to the container filesystem.</li>
+
+  <li><strong>Ban hostPath mounts in tenant namespaces via admission policy.</strong> PSA doesn't block all hostPath mounts (baseline allows some). Use Kyverno or OPA/Gatekeeper to deny all hostPath volume types in non-system namespaces. Block specific dangerous paths (docker socket, /proc, /etc, /var/lib/kubelet) even in system namespaces via path-specific policies.</li>
+
+  <li><strong>Pair Falco with PSA for runtime detection.</strong> PSA prevents known-bad configurations at deploy time. Falco detects unknown-bad behavior at runtime (a container that starts compliant but later executes a shell, makes unexpected network connections, or writes to sensitive paths). Both layers are needed.</li>
+
+  <li><strong>Pin PSA version labels and update them deliberately.</strong> Always set <code>pod-security.kubernetes.io/enforce-version=v1.&lt;N&gt;</code>. When upgrading Kubernetes, review PSS changelog for new checks, test with warn mode first, then bump the version pin once workloads are compliant. Never use <code>latest</code> in production enforce mode.</li>
+</ol>
+
+<button id="back-to-top" title="Back to top" onclick="document.getElementById('main-content').scrollTo({top:0,behavior:'smooth'})">↑</button>
+</main>
+
+<script>
+(function(){const t=localStorage.getItem('k8s-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+const main=document.getElementById('main-content');
+const btt=document.getElementById('back-to-top');
+main.addEventListener('scroll',()=>btt.classList.toggle('visible',main.scrollTop>400));
+const headings=document.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('.toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){tocLinks.forEach(l=>l.classList.remove('active'));const a=document.querySelector('.toc a[href="#'+e.target.id+'"]');if(a)a.classList.add('active');}});
+},{root:main,rootMargin:'-20% 0px -70% 0px'});
+headings.forEach(h=>obs.observe(h));
+function filterNav(val){const v=val.toLowerCase();document.querySelectorAll('.nav-section a').forEach(a=>{a.style.display=a.textContent.toLowerCase().includes(v)?'':'none';});}
+function copyCode(btn){const code=btn.parentElement.querySelector('code');navigator.clipboard.writeText(code.innerText).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});}
+</script>
+</body>
+</html>

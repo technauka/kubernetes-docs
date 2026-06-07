@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Distributed Tracing — Kubernetes Observability</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22}
+[data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bg4:#d0d7de;--border:#d0d7de;--text:#1f2328;--text2:#656d76;--text3:#9198a1;--code-bg:#f6f8fa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;font-size:14px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.sidebar{width:272px;min-width:272px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:transform .25s}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo{font-size:20px}
+.sidebar-title{font-size:14px;font-weight:600}
+.sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none}
+.sidebar-search input:focus{border-color:var(--accent)}
+.sidebar-nav{overflow-y:auto;flex:1;padding:8px 0}
+.nav-section{margin-bottom:4px}
+.nav-section-header{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.nav-section a{display:block;padding:5px 16px 5px 28px;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3)}
+.main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.hamburger{background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px;display:none}
+.topbar-title{font-size:14px;font-weight:600;flex:1}
+.topbar-actions{display:flex;gap:8px}
+.btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 12px;font-size:12px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--bg4)}
+main{flex:1;overflow-y:auto;padding:32px 40px;scroll-behavior:smooth}
+h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.subtitle{color:var(--text2);font-size:15px;margin-bottom:24px}
+h2{font-size:20px;font-weight:600;margin:40px 0 16px;padding-top:8px;border-top:1px solid var(--border)}
+h2:first-of-type{margin-top:24px;border-top:none}
+h3{font-size:16px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+h4{font-size:14px;font-weight:600;margin:18px 0 8px;color:var(--text2)}
+p{color:var(--text2);line-height:1.65;margin-bottom:12px}
+ul,ol{color:var(--text2);padding-left:20px;margin-bottom:12px}
+li{margin-bottom:4px;line-height:1.55}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'SF Mono',Consolas,monospace;font-size:12px;color:var(--text)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin-bottom:16px;position:relative}
+pre code{background:none;border:none;padding:0;font-size:12px;line-height:1.55}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);padding:3px 8px;font-size:11px;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:var(--bg4)}
+.table-wrap{overflow-x:auto;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--border);color:var(--text)}
+td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg2)}
+.callout{border-left:3px solid;padding:12px 16px;margin-bottom:16px;border-radius:0 6px 6px 0}
+.callout-info{border-color:var(--accent);background:rgba(88,166,255,.08)}
+.callout-warn{border-color:var(--yellow);background:rgba(210,153,34,.08)}
+.callout-danger{border-color:var(--red);background:rgba(248,81,73,.08)}
+.callout-success{border-color:var(--green);background:rgba(63,185,80,.08)}
+.callout-title{font-weight:600;font-size:13px;margin-bottom:4px}
+.callout p{margin-bottom:0;font-size:13px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card h4{margin-top:0;margin-bottom:8px;font-size:14px}
+.card p{font-size:13px;margin-bottom:0}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;font-family:'SF Mono',Consolas,monospace;font-size:12px;line-height:1.7;overflow-x:auto;white-space:pre;color:var(--text2)}
+.badge{display:inline-block;padding:1px 7px;border-radius:12px;font-size:11px;font-weight:500}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+.toc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px}
+.toc-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.toc ol{margin-bottom:0;padding-left:16px}
+.toc li{font-size:12px;margin-bottom:3px}
+.toc a{color:var(--text2)}
+.toc a:hover{color:var(--accent)}
+.toc a.toc-active{color:var(--accent);font-weight:600}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.section-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.section-nav a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2)}
+.section-nav a:hover{color:var(--accent);text-decoration:none;border-color:var(--accent)}
+.step-list{counter-reset:step;list-style:none;padding:0;margin-bottom:16px}
+.step-list li{counter-increment:step;padding:10px 12px 10px 44px;position:relative;border-left:2px solid var(--border);margin-bottom:6px;color:var(--text2);font-size:13px}
+.step-list li::before{content:counter(step);position:absolute;left:-14px;top:8px;background:var(--accent2);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+/* span timeline */
+.trace-timeline{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;overflow-x:auto}
+.trace-span{display:flex;align-items:center;margin-bottom:6px;font-size:12px;font-family:'SF Mono',Consolas,monospace}
+.span-label{width:220px;min-width:220px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.span-bar-wrap{flex:1;height:14px;background:var(--bg3);border-radius:3px;position:relative}
+.span-bar{height:100%;border-radius:3px;position:absolute}
+.span-root{background:var(--accent2)}
+.span-db{background:var(--purple)}
+.span-ext{background:var(--orange)}
+.span-cache{background:var(--green)}
+.span-duration{margin-left:8px;color:var(--text3);font-size:11px}
+#back-to-top{position:fixed;bottom:24px;right:24px;background:var(--accent2);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:100}
+details.coverage{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:40px}
+details.coverage summary{padding:14px 16px;cursor:pointer;font-size:13px;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+details.coverage summary::before{content:'▶';font-size:10px;transition:transform .2s;color:var(--text3)}
+details.coverage[open] summary::before{transform:rotate(90deg)}
+.coverage-body{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coverage-body li{font-size:12px;color:var(--text2)}
+@media(max-width:768px){.sidebar{position:fixed;left:0;top:0;height:100%;z-index:200;transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.hamburger{display:block}main{padding:20px 16px}.two-col{grid-template-columns:1fr}.coverage-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-logo">☸</span>
+    <span class="sidebar-title">Kubernetes Docs</span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="nav-filter" placeholder="Filter navigation…" aria-label="Filter navigation"/>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-header">Getting Started</div>
+      <a href="../00-introduction/00-overview.html">Overview</a>
+      <a href="../00-introduction/01-architecture.html">Architecture</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Workloads</div>
+      <a href="../01-workloads/00-pods.html">Pods</a>
+      <a href="../01-workloads/01-deployments.html">Deployments</a>
+      <a href="../01-workloads/02-statefulsets.html">StatefulSets</a>
+      <a href="../01-workloads/03-daemonsets.html">DaemonSets</a>
+      <a href="../01-workloads/04-jobs-cronjobs.html">Jobs &amp; CronJobs</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Networking</div>
+      <a href="../02-networking/00-services.html">Services</a>
+      <a href="../02-networking/01-ingress.html">Ingress</a>
+      <a href="../02-networking/02-network-policies.html">Network Policies</a>
+      <a href="../02-networking/03-dns.html">DNS</a>
+      <a href="../02-networking/04-cni.html">CNI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Storage</div>
+      <a href="../03-storage/00-volumes.html">Volumes</a>
+      <a href="../03-storage/01-persistent-volumes.html">Persistent Volumes</a>
+      <a href="../03-storage/02-storage-classes.html">Storage Classes</a>
+      <a href="../03-storage/03-csi.html">CSI</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Configuration</div>
+      <a href="../04-configuration/00-configmaps.html">ConfigMaps</a>
+      <a href="../04-configuration/01-secrets.html">Secrets</a>
+      <a href="../04-configuration/02-resource-management.html">Resource Management</a>
+      <a href="../04-configuration/03-hpa-vpa.html">HPA &amp; VPA</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Scheduling</div>
+      <a href="../05-scheduling/00-node-selection.html">Node Selection</a>
+      <a href="../05-scheduling/01-taints-tolerations.html">Taints &amp; Tolerations</a>
+      <a href="../05-scheduling/02-priority-preemption.html">Priority &amp; Preemption</a>
+      <a href="../05-scheduling/03-scheduler-internals.html">Scheduler Internals</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Security</div>
+      <a href="../06-security/00-rbac.html">RBAC</a>
+      <a href="../06-security/01-service-accounts.html">Service Accounts</a>
+      <a href="../06-security/02-pod-security.html">Pod Security</a>
+      <a href="../06-security/03-network-policies.html">Network Policies (Security)</a>
+      <a href="../06-security/04-secrets-management.html">Secrets Management</a>
+      <a href="../06-security/05-opa-gatekeeper.html">OPA Gatekeeper</a>
+      <a href="../06-security/06-admission-controllers.html">Admission Controllers</a>
+      <a href="../06-security/07-image-security.html">Image Security</a>
+      <a href="../06-security/08-audit-logging.html">Audit Logging</a>
+      <a href="../06-security/09-encryption-at-rest.html">Encryption at Rest</a>
+      <a href="../06-security/10-supply-chain-security.html">Supply Chain Security</a>
+      <a href="../06-security/11-compliance.html">Compliance</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Observability</div>
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics &amp; Prometheus</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html" class="active">Distributed Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Platform Engineering</div>
+      <a href="../08-platform-engineering/00-overview.html">Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-header">Production Operations</div>
+      <a href="../09-production-operations/00-overview.html">Overview</a>
+    </div>
+  </nav>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+    <span class="topbar-title">Distributed Tracing — Kubernetes Observability</span>
+    <div class="topbar-actions">
+      <button class="btn" id="theme-toggle">Light Mode</button>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <h1>Distributed Tracing in Kubernetes</h1>
+    <p class="subtitle">Complete guide to OpenTelemetry tracing, W3C Trace Context, Jaeger, Grafana Tempo, sampling strategies, auto-instrumentation, service mesh tracing, and production tail sampling.</p>
+
+    <nav class="section-nav" aria-label="Section navigation">
+      <a href="00-observability-overview.html">Overview</a>
+      <a href="01-metrics.html">Metrics</a>
+      <a href="02-logging.html">Logging</a>
+      <a href="03-tracing.html">Tracing</a>
+      <a href="04-events.html">Events</a>
+      <a href="05-dashboards.html">Dashboards</a>
+      <a href="06-alerting.html">Alerting</a>
+      <a href="07-profiling.html">Profiling</a>
+    </nav>
+
+    <nav class="toc" aria-label="Table of contents">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#concepts">Core Concepts</a></li>
+        <li><a href="#w3c">W3C Trace Context &amp; Propagation</a></li>
+        <li><a href="#otel">OpenTelemetry SDK &amp; API</a></li>
+        <li><a href="#auto-instrumentation">Auto-Instrumentation</a></li>
+        <li><a href="#collector">OTel Collector for Traces</a></li>
+        <li><a href="#tempo">Grafana Tempo</a></li>
+        <li><a href="#jaeger">Jaeger</a></li>
+        <li><a href="#sampling">Sampling Strategies</a></li>
+        <li><a href="#service-mesh">Service Mesh Tracing</a></li>
+        <li><a href="#correlation">Signal Correlation</a></li>
+        <li><a href="#operations">Metrics, Alerts &amp; Runbooks</a></li>
+      </ol>
+    </nav>
+
+    <!-- =================== CONCEPTS =================== -->
+    <h2 id="concepts">Core Concepts</h2>
+
+    <p>Distributed tracing tracks a single request as it flows through multiple services, capturing timing and causal relationships. Without tracing, diagnosing latency in a microservices system requires grepping logs across dozens of services with no way to correlate them to a specific request.</p>
+
+    <h3>Trace, Span, and Span Context</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Trace</h4>
+        <p>A directed acyclic graph (DAG) of spans representing one end-to-end request. Identified by a globally unique <strong>trace ID</strong> (128-bit / 16 bytes). All spans in a trace share the same trace ID.</p>
+      </div>
+      <div class="card">
+        <h4>Span</h4>
+        <p>A named, timed operation representing a unit of work. Has a <strong>span ID</strong> (64-bit / 8 bytes), start time, end time, status (OK/ERROR/UNSET), and zero or more attributes, events, and links.</p>
+      </div>
+      <div class="card">
+        <h4>Span Context</h4>
+        <p>The propagated portion of a span: trace ID + span ID + trace flags (sampled bit) + trace state. Propagated across process boundaries via HTTP headers or message queue metadata.</p>
+      </div>
+      <div class="card">
+        <h4>Parent–Child Relationship</h4>
+        <p>A child span records its parent's span ID. The root span has no parent ID. Causal relationships form a tree; async fan-out or messaging creates a DAG via span <strong>links</strong>.</p>
+      </div>
+      <div class="card">
+        <h4>Span Attributes</h4>
+        <p>Key-value pairs on a span (indexed for search). OTel semantic conventions define standard names: <code>http.method</code>, <code>db.system</code>, <code>rpc.service</code>, <code>k8s.pod.name</code>.</p>
+      </div>
+      <div class="card">
+        <h4>Span Events</h4>
+        <p>Timestamped log-like messages attached to a span (not propagated). Use for: exception recording, cache miss, retry attempt. Cheaper than creating a child span.</p>
+      </div>
+    </div>
+
+    <h3>Example Trace: Order Service</h3>
+    <div class="trace-timeline">
+      <div class="trace-span">
+        <div class="span-label">POST /orders [gateway]</div>
+        <div class="span-bar-wrap"><div class="span-bar span-root" style="left:0%;width:100%"></div></div>
+        <div class="span-duration">234ms</div>
+      </div>
+      <div class="trace-span">
+        <div class="span-label">  └ order-service.CreateOrder</div>
+        <div class="span-bar-wrap"><div class="span-bar span-root" style="left:5%;width:90%"></div></div>
+        <div class="span-duration">212ms</div>
+      </div>
+      <div class="trace-span">
+        <div class="span-label">    ├ redis.GET inventory</div>
+        <div class="span-bar-wrap"><div class="span-bar span-cache" style="left:8%;width:5%"></div></div>
+        <div class="span-duration">11ms</div>
+      </div>
+      <div class="trace-span">
+        <div class="span-label">    ├ postgres.INSERT orders</div>
+        <div class="span-bar-wrap"><div class="span-bar span-db" style="left:15%;width:20%"></div></div>
+        <div class="span-duration">43ms</div>
+      </div>
+      <div class="trace-span">
+        <div class="span-label">    ├ payment-service.Charge</div>
+        <div class="span-bar-wrap"><div class="span-bar span-ext" style="left:38%;width:45%"></div></div>
+        <div class="span-duration">96ms</div>
+      </div>
+      <div class="trace-span">
+        <div class="span-label">    │   └ stripe.CreateCharge</div>
+        <div class="span-bar-wrap"><div class="span-bar span-ext" style="left:42%;width:38%"></div></div>
+        <div class="span-duration">81ms</div>
+      </div>
+      <div class="trace-span">
+        <div class="span-label">    └ kafka.produce order.created</div>
+        <div class="span-bar-wrap"><div class="span-bar span-cache" style="left:85%;width:8%"></div></div>
+        <div class="span-duration">17ms</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-top:-8px">Waterfall view: each bar represents a span's start/end relative to trace start. Gaps reveal time spent between spans (serialization, network, queue wait). This trace immediately shows payment-service (96ms) is the dominant latency contributor.</p>
+
+    <h3>Span Status and Error Recording</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Status Code</th><th>Meaning</th><th>When to Set</th></tr></thead>
+        <tbody>
+          <tr><td><code>UNSET</code></td><td>Default — operation not explicitly classified</td><td>Default for all new spans</td></tr>
+          <tr><td><code>OK</code></td><td>Operation succeeded, explicitly confirmed</td><td>Set only when you want to suppress downstream error status</td></tr>
+          <tr><td><code>ERROR</code></td><td>Operation failed</td><td>On any exception or non-2xx HTTP response in a server span</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">Do Not Set OK Proactively</div>
+      <p>Setting status to <code>OK</code> on every successful span prevents automatic error propagation from child spans. Only set <code>OK</code> explicitly when you want to mark a span as definitively successful despite child errors (e.g., a retry that ultimately succeeded). Leave <code>UNSET</code> for normal successful operations.</p>
+    </div>
+
+    <!-- =================== W3C =================== -->
+    <h2 id="w3c">W3C Trace Context &amp; Propagation</h2>
+
+    <p>The W3C Trace Context specification (RFC) defines standard HTTP headers for propagating span context across service boundaries. All modern tracing SDKs support this as the default propagation format.</p>
+
+    <h3>traceparent Header</h3>
+    <pre><code class="language-http">traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+             ^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^ ^^
+             |  trace-id (32 hex chars, 128-bit) span-id (16 hex) flags
+             version=00                                            01=sampled</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>tracestate Header</h3>
+    <pre><code class="language-http"># Vendor-specific metadata, preserved through the call chain
+tracestate: vendorname1=opaqueValue1,vendorname2=opaqueValue2
+
+# Jaeger example:
+tracestate: jaeger=sampled=1
+
+# B3 single-header (legacy, still common):
+b3: 4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-1</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Propagation Formats Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Format</th><th>Header(s)</th><th>Origin</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>W3C TraceContext</td><td><code>traceparent</code>, <code>tracestate</code></td><td>W3C standard</td><td><span class="badge badge-green">Recommended</span></td></tr>
+          <tr><td>B3 Multi-header</td><td><code>X-B3-TraceId</code>, <code>X-B3-SpanId</code>, <code>X-B3-Sampled</code></td><td>Zipkin</td><td><span class="badge badge-yellow">Legacy / widely used</span></td></tr>
+          <tr><td>B3 Single-header</td><td><code>b3</code></td><td>Zipkin</td><td><span class="badge badge-yellow">Legacy</span></td></tr>
+          <tr><td>Jaeger</td><td><code>uber-trace-id</code></td><td>Uber/Jaeger</td><td><span class="badge badge-yellow">Legacy</span></td></tr>
+          <tr><td>AWS X-Ray</td><td><code>X-Amzn-Trace-Id</code></td><td>AWS</td><td><span class="badge badge-blue">AWS environments</span></td></tr>
+          <tr><td>Baggage</td><td><code>baggage</code></td><td>W3C standard</td><td><span class="badge badge-blue">User-defined context</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>W3C Baggage</h3>
+    <pre><code class="language-http"># Baggage propagates user-defined key-value pairs across the entire call chain
+# Use for: tenant ID, A/B experiment ID, user ID for debug sessions
+baggage: userId=12345,tenantId=acme-corp,ab-experiment=new-checkout
+
+# WARNING: Baggage is propagated to ALL downstream services — never put secrets here.
+# Baggage adds network overhead proportional to its size on every HTTP call.</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== OTEL SDK =================== -->
+    <h2 id="otel">OpenTelemetry SDK &amp; API</h2>
+
+    <h3>OTel Architecture Layers</h3>
+    <div class="diagram">┌─────────────────────────────────────────────────────┐
+│              OTel API (stable contract)              │
+│  Tracer / Span / Context / Propagator interfaces     │
+│  Safe to use in libraries — no vendor coupling       │
+└──────────────────┬──────────────────────────────────┘
+                   │ implements
+┌──────────────────▼──────────────────────────────────┐
+│             OTel SDK (configurable)                  │
+│  TracerProvider, Sampler, SpanProcessor,             │
+│  SpanExporter — configured by application operator   │
+└──────────────────┬──────────────────────────────────┘
+                   │ exports via
+┌──────────────────▼──────────────────────────────────┐
+│        OTLP Exporter (gRPC :4317 / HTTP :4318)       │
+│  Sends to OTel Collector or directly to backend      │
+└─────────────────────────────────────────────────────┘</div>
+
+    <h3>Go: Manual Instrumentation</h3>
+    <pre><code class="language-go">package main
+
+import (
+    "context"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/codes"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/sdk/resource"
+    sdktrace "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+    "go.opentelemetry.io/otel/trace"
+    "google.golang.org/grpc"
+)
+
+func initTracer(ctx context.Context) (*sdktrace.TracerProvider, error) {
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint("otel-collector.monitoring.svc:4317"),
+        otlptracegrpc.WithInsecure(),
+        otlptracegrpc.WithDialOption(grpc.WithBlock()),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    res := resource.NewWithAttributes(
+        semconv.SchemaURL,
+        semconv.ServiceName("order-service"),
+        semconv.ServiceVersion("v2.4.1"),
+        semconv.DeploymentEnvironment("production"),
+        attribute.String("k8s.namespace.name", "payments"),
+    )
+
+    tp := sdktrace.NewTracerProvider(
+        sdktrace.WithBatcher(exporter),
+        sdktrace.WithResource(res),
+        // Head-based sampling: 10% of traces
+        sdktrace.WithSampler(sdktrace.ParentBased(
+            sdktrace.TraceIDRatioBased(0.1),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    // Set W3C TraceContext + Baggage propagators
+    otel.SetTextMapPropagator(
+        propagation.NewCompositeTextMapPropagator(
+            propagation.TraceContext{},
+            propagation.Baggage{},
+        ),
+    )
+    return tp, nil
+}
+
+var tracer = otel.Tracer("order-service")
+
+func createOrder(ctx context.Context, req OrderRequest) (*Order, error) {
+    ctx, span := tracer.Start(ctx, "CreateOrder",
+        trace.WithAttributes(
+            attribute.String("order.customer_id", req.CustomerID),
+            attribute.Int("order.item_count", len(req.Items)),
+            attribute.Float64("order.total_amount", req.Total),
+        ),
+        trace.WithSpanKind(trace.SpanKindServer),
+    )
+    defer span.End()
+
+    order, err := insertOrderDB(ctx, req)
+    if err != nil {
+        // Record exception — adds span event with stack trace
+        span.RecordError(err, trace.WithStackTrace(true))
+        span.SetStatus(codes.Error, err.Error())
+        return nil, err
+    }
+
+    // Add span event (lightweight log attached to this span)
+    span.AddEvent("order persisted",
+        trace.WithAttributes(attribute.String("order.id", order.ID)),
+    )
+    return order, nil
+}
+
+func insertOrderDB(ctx context.Context, req OrderRequest) (*Order, error) {
+    ctx, span := tracer.Start(ctx, "db.insert",
+        trace.WithAttributes(
+            semconv.DBSystemPostgreSQL,
+            semconv.DBNameKey.String("orders"),
+            semconv.DBOperationKey.String("INSERT"),
+            semconv.DBStatementKey.String("INSERT INTO orders (customer_id, total) VALUES (?, ?)"),
+        ),
+        trace.WithSpanKind(trace.SpanKindClient),
+    )
+    defer span.End()
+    // ... actual DB operation
+    return &Order{}, nil
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Python: Manual Instrumentation</h3>
+    <pre><code class="language-python">from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_VERSION
+from opentelemetry.propagate import set_global_textmap
+from opentelemetry.propagators.composite import CompositePropagator
+from opentelemetry.propagators.b3 import B3MultiFormat
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+def init_tracer():
+    resource = Resource.create({
+        SERVICE_NAME: "payment-service",
+        SERVICE_VERSION: "v1.2.0",
+        "deployment.environment": "production",
+    })
+
+    exporter = OTLPSpanExporter(
+        endpoint="http://otel-collector.monitoring.svc:4317",
+        insecure=True,
+    )
+
+    provider = TracerProvider(resource=resource)
+    provider.add_span_processor(BatchSpanProcessor(exporter))
+    trace.set_tracer_provider(provider)
+
+    # Support both W3C and B3 for interop with legacy services
+    set_global_textmap(CompositePropagator([
+        TraceContextTextMapPropagator(),
+        B3MultiFormat(),
+    ]))
+
+tracer = trace.get_tracer("payment-service")
+
+def charge_customer(ctx, customer_id: str, amount: float):
+    with tracer.start_as_current_span(
+        "PaymentService.Charge",
+        context=ctx,
+        kind=trace.SpanKind.SERVER,
+        attributes={
+            "payment.customer_id": customer_id,
+            "payment.amount": amount,
+            "payment.currency": "USD",
+        }
+    ) as span:
+        try:
+            result = stripe_charge(ctx, customer_id, amount)
+            span.set_attribute("payment.charge_id", result.id)
+            return result
+        except StripeError as e:
+            span.record_exception(e)
+            span.set_status(trace.StatusCode.ERROR, str(e))
+            raise</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Java: OpenTelemetry with Spring Boot</h3>
+    <pre><code class="language-xml">&lt;!-- pom.xml --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;io.opentelemetry.instrumentation&lt;/groupId&gt;
+  &lt;artifactId&gt;opentelemetry-spring-boot-starter&lt;/artifactId&gt;
+  &lt;version&gt;2.3.0-alpha&lt;/version&gt;
+&lt;/dependency&gt;</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml"># application.yml — OTel Spring Boot auto-config
+otel:
+  service:
+    name: inventory-service
+  exporter:
+    otlp:
+      endpoint: http://otel-collector.monitoring.svc:4317
+      protocol: grpc
+  traces:
+    sampler: parentbased_traceidratio
+    sampler:
+      arg: "0.1"      # 10% head sampling
+  metrics:
+    exporter: otlp   # also export metrics via OTel
+  logs:
+    exporter: otlp   # also export logs via OTel
+  propagators: tracecontext,baggage</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-java">import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
+
+@Service
+public class InventoryService {
+    private final Tracer tracer = GlobalOpenTelemetry.getTracer("inventory-service");
+
+    public int checkStock(String productId) {
+        Span span = tracer.spanBuilder("InventoryService.checkStock")
+            .setSpanKind(SpanKind.INTERNAL)
+            .setAttribute("product.id", productId)
+            .startSpan();
+        try (Scope scope = span.makeCurrent()) {
+            int qty = inventoryRepo.findQuantity(productId);
+            span.setAttribute("inventory.quantity", qty);
+            return qty;
+        } catch (Exception e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            throw e;
+        } finally {
+            span.end();
+        }
+    }
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Semantic Conventions</h3>
+    <p>OTel semantic conventions define standardized attribute names across language SDKs. Using them enables consistent cross-service querying in backends like Tempo.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Signal</th><th>Key Attributes</th></tr></thead>
+        <tbody>
+          <tr><td>HTTP Server</td><td><code>http.method</code>, <code>http.route</code>, <code>http.status_code</code>, <code>http.url</code>, <code>server.address</code>, <code>server.port</code></td></tr>
+          <tr><td>HTTP Client</td><td><code>http.method</code>, <code>http.url</code>, <code>http.status_code</code>, <code>http.request.body.size</code></td></tr>
+          <tr><td>Database</td><td><code>db.system</code> (postgresql/mysql/redis), <code>db.name</code>, <code>db.operation</code>, <code>db.statement</code>, <code>db.user</code>, <code>server.address</code></td></tr>
+          <tr><td>Messaging</td><td><code>messaging.system</code> (kafka/rabbitmq), <code>messaging.destination.name</code>, <code>messaging.operation</code> (publish/receive/process)</td></tr>
+          <tr><td>RPC</td><td><code>rpc.system</code> (grpc), <code>rpc.service</code>, <code>rpc.method</code>, <code>rpc.grpc.status_code</code></td></tr>
+          <tr><td>Kubernetes</td><td><code>k8s.pod.name</code>, <code>k8s.namespace.name</code>, <code>k8s.deployment.name</code>, <code>k8s.node.name</code>, <code>k8s.cluster.name</code></td></tr>
+          <tr><td>Exceptions</td><td><code>exception.type</code>, <code>exception.message</code>, <code>exception.stacktrace</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== AUTO-INSTRUMENTATION =================== -->
+    <h2 id="auto-instrumentation">Auto-Instrumentation</h2>
+
+    <p>The OTel Operator provides zero-code-change auto-instrumentation for Java, Node.js, Python, .NET, and Go via the <code>Instrumentation</code> CRD. It injects an init container that installs the OTel agent/SDK and configures it via environment variables.</p>
+
+    <h3>OTel Operator Install</h3>
+    <pre><code class="language-bash">kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+
+# Or via Helm:
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm upgrade --install opentelemetry-operator open-telemetry/opentelemetry-operator \
+  --namespace opentelemetry-operator-system \
+  --create-namespace \
+  --set "manager.collectorImage.repository=otel/opentelemetry-collector-contrib"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Instrumentation CRD</h3>
+    <pre><code class="language-yaml">apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: otel-instrumentation
+  namespace: production
+spec:
+  # Where to send traces (OTel Collector endpoint)
+  exporter:
+    endpoint: http://otel-collector.monitoring.svc:4317
+
+  propagators:
+    - tracecontext
+    - baggage
+    - b3multi           # also support legacy B3 for mixed environments
+
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.1"     # 10% head sample; adjust per service via annotation
+
+  # Resource attributes added to all signals from instrumented pods
+  resource:
+    addK8sUIDAttributes: true
+    attributes:
+      cluster: prod-us-east-1
+
+  java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.33.0
+    env:
+      - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_SPRING_WEB_ENABLED
+        value: "true"
+
+  nodejs:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.49.1
+    env:
+      - name: OTEL_NODE_ENABLED_INSTRUMENTATIONS
+        value: "http,express,pg,redis,kafkajs"
+
+  python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.45b0
+    env:
+      - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+        value: "true"
+
+  go:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go:v0.11.0
+    # Go uses eBPF — no init container; requires privileged mode
+    env:
+      - name: OTEL_GO_AUTO_SHOW_VERIFIER_LOG
+        value: "false"
+
+  dotnet:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.7.0</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Enabling Auto-Instrumentation via Pod Annotations</h3>
+    <pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: production
+spec:
+  template:
+    metadata:
+      annotations:
+        # Enable auto-instrumentation for this deployment
+        instrumentation.opentelemetry.io/inject-java: "true"
+        # Or: inject-nodejs, inject-python, inject-dotnet, inject-go
+
+        # Override sampler for this specific service
+        instrumentation.opentelemetry.io/inject-java: "otel-instrumentation"
+
+        # Override container to inject (default: first container)
+        instrumentation.opentelemetry.io/container-names: "order-service"
+    spec:
+      containers:
+        - name: order-service
+          image: myregistry/order-service:v2.4.1
+          # OTel Operator injects these env vars automatically:
+          # OTEL_SERVICE_NAME=order-service
+          # OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector...:4317
+          # JAVA_TOOL_OPTIONS=-javaagent:/otel-auto-instrumentation/javaagent.jar
+          # OTEL_RESOURCE_ATTRIBUTES=k8s.pod.name=$(POD_NAME),k8s.namespace.name=$(NAMESPACE)...</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Auto-Instrumentation Coverage by Language</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Language</th><th>Mechanism</th><th>Frameworks Covered</th><th>Limitation</th></tr></thead>
+        <tbody>
+          <tr><td>Java</td><td>javaagent JAR (bytecode)</td><td>Spring Boot, Quarkus, Micronaut, JDBC, gRPC, Kafka, Redis, Mongo</td><td>Lambda / GraalVM native require manual SDK</td></tr>
+          <tr><td>Node.js</td><td>require() hook at startup</td><td>Express, Fastify, HTTP, gRPC, pg, mysql, Redis, Kafka</td><td>Custom async hooks may conflict</td></tr>
+          <tr><td>Python</td><td>sitecustomize.py + PYTHONPATH</td><td>Django, Flask, FastAPI, aiohttp, SQLAlchemy, Redis, Kafka</td><td>Celery async tasks need manual context</td></tr>
+          <tr><td>Go</td><td>eBPF (no code change needed)</td><td>net/http, gRPC, database/sql</td><td>Requires privileged DaemonSet; limited framework depth</td></tr>
+          <tr><td>.NET</td><td>CLR profiler</td><td>ASP.NET Core, HttpClient, EF Core, gRPC, Redis, Kafka</td><td>Profiler API limitations in some scenarios</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== COLLECTOR =================== -->
+    <h2 id="collector">OTel Collector for Traces</h2>
+
+    <p>The OTel Collector decouples application instrumentation from backend details. Applications export to the Collector via OTLP; the Collector transforms, samples, and fans out to one or more backends. This enables backend changes with zero application restarts.</p>
+
+    <h3>Collector Deployment Modes for Tracing</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Mode</th><th>Topology</th><th>Use For</th></tr></thead>
+        <tbody>
+          <tr><td>Agent (DaemonSet)</td><td>One collector per node; apps send to localhost</td><td>Head sampling decisions, initial enrichment, local buffering</td></tr>
+          <tr><td>Gateway (Deployment)</td><td>Centralized collectors; agents forward to gateway</td><td>Tail sampling (requires seeing all spans for a trace), fan-out to multiple backends</td></tr>
+          <tr><td>Sidecar</td><td>One collector per pod</td><td>Strict per-pod isolation; rarely needed for tracing</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">Tail Sampling Requires Gateway Mode</div>
+      <p>Tail sampling decisions require seeing <em>all spans of a trace</em> before deciding whether to keep or drop it. This means all spans for a trace must route to the same collector instance. Use a consistent hash on <code>trace_id</code> in the load balancing exporter to route all spans of a trace to the same gateway instance.</p>
+    </div>
+
+    <h3>Full Collector Config: Agent + Gateway</h3>
+    <pre><code class="language-yaml"># --- Agent ConfigMap (DaemonSet — one per node) ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-agent-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317      # apps send to node IP:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      memory_limiter:
+        limit_mib: 400
+        spike_limit_mib: 100
+        check_interval: 5s
+      batch:
+        timeout: 5s
+        send_batch_size: 1024
+      k8sattributes:                    # enrich with pod metadata
+        extract:
+          metadata:
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.deployment.name
+            - k8s.namespace.name
+            - k8s.node.name
+            - k8s.container.name
+          labels:
+            - tag_name: app
+              key: app
+              from: pod
+        pod_association:
+          - sources:
+              - from: connection
+      resource:
+        attributes:
+          - key: cluster
+            value: prod-us-east-1
+            action: insert
+
+    exporters:
+      # Forward to gateway using load-balancing on trace_id
+      loadbalancing:
+        protocol:
+          otlp:
+            tls:
+              insecure: true
+        resolver:
+          dns:
+            hostname: otel-gateway-headless.monitoring.svc   # headless Service
+            port: 4317
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, k8sattributes, resource, batch]
+          exporters: [loadbalancing]</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml"># --- Gateway ConfigMap (Deployment — 3+ replicas with tail sampler) ---
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+
+    processors:
+      memory_limiter:
+        limit_mib: 1500
+        spike_limit_mib: 400
+        check_interval: 5s
+      tail_sampling:
+        decision_wait: 30s            # wait up to 30s for all spans to arrive
+        num_traces: 50000             # in-memory trace buffer
+        expected_new_traces_per_sec: 1000
+        policies:
+          # Keep ALL traces with errors
+          - name: error-traces
+            type: status_code
+            status_code: {status_codes: [ERROR]}
+          # Keep slow traces (> 2s)
+          - name: slow-traces
+            type: latency
+            latency: {threshold_ms: 2000}
+          # Keep traces from specific services (always)
+          - name: payment-always
+            type: string_attribute
+            string_attribute: {key: "service.name", values: ["payment-service"]}
+          # Sample 5% of everything else
+          - name: probabilistic-base
+            type: probabilistic
+            probabilistic: {sampling_percentage: 5}
+      batch:
+        timeout: 5s
+        send_batch_size: 2048
+
+    exporters:
+      otlp/tempo:
+        endpoint: tempo.monitoring.svc:4317
+        tls:
+          insecure: true
+      otlp/jaeger:
+        endpoint: jaeger-collector.monitoring.svc:4317
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, tail_sampling, batch]
+          exporters: [otlp/tempo]</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Load-Balancing Exporter and Headless Service</h3>
+    <pre><code class="language-yaml"># Headless Service for gateway Pods — allows DNS SRV discovery
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-gateway-headless
+  namespace: monitoring
+spec:
+  clusterIP: None           # headless
+  selector:
+    app: otel-gateway
+  ports:
+    - port: 4317
+      name: grpc
+---
+# Gateway Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-gateway
+  namespace: monitoring
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: otelcol
+          image: otel/opentelemetry-collector-contrib:0.96.0
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
+            limits: {cpu: 2, memory: 3Gi}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol-contrib</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== TEMPO =================== -->
+    <h2 id="tempo">Grafana Tempo</h2>
+
+    <p>Grafana Tempo is a high-scale, cost-efficient distributed tracing backend. Like Loki, it uses object storage (S3/GCS/Azure Blob) for trace data and indexes only trace ID and span attributes needed for search — not full-text. It integrates natively with Grafana for trace visualization and metric/log correlation.</p>
+
+    <h3>Tempo Architecture</h3>
+    <div class="diagram">OTel Collector → Tempo Distributor
+                          │
+                    (consistent hash ring)
+                          │
+                 ┌────────▼────────┐
+                 │   Ingester      │ (WAL → object store)
+                 │   (3 replicas)  │
+                 └────────┬────────┘
+                          │
+              ┌───────────▼───────────┐
+              │   Object Store (S3)   │
+              │   Compactor (merges)  │
+              └───────────┬───────────┘
+                          │
+              ┌───────────▼───────────┐
+              │   Querier / Query     │ ← Grafana / Tempo API
+              │   Frontend            │
+              └───────────────────────┘
+
+    TraceQL search also requires:
+              ┌───────────────────────┐
+              │   Metrics Generator   │ (derives RED metrics from traces)
+              │   Tempo query via     │ ← Prometheus remote_write
+              │   span attributes     │
+              └───────────────────────┘</div>
+
+    <h3>Tempo Helm Install</h3>
+    <pre><code class="language-bash">helm repo add grafana https://grafana.github.io/helm-charts
+helm upgrade --install tempo grafana/tempo-distributed \
+  --namespace monitoring \
+  --values tempo-values.yaml</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Tempo Distributed Values</h3>
+    <pre><code class="language-yaml"># tempo-values.yaml
+tempo:
+  reportingEnabled: false
+  storage:
+    trace:
+      backend: s3
+      s3:
+        bucket: prod-tempo-traces
+        region: us-east-1
+        # IRSA annotation on ServiceAccount instead of static credentials
+
+  # Enable search over span attributes
+  search:
+    enabled: true
+    max_duration: 0      # no limit on trace duration for search
+
+  # Metrics generator: derive RED metrics from trace spans
+  metricsGenerator:
+    enabled: true
+    remoteWriteUrl: http://prometheus-operated.monitoring.svc:9090/api/v1/write
+    processors:
+      - service-graphs    # service dependency graph from traces
+      - span-metrics      # RED metrics (rate, error, duration) per operation
+
+  # TraceQL search requires ingester/querier config
+  ingester:
+    config:
+      replication_factor: 3
+      trace_idle_period: 30s
+      max_block_bytes: 104857600    # 100MB chunks
+
+ingester:
+  replicas: 3
+  resources:
+    requests: {cpu: 500m, memory: 2Gi}
+    limits: {cpu: 2, memory: 4Gi}
+  extraEnv:
+    - name: GOMEMLIMIT
+      value: "3500MiB"
+
+distributor:
+  replicas: 2
+  resources:
+    requests: {cpu: 200m, memory: 256Mi}
+
+querier:
+  replicas: 2
+  resources:
+    requests: {cpu: 500m, memory: 1Gi}
+
+compactor:
+  resources:
+    requests: {cpu: 500m, memory: 512Mi}
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/tempo-s3-role</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>TraceQL</h3>
+    <p>TraceQL is Tempo's query language for searching and filtering traces by span attributes, duration, status, and structural properties. Available in Tempo 2.0+.</p>
+    <pre><code class="language-traceql"># Find all error traces for order-service
+{ resource.service.name = "order-service" && status = error }
+
+# Find slow database spans (> 500ms)
+{ span.db.system = "postgresql" && duration > 500ms }
+
+# Find traces that hit the payment service with errors
+{ resource.service.name = "payment-service" && status = error }
+
+# Find traces by HTTP path and status
+{ span.http.route = "/api/v1/orders" && span.http.status_code >= 500 }
+
+# Find traces containing a specific span AND being slow overall
+{ resource.service.name = "inventory-service" } | select(duration > 2s)
+
+# Span co-existence: trace has both an error and a DB call
+{ status = error } && { span.db.system != nil }
+
+# Structural query: find parent spans with slow child DB operations
+{ resource.service.name = "order-service" } >> { span.db.system = "postgresql" && duration > 200ms }
+
+# Find traces by custom attribute
+{ span.order.customer_id = "cust-12345" }
+
+# Aggregation (Tempo 2.4+)
+{ status = error } | rate()
+{ resource.service.name = "payment-service" } | avg(duration) by(resource.service.name)</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Tempo Metrics Generator — Derived RED Metrics</h3>
+    <pre><code class="language-yaml"># Prometheus metrics automatically generated from trace data:
+# traces_spanmetrics_calls_total{service_name, span_name, status_code}
+# traces_spanmetrics_duration_milliseconds_bucket{...}
+# traces_service_graph_request_total{client, server}
+# traces_service_graph_request_failed_total{client, server}
+# traces_service_graph_request_server_seconds_bucket{...}
+
+# Use in Prometheus/Grafana without requiring manual metric instrumentation:
+# Error rate per operation from traces:
+rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m])
+  / rate(traces_spanmetrics_calls_total[5m])
+
+# p99 latency per service from traces:
+histogram_quantile(0.99,
+  sum by (le, service_name) (
+    rate(traces_spanmetrics_duration_milliseconds_bucket[5m])
+  )
+)</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== JAEGER =================== -->
+    <h2 id="jaeger">Jaeger</h2>
+
+    <p>Jaeger is a CNCF graduated distributed tracing system originally developed at Uber. It provides a rich UI for trace search, comparison, and dependency graph visualization. Many teams use Jaeger as the tracing UI frontend with Tempo or Elasticsearch as the storage backend.</p>
+
+    <h3>Jaeger Operator Install</h3>
+    <pre><code class="language-bash">kubectl create namespace observability
+kubectl apply -f https://github.com/jaegertracing/jaeger-operator/releases/latest/download/jaeger-operator.yaml \
+  -n observability</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Production Jaeger CR (Elasticsearch backend)</h3>
+    <pre><code class="language-yaml">apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: prod-jaeger
+  namespace: observability
+spec:
+  strategy: production    # separate collector / query / agent components
+
+  collector:
+    maxReplicas: 5
+    resources:
+      requests: {cpu: 500m, memory: 512Mi}
+      limits: {cpu: 1, memory: 1Gi}
+    options:
+      collector:
+        num-workers: 50
+        queue-size: 2000
+
+  query:
+    replicas: 2
+    resources:
+      requests: {cpu: 200m, memory: 256Mi}
+    metricsStorage:
+      type: prometheus    # span RED metrics from Prometheus
+
+  storage:
+    type: elasticsearch
+    options:
+      es:
+        server-urls: https://prod-logs-es-http.logging.svc:9200
+        tls:
+          ca: /es/certificates/ca.crt
+        index-prefix: jaeger
+        num-shards: 3
+        num-replicas: 1
+    secretName: jaeger-es-secret   # contains ES credentials
+
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: jaeger-basic-auth</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Jaeger vs Tempo Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Aspect</th><th>Jaeger</th><th>Grafana Tempo</th></tr></thead>
+        <tbody>
+          <tr><td>Storage</td><td>Cassandra / Elasticsearch</td><td>Object storage (S3/GCS/Azure Blob)</td></tr>
+          <tr><td>Storage cost</td><td>High (full indexing)</td><td>Low (only trace-ID + attribute index)</td></tr>
+          <tr><td>Query language</td><td>Tag search, service filter</td><td>TraceQL (powerful)</td></tr>
+          <tr><td>Derived metrics</td><td>SPM (with Prometheus)</td><td>Metrics generator (built-in)</td></tr>
+          <tr><td>Grafana integration</td><td>Via data source plugin</td><td>Native (first-class)</td></tr>
+          <tr><td>UI</td><td>Dedicated trace UI (excellent)</td><td>Grafana Explore (good)</td></tr>
+          <tr><td>Service dependency graph</td><td>Built-in (Jaeger UI)</td><td>Via Metrics Generator</td></tr>
+          <tr><td>Scalability</td><td>Moderate (ES/Cassandra limits)</td><td>High (object store scales)</td></tr>
+          <tr><td>Tail sampling</td><td>Built-in adaptive sampling</td><td>Via OTel Collector</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =================== SAMPLING =================== -->
+    <h2 id="sampling">Sampling Strategies</h2>
+
+    <p>Tracing every request at 100% is prohibitively expensive at production scale. Sampling reduces the volume of trace data while preserving statistical accuracy for performance analysis and retaining 100% of traces for important paths (errors, slow requests).</p>
+
+    <h3>Head-Based vs Tail-Based Sampling</h3>
+    <div class="two-col">
+      <div class="card">
+        <h4>Head-Based Sampling</h4>
+        <p>Decision made at the <strong>start</strong> of a trace (before any spans are collected). Deterministic — all services in a trace see the same sampling decision via the <code>sampled</code> flag in <code>traceparent</code>.</p>
+        <p style="margin-top:8px"><strong>Pros:</strong> Zero overhead for dropped traces. No collector buffering required.</p>
+        <p style="margin-top:4px"><strong>Cons:</strong> Cannot keep low-volume errors (you don't know a trace will error at trace start).</p>
+        <p style="margin-top:4px"><strong>Use:</strong> Traffic &gt;10k RPS where tail sampling is operationally expensive.</p>
+      </div>
+      <div class="card">
+        <h4>Tail-Based Sampling</h4>
+        <p>Decision made <strong>after all spans arrive</strong> at the collector (typically 10–30s window). Can inspect trace outcome: status, duration, service names.</p>
+        <p style="margin-top:8px"><strong>Pros:</strong> Can keep 100% of error/slow traces while sampling normal traffic.</p>
+        <p style="margin-top:4px"><strong>Cons:</strong> Requires buffering all in-flight spans in collector memory (50,000+ traces). All spans of a trace must route to the same collector instance.</p>
+        <p style="margin-top:4px"><strong>Use:</strong> Preferred when you need error trace fidelity. Requires OTel Collector gateway.</p>
+      </div>
+    </div>
+
+    <h3>Sampling Strategies Reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Strategy</th><th>Type</th><th>Description</th><th>OTel Sampler</th></tr></thead>
+        <tbody>
+          <tr><td>Always On</td><td>Head</td><td>Sample 100% of traces. Development/debug only.</td><td><code>always_on</code></td></tr>
+          <tr><td>Always Off</td><td>Head</td><td>Drop 100%. Effectively disables tracing.</td><td><code>always_off</code></td></tr>
+          <tr><td>TraceID Ratio</td><td>Head</td><td>Deterministic 0–100% based on trace ID hash.</td><td><code>traceidratio</code></td></tr>
+          <tr><td>ParentBased (ratio)</td><td>Head</td><td>Respects parent's sampling decision; falls back to ratio for root spans. <strong>Recommended default.</strong></td><td><code>parentbased_traceidratio</code></td></tr>
+          <tr><td>Status Code</td><td>Tail</td><td>Keep all ERROR traces.</td><td>OTel Collector tail_sampling policy</td></tr>
+          <tr><td>Latency</td><td>Tail</td><td>Keep traces over a duration threshold.</td><td>OTel Collector tail_sampling policy</td></tr>
+          <tr><td>Composite</td><td>Tail</td><td>AND/OR combination of multiple policies.</td><td>OTel Collector composite policy</td></tr>
+          <tr><td>Adaptive</td><td>Tail</td><td>Automatically adjusts rate to meet target RPS. Jaeger-specific.</td><td>Jaeger adaptive sampling</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>ParentBased Sampler — Why It Matters</h3>
+    <div class="callout callout-danger">
+      <div class="callout-title">Never Use TraceIDRatioBased Without ParentBased Wrapper</div>
+      <p>If you use <code>TraceIDRatioBased(0.1)</code> directly, each service makes its own independent sampling decision. Service A may decide to sample a trace; service B may decide to drop the same trace. This creates <strong>broken traces</strong> — some spans exist, others are missing. Always use <code>ParentBased(TraceIDRatioBased(0.1))</code> so downstream services respect the root's sampling decision.</p>
+    </div>
+
+    <h3>Production Tail Sampling Policy (OTel Collector)</h3>
+    <pre><code class="language-yaml">processors:
+  tail_sampling:
+    decision_wait: 30s
+    num_traces: 100000
+    expected_new_traces_per_sec: 5000
+    policies:
+      # --- Always keep ---
+      - name: errors
+        type: status_code
+        status_code: {status_codes: [ERROR]}
+      - name: slow-requests
+        type: latency
+        latency: {threshold_ms: 3000}
+      - name: user-marked-important
+        type: string_attribute
+        string_attribute:
+          key: sampling.priority
+          values: ["1", "high", "critical"]
+      # --- Noise reduction ---
+      - name: drop-health-checks
+        type: string_attribute
+        string_attribute:
+          key: http.route
+          values: ["/health", "/healthz", "/readyz", "/livez", "/metrics"]
+          invert_match: false
+        # This policy drops matching traces — combined with `and` policy below
+      # --- Composite: sample 5% of remaining traffic ---
+      - name: base-rate
+        type: and
+        and:
+          and_sub_policy:
+            - name: no-health-check
+              type: string_attribute
+              string_attribute:
+                key: http.route
+                values: ["/health", "/healthz", "/readyz", "/livez"]
+                invert_match: true
+            - name: probabilistic-5pct
+              type: probabilistic
+              probabilistic: {sampling_percentage: 5}</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== SERVICE MESH =================== -->
+    <h2 id="service-mesh">Service Mesh Tracing</h2>
+
+    <p>Service meshes (Istio, Linkerd) provide automatic trace span creation for all inter-pod communication at the sidecar proxy layer — without any code changes. This is a form of infrastructure-level instrumentation covering all HTTP/gRPC traffic.</p>
+
+    <h3>Istio Tracing</h3>
+    <pre><code class="language-yaml"># Enable tracing in IstioOperator
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  meshConfig:
+    enableTracing: true
+    defaultConfig:
+      tracing:
+        sampling: 1.0      # 1% — Istio uses 0-100 range (not 0-1)
+        # Send to OTel Collector via OTLP (Istio 1.16+)
+        openCensusAgent:
+          address: otel-agent.monitoring.svc:55678
+    extensionProviders:
+      - name: otel-tracing
+        opentelemetry:
+          service: otel-collector.monitoring.svc.cluster.local
+          port: 4317</code><button class="copy-btn">Copy</button></pre>
+
+    <pre><code class="language-yaml"># Enable tracing for a specific namespace via Telemetry API
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-tracing
+  namespace: production
+spec:
+  tracing:
+    - providers:
+        - name: otel-tracing
+      randomSamplingPercentage: 5.0   # 5% for this namespace
+      customTags:
+        env:
+          literal:
+            value: production
+        cluster:
+          environment:
+            name: CLUSTER_NAME</code><button class="copy-btn">Copy</button></pre>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">Istio Tracing Requires Header Forwarding</div>
+      <p>Istio's Envoy sidecar creates a new child span for each incoming request but cannot automatically propagate the trace context to outgoing requests made by your application code. Your application <strong>must still forward</strong> the <code>traceparent</code> (and optionally <code>b3</code>, <code>x-b3-*</code>) headers from incoming to outgoing requests. Failure to do this breaks the trace tree — Istio spans appear disconnected from application spans.</p>
+    </div>
+
+    <h3>Header Forwarding in Go</h3>
+    <pre><code class="language-go">// Forward trace headers from incoming request to outgoing call
+func forwardHeaders(outReq *http.Request, inReq *http.Request) {
+    for _, h := range []string{
+        "traceparent", "tracestate", "baggage",
+        // B3 headers (for Istio/Zipkin compatibility):
+        "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled",
+        "x-b3-flags", "b3",
+    } {
+        if v := inReq.Header.Get(h); v != "" {
+            outReq.Header.Set(h, v)
+        }
+    }
+}
+
+// With OTel SDK — inject propagates automatically if using otelhttp transport:
+import "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
+client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Linkerd Tracing</h3>
+    <pre><code class="language-bash"># Linkerd does NOT inject headers by default — uses opt-in tracing
+# Configure via Helm values:
+linkerd upgrade \
+  --set jaeger.enabled=true \
+  --set jaeger.collector.otlp_otlp_grpc_enabled=true \
+  --set jaeger.collector.otlp_grpc_addr="otel-collector.monitoring.svc:4317"
+
+# Enable tracing per namespace via annotation:
+kubectl annotate namespace production \
+  config.linkerd.io/trace-collector=otel-collector.monitoring.svc:4317 \
+  config.linkerd.io/trace-collector-service-account=otel-collector</code><button class="copy-btn">Copy</button></pre>
+
+    <!-- =================== CORRELATION =================== -->
+    <h2 id="correlation">Signal Correlation</h2>
+
+    <p>The value of tracing multiplies when trace IDs are available across all three observability signals. A single trace ID lets you navigate from a Grafana alert → Prometheus metric exemplar → Tempo trace → Loki log line for the exact same request.</p>
+
+    <h3>Exemplars: Metrics → Traces</h3>
+    <pre><code class="language-go">// Prometheus exemplar on a histogram observation
+import (
+    "github.com/prometheus/client_golang/prometheus"
+    "go.opentelemetry.io/otel/trace"
+)
+
+var requestDuration = prometheus.NewHistogramVec(
+    prometheus.HistogramOpts{
+        Name:    "http_request_duration_seconds",
+        Buckets: prometheus.DefBuckets,
+        // Native histograms also support exemplars:
+        NativeHistogramBucketFactor: 1.1,
+    },
+    []string{"method", "route", "status"},
+)
+
+func instrumentHandler(span trace.Span, method, route string, status int, dur float64) {
+    sc := span.SpanContext()
+    requestDuration.With(prometheus.Labels{
+        "method": method, "route": route, "status": strconv.Itoa(status),
+    }).(prometheus.ExemplarObserver).ObserveWithExemplar(dur, prometheus.Labels{
+        "traceID": sc.TraceID().String(),
+        "spanID":  sc.SpanID().String(),
+    })
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Grafana: Linking Traces to Logs (Derived Fields)</h3>
+    <pre><code class="language-json">// Grafana Loki data source derived fields config (in provisioning)
+{
+  "name": "Loki",
+  "type": "loki",
+  "url": "http://loki-gateway.monitoring.svc",
+  "jsonData": {
+    "derivedFields": [
+      {
+        "matcherRegex": "trace_id=(\\w+)",
+        "name": "TraceID",
+        "url": "${__value.raw}",
+        "datasourceUid": "tempo-uid",
+        "urlDisplayLabel": "View Trace in Tempo"
+      }
+    ]
+  }
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Grafana: Linking Traces to Logs (Tempo → Loki)</h3>
+    <pre><code class="language-json">// Tempo data source config — link to Loki for logs from trace
+{
+  "name": "Tempo",
+  "type": "tempo",
+  "url": "http://tempo-query-frontend.monitoring.svc:3100",
+  "jsonData": {
+    "tracesToLogsV2": {
+      "datasourceUid": "loki-uid",
+      "spanStartTimeShift": "-1m",
+      "spanEndTimeShift": "1m",
+      "filterByTraceID": true,
+      "filterBySpanID": false,
+      "customQuery": true,
+      "query": "{cluster=\"prod\", pod=\"$${__span.tags[\"k8s.pod.name\"]}\"} | json | trace_id = \"$${__trace.traceId}\""
+    },
+    "tracesToMetrics": {
+      "datasourceUid": "prometheus-uid",
+      "queries": [
+        {
+          "name": "Request Rate",
+          "query": "rate(traces_spanmetrics_calls_total{service_name=\"$${__span.tags[\"service.name\"]}\"}[5m])"
+        }
+      ]
+    },
+    "serviceMap": {
+      "datasourceUid": "prometheus-uid"
+    }
+  }
+}</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Correlation Flow Diagram</h3>
+    <div class="diagram">Alert fires (PrometheusRule)
+    │
+    ▼ Click alert → Grafana Explore
+Prometheus metric: http_request_duration_seconds p99 spike
+    │
+    ▼ Click exemplar dot on metric graph
+Tempo trace: 4bf92f3577b34da6... (the slow request)
+    │
+    ├── Waterfall shows payment-service span took 3.2s
+    │
+    ▼ Click "Logs for this span" in Tempo UI
+Loki logs: all log lines for that pod in the span time window
+    │
+    ▼ Find log line: "stripe API timeout after 3000ms"
+         trace_id=4bf92f3577b34da6 span_id=00f067aa0ba902b7
+
+Total time to root cause: ~2 minutes instead of ~2 hours</div>
+
+    <!-- =================== OPERATIONS =================== -->
+    <h2 id="operations">Metrics, Alerts &amp; Runbooks</h2>
+
+    <h3>Key Tracing Infrastructure Metrics</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Metric</th><th>Source</th><th>Alert Threshold</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>otelcol_receiver_accepted_spans</code></td><td>OTel Collector</td><td>—</td><td>Spans successfully received</td></tr>
+          <tr><td><code>otelcol_receiver_refused_spans</code></td><td>OTel Collector</td><td>&gt;0</td><td>Spans rejected (pipeline full/misconfigured)</td></tr>
+          <tr><td><code>otelcol_exporter_queue_size</code></td><td>OTel Collector</td><td>&gt;80% capacity</td><td>Export queue filling up — backend slow or down</td></tr>
+          <tr><td><code>otelcol_exporter_send_failed_spans</code></td><td>OTel Collector</td><td>&gt;0</td><td>Export failures — traces being dropped</td></tr>
+          <tr><td><code>tempo_ingester_live_traces</code></td><td>Tempo</td><td>—</td><td>Active traces in ingester memory</td></tr>
+          <tr><td><code>tempo_distributor_bytes_received_total</code></td><td>Tempo</td><td>—</td><td>Ingestion throughput</td></tr>
+          <tr><td><code>tempo_query_frontend_duration_seconds</code></td><td>Tempo</td><td>p99 &gt; 10s</td><td>TraceQL query latency</td></tr>
+          <tr><td><code>traces_spanmetrics_calls_total</code></td><td>Tempo metrics gen</td><td>—</td><td>RED metrics derived from traces</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Alert Rules</h3>
+    <pre><code class="language-yaml">groups:
+  - name: tracing-infrastructure
+    rules:
+      - alert: OTelCollectorDroppingSpans
+        expr: rate(otelcol_exporter_send_failed_spans_total[5m]) > 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "OTel Collector dropping spans — traces incomplete"
+          description: "Failed span export rate: {{ $value | humanize }}/s"
+          runbook: "Check collector logs; verify backend (Tempo/Jaeger) health"
+
+      - alert: OTelCollectorQueueFull
+        expr: (otelcol_exporter_queue_size / otelcol_exporter_queue_capacity) > 0.8
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "OTel Collector export queue > 80% full"
+          description: "Queue filling — backend may be slow. Consider scaling gateway."
+
+      - alert: TempoIngestionFailing
+        expr: rate(tempo_distributor_ingester_appends_failures_total[5m]) > 0
+        for: 3m
+        labels: {severity: critical}
+        annotations:
+          summary: "Tempo ingestion failures — traces may be lost"
+
+      - alert: TempoQueryLatencyHigh
+        expr: |
+          histogram_quantile(0.99,
+            rate(tempo_query_frontend_duration_seconds_bucket[5m])
+          ) > 10
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Tempo query p99 > 10s — trace searches degraded"</code><button class="copy-btn">Copy</button></pre>
+
+    <h3>Runbooks</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Broken / Incomplete Traces</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Check if all services use <code>ParentBased</code> sampler (not raw ratio)</li>
+          <li>Verify all services forward <code>traceparent</code> header on outgoing calls</li>
+          <li>Check load-balancer: spans for same trace must route to same gateway</li>
+          <li>Check <code>decision_wait</code> in tail_sampling — increase if spans arrive late</li>
+          <li>Verify <code>otelcol_receiver_refused_spans</code> is zero on agent</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>High Trace Drop Rate</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Check <code>otelcol_exporter_send_failed_spans_total</code> for failed exports</li>
+          <li>Verify Tempo / Jaeger backend is healthy and reachable</li>
+          <li>Check gateway CPU/memory — may need horizontal scaling</li>
+          <li>Check <code>otelcol_exporter_queue_size</code> vs capacity</li>
+          <li>Reduce ingestion rate by lowering sampling percentage temporarily</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Traces Not Appearing in Tempo</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Verify app is sending spans: <code>otelcol_receiver_accepted_spans_total &gt; 0</code></li>
+          <li>Check Tempo distributor: <code>kubectl logs -l app.kubernetes.io/component=distributor</code></li>
+          <li>Verify S3 write permissions (Tempo needs s3:PutObject)</li>
+          <li>Check Tempo ingester WAL disk space</li>
+          <li>Query Tempo directly: <code>curl http://tempo:3100/api/traces/&lt;trace-id&gt;</code></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>Auto-Instrumentation Not Working</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Verify operator is running: <code>kubectl get pods -n opentelemetry-operator-system</code></li>
+          <li>Check Instrumentation CRD exists in correct namespace</li>
+          <li>Verify pod annotation: <code>instrumentation.opentelemetry.io/inject-java: "true"</code></li>
+          <li>Check init container ran: <code>kubectl describe pod &lt;pod&gt; | grep -A5 Init</code></li>
+          <li>Check env vars injected: <code>kubectl exec &lt;pod&gt; -- env | grep OTEL</code></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>TraceQL Queries Timing Out</h4>
+        <ol style="font-size:12px;padding-left:16px;margin-top:8px;color:var(--text2)">
+          <li>Narrow time range — TraceQL scans all blocks in range</li>
+          <li>Add <code>resource.service.name</code> predicate to reduce scan scope</li>
+          <li>Check querier memory: <code>kubectl top pod -l app=tempo-distributed-querier</code></li>
+          <li>Enable <code>cache_results</code> in Tempo query frontend config</li>
+          <li>Increase <code>query_timeout</code> in Tempo config (default: 30s)</li>
+        </ol>
+      </div>
+    </div>
+
+    <h3>Best Practices</h3>
+    <ol class="step-list">
+      <li><strong>Use ParentBased sampler universally.</strong> All services must wrap their rate-based sampler in <code>ParentBased</code>. A service that breaks the parent chain creates orphaned spans that don't appear in trace waterfalls, making traces useless for debugging.</li>
+      <li><strong>Always record exceptions with <code>span.RecordError()</code>.</strong> This adds a span event with the full stack trace and sets status to ERROR, making error traces searchable by status in tail sampling policies and TraceQL.</li>
+      <li><strong>Use OTel semantic conventions for attribute names.</strong> Non-standard attribute names like <code>database_host</code> instead of <code>server.address</code> fragment queries across services and prevent generic dashboards from working.</li>
+      <li><strong>Deploy tail sampling for error fidelity.</strong> Head sampling at 1–10% will miss most errors (which are typically rare). Use OTel Collector gateway with tail sampling: keep 100% of error traces, slow traces, and use a low percentage (1–5%) for normal traffic.</li>
+      <li><strong>Exclude health-check and readiness probe spans.</strong> Kubernetes probes generate continuous noise traces. Add a tail sampling policy or head-based filter to drop spans where <code>http.route</code> matches <code>/health</code>, <code>/readyz</code>, <code>/livez</code>, <code>/metrics</code>.</li>
+      <li><strong>Set span names at the route level, not URL level.</strong> <code>/api/orders/12345</code> as a span name creates unbounded cardinality. Use <code>/api/orders/{id}</code> (the route template). OTel HTTP instrumentation libraries do this automatically when configured correctly.</li>
+      <li><strong>Forward trace context in async paths.</strong> When a trace crosses a message queue (Kafka, SQS, RabbitMQ), inject the span context into message headers and extract it on the consumer side. Use OTel's messaging semantic conventions and <code>SpanKind.PRODUCER</code> / <code>SpanKind.CONSUMER</code>.</li>
+      <li><strong>Configure Tempo metrics generator for service graphs.</strong> Deriving RED metrics and service dependency graphs from trace data gives you automatic service maps and SLO metrics without requiring manual metric instrumentation in every service.</li>
+    </ol>
+
+    <details class="coverage">
+      <summary>Coverage Details</summary>
+      <ul class="coverage-body">
+        <li>Core concepts: Trace (DAG), Span (timing + attributes), Span Context (trace ID + span ID + flags)</li>
+        <li>Parent-child span relationships; span links for async/messaging</li>
+        <li>Span attributes, span events (lightweight log on span)</li>
+        <li>Trace waterfall visualization example (order service, 7 spans)</li>
+        <li>Span status codes: UNSET / OK / ERROR — with anti-pattern callout (do not set OK proactively)</li>
+        <li>W3C traceparent header format: version + trace-id + span-id + flags</li>
+        <li>tracestate header for vendor-specific metadata</li>
+        <li>Propagation format comparison: W3C TraceContext / B3 Multi / B3 Single / Jaeger / AWS X-Ray / Baggage</li>
+        <li>W3C Baggage: use cases (tenant ID, A/B) and warning (no secrets, network overhead)</li>
+        <li>OTel architecture layers: API (library contract) → SDK (application config) → OTLP Exporter</li>
+        <li>Go: TracerProvider + OTLP gRPC exporter + ParentBased sampler + W3C+Baggage propagator + manual span creation with attributes, RecordError, AddEvent</li>
+        <li>Python: structlog integration, OTel TracerProvider, OTLP exporter, composite propagator (W3C + B3)</li>
+        <li>Java: Spring Boot auto-config via opentelemetry-spring-boot-starter, application.yml properties, manual tracer usage with Scope</li>
+        <li>OTel semantic conventions table: HTTP server/client, database, messaging, RPC, Kubernetes, exceptions</li>
+        <li>OTel Operator install (kubectl + Helm)</li>
+        <li>Instrumentation CRD: exporter, propagators, sampler, resource, per-language image + env config (Java/Node.js/Python/Go/dotnet)</li>
+        <li>Pod annotation for auto-instrumentation opt-in: inject-java/nodejs/python/go/dotnet</li>
+        <li>Auto-instrumentation coverage table by language: mechanism, frameworks, limitations</li>
+        <li>OTel Collector deployment modes: agent DaemonSet / gateway Deployment / sidecar</li>
+        <li>Tail sampling requires gateway callout; consistent hash on trace_id for routing</li>
+        <li>Agent ConfigMap: OTLP receiver, k8sattributes processor, loadbalancing exporter (DNS resolver)</li>
+        <li>Gateway ConfigMap: tail_sampling processor (error + latency + string_attribute + probabilistic policies)</li>
+        <li>Headless Service for gateway DNS discovery by load-balancing exporter</li>
+        <li>Grafana Tempo architecture: distributor / ingester (WAL) / compactor / querier / query frontend / metrics generator</li>
+        <li>Tempo Helm install (tempo-distributed)</li>
+        <li>Tempo distributed values: S3 backend, replication_factor 3, metricsGenerator (service-graphs + span-metrics), remote_write to Prometheus</li>
+        <li>TraceQL: span selectors, structural queries (&gt;&gt;), co-existence (&&), aggregation (rate/avg by)</li>
+        <li>Tempo metrics generator: derived RED metrics (traces_spanmetrics_calls_total, duration bucket, service_graph_request_total)</li>
+        <li>Jaeger Operator install; production Jaeger CR (strategy: production, Elasticsearch backend, SPM)</li>
+        <li>Jaeger vs Tempo comparison table (storage, cost, query, UI, scalability, tail sampling)</li>
+        <li>Head-based vs tail-based sampling: pros/cons/use cases</li>
+        <li>Sampling strategies reference table: always_on/off, traceidratio, parentbased, status_code, latency, composite, adaptive</li>
+        <li>ParentBased sampler critical: broken traces from independent sampling decisions</li>
+        <li>Production tail sampling policy: errors + slow + user-marked + health-check exclusion + 5% base rate</li>
+        <li>Istio tracing: IstioOperator config, Telemetry API for per-namespace sampling, OTLP endpoint</li>
+        <li>Istio header forwarding requirement callout + Go code pattern + otelhttp transport</li>
+        <li>Linkerd tracing via opt-in annotations + collector config</li>
+        <li>Exemplars: Prometheus histogram ExemplarObserver with trace_id/span_id</li>
+        <li>Grafana derived fields: Loki data source config linking trace_id to Tempo</li>
+        <li>Grafana Tempo data source: tracesToLogsV2 (Loki link), tracesToMetrics (Prometheus link), serviceMap</li>
+        <li>Signal correlation flow diagram: alert → metric exemplar → trace → logs → root cause</li>
+        <li>8 tracing infrastructure metrics with thresholds</li>
+        <li>4 PrometheusRule alert rules: OTelCollectorDroppingSpans, QueueFull, TempoIngestionFailing, TempoQueryLatencyHigh</li>
+        <li>5 runbooks: broken traces, high drop rate, traces not in Tempo, auto-instrumentation not working, TraceQL timeout</li>
+        <li>8 best practices: ParentBased universally, RecordError, semantic conventions, tail sampling for errors, health-check exclusion, route-level span names, async context propagation, Tempo metrics generator</li>
+      </ul>
+    </details>
+
+  </main>
+</div>
+
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+<script>
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-toggle');
+const saved = localStorage.getItem('k8s-theme') || 'dark';
+root.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? 'Light Mode' : 'Dark Mode';
+themeBtn.addEventListener('click', () => {
+  const cur = root.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('k8s-theme', next);
+  themeBtn.textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+});
+
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+const main = document.getElementById('main-content');
+const btt = document.getElementById('back-to-top');
+main.addEventListener('scroll', () => {
+  btt.style.display = main.scrollTop > 400 ? 'flex' : 'none';
+});
+btt.addEventListener('click', () => main.scrollTo({ top: 0, behavior: 'smooth' }));
+
+document.querySelectorAll('pre').forEach(pre => {
+  const btn = pre.querySelector('.copy-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const code = pre.querySelector('code');
+    navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  });
+});
+
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const tocLinks = document.querySelectorAll('.toc a');
+if (headings.length && tocLinks.length) {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove('toc-active'));
+        const active = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('toc-active');
+      }
+    });
+  }, { root: main, rootMargin: '0px 0px -70% 0px' });
+  headings.forEach(h => obs.observe(h));
+}
+
+document.getElementById('nav-filter').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.nav-section a').forEach(a => {
+    a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

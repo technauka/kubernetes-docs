@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Tuning | Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+#sidebar-header h1{font-size:14px;font-weight:600;color:var(--text);}
+#sidebar-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+#sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+#sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none;}
+#sidebar-search input:focus{border-color:var(--accent);}
+#sidebar-nav{overflow-y:auto;flex:1;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);}
+#main{flex:1;overflow-y:auto;padding:40px 48px;position:relative;}
+.page-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.page-header .breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.page-header .breadcrumb span{color:var(--text2);}
+.page-header h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-header .subtitle{color:var(--text2);font-size:16px;line-height:1.6;}
+.page-header .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+#toc{float:right;width:220px;margin:0 0 24px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;position:sticky;top:24px;}
+#toc h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+#toc a{display:block;font-size:12px;color:var(--text2);padding:3px 0;border-left:2px solid transparent;padding-left:8px;transition:all .15s;}
+#toc a:hover{color:var(--text);text-decoration:none;}
+#toc a.active{color:var(--accent);border-left-color:var(--accent);}
+#toc a.toc-h3{padding-left:18px;font-size:11px;}
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);clear:both;}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px;}
+h4{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;}
+p{color:var(--text2);line-height:1.7;margin-bottom:12px;}
+ul,ol{color:var(--text2);line-height:1.7;padding-left:20px;margin-bottom:12px;}
+li{margin-bottom:4px;}
+strong{color:var(--text);font-weight:600;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:12px;color:var(--text);line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);color:var(--text);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card-accent-blue{border-top:3px solid var(--accent);}
+.card-accent-green{border-top:3px solid var(--green);}
+.card-accent-yellow{border-top:3px solid var(--yellow);}
+.card-accent-red{border-top:3px solid var(--red);}
+.card-accent-purple{border-top:3px solid var(--purple);}
+.card-accent-orange{border-top:3px solid var(--orange);}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout-body p,.callout-body ul{font-size:13px;margin:0;}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.diagram .title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:16px 0;}
+#back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;z-index:100;}
+#back-top.visible{opacity:1;}
+#back-top:hover{background:var(--bg4);color:var(--text);}
+.perf-table td:first-child{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green);}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Kubernetes Docs</h1>
+    <p>Production-Grade Reference</p>
+  </div>
+  <div id="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)" />
+  </div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Getting Started</div>
+      <a href="../00-foundations/00-overview.html">00 Foundations Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Core Concepts</div>
+      <a href="../01-core-concepts/00-architecture.html">Architecture</a>
+      <a href="../01-core-concepts/01-pods.html">Pods</a>
+      <a href="../01-core-concepts/02-workloads.html">Workloads</a>
+      <a href="../01-core-concepts/03-services-networking.html">Services & Networking</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Observability</div>
+      <a href="../06-observability/00-observability-overview.html">Observability Overview</a>
+      <a href="../06-observability/07-profiling.html">Profiling</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/07-cost-management.html">Cost Management</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="00-production-overview.html">Production Overview</a>
+      <a href="01-capacity-planning.html">Capacity Planning</a>
+      <a href="02-performance-tuning.html" class="active">Performance Tuning</a>
+      <a href="03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="04-security-hardening.html">Security Hardening</a>
+      <a href="05-network-operations.html">Network Operations</a>
+      <a href="06-storage-operations.html">Storage Operations</a>
+      <a href="07-certificate-management.html">Certificate Management</a>
+      <a href="08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="09-incident-response.html">Incident Response</a>
+      <a href="10-sre-practices.html">SRE Practices</a>
+    </div>
+  </nav>
+</div>
+
+<div id="main">
+
+<nav id="toc">
+  <h3>On This Page</h3>
+  <a href="#methodology">Methodology</a>
+  <a href="#cpu-throttling">CPU Throttling</a>
+  <a href="#kernel-tuning">Kernel Tuning</a>
+  <a href="#jvm">JVM / GC Tuning</a>
+  <a href="#go-runtime">Go Runtime</a>
+  <a href="#network-perf">Network Performance</a>
+  <a href="#dns-perf">DNS Performance</a>
+  <a href="#startup-latency">Pod Startup Latency</a>
+  <a href="#apiserver-perf">API Server Performance</a>
+  <a href="#etcd-perf">etcd Performance</a>
+  <a href="#scheduler">Scheduler Optimization</a>
+  <a href="#profiling-workflow">Profiling Workflow</a>
+  <a href="#perf-alerts">Performance Alerts</a>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">09 — Production Operations / <span>02 Performance Tuning</span></div>
+  <h1>Performance Tuning</h1>
+  <p class="subtitle">Diagnosing and resolving latency, throughput, and saturation across workloads, the Linux kernel, JVM runtimes, and the Kubernetes control plane.</p>
+  <div class="meta">
+    <span class="badge badge-blue">Operations</span>
+    <span class="badge badge-yellow">Latency</span>
+    <span class="badge badge-red">Kernel</span>
+    <span class="badge badge-purple">JVM</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="methodology">Performance Investigation Methodology</h2>
+
+<p>Before tuning, identify the bottleneck. Tuning the wrong layer wastes time and can mask real issues. Use the USE method (Utilization, Saturation, Errors) as a systematic top-down approach:</p>
+
+<div class="diagram">
+  <div class="title">USE Method — Kubernetes Mapping</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  For each resource, check:
+  ├── Utilization  = how busy is it? (%)
+  ├── Saturation   = how much work is queued/waiting?
+  └── Errors       = are there operation failures?
+
+  CPU:
+    Util: rate(container_cpu_usage_seconds_total[5m]) / requests
+    Sat:  container_cpu_cfs_throttled_seconds_total (throttle ratio)
+    Err:  OOMKilled events (indirect CPU→memory link)
+
+  Memory:
+    Util: container_memory_working_set_bytes / requests
+    Sat:  container_memory_failures_total (page faults), kswapd activity
+    Err:  OOMKilled pod restarts
+
+  Network (node):
+    Util: node_network_transmit_bytes_total / NIC speed
+    Sat:  node_network_transmit_drop_total (TX queue drops)
+    Err:  node_network_transmit_errs_total
+
+  Disk (storage):
+    Util: rate(node_disk_io_time_seconds_total[5m])
+    Sat:  node_disk_io_time_weighted_seconds_total (I/O wait)
+    Err:  node_disk_read_errors_total
+
+  Control plane:
+    Util: apiserver_request_duration_seconds (p99)
+    Sat:  apiserver_current_inflight_requests
+    Err:  apiserver_request_total{code=~"5.."}</pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Where to look</th></tr></thead>
+  <tbody>
+    <tr><td>High p99 latency, normal p50</td><td>CPU throttling, GC pauses, tail latency in dependency</td><td>throttle ratio metric, GC logs, distributed traces</td></tr>
+    <tr><td>High p50 AND p99 latency</td><td>Resource saturation, slow external dependency, network congestion</td><td>CPU/mem utilization, downstream service latency</td></tr>
+    <tr><td>Latency spikes every N minutes</td><td>GC stop-the-world, cron job interference, HPA scaling event</td><td>GC logs, HPA events, cron schedule</td></tr>
+    <tr><td>Intermittent pod restarts</td><td>OOMKill, liveness probe timeout during GC pause, CPU starvation</td><td><code>kubectl describe pod</code> exit reason, throttle metric</td></tr>
+    <tr><td>Slow pod startup</td><td>Large image pull, slow readiness probe, DNS timeout</td><td>pod event timestamps, image pull duration</td></tr>
+    <tr><td>kubectl slow / timeouts</td><td>API server overloaded, etcd slow, network policy eval</td><td>apiserver latency metrics, etcd commit duration</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cpu-throttling">CPU Throttling</h2>
+
+<p>CPU throttling is one of the most common and most misunderstood performance problems in Kubernetes. A pod can be throttled even when node CPU utilization is low — throttling is governed by the CFS (Completely Fair Scheduler) quota enforcement, not node-level utilization.</p>
+
+<h3>How CFS throttling works</h3>
+
+<div class="diagram">
+  <div class="title">CFS CPU Quota Enforcement</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  cpu.limit = 500m → CFS quota = 50ms per 100ms period
+
+  Time →  0ms      50ms     100ms    150ms    200ms
+  Pod A:  ██████████████████ (uses 50ms → THROTTLED for 50ms)
+  Pod B:  ████████           (uses 40ms → not throttled)
+
+  Even if node has 80% idle CPU:
+  Pod A is throttled because it hit its period quota.
+
+  Multi-threaded processes are especially vulnerable:
+  8 threads × 12ms burst = 96ms needed, but quota = 50ms
+  → 46ms of throttle even at low average utilization</pre>
+</div>
+
+<h3>Measuring throttle ratio</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># CPU throttle ratio per container (> 25% is significant)
+sum by (namespace, pod, container) (
+  rate(container_cpu_cfs_throttled_seconds_total[5m])
+)
+  /
+sum by (namespace, pod, container) (
+  rate(container_cpu_cfs_periods_total[5m])
+)
+> 0.25
+
+# Top throttled containers cluster-wide
+sort_desc(
+  sum by (namespace, container) (
+    rate(container_cpu_cfs_throttled_seconds_total[5m])
+  )
+  /
+  sum by (namespace, container) (
+    rate(container_cpu_cfs_periods_total[5m])
+  )
+)</code></pre>
+
+<h3>Resolving CPU throttling</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Root cause</th><th>Resolution</th></tr></thead>
+  <tbody>
+    <tr><td>Limit too low for burst workloads</td><td>Raise CPU limit; set limit = 2–3× request for bursty services</td></tr>
+    <tr><td>Multi-threaded app spawns many goroutines/threads</td><td>Set <code>GOMAXPROCS</code> / thread count based on CPU request, not node CPU count</td></tr>
+    <tr><td>GC runs cause CPU spikes</td><td>Tune GC (see JVM section); increase CPU limit during GC window</td></tr>
+    <tr><td>Request too low (VPA recommends higher)</td><td>Raise request to VPA target; limit follows at 2× ratio</td></tr>
+    <tr><td>CPU-intensive startup (e.g. JVM class loading)</td><td>Startup probe + higher CPU limit; consider InitContainer for warmup</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body">
+    <strong>automaxprocs for Go services</strong>
+    <p>Go's runtime defaults <code>GOMAXPROCS</code> to the number of logical CPUs on the node (e.g. 96). Inside a container with a 500m CPU limit, 96 goroutines compete for 0.5 CPU — causing massive context switching and throttling. Add <code>go.uber.org/automaxprocs</code> to automatically set <code>GOMAXPROCS</code> from the container's CPU quota.</p>
+  </div>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-go">// main.go — add one import, zero configuration needed
+import (
+    _ "go.uber.org/automaxprocs"   // sets GOMAXPROCS from CPU quota automatically
+)
+
+// Or set manually based on CPU request (500m = 1 thread is reasonable)
+func init() {
+    if quota := runtime.NumCPU(); quota > 4 {
+        runtime.GOMAXPROCS(4)  // cap at 4 for container with 2 CPU limit
+    }
+}</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="kernel-tuning">Linux Kernel Tuning</h2>
+
+<p>Kernel parameters affect networking, memory management, and file descriptor limits. In Kubernetes, these are set at the node level (not container level) — use a DaemonSet with <code>initContainers</code> or node configuration to apply them.</p>
+
+<div class="callout callout-danger">
+  <div class="callout-icon">🚨</div>
+  <div class="callout-body">
+    <strong>Namespace-scoped vs node-scoped sysctls</strong>
+    <p>Some sysctls are namespace-scoped (safe to set per-pod via <code>securityContext.sysctls</code>) and some are node-scoped (require node-level access). Node-scoped tuning should be applied via DaemonSet or EKS managed node group launch template userData — never via privileged containers in production.</p>
+  </div>
+</div>
+
+<h3>Network kernel parameters</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-tuner
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: node-tuner
+  template:
+    metadata:
+      labels:
+        app: node-tuner
+    spec:
+      hostPID: true
+      hostNetwork: true
+      tolerations:
+        - operator: Exists   # run on all nodes including system
+      initContainers:
+        - name: sysctl-tuner
+          image: busybox:1.36
+          securityContext:
+            privileged: true
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # ── TCP Connection Tuning ──────────────────────────────
+              # Increase TCP backlog for high-connection-rate services
+              sysctl -w net.core.somaxconn=65535
+              sysctl -w net.ipv4.tcp_max_syn_backlog=65535
+
+              # TIME_WAIT socket reuse (prevents port exhaustion)
+              sysctl -w net.ipv4.tcp_tw_reuse=1
+              sysctl -w net.ipv4.ip_local_port_range="1024 65535"
+
+              # Keep-alive tuning (detect dead connections faster)
+              sysctl -w net.ipv4.tcp_keepalive_time=60
+              sysctl -w net.ipv4.tcp_keepalive_intvl=10
+              sysctl -w net.ipv4.tcp_keepalive_probes=6
+
+              # ── Socket Buffer Sizes ────────────────────────────────
+              # Larger buffers for high-throughput services
+              sysctl -w net.core.rmem_max=134217728
+              sysctl -w net.core.wmem_max=134217728
+              sysctl -w net.ipv4.tcp_rmem="4096 87380 134217728"
+              sysctl -w net.ipv4.tcp_wmem="4096 65536 134217728"
+
+              # ── Connection Tracking ────────────────────────────────
+              # Increase nf_conntrack table (prevents conntrack drops)
+              sysctl -w net.netfilter.nf_conntrack_max=1048576
+              sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=86400
+              sysctl -w net.netfilter.nf_conntrack_tcp_timeout_time_wait=30
+
+              # ── File Descriptors ───────────────────────────────────
+              sysctl -w fs.file-max=2097152
+              sysctl -w fs.inotify.max_user_watches=1048576
+              sysctl -w fs.inotify.max_user_instances=8192
+
+              # ── VM / Memory ────────────────────────────────────────
+              # Reduce swappiness (swap kills latency)
+              sysctl -w vm.swappiness=1
+              # Dirty page writeback (reduce I/O burst latency)
+              sysctl -w vm.dirty_ratio=10
+              sysctl -w vm.dirty_background_ratio=5
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+          resources:
+            requests:
+              cpu: 1m
+              memory: 4Mi</code></pre>
+
+<h3>Namespace-scoped sysctls (per-pod)</h3>
+
+<p>These safe sysctls can be set on individual pods for latency-sensitive services, without requiring privileged access or Kyverno exceptions:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">spec:
+  securityContext:
+    sysctls:
+      # TCP connection reuse for high-connection-rate pods
+      - name: net.ipv4.tcp_tw_reuse
+        value: "1"
+      # Local port range for outbound connections
+      - name: net.ipv4.ip_local_port_range
+        value: "1024 65535"
+      # Socket backlog per pod
+      - name: net.core.somaxconn
+        value: "65535"</code></pre>
+
+<div class="callout callout-info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <strong>Allowed safe sysctls</strong>
+    <p>K8s 1.27+ allows a defined list of safe sysctls by default: <code>kernel.shm_rmid_forced</code>, <code>net.ipv4.ip_local_port_range</code>, <code>net.ipv4.tcp_syncookies</code>, <code>net.ipv4.ping_group_range</code>, <code>net.ipv4.tcp_tw_reuse</code>, <code>net.ipv4.ip_unprivileged_port_start</code>. Enable unsafe sysctls only if explicitly required and Kyverno policy permits (see <a href="../08-platform-engineering/05-policy-enforcement.html">08-05</a>).</p>
+  </div>
+</div>
+
+<h3>Huge pages for memory-intensive workloads</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Node: pre-allocate 2MiB huge pages via launch template
+# echo 512 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
+
+# Pod requesting huge pages (databases, Kafka, Redis)
+spec:
+  containers:
+    - name: redis
+      resources:
+        requests:
+          hugepages-2Mi: 256Mi
+          memory: 256Mi
+        limits:
+          hugepages-2Mi: 256Mi
+          memory: 256Mi
+      volumeMounts:
+        - name: hugepage
+          mountPath: /dev/hugepages
+  volumes:
+    - name: hugepage
+      emptyDir:
+        medium: HugePages-2Mi</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="jvm">JVM / GC Tuning</h2>
+
+<p>JVM-based services (Java, Kotlin, Scala, Clojure) have unique performance challenges in containers: heap sizing, GC algorithm selection, and class loading all affect latency.</p>
+
+<h3>Container-aware JVM flags</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-dockerfile">FROM eclipse-temurin:21-jre
+
+ENV JAVA_OPTS="\
+  -XX:+UseContainerSupport \
+  -XX:MaxRAMPercentage=75.0 \
+  -XX:InitialRAMPercentage=50.0 \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=200 \
+  -XX:G1HeapRegionSize=16m \
+  -XX:+UseStringDeduplication \
+  -XX:+AlwaysPreTouch \
+  -XX:+DisableExplicitGC \
+  -Xss512k \
+  -XX:+HeapDumpOnOutOfMemoryError \
+  -XX:HeapDumpPath=/tmp/heapdump.hprof \
+  -Xlog:gc*:file=/tmp/gc.log:time,uptime,level,tags:filecount=5,filesize=20m \
+  -Djava.security.egd=file:/dev/./urandom"
+
+COPY target/app.jar /app.jar
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app.jar"]</code></pre>
+
+<h3>GC algorithm selection guide</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>GC Algorithm</th><th>JDK</th><th>Pause Goal</th><th>Heap Size</th><th>Best For</th></tr></thead>
+  <tbody>
+    <tr><td><strong>G1GC</strong></td><td>8u40+</td><td>≤ 200ms (configurable)</td><td>4 GiB – 32 GiB</td><td>Balanced throughput + latency; default for most services</td></tr>
+    <tr><td><strong>ZGC</strong></td><td>15+ (prod), 11 (exp)</td><td>&lt; 1ms</td><td>8 GiB+</td><td>Low-latency APIs, large heaps; slight throughput cost</td></tr>
+    <tr><td><strong>Shenandoah</strong></td><td>12+ (RedHat/Azul)</td><td>&lt; 10ms</td><td>Any</td><td>Low-latency with smaller heaps than ZGC</td></tr>
+    <tr><td><strong>ParallelGC</strong></td><td>All</td><td>No pause target</td><td>Any</td><td>Batch / throughput-first (not for latency-sensitive)</td></tr>
+    <tr><td><strong>SerialGC</strong></td><td>All</td><td>N/A</td><td>&lt; 512 MiB</td><td>Very small heaps, minimal CPU (sidecars, utilities)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>ZGC configuration for ultra-low latency</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash">JAVA_OPTS="\
+  -XX:+UseContainerSupport \
+  -XX:MaxRAMPercentage=70.0 \
+  -XX:+UseZGC \
+  -XX:+ZGenerational \
+  -XX:SoftMaxHeapSize=6g \
+  -XX:ZCollectionInterval=5 \
+  -XX:ZUncommitDelay=300 \
+  -Xlog:gc*:file=/tmp/gc.log:time,uptime:filecount=3,filesize=10m"
+
+# ZGC requires more memory overhead than G1 — allow 70% not 75%
+# -XX:+ZGenerational: generational ZGC (JDK 21, significant improvement)</code></pre>
+
+<h3>GC metrics via JMX / micrometer</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># JVM GC pause duration (micrometer instrumented apps)
+histogram_quantile(0.99,
+  rate(jvm_gc_pause_seconds_bucket{application="payment-service"}[5m])
+)
+
+# GC overhead (fraction of time spent in GC)
+sum by (application, gc) (
+  rate(jvm_gc_pause_seconds_sum{application="payment-service"}[5m])
+)
+
+# Heap usage vs max
+jvm_memory_used_bytes{area="heap",application="payment-service"}
+  /
+jvm_memory_max_bytes{area="heap",application="payment-service"}
+
+# GC frequency (collections per second)
+rate(jvm_gc_pause_seconds_count{application="payment-service"}[5m])</code></pre>
+
+<h3>JVM container resource sizing rules</h3>
+
+<ul>
+  <li><strong>Memory request</strong> = MaxHeap + NonHeap (Metaspace + CodeCache + DirectBuffers) + 20% OS overhead</li>
+  <li><strong>Non-heap estimate:</strong> typical Spring Boot app = 256–512 MiB non-heap</li>
+  <li><strong>Memory limit</strong> = memory request × 1.1 (small headroom; OOMKill is preferable to excessive provisioning)</li>
+  <li><strong>Example:</strong> 4 GiB heap → 4096 + 512 + 820 (20%) = ~5.4 GiB request; 5.9 GiB limit</li>
+  <li>Use <code>-XX:MaxRAMPercentage=75.0</code> so the JVM auto-sizes heap from the container limit</li>
+  <li><strong>CPU request:</strong> 1 CPU per 2 GiB heap is a reasonable starting point for G1GC</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="go-runtime">Go Runtime Tuning</h2>
+
+<h3>GOMAXPROCS and CPU quota</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-go">// go.mod
+require go.uber.org/automaxprocs v1.5.3
+
+// main.go
+import _ "go.uber.org/automaxprocs"
+// Automatically sets GOMAXPROCS = ceil(cpu_quota / cpu_period)
+// For 500m CPU limit: GOMAXPROCS = 1 (not 96)
+</code></pre>
+
+<h3>GOGC and memory pressure</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Pod env — GOGC controls GC frequency (default 100 = trigger at 2× live heap)
+env:
+  - name: GOGC
+    value: "100"      # default; lower = more frequent GC, less memory; higher = less GC, more memory
+  - name: GOMEMLIMIT   # Go 1.19+ — soft memory limit; triggers GC before OOMKill
+    valueFrom:
+      resourceFieldRef:
+        resource: limits.memory
+        divisor: "1"   # bytes; sets GOMEMLIMIT = container memory limit</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-go">// Programmatic GOMEMLIMIT (preferred — uses container limit automatically)
+import "runtime/debug"
+
+func init() {
+    // Set GOMEMLIMIT to 90% of container memory limit
+    // Prevents OOMKill by triggering aggressive GC before hitting the limit
+    if limit := containerMemoryLimit(); limit > 0 {
+        debug.SetMemoryLimit(int64(float64(limit) * 0.90))
+    }
+}</code></pre>
+
+<h3>Go pprof — identify hot paths</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Collect 30s CPU profile from running pod
+kubectl exec -n payments deploy/payment-service -- \
+  curl -s "http://localhost:6060/debug/pprof/profile?seconds=30" > cpu.prof
+
+# Analyze: show top 10 functions by CPU time
+go tool pprof -top cpu.prof
+
+# Interactive web UI (flame graph)
+go tool pprof -http=:8080 cpu.prof
+
+# Heap allocation profile
+kubectl exec -n payments deploy/payment-service -- \
+  curl -s "http://localhost:6060/debug/pprof/heap" > heap.prof
+go tool pprof -alloc_objects heap.prof</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="network-perf">Network Performance</h2>
+
+<h3>Connection pool tuning</h3>
+
+<p>Most latency in microservices is not compute — it's time waiting for a connection. Properly tuned connection pools dramatically reduce p99 latency.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Recommended (high-traffic)</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td>HTTP idle timeout</td><td>90s (Go)</td><td>30–60s</td><td>Recycle connections before load balancer kills them</td></tr>
+    <tr><td>HTTP keep-alive</td><td>enabled</td><td>enabled + DisableKeepAlives: false</td><td>Reuse TCP connections across requests</td></tr>
+    <tr><td>Max idle connections</td><td>100 (Go http.Transport)</td><td>500–2000</td><td>Enough connections for burst RPS</td></tr>
+    <tr><td>Max idle per host</td><td>2 (Go http.Transport)</td><td>100–500</td><td>Prevents connection queue buildup on single upstream</td></tr>
+    <tr><td>Dial timeout</td><td>30s</td><td>5s</td><td>Fast-fail on unreachable services</td></tr>
+    <tr><td>Response header timeout</td><td>none</td><td>30s</td><td>Prevent goroutine leak from slow upstreams</td></tr>
+  </tbody>
+</table>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-go">// Tuned HTTP client for high-traffic Go services
+import "net/http"
+
+var httpClient = &http.Client{
+    Timeout: 30 * time.Second,
+    Transport: &http.Transport{
+        MaxIdleConns:          1000,
+        MaxIdleConnsPerHost:   200,
+        MaxConnsPerHost:       500,
+        IdleConnTimeout:       60 * time.Second,
+        TLSHandshakeTimeout:   5 * time.Second,
+        ResponseHeaderTimeout: 20 * time.Second,
+        DialContext: (&net.Dialer{
+            Timeout:   5 * time.Second,
+            KeepAlive: 30 * time.Second,
+        }).DialContext,
+        ForceAttemptHTTP2:     true,
+        DisableCompression:    false,
+    },
+}</code></pre>
+
+<h3>Service mesh connection reuse (Istio/Envoy)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Istio DestinationRule — connection pool per upstream service
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: payment-service-dr
+  namespace: payments
+spec:
+  host: payment-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 1000
+        connectTimeout: 5s
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+      http:
+        http1MaxPendingRequests: 1000
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 0    # 0 = unlimited reuse (H2 multiplex)
+        maxRetries: 3
+        idleTimeout: 90s
+        h2UpgradePolicy: UPGRADE       # prefer HTTP/2
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50</code></pre>
+
+<h3>Network bandwidth testing</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Test pod-to-pod bandwidth (iperf3)
+# Start server in one pod
+kubectl run iperf-server --image=networkstatic/iperf3 -n default \
+  -- iperf3 -s
+
+# Run client from another pod (different node)
+kubectl run iperf-client --image=networkstatic/iperf3 -n default \
+  --restart=Never -it --rm \
+  -- iperf3 -c $(kubectl get pod iperf-server -o jsonpath='{.status.podIP}') \
+     -t 30 -P 8   # 8 parallel streams
+
+# Expected: ~10 Gbps within same AZ on m7i; ~5 Gbps cross-AZ
+
+# Test cross-AZ latency
+kubectl run netshoot --image=nicolaka/netshoot --restart=Never -it --rm -- \
+  ping -c 100 10.0.2.45  # pod IP in different AZ</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="dns-perf">DNS Performance</h2>
+
+<p>DNS is a hidden latency source in Kubernetes. Every hostname lookup that doesn't hit the local cache goes to CoreDNS, which can become a bottleneck under high RPS.</p>
+
+<h3>DNS lookup flow and optimization</h3>
+
+<div class="diagram">
+  <div class="title">Kubernetes DNS Resolution Path</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Pod queries "payment-service"
+    → ndots:5 triggers 5 search domain suffix attempts:
+      1. payment-service.payments.svc.cluster.local  ← HIT (found)
+      2. payment-service.cluster.local               (skipped after hit)
+      ...
+
+  With ndots:5, every external query like "api.stripe.com" tries:
+      1. api.stripe.com.payments.svc.cluster.local   (NXDOMAIN)
+      2. api.stripe.com.svc.cluster.local            (NXDOMAIN)
+      3. api.stripe.com.cluster.local                (NXDOMAIN)
+      4. api.stripe.com                              (HIT — external)
+  = 4 queries instead of 1 → 4× DNS load for external calls</pre>
+</div>
+
+<h3>Pod DNS configuration tuning</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">spec:
+  dnsPolicy: ClusterFirst
+  dnsConfig:
+    options:
+      # Reduce search domain attempts (ndots:3 is usually enough)
+      - name: ndots
+        value: "3"
+      # Enable DNS result caching in resolv.conf (not all images support)
+      - name: single-request-reopen
+      # Timeout for DNS queries
+      - name: timeout
+        value: "3"
+      # Number of retries before failing
+      - name: attempts
+        value: "3"</code></pre>
+
+<p>Alternatively, use FQDN for cross-namespace calls to bypass search domain expansion entirely:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Instead of: http://payment-service (triggers ndots suffix search)
+# Use FQDN:   http://payment-service.payments.svc.cluster.local
+# Or in same namespace, just: http://payment-service works fine</code></pre>
+
+<h3>CoreDNS autoscaling and tuning</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># CoreDNS HPA (proportional to nodes)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: coredns
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># CoreDNS ConfigMap tuning (kube-system)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+           lameduck 5s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+           pods insecure
+           fallthrough in-addr.arpa ip6.arpa
+           ttl 30
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf {
+           max_concurrent 1000
+           prefer_udp
+        }
+        cache 300 {           # cache TTL up to 300s (default 30s)
+           success 9984        # max successful cache entries
+           denial 9984         # max NXDOMAIN cache entries
+           prefetch 10 1m 10%  # prefetch before TTL expires (reduces latency spikes)
+        }
+        loop
+        reload
+        loadbalance
+    }</code></pre>
+
+<h3>Node-local DNS cache (NodeLocal DNSCache)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># NodeLocal DNSCache reduces CoreDNS load by caching at node level
+# Install: https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/
+
+# Verify it's running as DaemonSet
+kubectl get daemonset -n kube-system node-local-dns
+
+# After install, pods on that node use link-local DNS (169.254.20.10)
+# instead of ClusterIP, bypassing iptables conntrack for DNS queries
+# → reduces p99 DNS latency from ~2ms to ~0.1ms</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="startup-latency">Pod Startup Latency</h2>
+
+<p>Pod startup latency (from pending to ready) directly impacts autoscaling responsiveness. The time breaks down into distinct phases:</p>
+
+<div class="diagram">
+  <div class="title">Pod Startup Timeline</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Pending       Scheduled     PullingImage   Running        Ready
+     │              │              │              │             │
+     ├──── 0.1s ────┤              │              │             │
+     │  Scheduler   │              │              │             │
+     │  decision    ├──── 0–60s ───┤              │             │
+     │              │  Image pull  │              │             │
+     │              │  (first time)├──── 0.5s ────┤             │
+     │              │              │  Container   │             │
+     │              │              │  start       ├── probe ───►│
+     │              │              │              │  period     │
+  Total: 0.1s + image_pull + 0.5s + startup_probe_period</pre>
+</div>
+
+<h3>Reducing image pull time</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># 1. Pin images by digest (also prevents unexpected pulls)
+image: my-registry/payment-service@sha256:abc123...
+
+# 2. Use imagePullPolicy: IfNotPresent (default for non-latest)
+imagePullPolicy: IfNotPresent
+
+# 3. Pre-pull images on nodes (DaemonSet or node provisioning)
+# Karpenter EC2NodeClass userData pre-pull script:
+# docker pull my-registry/payment-service:v1.2.3 || true
+
+# 4. Use a registry in the same region/AZ as the cluster
+# ECR with VPC endpoint → no egress; pull from S3 locally
+
+# 5. Minimize image size (distroless / scratch)
+# Before: 800 MiB (alpine + full JDK + tools)
+# After:  85 MiB (distroless/java21 + app jar only)
+
+# 6. Sparsely-layered images (frequently-changing layers last)
+COPY --chown=nonroot:nonroot libs/ /app/libs/     # rarely changes
+COPY --chown=nonroot:nonroot config/ /app/config/  # sometimes changes
+COPY --chown=nonroot:nonroot app.jar /app/         # always changes</code></pre>
+
+<h3>Startup, readiness, and liveness probe tuning</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">spec:
+  containers:
+    - name: payment-service
+      startupProbe:
+        httpGet:
+          path: /actuator/health/liveness
+          port: 8080
+        initialDelaySeconds: 10    # wait for JVM basic startup
+        periodSeconds: 5
+        failureThreshold: 24       # allow up to 10+24×5 = 130s for full startup
+        successThreshold: 1
+        timeoutSeconds: 3
+
+      readinessProbe:
+        httpGet:
+          path: /actuator/health/readiness
+          port: 8080
+        initialDelaySeconds: 0     # startupProbe guards this; start checking immediately
+        periodSeconds: 5
+        failureThreshold: 3
+        successThreshold: 1
+        timeoutSeconds: 3
+
+      livenessProbe:
+        httpGet:
+          path: /actuator/health/liveness
+          port: 8080
+        initialDelaySeconds: 0     # startupProbe guards this
+        periodSeconds: 15          # don't check too often; liveness kill is expensive
+        failureThreshold: 3
+        successThreshold: 1
+        timeoutSeconds: 5          # higher timeout; liveness failure restarts the pod</code></pre>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body">
+    <strong>Liveness probe timeout during GC pauses</strong>
+    <p>A common misconfiguration: liveness probe <code>timeoutSeconds: 1</code> + <code>failureThreshold: 1</code> on a JVM service. A 200ms GC pause can cause the HTTP handler to respond slowly, triggering a false liveness failure and unnecessary pod restart. Set <code>timeoutSeconds: 5</code> and <code>failureThreshold: 3</code> (minimum 15s sustained unresponsiveness) to avoid this.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="apiserver-perf">API Server Performance</h2>
+
+<p>A slow or overloaded API server affects every kubectl command, every controller reconcile loop, and every admission webhook call.</p>
+
+<h3>API server latency metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># API server request latency p99 by verb and resource
+histogram_quantile(0.99,
+  sum by (verb, resource, le) (
+    rate(apiserver_request_duration_seconds_bucket{
+      job="apiserver"
+    }[5m])
+  )
+)
+
+# Inflight requests (near max → throttling in progress)
+apiserver_current_inflight_requests
+
+# Request rate by verb
+sum by (verb) (
+  rate(apiserver_request_total{job="apiserver"}[5m])
+)
+
+# Error rate (5xx responses)
+sum(rate(apiserver_request_total{job="apiserver",code=~"5.."}[5m]))
+  /
+sum(rate(apiserver_request_total{job="apiserver"}[5m]))
+
+# Watch event queue depth (large = consumers too slow)
+apiserver_watch_events_sizes_count</code></pre>
+
+<h3>API server tuning parameters</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># kube-apiserver flags (kubeadm ClusterConfiguration extraArgs)
+kube-apiserver:
+  # Increase request inflight limits (default: 400 mutating, 800 read-only)
+  --max-mutating-requests-inflight: "800"
+  --max-requests-inflight: "1600"
+  # Request timeout for long-running operations
+  --request-timeout: "60s"
+  # Audit log — only record what you need (high volume = high CPU)
+  --audit-policy-file: /etc/kubernetes/audit-policy.yaml
+  # Feature gate for priority and fairness (APF)
+  --enable-priority-and-fairness: "true"
+  # Increase etcd page size for large list operations
+  --default-watch-cache-size: "100"</code></pre>
+
+<h3>API Priority and Fairness (APF)</h3>
+
+<p>APF (GA in K8s 1.29) replaces the old max-inflight limits with a fine-grained priority system that prevents one noisy client from starving critical system operations:</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check current APF flow schemas and priority levels
+kubectl get flowschemas
+kubectl get prioritylevelconfigurations
+
+# Monitor queue depth and wait time per flow
+kubectl get --raw /metrics | grep apiserver_flowcontrol
+
+# Example: increase shares for system controllers if throttled
+kubectl patch prioritylevelconfiguration system-leader-election \
+  --type=json \
+  -p='[{"op":"replace","path":"/spec/limited/nominalConcurrencyShares","value":20}]'</code></pre>
+
+<h3>Reducing API server load</h3>
+
+<ul>
+  <li><strong>Use informers/watches, not polling:</strong> Controller code that calls <code>List</code> in a loop every second generates massive API load. Use client-go informers with <code>SharedIndexInformer</code> and watch events instead.</li>
+  <li><strong>Server-side filtering:</strong> Use <code>labelSelector</code> and <code>fieldSelector</code> in <code>List</code> calls to let the API server filter, reducing data transfer and client CPU.</li>
+  <li><strong>Avoid large objects:</strong> ConfigMaps and Secrets over 1 MiB degrade etcd and API server performance. Use S3/external stores for large data.</li>
+  <li><strong>Scope RBAC:</strong> Broad <code>ClusterRoleBindings</code> with <code>*</code> resource wildcards generate large authorization cache evaluations.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="etcd-perf">etcd Performance</h2>
+
+<p>etcd is the single source of truth for all Kubernetes state. etcd latency directly increases API server latency. The most common causes of etcd degradation are disk I/O latency and network latency between etcd members.</p>
+
+<h3>etcd health and latency metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check etcd endpoint health
+etcdctl endpoint health \
+  --endpoints=https://etcd-0:2379,https://etcd-1:2379,https://etcd-2:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/peer.crt \
+  --key=/etc/kubernetes/pki/etcd/peer.key
+
+# Check leader and round-trip latency
+etcdctl endpoint status \
+  --endpoints=https://etcd-0:2379 \
+  --write-out=table \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/peer.crt \
+  --key=/etc/kubernetes/pki/etcd/peer.key
+
+# Output columns: ENDPOINT / ID / VERSION / DB SIZE / IS LEADER / IS LEARNER / RAFT TERM / RAFT INDEX / RAFT APPLIED INDEX / ERRORS</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># etcd commit latency p99 (target: < 10ms for SSD)
+histogram_quantile(0.99,
+  rate(etcd_disk_backend_commit_duration_seconds_bucket[5m])
+)
+
+# WAL fsync latency (target: < 5ms; > 25ms = disk problem)
+histogram_quantile(0.99,
+  rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])
+)
+
+# etcd DB size (> 6 GiB = compact urgently)
+etcd_mvcc_db_total_size_in_bytes
+
+# Network peer latency between etcd members
+histogram_quantile(0.99,
+  rate(etcd_network_peer_round_trip_time_seconds_bucket[5m])
+)</code></pre>
+
+<h3>etcd compaction and defragmentation</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># etcd stores all historical revisions until compacted
+# Without compaction, DB grows unbounded and slows down
+
+# Check current revision
+REVISION=$(etcdctl endpoint status --write-out=json | \
+  jq '.[0].Status.header.revision')
+echo "Current revision: $REVISION"
+
+# Compact to current revision (removes all old revisions)
+etcdctl compact $REVISION
+
+# Defragment after compaction (reclaims disk space)
+# WARNING: etcd is briefly unavailable during defrag on that member
+etcdctl defrag
+
+# Check DB size before and after
+etcdctl endpoint status --write-out=table
+
+# Automate: kube-apiserver flag to auto-compact
+# --etcd-compaction-interval=5m  (compact every 5 minutes)</code></pre>
+
+<h3>etcd disk requirements</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Metric</th><th>Target</th><th>Warning</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>WAL fsync p99</td><td>&lt; 5ms</td><td>&gt; 10ms</td><td>Move to NVMe SSD; check I/O scheduler</td></tr>
+    <tr><td>Backend commit p99</td><td>&lt; 10ms</td><td>&gt; 25ms</td><td>Compact + defrag; check disk contention</td></tr>
+    <tr><td>DB size</td><td>&lt; 4 GiB</td><td>&gt; 6 GiB</td><td>Compact immediately; increase quota</td></tr>
+    <tr><td>DB size / quota</td><td>&lt; 60%</td><td>&gt; 80%</td><td>Compact or increase <code>--quota-backend-bytes</code></td></tr>
+    <tr><td>Peer latency p99</td><td>&lt; 5ms</td><td>&gt; 20ms</td><td>Co-locate etcd members in same region; check network</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout callout-danger">
+  <div class="callout-icon">🚨</div>
+  <div class="callout-body">
+    <strong>Never run etcd on shared disks</strong>
+    <p>etcd requires predictable fsync latency. Running etcd on a disk shared with other I/O-heavy workloads (logs, container images, Prometheus TSDB) causes latency spikes that appear as API server timeouts. Use dedicated NVMe SSDs for etcd. On AWS, use an io2 EBS volume with &gt; 3000 provisioned IOPS, or an instance-store NVMe disk (i4i family) for highest performance.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="scheduler">Scheduler Optimization</h2>
+
+<p>The scheduler can become a bottleneck when there are many unschedulable pods or when complex affinity rules increase per-pod scheduling time.</p>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># Scheduler queue depth (pods waiting to be scheduled)
+scheduler_pending_pods{queue="active"}
+scheduler_pending_pods{queue="backoff"}
+scheduler_pending_pods{queue="unschedulable"}
+
+# Scheduling latency p99 (time from pod creation to scheduling decision)
+histogram_quantile(0.99,
+  rate(scheduler_pod_scheduling_sli_duration_seconds_bucket[5m])
+)
+
+# Preemption events (expensive — pods killed to make room)
+rate(scheduler_pod_preemption_victims[5m])</code></pre>
+
+<h3>Scheduling performance tips</h3>
+
+<ul>
+  <li><strong>Avoid <code>requiredDuringScheduling</code> with broad selectors:</strong> Every pod evaluates affinity against all matching pods. Use <code>preferredDuringScheduling</code> where hard requirements aren't needed.</li>
+  <li><strong>Use <code>topologySpreadConstraints</code> over complex anti-affinity:</strong> TSC is more efficient for zone spreading.</li>
+  <li><strong>Increase scheduler parallelism</strong> via <code>--parallelism</code> flag (default 16) for large clusters with high pod churn.</li>
+  <li><strong>Use <code>percentageOfNodesToScore</code></strong>: For clusters with 1000+ nodes, the scheduler evaluates only a percentage of nodes (default 50% down to 5% for very large clusters), dramatically improving scheduling speed.</li>
+</ul>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># KubeSchedulerConfiguration (K8s 1.23+)
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+  - schedulerName: default-scheduler
+    plugins:
+      score:
+        disabled:
+          - name: NodeResourcesBalancedAllocation  # disable if using bin-packing
+        enabled:
+          - name: NodeResourcesFit
+            weight: 5
+    pluginConfig:
+      - name: NodeResourcesFit
+        args:
+          scoringStrategy:
+            type: MostAllocated    # bin-pack (vs LeastAllocated = spread)
+            resources:
+              - name: cpu
+                weight: 1
+              - name: memory
+                weight: 1
+leaderElection:
+  leaderElect: true
+percentageOfNodesToScore: 10    # for 1000+ node clusters</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="profiling-workflow">Profiling Workflow</h2>
+
+<p>When a performance issue is reported and USE method analysis doesn't pinpoint it, use continuous profiling with Pyroscope (covered in detail in <a href="../06-observability/07-profiling.html">Section 06-07</a>). This workflow covers the investigation path from symptom to root cause:</p>
+
+<div class="diagram">
+  <div class="title">Performance Investigation Workflow</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Alert: p99 latency > 500ms
+       │
+       ▼
+  1. Check CPU throttle ratio
+     container_cpu_cfs_throttled_seconds_total / periods > 25%?
+     ├── Yes → raise CPU limit or right-size request
+     └── No  → continue
+
+  2. Check memory pressure
+     container_memory_working_set_bytes / limit > 80%?
+     ├── Yes → check GC overhead, raise memory
+     └── No  → continue
+
+  3. Check GC pauses (JVM)
+     jvm_gc_pause_seconds p99 > 200ms?
+     ├── Yes → switch to ZGC, tune heap
+     └── No  → continue
+
+  4. Flame graph (Pyroscope / pprof)
+     What function is consuming the most CPU?
+     → json.Marshal hot? → use jsoniter or pre-allocated buffers
+     → sql.Query hot?   → add index, reduce N+1 queries
+     → sync.Mutex hot?  → partition lock, use sync/atomic
+
+  5. Trace analysis (Tempo)
+     Which span is slow? Is it this service or a downstream?
+     → DB query 450ms → add EXPLAIN ANALYZE, add index
+     → External API 300ms → add timeout + circuit breaker</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="perf-alerts">Performance Alerts</h2>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: performance-tuning-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: performance.tuning
+      rules:
+
+        - alert: ContainerCPUThrottlingHigh
+          expr: |
+            sum by (namespace, pod, container) (
+              rate(container_cpu_cfs_throttled_seconds_total[5m])
+            )
+            /
+            sum by (namespace, pod, container) (
+              rate(container_cpu_cfs_periods_total[5m])
+            ) > 0.25
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Container {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} CPU throttled > 25%"
+            description: "Throttle ratio is {{ $value | humanizePercentage }}. Raise CPU limit or lower GOMAXPROCS."
+            runbook_url: https://runbooks.example.com/performance/cpu-throttling
+
+        - alert: JVMGCPauseHigh
+          expr: |
+            histogram_quantile(0.99,
+              rate(jvm_gc_pause_seconds_bucket[5m])
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "JVM GC p99 pause > 500ms in {{ $labels.namespace }}/{{ $labels.application }}"
+            description: "Consider switching to ZGC or increasing heap."
+            runbook_url: https://runbooks.example.com/performance/jvm-gc-pauses
+
+        - alert: APIServerLatencyHigh
+          expr: |
+            histogram_quantile(0.99,
+              sum by (verb, le) (
+                rate(apiserver_request_duration_seconds_bucket{
+                  verb!~"WATCH|CONNECT"
+                }[5m])
+              )
+            ) > 1.0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "API server {{ $labels.verb }} p99 latency > 1s"
+            runbook_url: https://runbooks.example.com/performance/apiserver-latency
+
+        - alert: EtcdWALFsyncSlow
+          expr: |
+            histogram_quantile(0.99,
+              rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])
+            ) > 0.025
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "etcd WAL fsync p99 > 25ms — disk I/O problem"
+            runbook_url: https://runbooks.example.com/performance/etcd-slow-disk
+
+        - alert: EtcdDBSizeLarge
+          expr: etcd_mvcc_db_total_size_in_bytes > 6e9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "etcd DB size > 6 GiB — compact and defrag immediately"
+            runbook_url: https://runbooks.example.com/performance/etcd-db-size
+
+        - alert: CoreDNSLatencyHigh
+          expr: |
+            histogram_quantile(0.99,
+              rate(coredns_dns_request_duration_seconds_bucket[5m])
+            ) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CoreDNS p99 latency > 100ms"
+            description: "Consider NodeLocal DNSCache or increasing CoreDNS replicas."
+            runbook_url: https://runbooks.example.com/performance/coredns-latency
+
+        - alert: SchedulerPendingPodsHigh
+          expr: scheduler_pending_pods{queue="unschedulable"} > 10
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $value }} pods unschedulable for > 5 min"
+            runbook_url: https://runbooks.example.com/performance/scheduler-pending</code></pre>
+
+<!-- ============================================================ -->
+<h2>Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card card-accent-red">
+    <h3>Fix throttling before scaling</h3>
+    <p>CPU throttling is not solved by adding pods. Raise the CPU limit or lower GOMAXPROCS. Adding pods just moves the throttle to more instances.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>Use automaxprocs for Go</h3>
+    <p>Every Go service running in a container should import <code>go.uber.org/automaxprocs</code>. The default 96-goroutine scheduler on a 0.5 CPU container is a latency disaster.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>ZGC for low-latency JVM</h3>
+    <p>If p99 is critical and heap &gt; 4 GiB, switch from G1GC to ZGC with <code>-XX:+ZGenerational</code> (JDK 21). Sub-millisecond pauses eliminate GC-induced latency spikes.</p>
+  </div>
+  <div class="card card-accent-blue">
+    <h3>NodeLocal DNSCache</h3>
+    <p>Install NodeLocal DNSCache on every cluster. It reduces p99 DNS latency from 2–5ms to &lt;0.5ms and cuts CoreDNS load by 60–80%.</p>
+  </div>
+  <div class="card card-accent-green">
+    <h3>etcd on dedicated NVMe</h3>
+    <p>etcd fsync latency must stay below 5ms. Shared disks or gp2 EBS will cause intermittent API server timeouts. Use io2 with 3000+ IOPS or instance-store NVMe.</p>
+  </div>
+  <div class="card card-accent-orange">
+    <h3>Startup probe guards liveness</h3>
+    <p>Always use a startupProbe to cover slow JVM/Python startup. Without it, a liveness probe fires during class loading and restarts the pod unnecessarily — killing the first startup attempt.</p>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<button id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none';
+  });
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>300);
+});
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+const mainEl=document.getElementById('main');
+const headings=mainEl.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('#toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('#toc a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:mainEl,threshold:0.3});
+headings.forEach(h=>obs.observe(h));
+</script>
+</body>
+</html>

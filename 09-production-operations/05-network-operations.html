@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Operations | Kubernetes Docs</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#58a6ff;--accent2:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#d18616;--code-bg:#161b22;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+#sidebar-header h1{font-size:14px;font-weight:600;color:var(--text);}
+#sidebar-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+#sidebar-search{padding:8px 12px;border-bottom:1px solid var(--border);}
+#sidebar-search input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none;}
+#sidebar-search input:focus{border-color:var(--accent);}
+#sidebar-nav{overflow-y:auto;flex:1;padding:8px 0;}
+.nav-section{margin-bottom:4px;}
+.nav-section-title{padding:6px 16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.nav-section a{display:block;padding:5px 16px 5px 24px;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-section a:hover{color:var(--text);background:var(--bg3);text-decoration:none;}
+.nav-section a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);}
+#main{flex:1;overflow-y:auto;padding:40px 48px;position:relative;}
+.page-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.page-header .breadcrumb{font-size:12px;color:var(--text3);margin-bottom:8px;}
+.page-header .breadcrumb span{color:var(--text2);}
+.page-header h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.page-header .subtitle{color:var(--text2);font-size:16px;line-height:1.6;}
+.page-header .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+#toc{float:right;width:220px;margin:0 0 24px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;position:sticky;top:24px;}
+#toc h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+#toc a{display:block;font-size:12px;color:var(--text2);padding:3px 0;border-left:2px solid transparent;padding-left:8px;transition:all .15s;}
+#toc a:hover{color:var(--text);text-decoration:none;}
+#toc a.active{color:var(--accent);border-left-color:var(--accent);}
+#toc a.toc-h3{padding-left:18px;font-size:11px;}
+h2{font-size:22px;font-weight:600;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);clear:both;}
+h3{font-size:16px;font-weight:600;margin:28px 0 12px;}
+h4{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;}
+p{color:var(--text2);line-height:1.7;margin-bottom:12px;}
+ul,ol{color:var(--text2);line-height:1.7;padding-left:20px;margin-bottom:12px;}
+li{margin-bottom:4px;}
+strong{color:var(--text);font-weight:600;}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'JetBrains Mono','Fira Code',monospace;color:var(--accent);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:16px 0;position:relative;}
+pre code{background:none;border:none;padding:0;font-size:12px;color:var(--text);line-height:1.6;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;}
+pre:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:var(--bg4);color:var(--text);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:20px 0;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--text);}
+.card p{margin:0;font-size:13px;}
+.card-accent-blue{border-top:3px solid var(--accent);}
+.card-accent-green{border-top:3px solid var(--green);}
+.card-accent-yellow{border-top:3px solid var(--yellow);}
+.card-accent-red{border-top:3px solid var(--red);}
+.card-accent-purple{border-top:3px solid var(--purple);}
+.card-accent-orange{border-top:3px solid var(--orange);}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;margin-bottom:4px;font-size:13px;}
+.callout-body p,.callout-body ul{font-size:13px;margin:0;}
+.callout-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);}
+.callout-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);}
+.callout-danger{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);}
+.callout-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);}
+.diagram{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;margin:20px 0;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.diagram .title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+#back-top{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);cursor:pointer;opacity:0;transition:opacity .2s;z-index:100;}
+#back-top.visible{opacity:1;}
+#back-top:hover{background:var(--bg4);color:var(--text);}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Kubernetes Docs</h1>
+    <p>Production-Grade Reference</p>
+  </div>
+  <div id="sidebar-search">
+    <input type="text" placeholder="Filter navigation..." oninput="filterNav(this.value)" />
+  </div>
+  <nav id="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Networking</div>
+      <a href="../04-networking/00-networking-overview.html">Networking Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Platform Engineering</div>
+      <a href="../08-platform-engineering/06-multi-tenancy.html">Multi-Tenancy</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Production Operations</div>
+      <a href="00-production-overview.html">Production Overview</a>
+      <a href="01-capacity-planning.html">Capacity Planning</a>
+      <a href="02-performance-tuning.html">Performance Tuning</a>
+      <a href="03-disaster-recovery.html">Disaster Recovery</a>
+      <a href="04-security-hardening.html">Security Hardening</a>
+      <a href="05-network-operations.html" class="active">Network Operations</a>
+      <a href="06-storage-operations.html">Storage Operations</a>
+      <a href="07-certificate-management.html">Certificate Management</a>
+      <a href="08-cluster-maintenance.html">Cluster Maintenance</a>
+      <a href="09-incident-response.html">Incident Response</a>
+      <a href="10-sre-practices.html">SRE Practices</a>
+    </div>
+  </nav>
+</div>
+
+<div id="main">
+
+<nav id="toc">
+  <h3>On This Page</h3>
+  <a href="#network-stack">K8s Network Stack</a>
+  <a href="#cni-ops">CNI Operations</a>
+  <a href="#coredns-ops">CoreDNS Operations</a>
+  <a href="#ingress-ops">Ingress Operations</a>
+  <a href="#service-mesh-ops">Service Mesh Ops</a>
+  <a href="#network-debug">Network Debugging</a>
+  <a href="#conntrack">Conntrack Issues</a>
+  <a href="#mtu">MTU Problems</a>
+  <a href="#hubble">Cilium &amp; Hubble</a>
+  <a href="#network-policy-ops">NetworkPolicy Ops</a>
+  <a href="#cross-az">Cross-AZ Traffic</a>
+  <a href="#network-alerts">Network Alerts</a>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">09 — Production Operations / <span>05 Network Operations</span></div>
+  <h1>Network Operations</h1>
+  <p class="subtitle">Day-2 operations for CNI, CoreDNS, Ingress controllers, service mesh, conntrack exhaustion, MTU problems, and eBPF network observability with Hubble.</p>
+  <div class="meta">
+    <span class="badge badge-blue">Operations</span>
+    <span class="badge badge-green">CNI</span>
+    <span class="badge badge-yellow">Debugging</span>
+    <span class="badge badge-purple">Hubble</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="network-stack">Kubernetes Network Stack</h2>
+
+<p>Understanding the full packet path is essential for diagnosing network issues. A request from pod A to pod B traverses multiple layers — each is a potential failure point.</p>
+
+<div class="diagram">
+  <div class="title">Packet Path: Pod to Pod (Same Node)</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Pod A (eth0: 10.0.1.5)
+      │
+      ▼ veth pair
+  Node Linux bridge / eBPF (cilium0 or cni0)
+      │ NetworkPolicy evaluated here (iptables or eBPF)
+      ▼
+  Pod B (eth0: 10.0.1.6)
+
+  Packet Path: Pod to Pod (Different Node)
+  Pod A (10.0.1.5) → veth → CNI bridge → node routing table
+      → tunnel/VXLAN/BGP encapsulation → eth0 → Node B eth0
+      → de-encapsulate → CNI bridge → veth → Pod B
+
+  Packet Path: Pod to Service ClusterIP
+  Pod A → DNS lookup → CoreDNS → 10.96.5.42 (ClusterIP)
+      → kube-proxy iptables DNAT / eBPF load balancing
+      → selected endpoint pod IP (10.0.2.8)
+      → Pod B (cross-node routing)</pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Layer</th><th>Component</th><th>Failure Mode</th><th>Debug Command</th></tr></thead>
+  <tbody>
+    <tr><td>Pod networking</td><td>veth pair, CNI plugin</td><td>Pod can't reach any destination</td><td><code>kubectl exec &lt;pod&gt; -- ip addr; ip route</code></td></tr>
+    <tr><td>Service resolution</td><td>CoreDNS, kube-proxy/eBPF</td><td>DNS failure or DNAT not working</td><td><code>kubectl exec &lt;pod&gt; -- nslookup svc.namespace</code></td></tr>
+    <tr><td>NetworkPolicy</td><td>CNI enforcement</td><td>Connection refused/timeout unexpectedly</td><td>Hubble observe, kubectl describe netpol</td></tr>
+    <tr><td>Node routing</td><td>Linux kernel routing table</td><td>Pods on different nodes can't reach each other</td><td><code>ip route show; ip neigh show</code></td></tr>
+    <tr><td>Conntrack</td><td>nf_conntrack table</td><td>Intermittent connection drops under high RPS</td><td><code>cat /proc/net/nf_conntrack | wc -l</code></td></tr>
+    <tr><td>MTU</td><td>NIC, overlay tunnel</td><td>Large packets silently dropped</td><td><code>ping -M do -s 1400 &lt;pod-ip&gt;</code></td></tr>
+    <tr><td>Ingress</td><td>NGINX/Envoy/ALB</td><td>502/504 errors, timeouts</td><td>NGINX error logs, upstream check</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cni-ops">CNI Operations</h2>
+
+<h3>Checking CNI health</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check CNI DaemonSet status (for all major CNIs)
+kubectl get ds -n kube-system | grep -E "aws-node|cilium|calico|flannel|weave"
+
+# AWS VPC CNI — check node IP assignment
+kubectl get pods -n kube-system -l k8s-app=aws-node -o wide
+kubectl logs -n kube-system -l k8s-app=aws-node --tail=50
+
+# VPC CNI specific: check IP address pool and ENI attachment
+kubectl describe ds -n kube-system aws-node | grep -A5 "Environment"
+kubectl exec -n kube-system ds/aws-node -- /app/grpc-health-probe \
+  -addr=:11191 -connect-timeout=5s
+
+# Cilium: check agent status
+cilium status --wait
+cilium connectivity test   # full end-to-end test (takes 2-3 min)
+
+# Check for pods stuck in ContainerCreating (CNI failure)
+kubectl get pods -A | grep -v Running | grep ContainerCreating
+# If stuck, check kubelet logs on the node:
+journalctl -u kubelet | grep CNI | tail -50</code></pre>
+
+<h3>AWS VPC CNI warm pool tuning</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># VPC CNI maintains a warm pool of pre-assigned IPs
+# Tune to balance startup speed vs IP waste
+
+kubectl set env daemonset aws-node -n kube-system \
+  WARM_IP_TARGET=5 \          # keep 5 IPs pre-allocated per node
+  MINIMUM_IP_TARGET=10 \      # minimum IPs to hold even when idle
+  WARM_ENI_TARGET=1 \         # keep 1 ENI with available IPs
+  MAX_ENI=4 \                 # max ENIs per node (instance type limit)
+  ENABLE_PREFIX_DELEGATION=true  # 16 IPs per ENI slot
+
+# After changing: nodes need rolling replacement to pick up new settings
+# (or manually restart aws-node on each node)
+
+# Monitor IP pool health
+kubectl exec -n kube-system ds/aws-node -- \
+  curl -s http://localhost:61679/v1/networkinterfaces | jq '.'</code></pre>
+
+<h3>Cilium node-to-node connectivity</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check Cilium node mesh (every node should see every other node)
+cilium node list
+
+# Check endpoint health
+cilium endpoint list | grep -v "ready"
+
+# Verify BPF datapath is active (not falling back to iptables)
+kubectl exec -n kube-system ds/cilium -- cilium status | grep "KubeProxyReplacement"
+# Should show: KubeProxyReplacement: True
+
+# Check BPF map usage (high usage → map too small)
+kubectl exec -n kube-system ds/cilium -- cilium bpf ct list global | wc -l
+
+# Restart a specific Cilium agent (node-targeted)
+kubectl delete pod -n kube-system -l k8s-app=cilium \
+  --field-selector spec.nodeName=ip-10-0-1-42.us-east-1.compute.internal</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="coredns-ops">CoreDNS Operations</h2>
+
+<h3>Diagnosing DNS failures</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Test DNS resolution from a pod
+kubectl run dns-test --image=busybox:1.36 --restart=Never -it --rm -- \
+  nslookup payment-service.payments.svc.cluster.local
+
+# Test external DNS resolution
+kubectl run dns-test --image=busybox:1.36 --restart=Never -it --rm -- \
+  nslookup api.stripe.com
+
+# Test with dig (more detail)
+kubectl run dns-test --image=tutum/dnsutils --restart=Never -it --rm -- \
+  dig +short payment-service.payments.svc.cluster.local
+
+# Check CoreDNS pods and logs
+kubectl get pods -n kube-system -l k8s-app=kube-dns
+kubectl logs -n kube-system -l k8s-app=kube-dns --tail=100 | grep -i "error\|refused\|timeout"
+
+# Check CoreDNS ConfigMap
+kubectl get configmap coredns -n kube-system -o yaml
+
+# Watch CoreDNS query log (enable log plugin temporarily)
+kubectl edit configmap coredns -n kube-system
+# Add: log
+# between ready and kubernetes blocks
+# REMOVE after debugging — generates huge volume of logs</code></pre>
+
+<h3>CoreDNS performance metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># CoreDNS request rate
+sum(rate(coredns_dns_requests_total[5m])) by (server, zone, type)
+
+# CoreDNS error rate (SERVFAIL, NXDOMAIN)
+sum by (rcode) (rate(coredns_dns_responses_total[5m]))
+
+# CoreDNS p99 latency (target: < 2ms for cached; < 10ms for forwarded)
+histogram_quantile(0.99,
+  sum by (le) (rate(coredns_dns_request_duration_seconds_bucket[5m]))
+)
+
+# CoreDNS cache hit ratio
+sum(rate(coredns_cache_hits_total[5m]))
+  /
+(sum(rate(coredns_cache_hits_total[5m])) + sum(rate(coredns_cache_misses_total[5m])))</code></pre>
+
+<h3>CoreDNS common issues and fixes</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td>SERVFAIL for external names</td><td>Upstream resolver unreachable</td><td>Check <code>/etc/resolv.conf</code> on nodes; verify VPC DNS (169.254.169.253) accessible</td></tr>
+    <tr><td>Intermittent NXDOMAIN for cluster services</td><td>ndots:5 search domain exhausted; race condition</td><td>Use FQDNs; set <code>ndots: 3</code>; install NodeLocal DNSCache</td></tr>
+    <tr><td>High CoreDNS CPU</td><td>Too many queries; no caching</td><td>Increase cache TTL in Corefile; add <code>prefetch</code>; install NodeLocal DNSCache</td></tr>
+    <tr><td>CoreDNS pod OOMKilled</td><td>Memory leak (known in older versions)</td><td>Upgrade CoreDNS; set memory limit 256Mi+; check for large zone data</td></tr>
+    <tr><td>5-second DNS delay</td><td>conntrack race for UDP (parallel A/AAAA queries)</td><td>Add <code>single-request-reopen</code> to pod dnsConfig; or use NodeLocal DNSCache</td></tr>
+    <tr><td>DNS resolution works once, then fails</td><td>CoreDNS pod restarted; DNS negative cache not cleared</td><td>Check CoreDNS pod restarts; client-side DNS cache TTL</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>5-second DNS delay fix (conntrack race)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># This is a well-known Linux kernel issue:
+# Parallel A + AAAA queries share the same UDP 5-tuple, causing conntrack collision
+# Result: one query is dropped; OS waits 5s for timeout before retry
+
+# Fix 1: single-request-reopen in pod dnsConfig (serializes A/AAAA queries)
+# (Add to pod spec — see 02-performance-tuning.html)
+
+# Fix 2: NodeLocal DNSCache (runs on each node, bypasses conntrack for DNS)
+# Install:
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/kubernetes/master/cluster/addons/dns/nodelocaldns/nodelocaldns.yaml
+
+# Fix 3: CoreDNS autopath plugin (reduces search domain queries)
+# Add to Corefile:
+# autopath @kubernetes
+
+# Verify NodeLocal DNSCache running on all nodes
+kubectl get ds -n kube-system node-local-dns
+kubectl get pods -n kube-system -l k8s-app=node-local-dns</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="ingress-ops">Ingress Operations</h2>
+
+<h3>NGINX Ingress controller operations</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check NGINX Ingress controller status
+kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller
+kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller --tail=100
+
+# Inspect effective NGINX config for a specific Ingress
+CONTROLLER_POD=$(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller \
+  -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n ingress-nginx $CONTROLLER_POD -- cat /etc/nginx/nginx.conf | \
+  grep -A20 "server_name.*payment"
+
+# Check upstream health (NGINX upstream list)
+kubectl exec -n ingress-nginx $CONTROLLER_POD -- \
+  curl -s http://localhost:10246/configuration/backends | \
+  jq '.[] | select(.name | contains("payments")) | {name, endpoints}'
+
+# Reload NGINX configuration (triggers graceful reload)
+kubectl exec -n ingress-nginx $CONTROLLER_POD -- nginx -s reload
+
+# Check NGINX error logs (502/504 root cause)
+kubectl logs -n ingress-nginx $CONTROLLER_POD --tail=200 | \
+  grep -E "error|upstream|connect"</code></pre>
+
+<h3>Ingress annotation tuning for production</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: payment-api
+  namespace: payments
+  annotations:
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+
+    # Connection handling
+    nginx.ingress.kubernetes.io/upstream-keepalive-connections: "100"
+    nginx.ingress.kubernetes.io/upstream-keepalive-requests: "1000"
+    nginx.ingress.kubernetes.io/upstream-keepalive-time: "60s"
+
+    # Body size
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+
+    # SSL
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+    # CORS (if needed)
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://app.example.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+
+    # Canary (Argo Rollouts manages this for progressive delivery)
+    # nginx.ingress.kubernetes.io/canary: "true"
+    # nginx.ingress.kubernetes.io/canary-weight: "10"
+
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Permissions-Policy: camera=(), microphone=(), geolocation=()";
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.example.com
+      secretName: api-example-com-tls
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-service
+                port:
+                  number: 80</code></pre>
+
+<h3>NGINX Ingress metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># Request rate per Ingress
+sum by (ingress, namespace) (
+  rate(nginx_ingress_controller_requests[5m])
+)
+
+# Error rate (4xx + 5xx)
+sum by (ingress, status) (
+  rate(nginx_ingress_controller_requests{status=~"[45].."}[5m])
+)
+  /
+sum by (ingress) (
+  rate(nginx_ingress_controller_requests[5m])
+)
+
+# p99 response time
+histogram_quantile(0.99,
+  sum by (ingress, le) (
+    rate(nginx_ingress_controller_response_duration_seconds_bucket[5m])
+  )
+)
+
+# Upstream connection errors
+sum by (ingress) (
+  rate(nginx_ingress_controller_upstream_latency_seconds_count{status="error"}[5m])
+)</code></pre>
+
+<h3>AWS Load Balancer Controller (ALB)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check ALB controller health
+kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
+kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller --tail=50
+
+# Describe Ingress for ALB events
+kubectl describe ingress payment-api -n payments
+
+# Check target group health directly (ALB target group → pod IPs)
+ALB_ARN=$(aws elbv2 describe-load-balancers \
+  --query 'LoadBalancers[?contains(LoadBalancerName, `payment`)].LoadBalancerArn' \
+  --output text)
+TG_ARN=$(aws elbv2 describe-target-groups \
+  --load-balancer-arn $ALB_ARN \
+  --query 'TargetGroups[0].TargetGroupArn' --output text)
+aws elbv2 describe-target-health --target-group-arn $TG_ARN | \
+  jq '.TargetHealthDescriptions[] | {target:.Target, health:.TargetHealth}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="service-mesh-ops">Service Mesh Operations</h2>
+
+<h3>Istio / Envoy sidecar diagnostics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check Istio control plane health
+istioctl verify-install
+kubectl get pods -n istio-system
+
+# Check proxy status for all pods in a namespace
+istioctl proxy-status -n payments
+
+# Analyze potential configuration issues
+istioctl analyze -n payments
+
+# Dump Envoy config for a specific pod (very detailed)
+istioctl proxy-config all payment-pod-xyz.payments
+
+# Check listener configuration (what ports Envoy is listening on)
+istioctl proxy-config listener payment-pod-xyz.payments
+
+# Check cluster configuration (upstreams Envoy knows about)
+istioctl proxy-config cluster payment-pod-xyz.payments | \
+  grep -E "HOSTNAME|PORT|STATUS"
+
+# Check route configuration
+istioctl proxy-config route payment-pod-xyz.payments
+
+# View real-time Envoy access logs
+kubectl logs payment-pod-xyz -n payments -c istio-proxy --tail=50
+
+# Check mTLS status between two services
+istioctl x check-inject -n payments</code></pre>
+
+<h3>Envoy stats for latency debugging</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Access Envoy admin interface
+kubectl port-forward pod/payment-pod-xyz -n payments 15000:15000
+
+# Get upstream latency histograms from Envoy stats
+curl -s http://localhost:15000/stats | \
+  grep "upstream_rq_time\|upstream_cx_connect_ms" | \
+  grep -v "^$"
+
+# Get circuit breaker status
+curl -s http://localhost:15000/stats | \
+  grep "overflow\|pending_overflow"
+
+# Get retry stats
+curl -s http://localhost:15000/stats | \
+  grep "upstream_rq_retry"
+
+# Live request logging (Envoy tap API)
+curl -X POST http://localhost:15000/tap \
+  -H "Content-Type: application/json" \
+  -d '{"config_id":"test","tap_config":{"match_config":{"any_match":{}},"output_config":{"sinks":[{"format":"JSON_BODY_AS_STRING","streaming_admin":{}}]}}}'</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="network-debug">Network Debugging Toolkit</h2>
+
+<h3>netshoot — full network debug pod</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Run netshoot in target namespace
+kubectl run netshoot -n payments \
+  --image=nicolaka/netshoot \
+  --restart=Never -it --rm \
+  -- bash
+
+# Inside netshoot — useful commands:
+# TCP connectivity test
+nc -zv payment-service 80
+nc -zv postgresql.databases.svc.cluster.local 5432
+
+# HTTP test with headers
+curl -v http://payment-service/health
+curl -v --resolve "api.example.com:443:10.100.5.20" https://api.example.com/health
+
+# Trace route to a pod
+traceroute 10.0.2.5
+
+# DNS trace
+dig +trace payment-service.payments.svc.cluster.local
+dig +stats @169.254.20.10 payment-service.payments.svc.cluster.local
+
+# TCP packet capture (requires NET_ADMIN or node access)
+tcpdump -i eth0 -n 'host 10.0.2.5 and port 80' -w /tmp/capture.pcap
+
+# Show socket stats
+ss -tunaep
+netstat -tunaep
+
+# Show connection count to a specific IP
+ss -tn | grep 10.0.2.5 | wc -l</code></pre>
+
+<h3>kubectl debug — ephemeral container for network issues</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Attach netshoot as ephemeral container to a running pod
+kubectl debug -it payment-pod-xyz \
+  --image=nicolaka/netshoot \
+  --target=payment-service \
+  -n payments
+
+# Once inside, you share the pod's network namespace:
+# - Same IP as the target pod
+# - Can tcpdump the pod's actual traffic
+tcpdump -i eth0 -n port 5432
+
+# Capture and analyze with tshark
+tshark -i eth0 -Y "tcp.port==5432" -T fields \
+  -e frame.time -e ip.src -e ip.dst -e tcp.flags</code></pre>
+
+<h3>Node-level network debugging</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check iptables rules (kube-proxy managed)
+iptables-save | grep -E "KUBE-SVC|KUBE-SEP" | grep payment | head -20
+
+# Check kube-proxy endpoints for a service
+kubectl get endpoints payment-service -n payments -o yaml
+
+# Verify service ClusterIP is reachable from node
+curl -v http://10.96.5.42/health   # ClusterIP
+
+# Check if IPVS is being used (alternative to iptables)
+ipvsadm -Ln | grep 10.96.5.42
+
+# Check BPF (Cilium eBPF)
+kubectl exec -n kube-system ds/cilium -- \
+  cilium service list | grep payment
+
+# Check BGP routes (Cilium BGP or Calico BGP)
+kubectl exec -n kube-system ds/cilium -- \
+  cilium bgp routes --peer all</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="conntrack">Conntrack Table Exhaustion</h2>
+
+<p>The Linux conntrack table tracks every active TCP/UDP connection for NAT and stateful firewall purposes. Under high connection rates, it exhausts — causing new connections to silently fail. This is one of the most insidious Kubernetes networking problems.</p>
+
+<h3>Diagnosing conntrack exhaustion</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check current conntrack table usage
+cat /proc/sys/net/netfilter/nf_conntrack_count      # current entries
+cat /proc/sys/net/netfilter/nf_conntrack_max        # maximum
+
+# Usage percentage
+echo "scale=2; $(cat /proc/sys/net/netfilter/nf_conntrack_count) * 100 / \
+  $(cat /proc/sys/net/netfilter/nf_conntrack_max)" | bc
+
+# View kernel conntrack drop events (requires conntrack-tools)
+conntrack -E | grep "[DESTROY\|DROP]" | head -20
+
+# Check kernel drop counter
+grep conntrack /proc/net/stat/nf_conntrack | \
+  awk '{print "drops:", $3, "inserts:", $4}'
+
+# Monitor continuously
+watch -n1 'echo "Used: $(cat /proc/sys/net/netfilter/nf_conntrack_count) / \
+  Max: $(cat /proc/sys/net/netfilter/nf_conntrack_max)"'</code></pre>
+
+<h3>Conntrack table increase (kernel tuning DaemonSet)</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># In the node-tuner DaemonSet initContainer (see 04-security-hardening.html):
+sysctl -w net.netfilter.nf_conntrack_max=1048576        # 1M entries
+sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=86400
+sysctl -w net.netfilter.nf_conntrack_tcp_timeout_time_wait=30
+sysctl -w net.netfilter.nf_conntrack_tcp_timeout_close_wait=15
+
+# Also increase hashsize (requires module parameter)
+echo 262144 > /sys/module/nf_conntrack/parameters/hashsize
+
+# Verify
+cat /proc/sys/net/netfilter/nf_conntrack_max</code></pre>
+
+<div class="callout callout-info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <strong>Cilium eBPF bypasses conntrack for pod traffic</strong>
+    <p>Cilium in eBPF mode performs load balancing and policy enforcement entirely in the BPF datapath, bypassing iptables and conntrack for east-west (pod-to-pod) traffic. This eliminates conntrack exhaustion for internal traffic. Only external traffic (ingress) still goes through conntrack. If conntrack exhaustion is a recurring problem, migrating from kube-proxy iptables to Cilium eBPF is the architectural fix.</p>
+  </div>
+</div>
+
+<h3>Conntrack metrics</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-promql"># Conntrack table utilization per node
+node_nf_conntrack_entries / node_nf_conntrack_entries_limit
+
+# Conntrack entries rate (growth trend)
+rate(node_nf_conntrack_entries[5m])</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="mtu">MTU Problems</h2>
+
+<p>MTU (Maximum Transmission Unit) mismatches cause large packets to be silently dropped. In overlay networks (VXLAN/Geneve), the encapsulation overhead reduces the effective MTU. MTU issues are notoriously hard to diagnose because small packets work fine while large ones fail.</p>
+
+<div class="diagram">
+  <div class="title">MTU Overhead in Overlay Networks</div>
+  <pre style="background:none;border:none;padding:0;margin:0;font-size:12px;">
+  Physical NIC MTU: 9000 (jumbo frames) or 1500 (standard)
+
+  VXLAN encapsulation overhead:
+  Outer Ethernet: 14B + Outer IP: 20B + UDP: 8B + VXLAN: 8B = 50B overhead
+
+  Effective pod MTU: 1500 - 50 = 1450 (with standard frames)
+                    9000 - 50 = 8950 (with jumbo frames)
+
+  If pod MTU is set to 1500 but physical MTU is 1500:
+  Large packets get fragmented or dropped
+  → HTTP works (small packets) but uploads/downloads fail
+  → gRPC streams stall after first few kilobytes</pre>
+</div>
+
+<h3>Diagnosing MTU issues</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Check current MTU settings inside a pod
+kubectl exec -n payments pod/payment-pod-xyz -- ip link show eth0
+# Look for: mtu 1500 or mtu 8950
+
+# Test with increasing packet sizes (PMTUD — Path MTU Discovery)
+kubectl run mtu-test --image=busybox --restart=Never -it --rm -- sh -c "
+for size in 1400 1450 1472 1500 1510 8900 8950; do
+  result=$(ping -M do -c1 -s $size 10.0.1.5 2>&1 | tail -1)
+  echo \"Size $size: $result\"
+done"
+
+# Packets > MTU with DF bit set should fail with "Message too long"
+# If they don't fail but application hangs — MTU black hole (no ICMP returned)
+
+# Check for MTU black hole: try large HTTP body
+kubectl exec -n payments pod/payment-pod-xyz -- \
+  curl -v --max-time 5 http://order-service/api/data \
+  -d "$(dd if=/dev/urandom bs=2048 count=1 2>/dev/null | base64)"</code></pre>
+
+<h3>MTU configuration fixes</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># Cilium: set MTU explicitly in Helm values
+cilium:
+  mtu: 1450   # 1500 - 50 (VXLAN) = 1450; or auto-detect with 0
+
+# AWS VPC CNI: MTU is auto-configured from node NIC
+# Verify:
+kubectl exec -n kube-system ds/aws-node -- /app/grpc-health-probe -addr=:11191
+
+# Flannel: configure in ConfigMap
+kubectl edit configmap kube-flannel-cfg -n kube-flannel
+# Set "Backend": {"Type": "vxlan"}, "mtu": 1450
+
+# For jumbo frames (9000 MTU on AWS enhanced networking):
+# Set pod MTU to 8950 (9000 - 50 overhead)
+# Ensure ALL nodes use the same MTU — mixed MTU is the worst case</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="hubble">Cilium &amp; Hubble Observability</h2>
+
+<p>Hubble is Cilium's eBPF-based network observability platform. It provides a real-time view of every packet flowing through the cluster — who is talking to whom, what was allowed or dropped, and HTTP-level details — without any application instrumentation.</p>
+
+<h3>Hubble setup</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Enable Hubble in Cilium Helm values
+helm upgrade cilium cilium/cilium \
+  --namespace kube-system \
+  --reuse-values \
+  --set hubble.enabled=true \
+  --set hubble.relay.enabled=true \
+  --set hubble.ui.enabled=true \
+  --set hubble.metrics.enableOpenMetrics=true \
+  --set hubble.metrics.enabled="{dns,drop,tcp,flow,port-distribution,icmp,httpV2}"
+
+# Install Hubble CLI
+HUBBLE_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/hubble/master/stable.txt)
+curl -LO "https://github.com/cilium/hubble/releases/download/${HUBBLE_VERSION}/hubble-linux-amd64.tar.gz"
+tar xzvf hubble-linux-amd64.tar.gz
+sudo mv hubble /usr/local/bin/
+
+# Port-forward Hubble relay
+kubectl port-forward -n kube-system svc/hubble-relay 4245:80 &
+
+# Access Hubble UI
+kubectl port-forward -n kube-system svc/hubble-ui 12000:80</code></pre>
+
+<h3>Hubble observe — real-time flow analysis</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Watch all flows in the payments namespace
+hubble observe --namespace payments
+
+# Watch only dropped flows (NetworkPolicy denials)
+hubble observe --namespace payments --verdict DROPPED
+
+# Watch flows from a specific pod
+hubble observe --from-pod payments/payment-pod-xyz
+
+# Watch HTTP flows (L7 visibility requires Cilium L7 policy)
+hubble observe --namespace payments --protocol http
+
+# Filter flows between specific pods
+hubble observe \
+  --from-pod payments/payment-service \
+  --to-pod databases/postgresql
+
+# Get flow statistics (top talkers)
+hubble observe --namespace payments \
+  --output json | \
+  jq -r '[.source.pod_name, .destination.pod_name, .l4.TCP.destination_port] | @tsv' | \
+  sort | uniq -c | sort -rn | head -20
+
+# Find all unique destination ports from payments namespace
+hubble observe --namespace payments --output json | \
+  jq -r '.l4.TCP.destination_port // .l4.UDP.destination_port' | \
+  sort -n | uniq -c | sort -rn</code></pre>
+
+<h3>Hubble for NetworkPolicy debugging</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Which pods are being denied by NetworkPolicy?
+hubble observe --verdict DROPPED --namespace payments --output json | \
+  jq -r '"DROP: \(.source.pod_name) → \(.destination.pod_name):\(.l4.TCP.destination_port // .l4.UDP.destination_port) [\(.drop_reason_desc)]"'
+
+# Common drop reasons:
+# POLICY_DENIED      — NetworkPolicy explicitly blocks
+# UNKNOWN_CONNECTION — conntrack miss (usually timeout)
+# PORT_UNREACHABLE   — no listener on target port
+
+# Find which NetworkPolicy is blocking a specific flow
+cilium policy trace \
+  --src-identity 12345 \
+  --dst-identity 67890 \
+  --dport 5432 \
+  --proto tcp
+
+# Get Cilium endpoint identity numbers
+kubectl exec -n kube-system ds/cilium -- \
+  cilium endpoint list | grep payment</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="network-policy-ops">NetworkPolicy Operations</h2>
+
+<h3>Testing NetworkPolicy effectiveness</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Test that default-deny is working (should timeout/refuse)
+kubectl run test-deny \
+  --image=busybox --restart=Never -n payments -it --rm \
+  -- nc -zv -w3 order-service.orders 80
+# Expected: nc: bad address 'order-service.orders' OR Connection refused
+
+# Test that allowed traffic works
+kubectl run test-allow \
+  --image=busybox --restart=Never -n payments -it --rm \
+  -- nc -zv -w3 postgresql.databases 5432
+# Expected: Connection to postgresql.databases 5432 port [tcp/*] succeeded!
+
+# List all NetworkPolicies and their selectors
+kubectl get networkpolicies -n payments -o json | \
+  jq -r '.items[] | "\(.metadata.name): podSelector=\(.spec.podSelector | tostring)"'
+
+# Check which pods are selected by a policy
+kubectl get pods -n payments -l "$(
+  kubectl get networkpolicy default-deny -n payments \
+    -o jsonpath='{.spec.podSelector.matchLabels}' | \
+    jq -r 'to_entries | map("\(.key)=\(.value)") | join(",")' 2>/dev/null || echo "app=payment-service"
+)"</code></pre>
+
+<h3>Network policy visualization</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Generate a network policy diagram with netpol-viewer (krew plugin)
+kubectl netpol graph -n payments
+
+# Or export to Graphviz DOT format:
+kubectl get networkpolicies -n payments -o json | \
+  python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+print('digraph G {')
+for policy in data['items']:
+    name = policy['metadata']['name']
+    ns = policy['metadata']['namespace']
+    for rule in policy.get('spec', {}).get('ingress', []):
+        for src in rule.get('from', []):
+            ns_sel = src.get('namespaceSelector', {}).get('matchLabels', {})
+            pod_sel = src.get('podSelector', {}).get('matchLabels', {})
+            label = str(ns_sel) + '/' + str(pod_sel)
+            print(f'  \"{label}\" -> \"{ns}/{name}\"')
+print('}')
+"</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="cross-az">Cross-AZ Traffic Optimization</h2>
+
+<p>Cross-AZ traffic in AWS costs $0.01/GB and adds 1–3ms latency. For services with high RPS, this is significant. Kubernetes 1.21+ has built-in topology-aware routing to prefer same-AZ endpoints.</p>
+
+<h3>Topology-aware service routing</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: payments
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 80
+      targetPort: 8080
+  # Topology-aware routing: prefer same-AZ endpoints (K8s 1.21+)
+  trafficPolicy:
+    externalTraffic: Cluster
+    internalTrafficPolicy: Local   # for DaemonSet services (node-local)
+  topologyKeys:                    # deprecated in 1.21+; use spec below
+    - topology.kubernetes.io/zone
+    - "*"</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># K8s 1.21+: EndpointSlice topology hints (preferred approach)
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: payments
+  annotations:
+    service.kubernetes.io/topology-mode: Auto   # enable topology-aware routing
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 80
+      targetPort: 8080</code></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-bash"># Verify topology hints are set on EndpointSlice
+kubectl get endpointslice -n payments -l kubernetes.io/service-name=payment-service -o yaml | \
+  grep -A5 "hints:"
+
+# Monitor cross-AZ traffic (CloudWatch / VPC Flow Logs)
+aws ec2 describe-flow-logs \
+  --filter Name=resource-id,Values=vpc-0123456789abcdef0 \
+  --query 'FlowLogs[*].{LogGroupName:LogGroupName,Status:FlowLogStatus}'
+
+# Estimate cross-AZ cost reduction
+# Before topology hints: 100% traffic to all AZs
+# After topology hints: ~70% same-AZ, ~30% cross-AZ
+# For 1TB/day cross-AZ: $10/day saved with topology hints</code></pre>
+
+<h3>Using local traffic for kube-proxy / Cilium</h3>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml"># For NodePort services: route only to local pods (avoids cross-node hop)
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local   # only route to pods on THIS node
+  # Tradeoff: uneven load distribution if pods aren't evenly distributed
+  # Use with topologySpreadConstraints to ensure even pod distribution</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="network-alerts">Network Alerts</h2>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-yaml">apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: network-operations-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: network.operations
+      rules:
+
+        # Conntrack table near exhaustion
+        - alert: ConntrackTableNearFull
+          expr: |
+            node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Conntrack table {{ $value | humanizePercentage }} full on {{ $labels.instance }}"
+            description: "Risk of connection drops if table fills. Increase nf_conntrack_max."
+            runbook_url: https://runbooks.example.com/network/conntrack-exhaustion
+
+        - alert: ConntrackTableCritical
+          expr: |
+            node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.95
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Conntrack table 95%+ full — new connections may be dropped"
+            runbook_url: https://runbooks.example.com/network/conntrack-exhaustion
+
+        # CoreDNS SERVFAIL rate
+        - alert: CoreDNSServfailHigh
+          expr: |
+            sum(rate(coredns_dns_responses_total{rcode="SERVFAIL"}[5m]))
+              /
+            sum(rate(coredns_dns_responses_total[5m])) > 0.01
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CoreDNS SERVFAIL rate > 1%"
+            runbook_url: https://runbooks.example.com/network/coredns-servfail
+
+        # CoreDNS pod down
+        - alert: CoreDNSDown
+          expr: |
+            kube_deployment_status_replicas_available{deployment="coredns",namespace="kube-system"} < 1
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "CoreDNS has no available replicas — cluster DNS is down"
+            runbook_url: https://runbooks.example.com/network/coredns-down
+
+        # Hubble: high drop rate in namespace
+        - alert: NetworkPolicyDropRateHigh
+          expr: |
+            sum by (namespace) (
+              rate(hubble_drop_total{namespace!="kube-system"}[5m])
+            ) > 10
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High NetworkPolicy drop rate in namespace {{ $labels.namespace }}"
+            description: "{{ $value | humanize }} drops/sec. Check NetworkPolicy rules."
+            runbook_url: https://runbooks.example.com/network/policy-drops
+
+        # NGINX Ingress 5xx error rate
+        - alert: IngressHighErrorRate
+          expr: |
+            sum by (ingress, namespace) (
+              rate(nginx_ingress_controller_requests{status=~"5.."}[5m])
+            )
+              /
+            sum by (ingress, namespace) (
+              rate(nginx_ingress_controller_requests[5m])
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Ingress {{ $labels.namespace }}/{{ $labels.ingress }} 5xx rate > 5%"
+            runbook_url: https://runbooks.example.com/network/ingress-errors
+
+        # Node network TX drops
+        - alert: NodeNetworkTxDropsHigh
+          expr: |
+            rate(node_network_transmit_drop_total{device!~"lo|veth.*|docker.*|flannel.*|cni.*|cilium.*"}[5m]) > 100
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} TX drops > 100/sec on {{ $labels.device }}"
+            runbook_url: https://runbooks.example.com/network/node-tx-drops
+
+        # VPC CNI IP pool exhaustion (AWS)
+        - alert: VPCCNIIPPoolLow
+          expr: |
+            awscni_total_ipaddresses - awscni_assigned_ip_per_cidr < 5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "VPC CNI IP pool has fewer than 5 available IPs on {{ $labels.instance }}"
+            runbook_url: https://runbooks.example.com/network/vpc-cni-ip-pool</code></pre>
+
+<!-- ============================================================ -->
+<h2>Best Practices</h2>
+
+<div class="card-grid">
+  <div class="card card-accent-blue">
+    <h3>NodeLocal DNSCache everywhere</h3>
+    <p>Install NodeLocal DNSCache on every cluster. It eliminates the 5-second conntrack DNS race bug, reduces CoreDNS load by 60–80%, and cuts DNS p99 from 2ms to 0.1ms.</p>
+  </div>
+  <div class="card card-accent-red">
+    <h3>Monitor conntrack utilization</h3>
+    <p>Set an alert at 80% conntrack table utilization. Conntrack exhaustion causes silent connection drops that are extremely hard to diagnose after the fact.</p>
+  </div>
+  <div class="card card-accent-green">
+    <h3>Hubble for zero-trust debugging</h3>
+    <p>When a NetworkPolicy blocks traffic, <code>hubble observe --verdict DROPPED</code> shows exactly which flow is dropped and why — saving hours compared to trial-and-error policy editing.</p>
+  </div>
+  <div class="card card-accent-yellow">
+    <h3>Set MTU explicitly</h3>
+    <p>Never rely on auto-detection for overlay MTU. Set it explicitly in CNI configuration. Mixed-MTU clusters cause mysterious large-payload failures that don't show up in small-packet tests.</p>
+  </div>
+  <div class="card card-accent-purple">
+    <h3>Topology-aware routing</h3>
+    <p>Enable <code>service.kubernetes.io/topology-mode: Auto</code> on high-RPS services. At scale, this meaningfully reduces cross-AZ data transfer costs and latency.</p>
+  </div>
+  <div class="card card-accent-orange">
+    <h3>Use FQDNs for cross-namespace calls</h3>
+    <p>Short service names trigger multiple DNS search-domain lookups. Always use <code>service.namespace.svc.cluster.local</code> for cross-namespace calls to reduce DNS query volume and avoid race conditions.</p>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<button id="back-top" onclick="document.getElementById('main').scrollTo({top:0,behavior:'smooth'})">↑ Top</button>
+
+<script>
+function filterNav(v){
+  document.querySelectorAll('#sidebar-nav .nav-section a').forEach(a=>{
+    a.style.display=a.textContent.toLowerCase().includes(v.toLowerCase())?'':'none';
+  });
+}
+document.getElementById('main').addEventListener('scroll',function(){
+  document.getElementById('back-top').classList.toggle('visible',this.scrollTop>300);
+});
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(()=>{
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+const mainEl=document.getElementById('main');
+const headings=mainEl.querySelectorAll('h2[id],h3[id]');
+const tocLinks=document.querySelectorAll('#toc a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>l.classList.remove('active'));
+      const active=document.querySelector('#toc a[href="#'+e.target.id+'"]');
+      if(active)active.classList.add('active');
+    }
+  });
+},{root:mainEl,threshold:0.3});
+headings.forEach(h=>obs.observe(h));
+</script>
+</body>
+</html>
